@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Fabrique</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* Variables de couleurs */
+    :root {
+      --bg-page: #FFFBFF;
+      --bg-header: #FEFCF3;
+      --bg-card: #FBFAF0;
+      --bg-input: #EFEEE3;
+      --bg-result: #F5F4EA;
+      
+      --primary-green: #237329;
+      --dark-green: #4E6C50;
+      --light-green: #D2F4D1;
+      
+      --text-dark: #383832;
+      --text-gray: #65655E;
+      --text-light-gray: #666556;
+      
+      --font-title: 'Plus Jakarta Sans', sans-serif;
+      --font-body: 'Manrope', sans-serif;
+    }
+
+    /* Reset basique */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #E5E5E5; /* Fond gris pour bien voir la frame mobile */
+      font-family: var(--font-body);
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* Conteneur principal style mobile */
+    .app-container {
+      width: 100%;
+      max-width: 390px;
+      background-color: var(--bg-page);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    /* En-tête */
+    header {
+      background-color: var(--bg-header);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--dark-green);
+    }
+
+    .user-stats {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .coins {
+      background-color: var(--bg-result);
+      color: var(--dark-green);
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      background-color: var(--light-green);
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    /* Contenu principal */
+    main {
+      padding: 32px 24px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    .header-titles h1 {
+      font-family: var(--font-title);
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--text-dark);
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+
+    .header-titles p {
+      color: var(--text-gray);
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    /* Cartes (Sections de formulaire) */
+    .card {
+      background-color: var(--bg-card);
+      padding: 24px;
+      border-radius: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card h2 {
+      font-family: var(--font-title);
+      font-size: 16px;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-square {
+      width: 16px;
+      height: 16px;
+      background-color: var(--primary-green);
+      border-radius: 4px;
+    }
+
+    /* Upload Photo */
+    .upload-zone {
+      background-color: rgba(255, 255, 255, 0.9);
+      border: 2px dashed rgba(187, 185, 177, 0.5);
+      border-radius: 24px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--primary-green);
+      background-color: rgba(35, 115, 41, 0.05);
+    }
+
+    .upload-zone span {
+      color: var(--text-gray);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* Grille Type Vêtement */
+    .type-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .type-btn {
+      background-color: white;
+      border: 2px solid transparent;
+      padding: 16px;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-family: var(--font-title);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-light-gray);
+      transition: all 0.2s;
+    }
+
+    .type-btn:hover {
+      border-color: #EAE9DD;
+    }
+
+    .type-btn.active {
+      background-color: var(--primary-green);
+      color: white;
+      box-shadow: 0 4px 15px rgba(35, 115, 41, 0.2);
+    }
+
+    .type-icon {
+      width: 24px;
+      height: 20px;
+      background-color: var(--text-light-gray);
+      border-radius: 4px;
+    }
+
+    .type-btn.active .type-icon {
+      background-color: white;
+    }
+
+    /* Détails Vêtements */
+    .details-section {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .input-group label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-gray);
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .custom-select, .custom-input {
+      background-color: var(--bg-input);
+      border: none;
+      border-radius: 24px;
+      padding: 16px 24px;
+      width: 100%;
+      font-family: var(--font-body);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-dark);
+      appearance: none;
+      outline: none;
+    }
+
+    /* Dimensions */
+    .dimensions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .dimension-box {
+      background-color: var(--bg-input);
+      border-radius: 24px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .dimension-box input {
+      background: none;
+      border: none;
+      font-family: var(--font-title);
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--primary-green);
+      width: 60%;
+      outline: none;
+    }
+
+    .dimension-box span {
+      color: var(--text-light-gray);
+      font-weight: 700;
+    }
+
+    /* Dégats (Tags) */
+    .tags {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tag {
+      background-color: #EAE9DD;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-dark);
+      border: 2px solid transparent;
+      cursor: pointer;
+    }
+
+    .tag.active {
+      border-color: var(--primary-green);
+      color: var(--primary-green);
+    }
+
+    /* Slider simulé */
+    .slider-track {
+      height: 6px;
+      background-color: #EAE9DD;
+      border-radius: 10px;
+      position: relative;
+      margin: 10px 0;
+    }
+    .slider-thumb {
+      width: 16px;
+      height: 16px;
+      background-color: var(--primary-green);
+      border-radius: 50%;
+      position: absolute;
+      top: -5px;
+      left: 10%;
+    }
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-gray);
+    }
+
+    /* Bouton principal */
+    .btn-primary {
+      background-color: var(--primary-green);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 20px;
+      width: 100%;
+      font-family: var(--font-title);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(35, 115, 41, 0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 25px rgba(35, 115, 41, 0.4);
+    }
+
+    /* Bloc Résultats */
+    .result-card {
+      background-color: var(--bg-result);
+      border-radius: 32px;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 16px;
+    }
+
+    .result-icon {
+      width: 80px;
+      height: 80px;
+      background-color: var(--light-green);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .result-icon .inner-icon {
+      width: 30px;
+      height: 30px;
+      background-color: #405E43;
+      border-radius: 8px;
+    }
+
+    .result-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-gray);
+      letter-spacing: 1px;
+    }
+
+    .result-value {
+      font-family: var(--font-title);
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--text-dark);
+    }
+
+    /* Barre de progression */
+    .progress-container {
+      width: 100%;
+      margin-top: 8px;
+    }
+    
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .progress-header span:first-child { color: var(--text-gray); }
+    .progress-header span:last-child { color: var(--dark-green); }
+
+    .progress-bar {
+      height: 12px;
+      background-color: #EAE9DD;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 82%;
+      background-color: var(--dark-green);
+      border-radius: 10px;
+    }
+
+    /* Badge Bonus */
+    .bonus-badge {
+      background-color: rgba(255, 148, 119, 0.1);
+      padding: 16px;
+      border-radius: 30px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .bonus-badge span:first-child { font-size: 24px; }
+    .bonus-badge span:last-child {
+      color: #A24A33;
+      font-family: var(--font-title);
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <header>
+      <div class="logo">La Fabrique</div>
+      <div class="user-stats">
+        <span class="coins">1,250 🪙</span>
+        <img class="avatar" src="https://placehold.co/40x40" alt="Avatar Utilisateur">
+      </div>
+    </header>
+
+    <main>
+      <div class="header-titles">
+        <h1>Nouveau vêtement</h1>
+        <p>On passe ton futur chef-d'œuvre au rayon X.</p>
+      </div>
+
+      <section class="card">
+        <h2><div class="icon-square"></div> Photo du vêtement</h2>
+        <div class="upload-zone">
+          <input type="file" aria-label="Prendre en photo">
+          <span>📷 Prendre en photo</span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><div class="icon-square"></div> Type de vêtement</h2>
+        <div class="type-grid">
+          <button class="type-btn active">
+            <div class="type-icon"></div> T-Shirt
+          </button>
+          <button class="type-btn">
+            <div class="type-icon"></div> Jean
+          </button>
+          <button class="type-btn">
+            <div class="type-icon"></div> Sweatshirt
+          </button>
+          <button class="type-btn">
+            <div class="type-icon"></div> Tote Bag
+          </button>
+        </div>
+      </section>
+
+      <div class="details-section">
+        <div class="input-group">
+          <label>Détails du vêtement</label>
+          <select class="custom-select">
+            <option>Laine</option>
+            <option>Coton</option>
+            <option>Polyester</option>
+          </select>
+        </div>
+
+        <section class="card">
+          <h2><div class="icon-square"></div> Dimensions Totales</h2>
+          <div class="dimensions-grid">
+            <div class="input-group">
+              <label>Largeur (cm)</label>
+              <div class="dimension-box">
+                <input type="number" value="140">
+                <span>cm</span>
+              </div>
+            </div>
+            <div class="input-group">
+              <label>Hauteur (cm)</label>
+              <div class="dimension-box">
+                <input type="number" value="200">
+                <span>cm</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2><div class="icon-square"></div> Dégats</h2>
+          <div class="tags">
+            <button class="tag">Tache</button>
+            <button class="tag active">Trou</button>
+          </div>
+          <div>
+            <div class="slider-track">
+              <div class="slider-thumb"></div>
+            </div>
+            <div class="slider-labels">
+              <span>PETIT (1cm)</span>
+              <span>GRAND (10cm+)</span>
+            </div>
+          </div>
+        </section>
+
+        <button class="btn-primary">Analyser le tissu</button>
+      </div>
+
+      <section class="result-card">
+        <div class="result-icon">
+          <div class="inner-icon"></div>
+        </div>
+        <div class="result-label">Résultats de l'analyse</div>
+        <div class="result-value">0.35 m²</div>
+        
+        <div class="progress-container">
+          <div class="progress-header">
+            <span>Zone réutilisable</span>
+            <span>82%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+          </div>
+        </div>
+
+        <div class="bonus-badge">
+          <span>🎉</span>
+          <span>+5 points</span>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+</body>
+</html>
