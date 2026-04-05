@@ -1,0 +1,362 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Fabrique - Upcycling</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #2E7D32;
+      --text-dark: #383832;
+      --text-muted: #65655E;
+      --bg-light: #FFFBFF;
+      --bg-secondary: #FBFAF0;
+      --bg-header: #FEFCF3;
+      --accent-green: #D2F4D1;
+      --accent-orange: #FCC895;
+      --accent-red: #FF9477;
+      --card-bg: #EAE9DD;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Manrope', sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Container Mobile */
+    .app-container {
+      width: 100%;
+      max-width: 390px;
+      background-color: var(--bg-light);
+      position: relative;
+      overflow-x: hidden;
+      min-height: 100vh;
+      box-shadow: 0 0 40px rgba(0,0,0,0.1);
+    }
+
+    .bg-glow {
+      position: absolute;
+      width: 256px;
+      height: 158px;
+      right: -50px;
+      top: 50px;
+      background: rgba(157, 241, 151, 0.30);
+      border-radius: 50%;
+      filter: blur(32px);
+      z-index: 0;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg-header);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 10;
+    }
+
+    .header-logo {
+      color: #4E6C50;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-coins {
+      background: #F5F4EA;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      color: #4E6C50;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent-green);
+    }
+
+    /* Hero */
+    .hero {
+      padding: 40px 24px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .hero h1 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 44px;
+      font-weight: 800;
+      line-height: 1.05;
+      color: var(--text-dark);
+      margin-bottom: 16px;
+    }
+
+    .hero h1 span { color: var(--primary-color); }
+
+    .hero p {
+      color: var(--text-muted);
+      font-size: 18px;
+      line-height: 1.5;
+      margin-bottom: 32px;
+    }
+
+    .btn-primary {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 20px 40px;
+      border-radius: 9999px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0px 20px 25px -5px rgba(35, 115, 41, 0.20);
+    }
+
+    /* --- SECTION TRANSFORMATION (MISE À JOUR) --- */
+    .showcase-section {
+      padding: 40px 24px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .showcase-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      position: relative;
+    }
+
+    .showcase-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .col-left { padding-bottom: 48px; }
+    .col-right { padding-top: 48px; }
+
+    .img-card {
+      width: 100%;
+      border-radius: 32px;
+      overflow: hidden;
+      background: var(--card-bg);
+    }
+
+    .img-card img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .rotate-left { transform: rotate(-3deg); transform-origin: top left; }
+    .rotate-right { transform: rotate(6deg); transform-origin: top left; }
+
+    .label-badge {
+      width: 100%;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-radius: 32px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+    }
+
+    .text-green { color: #4E6C50; }
+    .text-brown { color: #845C32; }
+
+    .center-icon {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0px 8px 10px -6px rgba(0, 0, 0, 0.1), 0px 20px 25px -5px rgba(0, 0, 0, 0.1);
+      z-index: 20;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .center-icon-inner {
+      width: 25px;
+      height: 25px;
+      }
+
+    /* --- SECTION COMMENT ÇA MARCHE --- */
+    .how-it-works {
+      background: var(--bg-secondary);
+      padding: 60px 24px 100px;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .section-title h2 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 30px;
+      color: var(--text-dark);
+      margin-bottom: 8px;
+    }
+
+    .section-title p { color: var(--text-muted); font-size: 16px; }
+
+    .step-card {
+      background: white;
+      border-radius: 32px;
+      padding: 32px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .step-number {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      font-size: 60px;
+      font-weight: 800;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #EAE9DD;
+      opacity: 0.5;
+    }
+
+    .step-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 48px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .icon-01 { background: var(--accent-green); }
+    .icon-02 { background: var(--accent-orange); }
+    .icon-03 { background: var(--accent-red); }
+
+    .step-card h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 24px;
+      margin-bottom: 12px;
+      color: var(--text-dark);
+    }
+
+    .step-card p {
+      color: var(--text-muted);
+      font-size: 16px;
+      line-height: 26px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <div class="bg-glow"></div>
+    
+    <header class="header">
+      <div class="header-logo">La Fabrique</div>
+      <div class="header-user">
+        <div class="user-coins">{{ user_coins|default:"1,250" }} 🪙</div>
+        <img class="user-avatar" src="{% static 'core/images/page-accueil/profile-picture.jpg' %}" alt="Avatar utilisateur">
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h1>La Fabrique :<br><span>Faites du neuf avec du vôtre</span></h1>
+        <p>Rejoins l'atelier digital. Prends en photo ton vieux jean ou cette chemise qui traîne. Notre algorithme transforme tes souvenirs en pièces de créateur : sacs stylés, accessoires uniques ou objets déco. Ta machine, tes règles, ta Trame.</p>
+        <button class="btn-primary">Commencer</button>
+      </section>
+
+      <div class="showcase-container">
+        <div class="showcase-column col-left">
+            <div class="img-card rotate-left">
+            <img src="{% static 'core/images/page-accueil/jean-usage.png' %}" alt="Vieux jean">
+            </div>
+            <div class="label-badge text-green">Vieux jean</div>
+        </div>
+
+        <div class="center-icon">
+            <div class="center-icon-inner">
+              <img src="{% static 'core/images/page-accueil/icon-switch.png' %}" alt="fleches">
+            </div>
+        </div>
+
+        <div class="showcase-column col-right">
+            <div class="label-badge text-brown">Tote bag</div>
+            <div class="img-card rotate-right">
+            <img src="{% static 'core/images/page-accueil/tote-bag.png' %}" alt="Tote bag">
+            </div>
+        </div>
+      </div>
+
+      <section class="how-it-works">
+        <div class="section-header">
+          <h2>Comment ça marche ?</h2>
+          <p>C’est simple comme bonjour.</p>
+        </div>
+
+        <div class="steps-container">
+          <article class="step-card">
+            <div class="step-number">01</div>
+            <div class="step-icon green">
+                <img src="{% static 'core/images/page-accueil/icon-scanner.png' %}" alt="Scanner">
+            </div>
+            <h3>Scanner</h3>
+            <p>Prenez votre vêtement de seconde main en photo. Notre algorithme identifie la qualité de la matière et l'emplacement des coutures.</p>
+          </article>
+
+          <article class="step-card">
+            <div class="step-number">02</div>
+            <div class="step-icon orange">
+                <img src="{% static 'core/images/page-accueil/icon-analyser.png' %}" alt="Analyser">
+            </div>
+            <h3>Analyser</h3>
+            <p>Parcourez des patrons personnalisés selon la taille et la texture de votre tissu. Nous vous montrons exactement où couper.</p>
+          </article>
+
+          <article class="step-card">
+            <div class="step-number">03</div>
+            <div class="step-icon red">
+                <img src="{% static 'core/images/page-accueil/icon-creer.png' %}" alt="Créer">
+            </div>
+            <h3>Créer</h3>
+            <p>Suivez des guides vidéo étape par étape pour assembler votre nouveau chef-d'œuvre. Gagnez des jetons communautaires pour chaque projet réalisé.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+</body>
+</html>
