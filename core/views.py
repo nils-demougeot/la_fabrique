@@ -7,57 +7,44 @@ def home(request):
     }
     return render(request, 'core/index.html', context)
 
-from django.shortcuts import render
 
 def new_material(request):
-    # Dictionnaire de contexte envoyé au template
-    context = {
-        'result_ready': False
-    }
+    # Par défaut, on n'affiche pas la carte de résultat
+    context = {'result_ready': False}
 
     if request.method == 'POST':
         try:
-            # 1. Récupération des données saisies par l'utilisateur
+            # Récupération des données du formulaire HTML
             width_cm = float(request.POST.get('width', 0))
             height_cm = float(request.POST.get('height', 0))
             damage_size_cm = float(request.POST.get('damage_size', 0))
             
-            # L'image importée est stockée ici pour tes futurs traitements (enregistrement en BDD)
-            uploaded_image = request.FILES.get('image')
-
-            # 2. Algorithme de calcul de la quantité de tissu
-            # Conversion de la surface totale en m² (1 m² = 10 000 cm²)
+            # Calculs : conversion en m² (1 m² = 10 000 cm²)
             total_area_m2 = (width_cm * height_cm) / 10000.0
-
-            # Approximation de la surface du dégât (tache ou trou) en m².
-            # On considère le dégât comme un carré de côté "damage_size_cm" pour simplifier.
+            
+            # On estime que le dégât est un carré (côté * côté)
             defect_area_m2 = (damage_size_cm * damage_size_cm) / 10000.0
+            
+            # La zone réutilisable est la zone totale moins le dégât (on ne descend pas sous 0)
+            usable_area_m2 = max(0, total_area_m2 - defect_area_m2)
 
-            # Soustraction exacte des défauts 
-            usable_area_m2 = total_area_m2 - defect_area_m2
-
-            # Sécurité pour éviter une surface négative si le dégât renseigné est plus grand que le vêtement
-            if usable_area_m2 < 0:
-                usable_area_m2 = 0
-
-            # 3. Calcul des statistiques pour l'affichage
-            percentage = 0
+            # Calcul du pourcentage pour la barre de progression
             if total_area_m2 > 0:
                 percentage = int((usable_area_m2 / total_area_m2) * 100)
-            
-            # Application de la règle de gamification : 1 pièce gagnée à chaque utilisation 
-            coins_earned = 1 
+            else:
+                percentage = 0
 
-            # 4. Envoi des résultats au template
+            # On met à jour le contexte pour dire au template d'afficher les résultats
             context.update({
-                'result_ready': True,
-                'usable_area': round(usable_area_m2, 2),
+                'result_ready': True,          # Déclenche le {% if result_ready %} du HTML
+                'usable_area': round(usable_area_m2, 2), # Arrondi à 2 décimales
                 'percentage': percentage,
-                'coins_earned': coins_earned,
+                'coins_earned': 1,             # Gamification
             })
 
         except ValueError:
-            # Gestion basique des erreurs si l'utilisateur entre du texte à la place des chiffres
-            context['error'] = "Veuillez entrer des dimensions valides."
+            # Si l'utilisateur a réussi à envoyer du texte au lieu de nombres
+            context['error'] = "Les dimensions saisies sont invalides."
 
+    # On renvoie la page avec les variables (soit vides, soit avec les résultats si POST)
     return render(request, 'core/new_material.html', context)
