@@ -34,18 +34,16 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background-color: #E5E5E5;
+      background-color: #f4f4f4;
       font-family: var(--font-body);
       display: flex;
       justify-content: center;
-      padding: 20px;
     }
 
     .app-container {
       width: 100%;
-      max-width: 390px;
+      max-width: 430px;
       background-color: var(--bg-page);
-      border-radius: 24px;
       overflow: hidden;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     }
@@ -95,6 +93,15 @@
     .upload-zone span { color: var(--text-gray); font-weight: 600; font-size: 14px; }
     .upload-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
+    .upload-zone.is-uploaded {
+      background-color: var(--light-green);
+      border: 2px solid var(--primary-green);
+    }
+
+    .upload-zone.is-uploaded span {
+      color: var(--primary-green);
+    }
+
     .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .type-btn {
       background-color: white; border: 2px solid transparent; padding: 16px; border-radius: 16px;
@@ -131,6 +138,7 @@
     .tag {
       flex: 1;
       display: flex;
+      gap: 6px;
       justify-content: center;
       align-items: center;
       background-color: #EAE9DD;
@@ -212,9 +220,9 @@
             <img class="icon-square" src="{% static 'core/images/new-material/icon-scan.svg' %}" alt="Scan">
             Photo du vêtement
           </h2>
-          <div class="upload-zone">
-            <input type="file" name="image" accept="image/*" aria-label="Prendre en photo" required>
-            <span>📷 Prendre en photo</span>
+          <div class="upload-zone" id="drop-zone">
+            <input type="file" id="photo-input" accept="image/*" aria-label="Prendre en photo">
+            <span id="upload-text">📷 Prendre en photo</span>
           </div>
         </section>
 
@@ -349,6 +357,20 @@
       const resultSection = document.getElementById('result-section');
       if (resultSection) {
         resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  </script>
+
+  <script>
+    const photoInput = document.getElementById('photo-input');
+    const uploadText = document.getElementById('upload-text');
+    const dropZone = document.getElementById('drop-zone');
+
+    photoInput.addEventListener('change', function(event) {
+      // Si un fichier a bien été sélectionné
+      if (event.target.files.length > 0) {
+        uploadText.textContent = '✅ Photo téléchargée';
+        dropZone.classList.add('is-uploaded');
       }
     });
   </script>
