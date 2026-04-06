@@ -102,15 +102,45 @@
       color: var(--primary-green);
     }
 
-    .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .type-btn {
-      background-color: white; border: 2px solid transparent; padding: 16px; border-radius: 16px;
-      display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer;
-      font-family: var(--font-title); font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-light-gray);
+    .type-grid { 
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); 
+      gap: 10px; 
     }
-    .type-btn.active { background-color: var(--primary-green); color: white; box-shadow: 0 4px 15px rgba(35, 115, 41, 0.2); }
-    .type-icon { width: 24px; height: 20px; background-color: var(--text-light-gray); border-radius: 4px; }
-    .type-btn.active .type-icon { background-color: white; }
+
+    .type-btn {
+      background-color: white; 
+      border: 2px solid transparent; 
+      padding: 12px 4px; 
+      border-radius: 16px;
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      gap: 8px; 
+      cursor: pointer;
+      font-family: var(--font-title); 
+      font-size: 11px; 
+      font-weight: 700; 
+      text-transform: uppercase; 
+      color: var(--text-light-gray);
+      transition: all 0.2s ease;
+    }
+
+    .type-btn.active { 
+      background-color: var(--primary-green); 
+      color: white; 
+      box-shadow: 0 4px 15px rgba(35, 115, 41, 0.2); 
+    }
+
+    .type-icon-img {
+      width: 28px;
+      height: 28px;
+      transition: filter 0.2s ease;
+    }
+
+    .type-btn.active .type-icon-img {
+      filter: brightness(0) invert(1);
+    }
 
     .details-section { display: flex; flex-direction: column; gap: 24px; }
     .input-group label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-gray); letter-spacing: 1px; margin-bottom: 8px; display: block; }
@@ -347,20 +377,39 @@
         <input type="hidden" name="clothing_type" id="clothing_type_input" value="tshirt">
 
         <section class="card">
-          <h2><img class="icon-square" src="{% static 'core/images/new-material/icon-shirt.svg' %}" alt="T-shirt"> Type de vêtement</h2>
+          <h2><img class="type-icon-img" src="{% static 'core/images/new-material/icon-shirt.svg' %}" alt="Vêtement"> Type de vêtement</h2>
           <div class="type-grid">
+            
             <button type="button" class="type-btn active" data-type="tshirt">
-              <div class="type-icon"></div> T-Shirt
+              <img class="type-icon-img" src="{% static 'core/images/new-material/shirt.svg' %}" alt="Shirt">
+              T-Shirt
             </button>
+
             <button type="button" class="type-btn" data-type="jean">
-              <div class="type-icon"></div> Jean
+              <img class="type-icon-img" src="{% static 'core/images/new-material/pants.svg' %}" alt="Pantalon">
+              Jean
             </button>
-            <button type="button" class="type-btn" data-type="sweat">
-              <div class="type-icon"></div> Sweatshirt
+
+            <button type="button" class="type-btn" data-type="hoodie">
+              <img class="type-icon-img" src="{% static 'core/images/new-material/hoodie.svg' %}" alt="Hoodie">
+              Hoodie
             </button>
-            <button type="button" class="type-btn" data-type="totebag">
-              <div class="type-icon"></div> Tote Bag
+
+            <button type="button" class="type-btn" data-type="robe">
+              <img class="type-icon-img" src="{% static 'core/images/new-material/dress.svg' %}" alt="Robe">
+              Robe
             </button>
+
+            <button type="button" class="type-btn" data-type="jupe">
+              <img class="type-icon-img" src="{% static 'core/images/new-material/skirt.svg' %}" alt="Jupe">
+              Jupe
+            </button>
+
+            <button type="button" class="type-btn" data-type="manteau">
+              <img class="type-icon-img" src="{% static 'core/images/new-material/cardigan.svg' %}" alt="Manteau">
+              Manteau
+            </button>
+
           </div>
         </section>
 
