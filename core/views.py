@@ -1,4 +1,6 @@
+import json
 from django.shortcuts import render
+import math
 
 def home(request):
     # On passe notre donnée de pièces virtuelles pour l'injecter dans la maquette
