@@ -41,8 +41,8 @@ def new_material(request):
 
     if request.method == 'POST':
         try:
-            # Récupération des données du formulaire HTML
-            damage_size_cm = float(request.POST.get('damage_size', 0))
+            # On récupère toutes les tailles de dégâts envoyées par le formulaire sous forme de liste
+            damage_sizes = request.POST.getlist('damage_size[]')
             
             # Les données de l'image et du canvas
             coords_str = request.POST.get('polygon_coords', '[]')
@@ -55,7 +55,14 @@ def new_material(request):
             img_w = float(request.POST.get('image_width', 1))
             img_h = float(request.POST.get('image_height', 1))
 
-            defect_area_m2 = (damage_size_cm * damage_size_cm) / 10000.0
+
+            # On calcule l'aire totale de TOUS les défauts additionnés
+            total_defect_area_m2 = 0.0
+
+            for size_str in damage_sizes:
+                size_cm = float(size_str)
+                # On ajoute l'aire de ce dégât (estimée comme un carré de côté size_cm)
+                total_defect_area_m2 += (size_cm * size_cm) / 10000.0
 
             # Vérifie si l'utilisateur a complété l'étalonnage
             if len(polygon_points) >= 3 and len(calib_points) == 2 and calib_distance_cm > 0:

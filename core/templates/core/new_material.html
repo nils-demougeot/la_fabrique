@@ -114,9 +114,40 @@
 
     .details-section { display: flex; flex-direction: column; gap: 24px; }
     .input-group label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-gray); letter-spacing: 1px; margin-bottom: 8px; display: block; }
-    .custom-select, .custom-input {
-      background-color: var(--bg-input); border: none; border-radius: 99px; padding: 16px 24px;
-      width: 100%; font-family: var(--font-body); font-size: 16px; font-weight: 600; color: var(--text-dark); outline: none;
+    
+    .custom-input {
+      background-color: var(--bg-input); 
+      border: none; 
+      border-radius: 99px; 
+      padding: 16px 24px;
+      width: 100%; 
+      font-family: var(--font-body); 
+      font-size: 16px; 
+      font-weight: 600; 
+      color: var(--text-dark); 
+      outline: none;
+    }
+
+    .custom-select {
+      background-color: var(--bg-input); 
+      border: none; 
+      border-radius: 99px; 
+      padding: 16px 24px;
+      width: 100%; 
+      font-family: var(--font-body); 
+      font-size: 16px; 
+      font-weight: 600; 
+      color: var(--text-dark); 
+      outline: none;
+      
+      appearance: none;
+      -webkit-appearance: none;
+      
+      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2365655E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 24px center;
+      background-size: 16px;
+      padding-right: 48px;
     }
 
     .dimensions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -163,6 +194,25 @@
     input[type=range] { width: 100%; margin: 10px 0; accent-color: var(--primary-green); }
     .slider-labels { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: var(--text-gray); }
     .current-slider-value { text-align: center; font-family: var(--font-title); font-weight: 800; color: var(--primary-green); font-size: 18px; margin-bottom: 8px; }
+
+    .btn-delete-damage {
+      background: none;
+      border: none;
+      color: #A24A33;
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 16px;
+      text-decoration: underline;
+      display: block;
+      width: 100%;
+      text-align: center;
+    }
+
+    .toggle-icon {
+      transition: transform 0.3s ease-in-out;
+    }
 
     .btn-primary {
       background-color: var(--primary-green); color: white; border: none; border-radius: 30px; padding: 20px;
@@ -344,25 +394,45 @@
             </div>
           </section>
 
-          <section class="card">
-            <h2><img class="icon-square" src="{% static 'core/images/new-material/icon-ciseaux.svg' %}" alt="Ciseaux"> Dégâts</h2>
-            <div class="tags">
-                <input type="radio" id="degat-tache" name="type_degat" class="hidden-radio">
-                <label for="degat-tache" class="tag"><img class="icon-square" src="{% static 'core/images/new-material/icon-tache.svg' %}" alt="Tache"> Tache</label>
-
-                <input type="radio" id="degat-trou" name="type_degat" class="hidden-radio" checked>
-                <label for="degat-trou" class="tag"><img class="icon-square" src="{% static 'core/images/new-material/icon-trou.svg' %}" alt="Trou"> Trou</label>
-            </div>
-            
-            <div>
-              <div class="current-slider-value" id="slider_display">1 cm</div>
-              <input type="range" name="damage_size" id="damage_slider" min="1" max="30" value="0">
-              <div class="slider-labels">
-                <span>PETIT (1cm)</span>
-                <span>GRAND (30cm)</span>
+          <div id="damages-container" class="details-section">
+  
+          <section class="card damage-card" id="damage-1">
+            <h2 class="damage-header" style="cursor: pointer; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <img class="icon-square" src="{% static 'core/images/new-material/icon-ciseaux.svg' %}" alt="Ciseaux">
+                <span class="damage-title">Dégât 1</span>
               </div>
+              <svg class="toggle-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#65655E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(180deg);">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </h2>
+
+            <div class="damage-content">
+              <div class="tags">
+                  <input type="radio" id="degat-tache-1" name="type_degat_1" class="hidden-radio">
+                  <label for="degat-tache-1" class="tag"><img class="icon-square" src="{% static 'core/images/new-material/icon-tache.svg' %}" alt="Tache"> Tache</label>
+
+                  <input type="radio" id="degat-trou-1" name="type_degat_1" class="hidden-radio" checked>
+                  <label for="degat-trou-1" class="tag"><img class="icon-square" src="{% static 'core/images/new-material/icon-trou.svg' %}" alt="Trou"> Trou</label>
+              </div>
+              
+              <div>
+                <div class="current-slider-value">1 cm</div>
+                <input type="range" name="damage_size[]" class="damage-slider" min="1" max="30" value="1">
+                <div class="slider-labels">
+                  <span>PETIT (1cm)</span>
+                  <span>GRAND (30cm)</span>
+                </div>
+              </div>
+              <button type="button" class="btn-delete-damage">Supprimer ce dégât</button>
             </div>
           </section>
+
+        </div>
+
+        <button type="button" id="btn-add-damage" class="btn-secondary" style="margin-top: 16px; margin-bottom: 32px; width: 100%;">
+          + Ajouter un autre dégât
+        </button>
 
           <button type="submit" class="btn-primary"><img class="icon-square" src="{% static 'core/images/new-material/icon-analyser.svg' %}" alt="Analyser"> Analyser le tissu</button>
         </div>
@@ -432,7 +502,10 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // 1. Gestion des boutons "Type de vêtement"
+      
+      // ==========================================
+      // 1. GESTION DU TYPE DE VÊTEMENT
+      // ==========================================
       const typeButtons = document.querySelectorAll('.type-btn');
       const hiddenTypeInput = document.getElementById('clothing_type_input');
 
@@ -447,215 +520,297 @@
         });
       });
 
-      // 2. Gestion du Slider de dégâts
-      const slider = document.getElementById('damage_slider');
-      const sliderDisplay = document.getElementById('slider_display');
 
-      slider.addEventListener('input', (e) => {
-        sliderDisplay.textContent = e.target.value + ' cm';
-      });
+      // ==========================================
+      // 2. GESTION DES DÉGÂTS (Sliders, Toggle, Ajout)
+      // ==========================================
+      const damagesContainer = document.getElementById('damages-container');
+      const btnAddDamage = document.getElementById('btn-add-damage');
+      let damageCount = 1;
 
-      // 3. Auto-scroll vers les résultats après la soumission du formulaire
-      const resultSection = document.getElementById('result-section');
-      if (resultSection) {
-        resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      function attachSliderEvent(card) {
+        const slider = card.querySelector('.damage-slider');
+        const display = card.querySelector('.current-slider-value');
+        if(slider && display) {
+            slider.addEventListener('input', (e) => {
+            display.textContent = e.target.value + ' cm';
+            });
+        }
+      }
+
+      function attachToggleEvent(card) {
+        const header = card.querySelector('.damage-header');
+        const content = card.querySelector('.damage-content');
+        const icon = card.querySelector('.toggle-icon');
+
+        if(header && content && icon) {
+            header.addEventListener('click', () => {
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                // On tourne la flèche vers le haut
+                newCard.querySelector('.toggle-icon').style.transform = 'rotate(180deg)';
+            } else {
+                content.style.display = 'none';
+                // On remet la flèche vers le bas
+                icon.style.transform = 'rotate(0deg)';
+            }
+            });
+        }
+      }
+
+      if (damagesContainer) {
+        damagesContainer.addEventListener('click', (e) => {
+          if (e.target.classList.contains('btn-delete-damage')) {
+            const allCards = damagesContainer.querySelectorAll('.damage-card');
+            
+            if (allCards.length > 1) {
+              const cardToRemove = e.target.closest('.damage-card');
+              cardToRemove.remove();
+              
+              const remainingCards = damagesContainer.querySelectorAll('.damage-card');
+              remainingCards.forEach((card, index) => {
+                card.querySelector('.damage-title').textContent = `Dégât ${index + 1}`;
+              });
+              damageCount = remainingCards.length;
+            } else {
+              alert("Tu dois conserver au moins une zone de dégât.");
+            }
+          }
+        });
+      }
+
+      const firstCard = document.getElementById('damage-1');
+      if (firstCard) {
+        attachSliderEvent(firstCard);
+        attachToggleEvent(firstCard);
+      }
+
+      if (btnAddDamage) {
+        btnAddDamage.addEventListener('click', () => {
+            damageCount++;
+            
+            const newCard = firstCard.cloneNode(true);
+            newCard.id = `damage-${damageCount}`;
+            newCard.querySelector('.damage-title').textContent = `Dégât ${damageCount}`;
+            newCard.querySelector('.damage-content').style.display = 'block';
+            newCard.querySelector('.toggle-icon').style.transform = 'rotate(180deg)';
+            
+            const radios = newCard.querySelectorAll('input[type="radio"]');
+            const labels = newCard.querySelectorAll('label.tag');
+            
+            radios[0].id = `degat-tache-${damageCount}`;
+            radios[0].name = `type_degat_${damageCount}`;
+            labels[0].setAttribute('for', `degat-tache-${damageCount}`);
+            
+            radios[1].id = `degat-trou-${damageCount}`;
+            radios[1].name = `type_degat_${damageCount}`;
+            labels[1].setAttribute('for', `degat-trou-${damageCount}`);
+            
+            const slider = newCard.querySelector('.damage-slider');
+            slider.value = 1;
+            newCard.querySelector('.current-slider-value').textContent = '1 cm';
+            
+            attachSliderEvent(newCard);
+            attachToggleEvent(newCard);
+            
+            damagesContainer.appendChild(newCard);
+        });
+      }
+
+
+      // ==========================================
+      // 3. GESTION DE LA PHOTO ET DU CANVAS (Pop-up)
+      // ==========================================
+      const photoInput = document.getElementById('photo-input');
+      const uploadText = document.getElementById('upload-text');
+      const dropZone = document.getElementById('drop-zone');
+
+      const polygonCoordsInput = document.getElementById('polygon_coords');
+      const calibCoordsInput = document.getElementById('calibration_coords');
+      const calibDistanceInput = document.getElementById('calibration_distance');
+      const imageWidthInput = document.getElementById('image_width');
+      const imageHeightInput = document.getElementById('image_height');
+
+      const modal = document.getElementById('image-modal');
+      const canvas = document.getElementById('drawing-canvas');
+      const ctx = canvas ? canvas.getContext('2d') : null;
+      const btnClear = document.getElementById('btn-clear-canvas');
+      const btnNext = document.getElementById('btn-next-step');
+      const btnValidate = document.getElementById('btn-validate-canvas');
+
+      const step1UI = document.getElementById('step-1-ui');
+      const step2UI = document.getElementById('step-2-ui');
+      const distanceInput = document.getElementById('calib-distance-input');
+
+      let currentStep = 1;
+      let polygonPoints = [];
+      let calibPoints = [];
+      let imageObj = new Image();
+
+      if (photoInput) {
+        photoInput.addEventListener('change', function(event) {
+            if (event.target.files.length > 0) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                imageObj.onload = () => {
+                imageWidthInput.value = imageObj.width;
+                imageHeightInput.value = imageObj.height;
+
+                const maxWidth = window.innerWidth * 0.8;
+                const scale = Math.min(1, maxWidth / imageObj.width);
+                canvas.width = imageObj.width * scale;
+                canvas.height = imageObj.height * scale;
+                
+                currentStep = 1;
+                polygonPoints = [];
+                calibPoints = [];
+                distanceInput.value = '';
+                
+                switchStep(1);
+                redrawCanvas();
+                modal.classList.add('active');
+                };
+                imageObj.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+
+            uploadText.textContent = '✅ Photo ajoutée';
+            dropZone.classList.add('is-uploaded');
+            }
+        });
+      }
+
+      if (canvas) {
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x_rel = (e.clientX - rect.left) / rect.width;
+            const y_rel = (e.clientY - rect.top) / rect.height;
+
+            if (currentStep === 1) {
+            polygonPoints.push({ x: x_rel, y: y_rel });
+            } else if (currentStep === 2) {
+            if (calibPoints.length < 2) {
+                calibPoints.push({ x: x_rel, y: y_rel });
+            }
+            }
+            redrawCanvas();
+        });
+      }
+
+      function redrawCanvas() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(imageObj, 0, 0, canvas.width, canvas.height);
+
+        // Dessiner le Polygone
+        if (polygonPoints.length > 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#237329';
+            ctx.lineWidth = 3;
+            ctx.fillStyle = currentStep === 1 ? 'rgba(210, 244, 209, 0.4)' : 'rgba(210, 244, 209, 0.15)'; 
+
+            polygonPoints.forEach((point, index) => {
+            const px = point.x * canvas.width;
+            const py = point.y * canvas.height;
+            if (index === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+            });
+
+            if (polygonPoints.length > 2) {
+            ctx.closePath();
+            ctx.fill();
+            }
+            ctx.stroke();
+
+            if (currentStep === 1) {
+            polygonPoints.forEach((point) => drawDot(point.x * canvas.width, point.y * canvas.height, '#237329'));
+            }
+        }
+
+        // Dessiner la ligne d'étalonnage
+        if (currentStep === 2 && calibPoints.length > 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#A24A33'; 
+            ctx.lineWidth = 4;
+            
+            calibPoints.forEach((point, index) => {
+            const px = point.x * canvas.width;
+            const py = point.y * canvas.height;
+            if (index === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+            });
+            ctx.stroke();
+
+            calibPoints.forEach((point) => drawDot(point.x * canvas.width, point.y * canvas.height, '#A24A33'));
+        }
+      }
+
+      function drawDot(x, y, color) {
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+      }
+
+      function switchStep(step) {
+        currentStep = step;
+        if (step === 1) {
+            step1UI.style.display = 'block';
+            step2UI.style.display = 'none';
+            btnNext.style.display = 'block';
+            btnValidate.style.display = 'none';
+        } else {
+            step1UI.style.display = 'none';
+            step2UI.style.display = 'block';
+            btnNext.style.display = 'none';
+            btnValidate.style.display = 'block';
+        }
+      }
+
+      if (btnClear) {
+        btnClear.addEventListener('click', () => {
+            if (currentStep === 1) polygonPoints = [];
+            else calibPoints = [];
+            redrawCanvas();
+        });
+      }
+
+      if (btnNext) {
+        btnNext.addEventListener('click', () => {
+            if (polygonPoints.length < 3) {
+            alert("Place au moins 3 points pour former la zone.");
+            return;
+            }
+            switchStep(2);
+            redrawCanvas();
+        });
+      }
+
+      if (btnValidate) {
+        btnValidate.addEventListener('click', () => {
+            if (calibPoints.length < 2) {
+            alert("Place 2 points pour créer une ligne d'étalonnage.");
+            return;
+            }
+            if (!distanceInput.value || distanceInput.value <= 0) {
+            alert("Saisis la distance réelle en centimètres.");
+            return;
+            }
+
+            polygonCoordsInput.value = JSON.stringify(polygonPoints);
+            calibCoordsInput.value = JSON.stringify(calibPoints);
+            calibDistanceInput.value = distanceInput.value;
+
+            modal.classList.remove('active');
+            uploadText.textContent = '✅ Zone et Taille validées';
+        });
       }
     });
-  </script>
-
-  <script>
-  const photoInput = document.getElementById('photo-input');
-  const uploadText = document.getElementById('upload-text');
-  const dropZone = document.getElementById('drop-zone');
-
-  // Inputs cachés
-  const polygonCoordsInput = document.getElementById('polygon_coords');
-  const calibCoordsInput = document.getElementById('calibration_coords');
-  const calibDistanceInput = document.getElementById('calibration_distance');
-  const imageWidthInput = document.getElementById('image_width');
-  const imageHeightInput = document.getElementById('image_height');
-
-  // Elements Modale
-  const modal = document.getElementById('image-modal');
-  const canvas = document.getElementById('drawing-canvas');
-  const ctx = canvas.getContext('2d');
-  const btnClear = document.getElementById('btn-clear-canvas');
-  const btnNext = document.getElementById('btn-next-step');
-  const btnValidate = document.getElementById('btn-validate-canvas');
-
-  // UI Étapes
-  const step1UI = document.getElementById('step-1-ui');
-  const step2UI = document.getElementById('step-2-ui');
-  const distanceInput = document.getElementById('calib-distance-input');
-
-  let currentStep = 1;
-  let polygonPoints = [];
-  let calibPoints = [];
-  let imageObj = new Image();
-
-  // 1. Chargement de l'image
-  photoInput.addEventListener('change', function(event) {
-    if (event.target.files.length > 0) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-
-      reader.onload = (e) => {
-        imageObj.onload = () => {
-          // Enregistrer la vraie taille de l'image pour le Backend
-          imageWidthInput.value = imageObj.width;
-          imageHeightInput.value = imageObj.height;
-
-          // Ajuster la résolution interne du canvas
-          const maxWidth = window.innerWidth * 0.8;
-          const scale = Math.min(1, maxWidth / imageObj.width);
-          canvas.width = imageObj.width * scale;
-          canvas.height = imageObj.height * scale;
-          
-          // Reset des variables
-          currentStep = 1;
-          polygonPoints = [];
-          calibPoints = [];
-          distanceInput.value = '';
-          
-          switchStep(1);
-          redrawCanvas();
-          modal.classList.add('active');
-        };
-        imageObj.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-
-      uploadText.textContent = '✅ Photo ajoutée';
-      dropZone.classList.add('is-uploaded');
-    }
-  });
-
-  // 2. Gestion du Clic (Correction du décalage)
-  canvas.addEventListener('click', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    // LA CORRECTION EST ICI : on divise par rect.width (taille CSS) et non canvas.width
-    const x_rel = (e.clientX - rect.left) / rect.width;
-    const y_rel = (e.clientY - rect.top) / rect.height;
-
-    if (currentStep === 1) {
-      polygonPoints.push({ x: x_rel, y: y_rel });
-    } else if (currentStep === 2) {
-      // On ne garde que 2 points max pour l'étalonnage
-      if (calibPoints.length < 2) {
-        calibPoints.push({ x: x_rel, y: y_rel });
-      }
-    }
-    redrawCanvas();
-  });
-
-  // 3. Dessin du Canvas
-  function redrawCanvas() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(imageObj, 0, 0, canvas.width, canvas.height);
-
-    // Dessiner le Polygone
-    if (polygonPoints.length > 0) {
-      ctx.beginPath();
-      ctx.strokeStyle = '#237329';
-      ctx.lineWidth = 3;
-      // Si on est à l'étape 2, on rend le polygone plus transparent pour se concentrer sur l'étalonnage
-      ctx.fillStyle = currentStep === 1 ? 'rgba(210, 244, 209, 0.4)' : 'rgba(210, 244, 209, 0.15)'; 
-
-      polygonPoints.forEach((point, index) => {
-        const px = point.x * canvas.width;
-        const py = point.y * canvas.height;
-        if (index === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      });
-
-      if (polygonPoints.length > 2) {
-        ctx.closePath();
-        ctx.fill();
-      }
-      ctx.stroke();
-
-      if (currentStep === 1) {
-        polygonPoints.forEach((point) => drawDot(point.x * canvas.width, point.y * canvas.height, '#237329'));
-      }
-    }
-
-    // Dessiner la ligne d'étalonnage (Étape 2)
-    if (currentStep === 2 && calibPoints.length > 0) {
-      ctx.beginPath();
-      ctx.strokeStyle = '#A24A33'; // Rouge/Orange pour contraster
-      ctx.lineWidth = 4;
-      
-      calibPoints.forEach((point, index) => {
-        const px = point.x * canvas.width;
-        const py = point.y * canvas.height;
-        if (index === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      });
-      ctx.stroke();
-
-      calibPoints.forEach((point) => drawDot(point.x * canvas.width, point.y * canvas.height, '#A24A33'));
-    }
-  }
-
-  function drawDot(x, y, color) {
-    ctx.beginPath();
-    ctx.arc(x, y, 5, 0, 2 * Math.PI);
-    ctx.fillStyle = 'white';
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = color;
-    ctx.stroke();
-  }
-
-  // 4. Gestion des boutons
-  function switchStep(step) {
-    currentStep = step;
-    if (step === 1) {
-      step1UI.style.display = 'block';
-      step2UI.style.display = 'none';
-      btnNext.style.display = 'block';
-      btnValidate.style.display = 'none';
-    } else {
-      step1UI.style.display = 'none';
-      step2UI.style.display = 'block';
-      btnNext.style.display = 'none';
-      btnValidate.style.display = 'block';
-    }
-  }
-
-  btnClear.addEventListener('click', () => {
-    if (currentStep === 1) polygonPoints = [];
-    else calibPoints = [];
-    redrawCanvas();
-  });
-
-  btnNext.addEventListener('click', () => {
-    if (polygonPoints.length < 3) {
-      alert("Place au moins 3 points pour former la zone.");
-      return;
-    }
-    switchStep(2);
-    redrawCanvas();
-  });
-
-  btnValidate.addEventListener('click', () => {
-    if (calibPoints.length < 2) {
-      alert("Place 2 points pour créer une ligne d'étalonnage.");
-      return;
-    }
-    if (!distanceInput.value || distanceInput.value <= 0) {
-      alert("Saisis la distance réelle en centimètres.");
-      return;
-    }
-
-    // Enregistrement des données dans les inputs cachés
-    polygonCoordsInput.value = JSON.stringify(polygonPoints);
-    calibCoordsInput.value = JSON.stringify(calibPoints);
-    calibDistanceInput.value = distanceInput.value;
-
-    modal.classList.remove('active');
-    uploadText.textContent = '✅ Zone et Taille validées';
-  });
   </script>
 </body>
 </html>
