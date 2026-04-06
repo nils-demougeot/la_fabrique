@@ -99,7 +99,7 @@ def new_material(request):
                 polygon_area_m2 = polygon_area_cm2 / 10000.0
                 
                 # Résultat final
-                usable_area_m2 = max(0, polygon_area_m2 - defect_area_m2)
+                usable_area_m2 = max(0, polygon_area_m2 - total_defect_area_m2)
                 
                 # Si tu as retiré les inputs "width" et "height", 
                 # la zone tracée EST la totalité du vêtement moins les défauts.
