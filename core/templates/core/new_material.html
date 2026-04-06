@@ -189,6 +189,74 @@
     .bonus-badge span:last-child { color: #A24A33; font-family: var(--font-title); font-weight: 800; font-size: 16px; }
 
     .error-msg { color: #A24A33; font-weight: bold; text-align: center; margin-top: 10px; }
+
+
+    /* --- Styles pour la Modale et le Canvas --- */
+    .modal {
+      display: none; /* Caché par défaut */
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background-color: var(--bg-page);
+      padding: 24px;
+      border-radius: 24px;
+      width: 90%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-content h3 {
+      font-family: var(--font-title);
+      color: var(--text-dark);
+    }
+
+    .modal-content p {
+      font-size: 14px;
+      color: var(--text-gray);
+    }
+
+    .canvas-container {
+      width: 100%;
+      background-color: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas {
+      max-width: 100%;
+      cursor: crosshair;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-input);
+      color: var(--text-dark);
+      border: none;
+      border-radius: 30px;
+      padding: 16px;
+      flex: 1;
+      font-weight: 700;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -298,6 +366,40 @@
 
           <button type="submit" class="btn-primary"><img class="icon-square" src="{% static 'core/images/new-material/icon-analyser.svg' %}" alt="Analyser"> Analyser le tissu</button>
         </div>
+
+        <input type="hidden" name="polygon_coords" id="polygon_coords" value="[]">
+        <input type="hidden" name="calibration_coords" id="calibration_coords" value="[]">
+        <input type="hidden" name="calibration_distance" id="calibration_distance" value="0">
+        <input type="hidden" name="image_width" id="image_width" value="0">
+        <input type="hidden" name="image_height" id="image_height" value="0">
+
+        <div id="image-modal" class="modal">
+          <div class="modal-content">
+            
+            <div id="step-1-ui">
+              <h3>Étape 1 : Délimite la zone saine</h3>
+              <p>Clique sur les bords pour créer le contour. (3 points minimum)</p>
+            </div>
+
+            <div id="step-2-ui" style="display: none;">
+              <h3>Étape 2 : Étalonnage</h3>
+              <p>Place 2 points sur un repère connu de l'image (ex: une couture, le col) et indique sa taille réelle.</p>
+              <div class="input-group" style="margin-top: 12px;">
+                <input type="number" id="calib-distance-input" placeholder="Taille en centimètres (ex: 20)" class="custom-input" min="1" step="0.1">
+              </div>
+            </div>
+            
+            <div class="canvas-container">
+              <canvas id="drawing-canvas"></canvas>
+            </div>
+            
+            <div class="modal-actions">
+              <button type="button" id="btn-clear-canvas" class="btn-secondary">Effacer</button>
+              <button type="button" id="btn-next-step" class="btn-primary">Suivant</button>
+              <button type="button" id="btn-validate-canvas" class="btn-primary" style="display: none;">Valider</button>
+            </div>
+          </div>
+        </div>
       </form>
 
       {% if result_ready %}
@@ -362,17 +464,198 @@
   </script>
 
   <script>
-    const photoInput = document.getElementById('photo-input');
-    const uploadText = document.getElementById('upload-text');
-    const dropZone = document.getElementById('drop-zone');
+  const photoInput = document.getElementById('photo-input');
+  const uploadText = document.getElementById('upload-text');
+  const dropZone = document.getElementById('drop-zone');
 
-    photoInput.addEventListener('change', function(event) {
-      // Si un fichier a bien été sélectionné
-      if (event.target.files.length > 0) {
-        uploadText.textContent = '✅ Photo téléchargée';
-        dropZone.classList.add('is-uploaded');
+  // Inputs cachés
+  const polygonCoordsInput = document.getElementById('polygon_coords');
+  const calibCoordsInput = document.getElementById('calibration_coords');
+  const calibDistanceInput = document.getElementById('calibration_distance');
+  const imageWidthInput = document.getElementById('image_width');
+  const imageHeightInput = document.getElementById('image_height');
+
+  // Elements Modale
+  const modal = document.getElementById('image-modal');
+  const canvas = document.getElementById('drawing-canvas');
+  const ctx = canvas.getContext('2d');
+  const btnClear = document.getElementById('btn-clear-canvas');
+  const btnNext = document.getElementById('btn-next-step');
+  const btnValidate = document.getElementById('btn-validate-canvas');
+
+  // UI Étapes
+  const step1UI = document.getElementById('step-1-ui');
+  const step2UI = document.getElementById('step-2-ui');
+  const distanceInput = document.getElementById('calib-distance-input');
+
+  let currentStep = 1;
+  let polygonPoints = [];
+  let calibPoints = [];
+  let imageObj = new Image();
+
+  // 1. Chargement de l'image
+  photoInput.addEventListener('change', function(event) {
+    if (event.target.files.length > 0) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        imageObj.onload = () => {
+          // Enregistrer la vraie taille de l'image pour le Backend
+          imageWidthInput.value = imageObj.width;
+          imageHeightInput.value = imageObj.height;
+
+          // Ajuster la résolution interne du canvas
+          const maxWidth = window.innerWidth * 0.8;
+          const scale = Math.min(1, maxWidth / imageObj.width);
+          canvas.width = imageObj.width * scale;
+          canvas.height = imageObj.height * scale;
+          
+          // Reset des variables
+          currentStep = 1;
+          polygonPoints = [];
+          calibPoints = [];
+          distanceInput.value = '';
+          
+          switchStep(1);
+          redrawCanvas();
+          modal.classList.add('active');
+        };
+        imageObj.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      uploadText.textContent = '✅ Photo ajoutée';
+      dropZone.classList.add('is-uploaded');
+    }
+  });
+
+  // 2. Gestion du Clic (Correction du décalage)
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    // LA CORRECTION EST ICI : on divise par rect.width (taille CSS) et non canvas.width
+    const x_rel = (e.clientX - rect.left) / rect.width;
+    const y_rel = (e.clientY - rect.top) / rect.height;
+
+    if (currentStep === 1) {
+      polygonPoints.push({ x: x_rel, y: y_rel });
+    } else if (currentStep === 2) {
+      // On ne garde que 2 points max pour l'étalonnage
+      if (calibPoints.length < 2) {
+        calibPoints.push({ x: x_rel, y: y_rel });
       }
-    });
+    }
+    redrawCanvas();
+  });
+
+  // 3. Dessin du Canvas
+  function redrawCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(imageObj, 0, 0, canvas.width, canvas.height);
+
+    // Dessiner le Polygone
+    if (polygonPoints.length > 0) {
+      ctx.beginPath();
+      ctx.strokeStyle = '#237329';
+      ctx.lineWidth = 3;
+      // Si on est à l'étape 2, on rend le polygone plus transparent pour se concentrer sur l'étalonnage
+      ctx.fillStyle = currentStep === 1 ? 'rgba(210, 244, 209, 0.4)' : 'rgba(210, 244, 209, 0.15)'; 
+
+      polygonPoints.forEach((point, index) => {
+        const px = point.x * canvas.width;
+        const py = point.y * canvas.height;
+        if (index === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+
+      if (polygonPoints.length > 2) {
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.stroke();
+
+      if (currentStep === 1) {
+        polygonPoints.forEach((point) => drawDot(point.x * canvas.width, point.y * canvas.height, '#237329'));
+      }
+    }
+
+    // Dessiner la ligne d'étalonnage (Étape 2)
+    if (currentStep === 2 && calibPoints.length > 0) {
+      ctx.beginPath();
+      ctx.strokeStyle = '#A24A33'; // Rouge/Orange pour contraster
+      ctx.lineWidth = 4;
+      
+      calibPoints.forEach((point, index) => {
+        const px = point.x * canvas.width;
+        const py = point.y * canvas.height;
+        if (index === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+
+      calibPoints.forEach((point) => drawDot(point.x * canvas.width, point.y * canvas.height, '#A24A33'));
+    }
+  }
+
+  function drawDot(x, y, color) {
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, 2 * Math.PI);
+    ctx.fillStyle = 'white';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = color;
+    ctx.stroke();
+  }
+
+  // 4. Gestion des boutons
+  function switchStep(step) {
+    currentStep = step;
+    if (step === 1) {
+      step1UI.style.display = 'block';
+      step2UI.style.display = 'none';
+      btnNext.style.display = 'block';
+      btnValidate.style.display = 'none';
+    } else {
+      step1UI.style.display = 'none';
+      step2UI.style.display = 'block';
+      btnNext.style.display = 'none';
+      btnValidate.style.display = 'block';
+    }
+  }
+
+  btnClear.addEventListener('click', () => {
+    if (currentStep === 1) polygonPoints = [];
+    else calibPoints = [];
+    redrawCanvas();
+  });
+
+  btnNext.addEventListener('click', () => {
+    if (polygonPoints.length < 3) {
+      alert("Place au moins 3 points pour former la zone.");
+      return;
+    }
+    switchStep(2);
+    redrawCanvas();
+  });
+
+  btnValidate.addEventListener('click', () => {
+    if (calibPoints.length < 2) {
+      alert("Place 2 points pour créer une ligne d'étalonnage.");
+      return;
+    }
+    if (!distanceInput.value || distanceInput.value <= 0) {
+      alert("Saisis la distance réelle en centimètres.");
+      return;
+    }
+
+    // Enregistrement des données dans les inputs cachés
+    polygonCoordsInput.value = JSON.stringify(polygonPoints);
+    calibCoordsInput.value = JSON.stringify(calibPoints);
+    calibDistanceInput.value = distanceInput.value;
+
+    modal.classList.remove('active');
+    uploadText.textContent = '✅ Zone et Taille validées';
+  });
   </script>
 </body>
 </html>
