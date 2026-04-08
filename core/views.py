@@ -1,5 +1,6 @@
 import json
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 import math
 
 def home(request):
@@ -38,6 +39,7 @@ def calculate_polygon_area(points, width_cm, height_cm):
     # Retourne la valeur absolue divisée par 2 (en cm²)
     return abs(area) / 2.0
 
+@login_required
 def new_material(request):
     context = {'result_ready': False}
 

@@ -348,9 +348,24 @@
         <span class="coins">1,250 🪙</span>
         <img class="avatar" src="{% static 'core/images/page-accueil/profile-picture.jpg' %}" alt="Avatar utilisateur">
       </div>
+      {% if user.is_authenticated %}
+      <form action="{% url 'logout' %}" method="post" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" style="background: none; border: none; cursor: pointer; color: #A24A33; font-weight: bold; text-decoration: underline;">
+              <img src="{% static 'core/images/new-material/icon-logout.svg' %}" alt="Logout" style="width: 16px; vertical-align: middle; margin-right: 4px;">
+          </button>
+      </form>
+      {% endif %}
     </header>
 
     <main>
+      {% if user.is_authenticated %}
+        
+      <span style="font-weight: 700; color: var(--text-dark); margin-right: 8px;">
+          Salut, {{ user.username }} !
+      </span>
+
+      {% endif %}
       <div class="header-titles">
         <h1>Nouveau vêtement</h1>
         <p>On passe ton futur chef-d'œuvre au rayon X.</p>

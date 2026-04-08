@@ -285,17 +285,27 @@
     
     <header class="header">
       <div class="header-logo">La Fabrique</div>
+      
       <div class="header-user">
         <div class="user-coins">{{ user_coins|default:"1,250" }} 🪙</div>
         <img class="user-avatar" src="{% static 'core/images/page-accueil/profile-picture.jpg' %}" alt="Avatar utilisateur">
       </div>
+
+      {% if user.is_authenticated %}
+      <form action="{% url 'logout' %}" method="post" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" style="background: none; border: none; cursor: pointer; color: #A24A33; font-weight: bold; text-decoration: underline;">
+              <img src="{% static 'core/images/page-accueil/icon-logout.svg' %}" alt="Logout" style="width: 16px; vertical-align: middle; margin-right: 4px;">
+          </button>
+      </form>
+      {% endif %}
     </header>
 
     <main>
       <section class="hero">
         <h1>La Fabrique :<br><span>Faites du neuf avec du vôtre</span></h1>
         <p>Rejoins l'atelier digital. Prends en photo ton vieux jean ou cette chemise qui traîne. Notre algorithme transforme tes souvenirs en pièces de créateur : sacs stylés, accessoires uniques ou objets déco. Ta machine, tes règles, ta Trame.</p>
-        <button class="btn-primary">Commencer</button>
+        <button class="btn-primary" onclick="window.location='new_material'">Commencer</button>
       </section>
 
       <div class="showcase-container">
