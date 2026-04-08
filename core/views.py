@@ -3,8 +3,9 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 import math
 
+from core.models import Vetement
+
 def home(request):
-    # On passe notre donnée de pièces virtuelles pour l'injecter dans la maquette
     context = {
         'user_coins': '1,250'
     }
@@ -22,13 +23,10 @@ def calculate_polygon_area(points, width_cm, height_cm):
     if len(points) < 3:
         return 0.0
 
-    # Conversion des points relatifs en centimètres réels
-    # Exemple: x=0.5 avec une largeur de 50cm donne x=25cm
     real_points = []
     for p in points:
         real_points.append((p['x'] * width_cm, p['y'] * height_cm))
 
-    # Formule du lacet (Shoelace algorithm)
     area = 0.0
     n = len(real_points)
     for i in range(n):
@@ -36,7 +34,6 @@ def calculate_polygon_area(points, width_cm, height_cm):
         area += real_points[i][0] * real_points[j][1]
         area -= real_points[j][0] * real_points[i][1]
         
-    # Retourne la valeur absolue divisée par 2 (en cm²)
     return abs(area) / 2.0
 
 @login_required
@@ -45,10 +42,8 @@ def new_material(request):
 
     if request.method == 'POST':
         try:
-            # On récupère toutes les tailles de dégâts envoyées par le formulaire sous forme de liste
             damage_sizes = request.POST.getlist('damage_size[]')
             
-            # Les données de l'image et du canvas
             coords_str = request.POST.get('polygon_coords', '[]')
             polygon_points = json.loads(coords_str)
             
@@ -60,34 +55,26 @@ def new_material(request):
             img_h = float(request.POST.get('image_height', 1))
 
 
-            # On calcule l'aire totale de TOUS les défauts additionnés
             total_defect_area_m2 = 0.0
 
             for size_str in damage_sizes:
                 size_cm = float(size_str)
-                # On ajoute l'aire de ce dégât (estimée comme un carré de côté size_cm)
                 total_defect_area_m2 += (size_cm * size_cm) / 10000.0
 
-            # Vérifie si l'utilisateur a complété l'étalonnage
             if len(polygon_points) >= 3 and len(calib_points) == 2 and calib_distance_cm > 0:
                 
-                # 1. ÉTALONNAGE : Convertir les 2 points d'étalonnage en vrais pixels
                 c1_x, c1_y = calib_points[0]['x'] * img_w, calib_points[0]['y'] * img_h
                 c2_x, c2_y = calib_points[1]['x'] * img_w, calib_points[1]['y'] * img_h
                 
-                # Calcul de la distance en pixels (Théorème de Pythagore)
                 distance_px = math.sqrt((c2_x - c1_x)**2 + (c2_y - c1_y)**2)
                 
                 if distance_px == 0:
                     raise ValueError("Points d'étalonnage confondus.")
                 
-                # Ratio : centimètres par pixel
                 cm_per_px = calib_distance_cm / distance_px
                 
-                # 2. POLYGONE : Convertir en vrais pixels
                 px_points = [(p['x'] * img_w, p['y'] * img_h) for p in polygon_points]
                 
-                # Algorithme du lacet pour l'aire en pixels carrés
                 area_px2 = 0.0
                 n = len(px_points)
                 for i in range(n):
@@ -96,22 +83,44 @@ def new_material(request):
                     area_px2 -= px_points[j][0] * px_points[i][1]
                 area_px2 = abs(area_px2) / 2.0
                 
-                # 3. CONVERSION : Pixels² -> cm² -> m²
                 polygon_area_cm2 = area_px2 * (cm_per_px ** 2)
-                polygon_area_m2 = polygon_area_cm2 / 10000.0
+                polygon_area_m2 = polygon_area_cm2*2 / 10000.0
                 
-                # Résultat final
                 usable_area_m2 = max(0, polygon_area_m2 - total_defect_area_m2)
                 
-                # Si tu as retiré les inputs "width" et "height", 
-                # la zone tracée EST la totalité du vêtement moins les défauts.
                 percentage = int((usable_area_m2 / polygon_area_m2) * 100) if polygon_area_m2 > 0 else 0
                 
+                
+                # SAUVEGARDE DANS LA BASE DE DONNÉES
+                
+                type_vetement = request.POST.get('clothing_type', 'inconnu')
+                largeur_cm = float(request.POST.get('width', 0))
+                hauteur_cm = float(request.POST.get('height', 0))
+                photo_fichier = request.FILES.get('photo')
+
+                nouveau_vetement = Vetement.objects.create(
+                    utilisateur=request.user,
+                    nomVetement=f"{type_vetement.capitalize()} de {request.user.username}",
+                    photoURL=photo_fichier,
+                    typeVetement=type_vetement,
+                    largeur=largeur_cm,
+                    hauteur=hauteur_cm,
+                    surfaceTotale=polygon_area_m2,
+                    surfaceTaches=total_defect_area_m2,
+                    surfaceTrous=0.0,
+                    surfaceExploitable=usable_area_m2,
+                    etat="À transformer"
+                )
+
+                coins_earned = 3
+                request.user.soldePieces += coins_earned
+                request.user.save()
+
                 context.update({
                     'result_ready': True,
                     'usable_area': round(usable_area_m2, 2),
                     'percentage': percentage,
-                    'coins_earned': 3, # Jackpot de gamification !
+                    'coins_earned': 3,
                 })
             else:
                 context['error'] = "Veuillez compléter le tracé et l'étalonnage de la photo."

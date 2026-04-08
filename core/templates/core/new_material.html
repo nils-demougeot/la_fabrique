@@ -384,7 +384,7 @@
             Photo du vêtement
           </h2>
           <div class="upload-zone" id="drop-zone">
-            <input type="file" id="photo-input" accept="image/*" aria-label="Prendre en photo">
+            <input type="file" id="photo-input" accept="image/*" aria-label="Prendre en photo" name="photo-vetement">
             <span id="upload-text">📷 Prendre en photo</span>
           </div>
         </section>
@@ -392,7 +392,7 @@
         <input type="hidden" name="clothing_type" id="clothing_type_input" value="tshirt">
 
         <section class="card">
-          <h2><img class="type-icon-img" src="{% static 'core/images/new-material/icon-shirt.svg' %}" alt="Vêtement"> Type de vêtement</h2>
+          <h2><img class="type-square" src="{% static 'core/images/new-material/icon-shirt.svg' %}" alt="Vêtement"> Type de vêtement</h2>
           <div class="type-grid">
             
             <button type="button" class="type-btn active" data-type="tshirt">
