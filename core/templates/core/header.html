@@ -1,0 +1,132 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Fabrique</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&family=Manrope:wght@400;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================
+       Variables CSS (Communes à tout le site)
+       ========================================= */
+    :root {
+      --bg-page: #f0f0f0;
+      --bg-main: #FFFBFF;
+      --bg-input: #EFEEE3;
+      --text-dark: #39382B;
+      --text-muted: #666556;
+      --color-primary: #237329;
+      --color-accent: #A24A33;
+      --color-white: #FFFFFF;
+      --font-title: 'Plus Jakarta Sans', sans-serif;
+      --font-body: 'Be Vietnam Pro', sans-serif;
+    }
+
+    /* Le reset basique de ton design */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background-color: var(--bg-page);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: var(--font-body);
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 430px; /* Ou 390px selon tes maquettes */
+      height: 100vh; /* Ou 725px selon tes maquettes */
+      max-height: 100vh;
+      background-color: var(--bg-main);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Le Header Commun */
+    .header-global {
+      background-color: #FEFCF3; /* La couleur de fond de ton header existant */
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .logo {
+      font-family: var(--font-title);
+      font-weight: 800;
+      font-size: 20px;
+      color: var(--color-primary);
+      text-decoration: none;
+      height: 32px;
+    }
+
+    .logo-img {
+      height: 32px;
+      width: auto;
+      display: block;
+    }
+
+    .user-stats { display: flex; align-items: center; gap: 10px; }
+    .coins {
+      background-color: #F5F4EA;
+      color: var(--color-primary);
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #D2F4D1; object-fit: cover;}
+    
+    .scrollable-content {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      z-index: 1;
+    }
+
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <header class="header-global">
+      <a href="{% url 'home' %}" class="logo"><img class="logo-img" src="{% static 'core/images/logo-la-fabrique.svg' %}" alt="logo"></a>
+      
+      <div class="user-stats">
+        {% if user.is_authenticated %}
+            <span class="coins">{{ user.soldePieces }} 🪙</span>
+            
+            <form action="{% url 'logout' %}" method="post" style="display: inline; margin-left: 8px;">
+                {% csrf_token %}
+                <button type="submit" style="background: none; border: none; cursor: pointer; color: var(--color-accent); font-weight: bold; text-decoration: underline; font-family: var(--font-body);">
+                    Déconnexion
+                </button>
+            </form>
+        {% else %}
+            <a href="{% url 'connexion' %}" style="color: var(--color-primary); font-weight: bold; text-decoration: none;">
+                Se connecter
+            </a>
+        {% endif %}
+        <img class="avatar" src="{% static 'core/images/page-accueil/profile-picture.jpg' %}" alt="Avatar">
+      </div>
+    </header>
+
+    <div class="scrollable-content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+  </div>
+
+</body>
+</html>

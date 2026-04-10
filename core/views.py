@@ -1,9 +1,10 @@
 import json
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login
 import math
 
-from core.models import Vetement
+from core.models import Vetement, Utilisateur
 
 def home(request):
     context = {
@@ -12,8 +13,6 @@ def home(request):
     return render(request, 'core/index.html', context)
 
 
-import json
-from django.shortcuts import render
 
 def calculate_polygon_area(points, width_cm, height_cm):
     """
@@ -37,7 +36,7 @@ def calculate_polygon_area(points, width_cm, height_cm):
     return abs(area) / 2.0
 
 @login_required
-def new_material(request):
+def ajout_textile(request):
     context = {'result_ready': False}
 
     if request.method == 'POST':
@@ -128,4 +127,64 @@ def new_material(request):
         except (ValueError, json.JSONDecodeError, ZeroDivisionError):
             context['error'] = "Erreur dans le calcul de la surface. Recommencez le tracé."
 
-    return render(request, 'core/new_material.html', context)
+    return render(request, 'core/ajout_textile.html', context)
+
+
+def inscription(request):
+    if request.method == 'POST':
+        # On sauvegarde l'email et le mdp dans la session
+        request.session['reg_email'] = request.POST.get('email')
+        request.session['reg_password'] = request.POST.get('password')
+        return redirect('inscription_etape1')
+    
+    return render(request, 'core/inscription.html')
+
+def inscription_etape1(request):
+    if request.method == 'POST':
+        # On sauvegarde le pseudo
+        request.session['reg_username'] = request.POST.get('username')
+        return redirect('inscription_etape2')
+        
+    return render(request, 'core/inscription_etape1.html')
+
+def inscription_etape2(request):
+    if request.method == 'POST':
+        # On sauvegarde le niveau
+        request.session['reg_niveau'] = request.POST.get('experience_level')
+        return redirect('inscription_etape3')
+        
+    return render(request, 'core/inscription_etape2.html')
+
+def inscription_etape3(request):
+    if request.method == 'POST':
+        # 1. On récupère les cases cochées (getlist car il y a plusieurs cases avec name="target")
+        cibles_list = request.POST.getlist('target')
+        cibles_str = ", ".join(cibles_list) # Transforme la liste en texte : "sacs, accessoires"
+
+        # 2. On récupère toutes les infos des étapes précédentes dans la session
+        email = request.session.get('reg_email')
+        password = request.session.get('reg_password')
+        username = request.session.get('reg_username')
+        niveau = request.session.get('reg_niveau')
+
+        # 3. ON CRÉE ENFIN LE COMPTE DANS LA BASE DE DONNÉES !
+        # Note: On utilise create_user pour que le mot de passe soit haché et sécurisé.
+        nouvel_utilisateur = Utilisateur.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            niveau_couture=niveau,
+            envies_creation=cibles_str
+        )
+
+        # 4. On nettoie la session (bonne pratique)
+        keys_to_delete = ['reg_email', 'reg_password', 'reg_username', 'reg_niveau']
+        for key in keys_to_delete:
+            if key in request.session:
+                del request.session[key]
+
+        # 5. On connecte l'utilisateur automatiquement et on l'envoie sur l'accueil
+        login(request, nouvel_utilisateur)
+        return redirect('home')
+
+    return render(request, 'core/inscription_etape3.html')

@@ -124,8 +124,8 @@ STATIC_URL = 'static/'
 AUTH_USER_MODEL = 'core.Utilisateur'
 
 
-LOGIN_REDIRECT_URL = 'new_material' 
+LOGIN_REDIRECT_URL = 'ajout_textile' 
 
-LOGOUT_REDIRECT_URL = 'login' 
+LOGOUT_REDIRECT_URL = 'home' 
 
-LOGIN_URL = 'login'
+LOGIN_URL = 'connexion'

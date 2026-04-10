@@ -5,6 +5,9 @@ class Utilisateur(AbstractUser):
     consentementRGPD = models.BooleanField(default=False)
     soldePieces = models.IntegerField(default=0)
 
+    niveau_couture = models.CharField(max_length=30, blank=True, null=True)
+    envies_creation = models.CharField(max_length=255, blank=True, null=True)
+
     def __str__(self):
         return self.username
 

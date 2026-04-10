@@ -1,0 +1,222 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Fabrique - Étape 03</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&family=Manrope:wght@600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================
+   Variables CSS (Design System complet)
+   ========================================= */
+:root {
+  --bg-main: #FFFBFF;
+  --bg-input: #EFEEE3;
+  --bg-progress-track: #ECE9D1;
+  --text-dark: #39382B;
+  --text-muted: #666556;
+  --color-primary: #237329;
+  --color-primary-dark: #3E6E59;
+  --color-accent: #A24A33;
+  --color-white: #FFFFFF;
+  --blur-color: rgba(157, 241, 151, 0.30);
+
+  /* Variables spécifiques à l'étape 3 */
+  --bg-tag: #ECE9D1;
+  --text-tag: #666556;
+  --bg-tag-selected: #FFC4B5;
+  --text-tag-selected: #7C2E19;
+
+  --font-title: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Be Vietnam Pro', sans-serif;
+}
+
+/* =========================================
+   Reset basique & Layout principal
+   ========================================= */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: #f0f0f0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.app-container {
+  width: 390px;
+  height: 725px;
+  position: relative;
+  background: var(--bg-main);
+  overflow: hidden;
+  font-family: var(--font-body);
+  display: flex;
+  flex-direction: column;
+}
+
+.decorative-blur {
+  width: 256px; height: 256px; position: absolute;
+  left: 173px; top: -82px; background: var(--blur-color);
+  border-radius: 50%; filter: blur(32px); z-index: 0; pointer-events: none;
+}
+
+.scrollable-content {
+  flex: 1; overflow-y: auto; position: relative; z-index: 1;
+  padding: 48px 24px 100px 24px;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+}
+
+/* =========================================
+   En-tête (Marque) & Progression
+   ========================================= */
+.header-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 56px; }
+.brand-logo { width: 32px; height: 32px; background: var(--color-primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+.logo-inner { width: 13.5px; height: 13.5px; background: var(--color-white); }
+.brand-name { color: var(--text-dark); font-size: 24px; font-family: var(--font-title); font-weight: 800; }
+
+.onboarding-step { display: flex; flex-direction: column; gap: 32px; }
+.progress-container { display: flex; align-items: center; gap: 16px; }
+.progress-track { width: 249px; height: 4px; background: var(--bg-progress-track); border-radius: 9999px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--color-primary); border-radius: 9999px; }
+.progress-fill.step-3 { width: 100%; } /* 100% pour la dernière étape */
+.progress-text { color: var(--color-primary-dark); font-size: 12px; font-family: var(--font-title); font-weight: 700; }
+
+.step-header { display: flex; flex-direction: column; gap: 8px; }
+.step-title { color: var(--text-dark); font-size: 24px; font-family: var(--font-title); font-weight: 700; line-height: 1.3; }
+.step-subtitle { color: var(--text-muted); font-size: 16px; line-height: 1.5; }
+
+/* =========================================
+   Tags de sélection (Chips)
+   ========================================= */
+.tags-selection { border: none; margin-top: 16px; }
+.tags-container { display: flex; flex-wrap: wrap; gap: 12px; }
+.tag-chip { cursor: pointer; display: inline-block; }
+
+.tag-content {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 24px; background-color: var(--bg-tag); color: var(--text-tag);
+  border-radius: 6px; font-family: var(--font-title); font-weight: 700;
+  font-size: 14px; line-height: 20px; transition: all 0.2s ease; user-select: none;
+}
+
+.tag-chip input[type="checkbox"]:checked + .tag-content {
+  background-color: var(--bg-tag-selected); color: var(--text-tag-selected);
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.tag-chip:hover .tag-content { transform: translateY(-1px); }
+
+.tag-icon {
+  display: none; width: 12px; height: 12px; background-color: var(--text-tag-selected);
+  clip-path: polygon(20% 0%, 0% 20%, 30% 50%, 0% 80%, 20% 100%, 50% 70%, 80% 100%, 100% 80%, 70% 50%, 100% 20%, 80% 0%, 50% 30%);
+}
+
+.tag-chip input[type="checkbox"]:checked + .tag-content .tag-icon { display: inline-block; }
+
+/* =========================================
+   Barre d'actions (Sticky Footer)
+   ========================================= */
+.bottom-actions {
+  position: absolute; bottom: 0; left: 0; width: 100%; padding: 24px;
+  background: rgba(255, 255, 255, 0.80); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  display: flex; justify-content: space-between; align-items: center; z-index: 10;
+}
+
+.btn-skip { background: transparent; border: none; padding: 16px 8px; color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-next {
+  background: var(--color-accent); border: none; border-radius: 9999px; padding: 16px 24px;
+  display: flex; align-items: center; gap: 8px; color: var(--color-white);
+  font-size: 16px; font-family: var(--font-title); font-weight: 700; cursor: pointer;
+  box-shadow: 0px 10px 15px -3px rgba(162, 74, 51, 0.30); transition: transform 0.2s ease;
+}
+.btn-next:hover { transform: translateY(-2px); box-shadow: 0px 12px 18px -3px rgba(162, 74, 51, 0.40); }
+.icon-arrow { width: 6px; height: 10px; background: var(--color-white); clip-path: polygon(0 0, 100% 50%, 0 100%); }
+</style>
+
+</head>
+<body>
+
+  <main class="app-container">
+    <div class="decorative-blur"></div>
+
+    <div class="scrollable-content">
+      <header class="header-brand">
+        <div class="brand-logo"><div class="logo-inner"></div></div>
+        <span class="brand-name">La Fabrique</span>
+      </header>
+
+      <section class="onboarding-step">
+        
+        <div class="progress-container">
+          <div class="progress-track">
+            <div class="progress-fill step-3"></div>
+          </div>
+          <span class="progress-text">ETAPE 03/03</span>
+        </div>
+
+        <div class="step-header">
+          <h1 class="step-title">Que va-t-on créer ?</h1>
+          <p class="step-subtitle">Un bob de l'espace ? Un tote-bag increvable ? Choisis ta cible et prépare ton aiguille !</p>
+        </div>
+
+        <form id="form-etape-3" class="step-form" method="POST">
+          {% csrf_token %}
+          <fieldset class="tags-selection">
+            <legend class="sr-only">Choisissez les objets que vous souhaitez créer</legend>
+            
+            <div class="tags-container">
+              <label class="tag-chip">
+                <input type="checkbox" name="target" value="sacs" class="sr-only" checked>
+                <span class="tag-content">Sacs <span class="tag-icon"></span></span>
+              </label>
+
+              <label class="tag-chip">
+                <input type="checkbox" name="target" value="hauts" class="sr-only">
+                <span class="tag-content">Hauts <span class="tag-icon"></span></span>
+              </label>
+
+              <label class="tag-chip">
+                <input type="checkbox" name="target" value="accessoires" class="sr-only" checked>
+                <span class="tag-content">Accessoires <span class="tag-icon"></span></span>
+              </label>
+
+              <label class="tag-chip">
+                <input type="checkbox" name="target" value="jeans" class="sr-only">
+                <span class="tag-content">Jeans <span class="tag-icon"></span></span>
+              </label>
+
+              <label class="tag-chip">
+                <input type="checkbox" name="target" value="manteaux" class="sr-only">
+                <span class="tag-content">Manteaux <span class="tag-icon"></span></span>
+              </label>
+
+              <label class="tag-chip">
+                <input type="checkbox" name="target" value="decorations" class="sr-only">
+                <span class="tag-content">Décorations <span class="tag-icon"></span></span>
+              </label>
+            </div>
+          </fieldset>
+        </form>
+
+      </section>
+    </div>
+
+    <footer class="bottom-actions">
+      <button type="button" class="btn-skip">Passer</button>
+      
+      <button type="submit" form="form-etape-3" class="btn-next">
+        Terminer
+        <span class="icon-arrow"></span>
+      </button>
+    </footer>
+  </main>
+
+</body>
+</html>

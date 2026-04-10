@@ -1,0 +1,382 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Fabrique - Étape 02</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&family=Manrope:wght@600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================
+   Variables CSS (Design System)
+   ========================================= */
+:root {
+  --bg-main: #FFFBFF;
+  --bg-progress-track: #ECE9D1;
+  --bg-card: #F7F4DE;
+  --text-dark: #39382B;
+  --text-muted: #666556;
+  --color-primary: #237329;
+  --color-primary-dark: #3E6E59;
+  --color-accent: #A24A33;
+  --color-white: #FFFFFF;
+  --blur-color: rgba(157, 241, 151, 0.30);
+
+  --font-title: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Be Vietnam Pro', sans-serif;
+}
+
+/* =========================================
+   Reset & Utilitaires
+   ========================================= */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #f0f0f0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* =========================================
+   Layout principal
+   ========================================= */
+.app-container {
+  width: 390px;
+  height: 725px;
+  position: relative;
+  background: var(--bg-main);
+  overflow: hidden;
+  font-family: var(--font-body);
+  display: flex;
+  flex-direction: column;
+}
+
+.decorative-blur {
+  width: 256px;
+  height: 256px;
+  position: absolute;
+  left: 173px;
+  top: -82px;
+  background: var(--blur-color);
+  border-radius: 50%;
+  filter: blur(32px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.scrollable-content {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+  padding: 48px 24px 100px 24px;
+}
+
+/* =========================================
+   En-tête & Progression
+   ========================================= */
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 56px;
+}
+
+.brand-logo {
+  width: 32px;
+  height: 32px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo-inner {
+  width: 13.5px;
+  height: 13.5px;
+  background: var(--color-white);
+}
+
+.brand-name {
+  color: var(--text-dark);
+  font-size: 24px;
+  font-family: var(--font-title);
+  font-weight: 800;
+}
+
+.onboarding-step {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.progress-track {
+  width: 249px;
+  height: 4px;
+  background: var(--bg-progress-track);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 9999px;
+}
+
+/* Étape 2 = 66% de la barre */
+.progress-fill.step-2 { width: 66.66%; }
+
+.progress-text {
+  color: var(--color-primary-dark);
+  font-size: 12px;
+  font-family: var(--font-title);
+  font-weight: 700;
+}
+
+.step-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.step-title {
+  color: var(--text-dark);
+  font-size: 24px;
+  font-family: var(--font-title);
+  font-weight: 700;
+}
+
+.step-subtitle {
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* =========================================
+   Cartes de sélection (Niveaux)
+   ========================================= */
+.level-selection {
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.level-card {
+  display: block;
+  cursor: pointer;
+  border-radius: 32px;
+  transition: all 0.2s ease;
+}
+
+/* Style appliqué quand l'input radio caché est coché */
+.level-card input[type="radio"]:checked + .card-content {
+  box-shadow: 0 0 0 2px var(--color-primary);
+  background-color: #f1edca; /* Légèrement plus foncé pour marquer la sélection */
+}
+
+.card-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  background: var(--bg-card);
+  border-radius: 32px;
+  transition: all 0.2s ease;
+}
+
+.card-content:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.level-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--color-white);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Représentation simplifiée des icônes du design */
+.icon-placeholder {
+  width: 18px;
+  height: 22px;
+  background: var(--color-primary);
+  display: inline-block;
+}
+
+.level-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.level-title {
+  color: var(--text-dark);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.level-desc {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+/* =========================================
+   Barre d'actions (Sticky Footer)
+   ========================================= */
+.bottom-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.80);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+.btn-skip {
+  background: transparent;
+  border: none;
+  padding: 16px 8px;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-next {
+  background: var(--color-accent);
+  border: none;
+  border-radius: 9999px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-white);
+  font-size: 16px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0px 10px 15px -3px rgba(162, 74, 51, 0.30);
+}
+</style>
+
+</head>
+<body>
+
+  <main class="app-container">
+    <div class="decorative-blur"></div>
+
+    <div class="scrollable-content">
+      <header class="header-brand">
+        <div class="brand-logo"><div class="logo-inner"></div></div>
+        <span class="brand-name">La Fabrique</span>
+      </header>
+
+      <section class="onboarding-step">
+        
+        <div class="progress-container">
+          <div class="progress-track">
+            <div class="progress-fill step-2"></div>
+          </div>
+          <span class="progress-text">ETAPE 02/03</span>
+        </div>
+
+        <div class="step-header">
+          <h1 class="step-title">Ton niveau</h1>
+          <p class="step-subtitle">Dis-nous tout : c'est quoi ton passif avec l'aiguille ?</p>
+        </div>
+
+        <form class="step-form" id="form-etape-2" method="POST">
+        {% csrf_token %}
+          <fieldset class="level-selection" name="experience_level">
+            <legend class="sr-only">Choisissez votre niveau d'expérience</legend>
+            
+            <label class="level-card">
+              <input type="radio" name="experience_level" value="debutant" class="sr-only" checked>
+              <div class="card-content">
+                <div class="level-icon"><span class="icon-placeholder"></span></div>
+                <div class="level-text">
+                  <span class="level-title">Débutant</span>
+                  <span class="level-desc">En plein combat avec mon premier fil.</span>
+                </div>
+              </div>
+            </label>
+
+            <label class="level-card">
+              <input type="radio" name="experience_level" value="intermediaire" class="sr-only">
+              <div class="card-content">
+                <div class="level-icon"><span class="icon-placeholder"></span></div>
+                <div class="level-text">
+                  <span class="level-title">Intermédiaire</span>
+                  <span class="level-desc">Je ne perds plus le fil</span>
+                </div>
+              </div>
+            </label>
+
+            <label class="level-card">
+              <input type="radio" name="experience_level" value="avance" class="sr-only">
+              <div class="card-content">
+                <div class="level-icon"><span class="icon-placeholder"></span></div>
+                <div class="level-text">
+                  <span class="level-title">Avancé</span>
+                  <span class="level-desc">Au sommet de la chaîne</span>
+                </div>
+              </div>
+            </label>
+          </fieldset>
+        </form>
+
+      </section>
+    </div>
+
+    <footer class="bottom-actions">
+      <button type="button" class="btn-skip">Passer</button>
+      <button type="submit" class="btn-next" form="form-etape-2">
+        Etape suivante
+        <span class="icon-arrow"></span>
+      </button>
+    </footer>
+  </main>
+
+</body>
+</html>

@@ -1,0 +1,289 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Fabrique - Connexion</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Manrope:wght@700&family=Plus+Jakarta+Sans:ital,wght@0,700;0,800;1,800&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================
+   Variables CSS (Design System)
+   ========================================= */
+:root {
+  /* Couleurs */
+  --bg-main: #FFFBFF;
+  --bg-card: #FDFAE5;
+  --bg-input: #ECE9D1;
+  --text-dark: #39382B;
+  --text-muted: #666556;
+  --text-muted-light: rgba(102, 101, 86, 0.50);
+  --color-primary: #237329;
+  --color-secondary: #2E7D32;
+  --color-accent: #A24A33;
+  --color-white: #FFFFFF;
+  --blur-color: rgba(157, 241, 151, 0.30);
+
+  /* Polices */
+  --font-title: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Be Vietnam Pro', sans-serif;
+  --font-btn: 'Manrope', sans-serif;
+}
+
+/* =========================================
+   Reset basique
+   ========================================= */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #f0f0f0; /* Fond gris pour contraster avec l'app mobile */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* =========================================
+   Layout principal (Simili-Mobile)
+   ========================================= */
+.app-container {
+  width: 390px;
+  height: 1017px; /* Fixé comme dans ton exemple, mais idéalement à passer en min-height */
+  position: relative;
+  background: var(--bg-main);
+  overflow: hidden;
+  font-family: var(--font-body);
+}
+
+.decorative-blur {
+  width: 256px;
+  height: 158px;
+  position: absolute;
+  left: 173px;
+  top: -50px;
+  background: var(--blur-color);
+  border-radius: 50%;
+  filter: blur(32px);
+  z-index: 0;
+}
+
+/* =========================================
+   En-tête (Header)
+   ========================================= */
+.header-section {
+  position: relative;
+  z-index: 1;
+  padding: 48px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.brand-logo {
+  width: 32px;
+  height: 32px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo-inner {
+  width: 13.5px;
+  height: 13.5px;
+  background: var(--color-white);
+}
+
+.brand-name {
+  color: var(--text-dark);
+  font-size: 24px;
+  font-family: var(--font-title);
+  font-weight: 800;
+}
+
+.main-title {
+  color: var(--text-dark);
+  font-size: 42px;
+  font-family: var(--font-title);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.text-italic-green {
+  color: var(--color-secondary);
+  font-style: italic;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+/* =========================================
+   Carte Formulaire
+   ========================================= */
+.login-card {
+  position: relative;
+  z-index: 1;
+  margin: 20px 24px;
+  padding: 32px;
+  background: var(--bg-card);
+  box-shadow: 0px 20px 50px rgba(57, 56, 43, 0.08);
+  border-radius: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  transform: rotate(1deg);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  color: var(--text-dark);
+  font-size: 14px;
+  font-family: var(--font-title);
+  font-weight: 700;
+}
+
+.form-input {
+  width: 100%;
+  padding: 18px 20px;
+  background: var(--bg-input);
+  border: none;
+  border-radius: 6px;
+  color: var(--text-dark);
+  font-size: 16px;
+  font-family: var(--font-body);
+  outline: none;
+}
+
+.form-input::placeholder {
+  color: var(--text-muted-light);
+}
+
+.form-input:focus {
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+/* Bouton Soumettre */
+.btn-submit {
+  width: 100%;
+  padding: 20px;
+  margin-top: 8px;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 9999px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 17px;
+  color: var(--color-white);
+  font-size: 18px;
+  font-family: var(--font-btn);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0px 20px 25px -5px rgba(35, 115, 41, 0.20);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 25px 30px -5px rgba(35, 115, 41, 0.30);
+}
+
+.btn-icon {
+  width: 16px;
+  height: 16px;
+  background: var(--color-white);
+  display: inline-block;
+}
+
+/* Pied de carte */
+.login-footer {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.footer-text {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.footer-link {
+  color: var(--color-accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.footer-link:hover {
+  text-decoration: none;
+}
+</style>
+</head>
+<body>
+
+  <main class="app-container">
+    <div class="decorative-blur"></div>
+
+    <header class="header-section">
+      <div class="brand">
+        <div class="brand-logo"><div class="logo-inner"></div></div>
+        <span class="brand-name">La Fabrique</span>
+      </div>
+      
+      <h1 class="main-title">
+        Bienvenue dans <span class="text-italic-green">l’atelier</span> !
+      </h1>
+      
+      <p class="subtitle">Chaque chute de tissu est une quête. Commencez la vôtre.</p>
+    </header>
+
+    <form class="login-card" method="POST" action="{% url 'inscription' %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="email" class="form-label">Adresse e-mail</label>
+        <input type="email" name="email" id="email" class="form-input" placeholder="tissserand@atelier.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Mot de passe</label>
+        <input type="password" name="password" id="password" class="form-input" placeholder="••••••••" required>
+      </div>
+
+      <button type="submit" class="btn-submit">
+        Débuter l’aventure
+        <span class="btn-icon"></span>
+      </button>
+
+      <div class="login-footer">
+        <span class="footer-text">Déjà de la partie ? </span>
+        <a href="{% url 'connexion' %}" class="footer-link">Se connecter</a>
+      </div>
+    </form>
+  </main>
+
+</body>
+</html>
