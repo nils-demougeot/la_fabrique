@@ -157,9 +157,9 @@ def inscription_etape2(request):
 
 def inscription_etape3(request):
     if request.method == 'POST':
-        # 1. On récupère les cases cochées (getlist car il y a plusieurs cases avec name="target")
+        # 1. On récupère les cases cochées
         cibles_list = request.POST.getlist('target')
-        cibles_str = ", ".join(cibles_list) # Transforme la liste en texte : "sacs, accessoires"
+        cibles_str = ", ".join(cibles_list)
 
         # 2. On récupère toutes les infos des étapes précédentes dans la session
         email = request.session.get('reg_email')
@@ -167,8 +167,7 @@ def inscription_etape3(request):
         username = request.session.get('reg_username')
         niveau = request.session.get('reg_niveau')
 
-        # 3. ON CRÉE ENFIN LE COMPTE DANS LA BASE DE DONNÉES !
-        # Note: On utilise create_user pour que le mot de passe soit haché et sécurisé.
+        # 3. On créé le compte dans la session
         nouvel_utilisateur = Utilisateur.objects.create_user(
             username=username,
             email=email,
@@ -177,7 +176,7 @@ def inscription_etape3(request):
             envies_creation=cibles_str
         )
 
-        # 4. On nettoie la session (bonne pratique)
+        # 4. On nettoie la session
         keys_to_delete = ['reg_email', 'reg_password', 'reg_username', 'reg_niveau']
         for key in keys_to_delete:
             if key in request.session:
