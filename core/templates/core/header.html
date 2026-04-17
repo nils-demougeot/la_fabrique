@@ -111,13 +111,13 @@
                 <button type="submit" style="background: none; border: none; cursor: pointer; color: var(--color-accent); font-weight: bold; text-decoration: underline; font-family: var(--font-body);">
                     Déconnexion
                 </button>
-            </form>
+            </form>        
+        <img class="avatar" src="{% static 'core/images/page-accueil/profile-picture.jpg' %}" alt="Avatar">
         {% else %}
             <a href="{% url 'connexion' %}" style="color: var(--color-primary); font-weight: bold; text-decoration: none;">
                 Se connecter
             </a>
         {% endif %}
-        <img class="avatar" src="{% static 'core/images/page-accueil/profile-picture.jpg' %}" alt="Avatar">
       </div>
     </header>
 
