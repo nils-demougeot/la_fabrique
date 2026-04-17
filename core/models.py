@@ -72,3 +72,4 @@ class AchatPatron(models.Model):
     typePayement = models.CharField(max_length=30)
     nombrePieceUtilisees = models.IntegerField(default=0)
     montantEuro = models.FloatField(default=0.0)
+    #coucouuu
