@@ -83,8 +83,91 @@
       border-radius: 20px;
       font-size: 14px;
     }
-    .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #D2F4D1; object-fit: cover;}
-    
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #D2F4D1;
+      object-fit: cover;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      display: block;
+    }
+    .avatar:active { opacity: 0.7; }
+
+    /* Menu déroulant profil */
+    .avatar-menu { position: relative; }
+
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+      padding: 8px;
+      min-width: 190px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      transform-origin: top right;
+      transform: scale(0.92);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .dropdown-menu.open {
+      transform: scale(1);
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-dark);
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .dropdown-item:hover { background: #F5F4EA; }
+
+    .dropdown-item.logout-item { color: var(--color-accent); }
+    .dropdown-item.logout-item:hover { background: #FFF0EC; }
+
+    .dropdown-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .dropdown-icon img { width: 16px; height: 16px; }
+    .icon-dashboard { background: #D2F4D1; }
+    .icon-logout    { background: #FFE4DC; }
+
+    .dropdown-divider {
+      height: 1px;
+      background: #EEEDE3;
+      margin: 4px 4px;
+    }
+
     .scrollable-content {
       flex: 1;
       overflow-y: auto;
@@ -104,19 +187,35 @@
       
       <div class="user-stats">
         {% if user.is_authenticated %}
-            <span class="coins">{{ user.soldePieces }} 🪙</span>
-            
-            <form action="{% url 'logout' %}" method="post" style="display: inline; margin-left: 8px;">
+          <span class="coins">{{ user.soldePieces }} 🪙</span>
+          <div class="avatar-menu">
+            <img class="avatar"
+                 src="{% static 'core/images/page-accueil/profile-picture.jpg' %}"
+                 alt="Avatar"
+                 id="avatarBtn">
+            <div class="dropdown-menu" id="dropdownMenu">
+              <a href="{% url 'dashboard' %}" class="dropdown-item">
+                <span class="dropdown-icon icon-dashboard">
+                  <img src="{% static 'core/images/page-accueil/icon-analyser.svg' %}" alt="">
+                </span>
+                Dashboard
+              </a>
+              <div class="dropdown-divider"></div>
+              <form action="{% url 'logout' %}" method="post">
                 {% csrf_token %}
-                <button type="submit" style="background: none; border: none; cursor: pointer; color: var(--color-accent); font-weight: bold; text-decoration: underline; font-family: var(--font-body);">
-                    Déconnexion
+                <button type="submit" class="dropdown-item logout-item">
+                  <span class="dropdown-icon icon-logout">
+                    <img src="{% static 'core/images/page-accueil/icon-logout.svg' %}" alt="">
+                  </span>
+                  Déconnexion
                 </button>
-            </form>        
-        <img class="avatar" src="{% static 'core/images/page-accueil/profile-picture.jpg' %}" alt="Avatar">
+              </form>
+            </div>
+          </div>
         {% else %}
-            <a href="{% url 'connexion' %}" style="color: var(--color-primary); font-weight: bold; text-decoration: none;">
-                Se connecter
-            </a>
+          <a href="{% url 'connexion' %}" style="color: var(--color-primary); font-weight: bold; text-decoration: none;">
+            Se connecter
+          </a>
         {% endif %}
       </div>
     </header>
@@ -128,5 +227,19 @@
 
   </div>
 
+  <script>
+    const avatarBtn = document.getElementById('avatarBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    if (avatarBtn && dropdownMenu) {
+      avatarBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdownMenu.classList.toggle('open');
+      });
+      document.addEventListener('click', () => {
+        dropdownMenu.classList.remove('open');
+      });
+    }
+  </script>
+  {% block extra_js %}{% endblock %}
 </body>
 </html>
