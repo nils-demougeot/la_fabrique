@@ -13,6 +13,30 @@ def home(request):
     return render(request, 'core/index.html', context)
 
 
+@login_required
+def dashboard(request):
+    user = request.user
+    OBJECTIF_M2 = 15.0
+
+    # TODO: remplacer par Vetement.objects.filter(utilisateur=user).aggregate(total=Sum('surfaceExploitable'))
+    surface_totale = 12.4
+    # TODO: remplacer par surface_totale * facteur_CO2 (ex: 1 m² ≈ 1.13 kg CO2 économisé)
+    co2_economise = 14
+
+    surface_pourcentage = round((surface_totale / OBJECTIF_M2) * 100)
+    surface_restante = round(OBJECTIF_M2 - surface_totale, 1)
+
+    context = {
+        'surface_totale': surface_totale,
+        'surface_objectif': OBJECTIF_M2,
+        'surface_pourcentage': surface_pourcentage,
+        'surface_restante': surface_restante,
+        'credits': user.soldePieces,
+        'co2_economise': co2_economise,
+    }
+    return render(request, 'core/dashboard.html', context)
+
+
 
 def calculate_polygon_area(points, width_cm, height_cm):
     """

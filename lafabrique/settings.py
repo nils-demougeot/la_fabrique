@@ -132,7 +132,7 @@ STATIC_URL = 'static/'
 AUTH_USER_MODEL = 'core.Utilisateur'
 
 
-LOGIN_REDIRECT_URL = 'ajout_textile' 
+LOGIN_REDIRECT_URL = 'dashboard'
 
 LOGOUT_REDIRECT_URL = 'home' 
 
