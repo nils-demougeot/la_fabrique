@@ -1,0 +1,789 @@
+{% extends 'core/header.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+
+  /* =========================================
+     Layout principal
+     ========================================= */
+  .patrons-page {
+    padding: 30px 16px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .page-title h1 {
+    font-family: var(--font-title);
+    font-weight: 800;
+    font-size: 36px;
+    line-height: 1;
+    color: var(--text-dark);
+    padding: 0 8px;
+  }
+
+  .title-accent { color: var(--color-primary); }
+
+  /* =========================================
+     Barre de recherche + filtres
+     ========================================= */
+  .search-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .search-input-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 16px;
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    pointer-events: none;
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px 0 46px;
+    background: #F5F4EA;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-dark);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .search-input::placeholder { color: var(--text-muted); }
+
+  .search-input:focus {
+    background: white;
+    border-color: var(--color-primary);
+  }
+
+  .filter-btn {
+    height: 48px;
+    padding: 0 18px;
+    background: #ECE9D1;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-dark);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .filter-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .filter-btn.active {
+    background: var(--text-dark);
+    color: white;
+  }
+
+  .filter-count {
+    display: none;
+    width: 18px;
+    height: 18px;
+    background: var(--color-primary);
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 800;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .filter-count.visible { display: flex; }
+
+  /* Panneau filtres — animation grid */
+  .filter-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
+  }
+
+  .filter-panel.open { grid-template-rows: 1fr; }
+
+  .filter-panel-inner {
+    overflow: hidden;
+  }
+
+  .filter-panel-content {
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .filter-group-label {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted);
+  }
+
+  .filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .filter-chip {
+    padding: 6px 16px;
+    background: #F5F4EA;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filter-chip:hover { background: #EFEEE3; }
+
+  .filter-chip.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+  }
+
+  /* =========================================
+     Liste de patrons
+     ========================================= */
+  .patrons-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Wrapper animable — collapse au dismiss */
+  .patron-wrap {
+    padding-bottom: 24px;
+    overflow: hidden;
+    transition: padding-bottom 0.35s ease;
+  }
+
+  /* =========================================
+     Carte patron
+     ========================================= */
+  .patron-card {
+    background: white;
+    border-radius: 48px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+    overflow: visible;      /* stamps dépassent */
+    position: relative;
+    will-change: transform;
+    touch-action: pan-y;    /* scroll vertical préservé */
+    cursor: grab;
+    user-select: none;
+  }
+
+  .patron-card:active { cursor: grabbing; }
+
+  .patron-card-inner {
+    border-radius: 48px;
+    overflow: hidden;
+  }
+
+  /* -- Image -- */
+  .patron-card-image {
+    position: relative;
+    height: 380px;
+    overflow: hidden;
+  }
+
+  .patron-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+
+  .patron-card-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0) 50%);
+    pointer-events: none;
+  }
+
+  .patron-card-name {
+    position: absolute;
+    left: 24px;
+    bottom: 24px;
+    color: white;
+    font-family: var(--font-title);
+    font-weight: 800;
+    font-size: 30px;
+    line-height: 1;
+    max-width: 260px;
+  }
+
+  /* Badges */
+  .badge-overlay {
+    position: absolute;
+    top: 16px;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+    line-height: 1.4;
+  }
+
+  .badge-compat  { left: 16px;  background: rgba(35, 115, 41, 0.70); }
+  .badge-fabric  { right: 16px; background: rgba(0, 0, 0, 0.60); }
+  .badge-premium { right: 16px; background: rgba(162, 74, 51, 0.80); }
+
+  .badge-dot {
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* -- Tags -- */
+  .patron-tags {
+    padding: 10px 20px 5px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .tag-pill {
+    height: 30px;
+    padding: 2px 14px;
+    background: #F7F4DE;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-title);
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-dark);
+    white-space: nowrap;
+  }
+
+  .tag-pill img { width: 13px; height: 14px; opacity: 0.7; }
+
+  /* -- Actions -- */
+  .patron-actions {
+    padding: 10px 20px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .patron-icon-group { display: flex; gap: 12px; }
+
+  .patron-icon-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s;
+    flex-shrink: 0;
+  }
+
+  .patron-icon-btn:active { transform: scale(0.88); }
+
+  .patron-icon-btn.skip    { background: #F7F4DE; }
+  .patron-icon-btn.like-btn { background: #FFC4B5; }
+
+  .patron-icon-btn svg {
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+  }
+
+  .btn-instructions {
+    padding: 12px 24px;
+    background: var(--color-primary);
+    border-radius: 9999px;
+    color: white;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-instructions:active { opacity: 0.8; }
+
+  /* =========================================
+     Stamps LIKE / NOPE
+     ========================================= */
+  .stamp {
+    position: absolute;
+    top: 32px;
+    padding: 6px 18px;
+    border-radius: 10px;
+    font-family: var(--font-title);
+    font-weight: 800;
+    font-size: 26px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 4px solid;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 20;
+    transition: opacity 0.07s;
+  }
+
+  .stamp-like {
+    left: 24px;
+    color: #237329;
+    border-color: #237329;
+    transform: rotate(-15deg);
+    transform-origin: top left;
+  }
+
+  .stamp-nope {
+    right: 24px;
+    color: #A24A33;
+    border-color: #A24A33;
+    transform: rotate(15deg);
+    transform-origin: top right;
+  }
+
+  /* =========================================
+     État vide
+     ========================================= */
+  .list-empty {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 48px 24px;
+    text-align: center;
+  }
+
+  .list-empty-emoji { font-size: 56px; }
+
+  .list-empty-title {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--text-dark);
+  }
+
+  .list-empty-sub {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-muted);
+    max-width: 240px;
+    line-height: 1.5;
+  }
+
+  /* =========================================
+     Particules cœurs
+     ========================================= */
+  @keyframes floatHeart {
+    0%   { transform: translate(0, 0) scale(1);               opacity: 1; }
+    65%  {                                                     opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) scale(0.1); opacity: 0; }
+  }
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+<main class="patrons-page">
+
+  <!-- Titre -->
+  <div class="page-title">
+    <h1>Ton prochain<br><span class="title-accent">chef-d'œuvre</span></h1>
+  </div>
+
+  <!-- Recherche + filtres -->
+  <div class="search-section">
+    <div class="search-row">
+      <div class="search-input-wrap">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input id="searchInput"
+               class="search-input"
+               type="search"
+               placeholder="Rechercher un patron..."
+               autocomplete="off">
+      </div>
+      <button id="filterBtn" class="filter-btn" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="6"  x2="20" y2="6"/>
+          <line x1="8" y1="12" x2="16" y2="12"/>
+          <line x1="11" y1="18" x2="13" y2="18"/>
+        </svg>
+        Filtres
+        <span class="filter-count" id="filterCount">0</span>
+      </button>
+    </div>
+
+    <!-- Panneau de filtres -->
+    <div class="filter-panel" id="filterPanel" aria-hidden="true">
+      <div class="filter-panel-inner">
+        <div class="filter-panel-content">
+          <div class="filter-group">
+            <p class="filter-group-label">Difficulté</p>
+            <div class="filter-chips">
+              <button class="filter-chip" data-filter-key="difficulty" data-filter-val="débutant">Débutant</button>
+              <button class="filter-chip" data-filter-key="difficulty" data-filter-val="intermédiaire">Intermédiaire</button>
+              <button class="filter-chip" data-filter-key="difficulty" data-filter-val="avancé">Avancé</button>
+            </div>
+          </div>
+          <div class="filter-group">
+            <p class="filter-group-label">Accès</p>
+            <div class="filter-chips">
+              <button class="filter-chip" data-filter-key="premium" data-filter-val="false">Gratuit</button>
+              <button class="filter-chip" data-filter-key="premium" data-filter-val="true">Premium</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liste des patrons -->
+  <div class="patrons-list" id="patronsList">
+    {% for patron in patrons %}
+    <div class="patron-wrap"
+         data-title="{{ patron.titre|lower }}"
+         data-difficulty="{{ patron.difficulte_label|lower }}"
+         data-premium="{{ patron.est_premium|yesno:'true,false' }}">
+
+      <div class="patron-card">
+        <!-- Stamps -->
+        <div class="stamp stamp-like">J'adore ✓</div>
+        <div class="stamp stamp-nope">Passer ✗</div>
+
+        <div class="patron-card-inner">
+
+          <!-- Image -->
+          <div class="patron-card-image">
+            <img src="{{ patron.image|default:'https://placehold.co/358x380' }}"
+                 alt="{{ patron.titre }}"
+                 draggable="false">
+            <div class="patron-card-gradient"></div>
+            <h2 class="patron-card-name">{{ patron.titre }}</h2>
+            <div class="badge-overlay badge-compat">
+              <span class="badge-dot"></span>
+              {{ patron.compatibilite }}% Compatible
+            </div>
+            {% if patron.est_premium %}
+            <div class="badge-overlay badge-premium">✦ Premium</div>
+            {% else %}
+            <div class="badge-overlay badge-fabric">{{ patron.tissu }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Tags -->
+          <div class="patron-tags">
+            <span class="tag-pill">
+              <img src="{% static 'core/images/ajout_textile/icon-ciseaux.svg' %}" alt="">
+              {{ patron.difficulte_label }}
+            </span>
+            <span class="tag-pill">
+              <img src="{% static 'core/images/page-accueil/icon-analyser.svg' %}" alt="">
+              {{ patron.duree }}
+            </span>
+          </div>
+
+          <!-- Actions -->
+          <div class="patron-actions">
+            <div class="patron-icon-group">
+              <!-- Bouton skip (gauche) -->
+              <button class="patron-icon-btn skip" title="Passer">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     fill="none" stroke="#A24A33" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6"  y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+              <!-- Bouton like (droite) -->
+              <button class="patron-icon-btn like-btn" title="J'adore">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     fill="#7C2E19" stroke="#7C2E19" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </button>
+            </div>
+            <a href="#" class="btn-instructions">Instructions</a>
+          </div>
+
+        </div><!-- /.patron-card-inner -->
+      </div><!-- /.patron-card -->
+    </div><!-- /.patron-wrap -->
+    {% empty %}
+    <p style="text-align:center; color:var(--text-muted); font-family:var(--font-body); padding:40px 0;">
+      Aucun patron disponible pour l'instant.
+    </p>
+    {% endfor %}
+  </div>
+
+  <!-- État vide (filtres ou tout vu) -->
+  <div class="list-empty" id="listEmpty">
+    <div class="list-empty-emoji" id="listEmptyEmoji">🔍</div>
+    <p class="list-empty-title" id="listEmptyTitle">Aucun résultat</p>
+    <p class="list-empty-sub" id="listEmptySub">Essaie d'autres mots-clés ou ajuste les filtres.</p>
+  </div>
+
+</main>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+(function () {
+  'use strict';
+
+  /* ── Refs ─────────────────────────────────────────────── */
+  const searchInput = document.getElementById('searchInput');
+  const filterBtn   = document.getElementById('filterBtn');
+  const filterPanel = document.getElementById('filterPanel');
+  const filterCount = document.getElementById('filterCount');
+  const listEmpty   = document.getElementById('listEmpty');
+  const wraps       = Array.from(document.querySelectorAll('.patron-wrap'));
+  const chips       = Array.from(document.querySelectorAll('.filter-chip'));
+
+  /* ── Particules cœurs ─────────────────────────────────── */
+  function spawnHearts(card) {
+    const rect = card.getBoundingClientRect();
+    const cx   = rect.left + rect.width  / 2;
+    const cy   = rect.top  + rect.height * 0.35;
+    const pool = ['💚','✨','🌿','💛','💚','🎉','✨','💚','🌟','💚'];
+    pool.forEach((emoji, i) => {
+      const el  = document.createElement('span');
+      el.textContent = emoji;
+      const deg = Math.random() * 240 - 120;
+      const rad = deg * Math.PI / 180;
+      const d   = 80 + Math.random() * 110;
+      el.style.cssText = [
+        'position:fixed',
+        `left:${cx}px`, `top:${cy}px`,
+        `font-size:${14 + Math.random() * 18}px`,
+        'pointer-events:none', 'z-index:9999',
+        `--tx:${(Math.cos(rad)*d).toFixed(1)}px`,
+        `--ty:${(Math.sin(rad)*d - 55).toFixed(1)}px`,
+        `animation:floatHeart 0.85s ease-out ${i*55}ms forwards`,
+      ].join(';');
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1050 + i * 55);
+    });
+  }
+
+  /* ── Collapse wrap ────────────────────────────────────── */
+  function collapseWrap(wrap) {
+    const h = wrap.offsetHeight;
+    wrap.style.height       = h + 'px';
+    wrap.style.overflow     = 'hidden';
+    wrap.style.paddingBottom = '0';
+    requestAnimationFrame(() => {
+      wrap.style.transition = 'height 0.38s ease, padding-bottom 0.38s ease, opacity 0.25s ease';
+      wrap.style.height     = '0';
+      wrap.style.opacity    = '0';
+    });
+    setTimeout(() => { wrap.dataset.dismissed = '1'; wrap.style.display = 'none'; checkEmpty(); }, 420);
+  }
+
+  /* ── Actions swipe ────────────────────────────────────── */
+  function doSkip(card, wrap) {
+    const stamp = card.querySelector('.stamp-nope');
+    if (stamp) stamp.style.opacity = '1';
+    card.style.transition = 'transform 0.38s ease, opacity 0.38s ease';
+    card.style.transform  = 'translateX(-115%) rotate(-15deg)';
+    card.style.opacity    = '0';
+    setTimeout(() => collapseWrap(wrap), 200);
+  }
+
+  function doLike(card, wrap) {
+    const stamp = card.querySelector('.stamp-like');
+    if (stamp) { stamp.style.opacity = '1'; stamp.style.transform = 'rotate(-15deg) scale(1.15)'; }
+    spawnHearts(card);
+    setTimeout(() => {
+      card.style.transition = 'transform 0.38s ease, opacity 0.38s ease';
+      card.style.transform  = 'translateX(115%) rotate(15deg)';
+      card.style.opacity    = '0';
+      setTimeout(() => collapseWrap(wrap), 200);
+    }, 350);
+  }
+
+  /* ── Swipe drag ───────────────────────────────────────── */
+  function initSwipe(wrap) {
+    const card      = wrap.querySelector('.patron-card');
+    const likeStamp = card.querySelector('.stamp-like');
+    const nopeStamp = card.querySelector('.stamp-nope');
+    let startX, startY, curX = 0, dragging = false;
+    const THRESHOLD = 85;
+
+    card.addEventListener('pointerdown', e => {
+      if (wrap.dataset.dismissed) return;
+      if (e.target.closest('.patron-icon-btn, .btn-instructions, a')) return;
+      startX = e.clientX; startY = e.clientY; curX = 0;
+      dragging = true;
+      card.style.transition = 'none';
+      card.setPointerCapture(e.pointerId);
+    });
+
+    card.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      curX = e.clientX - startX;
+      const curY = (e.clientY - startY) * 0.12;
+      const rot  = curX * 0.05;
+      card.style.transform = `translate(${curX}px, ${curY}px) rotate(${rot}deg)`;
+      if (likeStamp) likeStamp.style.opacity = String(Math.max(0, Math.min(1, (curX - 25) / 55)));
+      if (nopeStamp) nopeStamp.style.opacity = String(Math.max(0, Math.min(1, (-curX - 25) / 55)));
+    });
+
+    function endDrag() {
+      if (!dragging) return;
+      dragging = false;
+      if      (curX >  THRESHOLD) doLike(card, wrap);
+      else if (curX < -THRESHOLD) doSkip(card, wrap);
+      else {
+        card.style.transition = 'transform 0.42s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        card.style.transform  = '';
+        if (likeStamp) likeStamp.style.opacity = '0';
+        if (nopeStamp) nopeStamp.style.opacity = '0';
+      }
+    }
+
+    card.addEventListener('pointerup',     endDrag);
+    card.addEventListener('pointercancel', endDrag);
+
+    card.querySelector('.patron-icon-btn.skip')
+      ?.addEventListener('click', e => { e.stopPropagation(); if (!wrap.dataset.dismissed) doSkip(card, wrap); });
+    card.querySelector('.patron-icon-btn.like-btn')
+      ?.addEventListener('click', e => { e.stopPropagation(); if (!wrap.dataset.dismissed) doLike(card, wrap); });
+  }
+
+  /* ── Filtres ──────────────────────────────────────────── */
+
+  /* Toggle panneau */
+  filterBtn.addEventListener('click', () => {
+    const open = filterPanel.classList.toggle('open');
+    filterBtn.classList.toggle('active', open);
+    filterBtn.setAttribute('aria-expanded', open);
+    filterPanel.setAttribute('aria-hidden', !open);
+  });
+
+  /* Chips */
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('active');
+      updateFilterCount();
+      applyAll();
+    });
+  });
+
+  function updateFilterCount() {
+    const n = chips.filter(c => c.classList.contains('active')).length;
+    filterCount.textContent = n;
+    filterCount.classList.toggle('visible', n > 0);
+  }
+
+  /* ── Recherche ────────────────────────────────────────── */
+  searchInput.addEventListener('input', applyAll);
+
+  /* ── Application combinée ─────────────────────────────── */
+  function applyAll() {
+    const query = searchInput.value.toLowerCase().trim();
+
+    /* Regrouper les filtres actifs par clé (OR intra-clé, AND inter-clés) */
+    const byKey = {};
+    chips.filter(c => c.classList.contains('active')).forEach(c => {
+      const k = c.dataset.filterKey;
+      if (!byKey[k]) byKey[k] = new Set();
+      byKey[k].add(c.dataset.filterVal);
+    });
+
+    wraps.forEach(wrap => {
+      if (wrap.dataset.dismissed) return;
+      const matchSearch  = !query || wrap.dataset.title.includes(query);
+      const matchFilters = Object.entries(byKey).every(([k, vals]) =>
+        vals.has((wrap.dataset[k] || '').toLowerCase())
+      );
+      wrap.style.display = (matchSearch && matchFilters) ? '' : 'none';
+    });
+
+    checkEmpty();
+  }
+
+  /* ── État vide ────────────────────────────────────────── */
+  function checkEmpty() {
+    const hasVisible = wraps.some(w => !w.dataset.dismissed && w.style.display !== 'none');
+    const allDone    = wraps.every(w => !!w.dataset.dismissed);
+    listEmpty.style.display = hasVisible ? 'none' : 'flex';
+
+    if (!hasVisible) {
+      if (allDone) {
+        document.getElementById('listEmptyEmoji').textContent = '🎉';
+        document.getElementById('listEmptyTitle').textContent = 'Tu as tout vu !';
+        document.getElementById('listEmptySub').textContent   = 'Reviens bientôt pour de nouveaux patrons.';
+      } else {
+        document.getElementById('listEmptyEmoji').textContent = '🔍';
+        document.getElementById('listEmptyTitle').textContent = 'Aucun résultat';
+        document.getElementById('listEmptySub').textContent   = 'Essaie d\'autres mots-clés ou ajuste les filtres.';
+      }
+    }
+  }
+
+  /* ── Init ─────────────────────────────────────────────── */
+  wraps.forEach(initSwipe);
+
+})();
+</script>
+{% endblock %}

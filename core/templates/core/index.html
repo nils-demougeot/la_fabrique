@@ -341,3 +341,11 @@
       </section>
     </main>
 {% endblock %}
+
+{% block bottom_nav %}
+  {% if user.is_authenticated %}
+    {% with nav_active='accueil' %}
+      {% include 'core/bottom_nav.html' %}
+    {% endwith %}
+  {% endif %}
+{% endblock %}

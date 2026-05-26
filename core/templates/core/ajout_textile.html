@@ -848,3 +848,9 @@
     });
   </script>
 {% endblock %}
+
+{% block bottom_nav %}
+  {% with nav_active='scanner' %}
+    {% include 'core/bottom_nav.html' %}
+  {% endwith %}
+{% endblock %}

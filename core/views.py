@@ -154,6 +154,44 @@ def ajout_textile(request):
     return render(request, 'core/ajout_textile.html', context)
 
 
+@login_required
+def patrons(request):
+    DIFFICULTE_LABELS = {1: 'Débutant', 2: 'Intermédiaire', 3: 'Avancé'}
+
+    # TODO: remplacer par Patron.objects.all() avec calcul de compatibilité
+    # depuis sum(Vetement.surfaceExploitable) de l'utilisateur
+    patrons_list = [
+        {
+            'titre': 'Crop Top',
+            'image': None,
+            'compatibilite': 95,
+            'tissu': 'Cotton',
+            'difficulte_label': DIFFICULTE_LABELS[1],
+            'duree': '2h',
+            'est_premium': False,
+        },
+        {
+            'titre': 'Bob',
+            'image': None,
+            'compatibilite': 89,
+            'tissu': 'Jean',
+            'difficulte_label': DIFFICULTE_LABELS[1],
+            'duree': '2h',
+            'est_premium': False,
+        },
+        {
+            'titre': 'Tote bag patchwork',
+            'image': None,
+            'compatibilite': 79,
+            'tissu': 'Laine',
+            'difficulte_label': DIFFICULTE_LABELS[2],
+            'duree': '3h',
+            'est_premium': True,
+        },
+    ]
+    return render(request, 'core/patrons.html', {'patrons': patrons_list})
+
+
 def inscription(request):
     if request.method == 'POST':
         # On sauvegarde l'email et le mdp dans la session

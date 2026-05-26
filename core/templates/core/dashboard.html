@@ -467,7 +467,7 @@
         </div>
         <span class="action-label">Scanner un tissu</span>
       </a>
-      <a href="#" class="action-btn">
+      <a href="{% url 'patrons' %}" class="action-btn">
         <div class="action-icon red">
           <img src="{% static 'core/images/ajout_textile/icon-ciseaux.svg' %}" alt="">
         </div>
@@ -511,4 +511,10 @@
   </div>
 
 </main>
+{% endblock %}
+
+{% block bottom_nav %}
+  {% with nav_active='accueil' %}
+    {% include 'core/bottom_nav.html' %}
+  {% endwith %}
 {% endblock %}
