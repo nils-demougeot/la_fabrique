@@ -277,6 +277,11 @@ def etape_projet(request, patron_pk, etape_num):
     return render(request, 'core/etape_projet.html', context)
 
 
+@login_required
+def communaute(request):
+    return render(request, 'core/communaute.html')
+
+
 def inscription(request):
     if request.method == 'POST':
         # On sauvegarde l'email et le mdp dans la session

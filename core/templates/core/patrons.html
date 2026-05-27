@@ -585,6 +585,12 @@
 {% endblock %}
 
 
+{% block bottom_nav %}
+  {% with nav_active='patrons' %}
+    {% include 'core/bottom_nav.html' %}
+  {% endwith %}
+{% endblock %}
+
 {% block extra_js %}
 <script>
 (function () {

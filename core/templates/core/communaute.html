@@ -1,0 +1,1185 @@
+{% extends 'core/header.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+
+  /* ── Layout ── */
+  .communaute-page {
+    padding: 0 16px 110px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  /* ── Titre ── */
+  .page-hero {
+    padding-top: 28px;
+  }
+  .page-hero h1 {
+    font-family: var(--font-title);
+    font-size: 32px;
+    font-weight: 800;
+    font-style: italic;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    line-height: 1;
+    text-align: center;
+    margin: 0 0 24px;
+  }
+
+  /* ── Carte niveau ── */
+  .level-card {
+    background: #FDFAE5;
+    border-radius: 48px;
+    padding: 24px;
+    outline: 1px rgba(188, 186, 168, 0.15) solid;
+    outline-offset: -1px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .level-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .level-name {
+    color: var(--color-primary);
+    font-family: var(--font-title);
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .level-flame {
+    font-size: 20px;
+  }
+  .level-bar-track {
+    width: 100%;
+    height: 16px;
+    background: #F7F4DE;
+    border-radius: 9999px;
+    padding: 4px;
+    overflow: hidden;
+  }
+  .level-bar-fill {
+    height: 100%;
+    background: var(--color-primary);
+    border-radius: 9999px;
+    position: relative;
+    overflow: hidden;
+  }
+  .level-bar-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.20);
+  }
+  .level-card-bottom {
+    display: flex;
+    justify-content: space-between;
+  }
+  .level-pts-current {
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .level-pts-remaining {
+    color: var(--color-primary);
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  /* ── Réutilisation styles search/filtres (identiques à patrons.html) ── */
+  .search-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .search-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .search-input-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .search-icon {
+    position: absolute;
+    left: 16px;
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    pointer-events: none;
+    flex-shrink: 0;
+  }
+  .search-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px 0 46px;
+    background: #F5F4EA;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-dark);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .search-input::placeholder { color: var(--text-muted); }
+  .search-input:focus {
+    background: white;
+    border-color: var(--color-primary);
+  }
+  .filter-btn {
+    height: 48px;
+    padding: 0 18px;
+    background: #ECE9D1;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-dark);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+  .filter-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .filter-btn.active {
+    background: var(--text-dark);
+    color: white;
+  }
+  .filter-count {
+    display: none;
+    width: 18px;
+    height: 18px;
+    background: var(--color-primary);
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 800;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .filter-count.visible { display: flex; }
+  .filter-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
+  }
+  .filter-panel.open { grid-template-rows: 1fr; }
+  .filter-panel-inner { overflow: hidden; }
+  .filter-panel-content {
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .filter-group-label {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted);
+  }
+  .filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .filter-chip {
+    padding: 6px 16px;
+    background: #F5F4EA;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-chip:hover { background: #EFEEE3; }
+  .filter-chip.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+  }
+
+  /* ── Carte créateur de la semaine ── */
+  .creator-card {
+    background: #F7F4DE;
+    border-radius: 48px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .creator-banner {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #D2F4D1 0%, #ECE9D1 60%, #FCC895 100%);
+  }
+  .creator-banner-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .creator-banner-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: #A24A33;
+    border-radius: 9999px;
+    padding: 4px 16px;
+    box-shadow: 0 4px 6px -4px rgba(0,0,0,0.10), 0 10px 15px -3px rgba(0,0,0,0.10);
+  }
+  .creator-banner-badge span {
+    color: white;
+    font-family: var(--font-title);
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.6px;
+  }
+  .creator-body {
+    background: #FBFAF0;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .creator-identity {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .creator-avatar-ring {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    padding: 2px;
+    flex-shrink: 0;
+    display: flex;
+  }
+  .creator-avatar-ring img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid #ECE9D1;
+    object-fit: cover;
+    display: block;
+  }
+  .creator-name {
+    color: #39382B;
+    font-family: var(--font-title);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 24px;
+  }
+  .creator-title {
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 22px;
+  }
+  .creator-quote {
+    color: #39382B;
+    font-family: var(--font-body);
+    font-size: 17px;
+    font-style: italic;
+    font-weight: 400;
+    line-height: 28px;
+    margin-bottom: 32px;
+  }
+  .btn-follow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 9999px;
+    padding: 12px 32px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -4px rgba(35,115,41,0.20), 0 10px 15px -3px rgba(35,115,41,0.20);
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-follow:active { transform: scale(0.97); }
+  .btn-follow.following {
+    background: #EFEEE3;
+    color: var(--text-dark);
+    box-shadow: none;
+  }
+
+  /* ── Hashtags ── */
+  .hashtags-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .section-title {
+    font-family: var(--font-title);
+    font-size: 28px;
+    font-weight: 800;
+    color: #383832;
+    line-height: 1.1;
+  }
+  .section-link {
+    color: var(--color-primary);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .hashtags-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .hashtags-scroll::-webkit-scrollbar { display: none; }
+  .hashtag-pill {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    padding: 10px 20px;
+    background: #F1EFD7;
+    border-radius: 9999px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .hashtag-pill:hover { background: #E8E5C5; }
+  .hashtag-pill.active {
+    background: #9DF197;
+    color: #005C15;
+    font-weight: 600;
+    border-color: rgba(35,115,41,0.20);
+  }
+
+  /* ── Section projets ── */
+  .projects-section {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .projects-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Dropdown tri */
+  .sort-dropdown-wrap {
+    position: relative;
+  }
+  .sort-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--color-primary);
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 600;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .sort-toggle svg {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.2s;
+  }
+  .sort-toggle.open svg { transform: rotate(180deg); }
+  .sort-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+    padding: 8px;
+    min-width: 150px;
+    z-index: 30;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .sort-menu.open { display: flex; }
+  .sort-option {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: background 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sort-option:hover { background: #F5F4EA; }
+  .sort-option.selected {
+    color: var(--color-primary);
+    font-weight: 700;
+  }
+  .sort-option.selected::before {
+    content: '✓';
+    font-size: 12px;
+  }
+  .sort-option:not(.selected)::before {
+    content: '';
+    display: inline-block;
+    width: 12px;
+  }
+
+  /* ── Carte projet ── */
+  .project-card {
+    background: white;
+    border-radius: 48px;
+    box-shadow: 0 10px 30px -15px rgba(0,0,0,0.05);
+    overflow: hidden;
+    outline: 1px rgba(188, 186, 168, 0.10) solid;
+    outline-offset: -1px;
+    display: flex;
+    flex-direction: column;
+  }
+  .project-card-header {
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .project-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .project-author-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #D2F4D1;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--color-primary);
+  }
+  .project-author-name {
+    color: #39382B;
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 22px;
+  }
+  .project-author-time {
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 12px;
+    line-height: 16px;
+  }
+  .project-more-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    color: var(--text-muted);
+    border-radius: 8px;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .project-more-btn:hover { background: #F5F4EA; }
+  .project-more-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+    padding: 6px;
+    min-width: 160px;
+    z-index: 30;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .project-more-menu.open { display: flex; }
+  .project-more-item {
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .project-more-item:hover { background: #F5F4EA; }
+  .project-more-item.danger { color: #C62828; }
+  .project-more-item.danger:hover { background: #FFF0EC; }
+
+  /* Photo projet */
+  .project-photo-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+  }
+  .project-photo-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .project-badge-photo {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: rgba(255,251,255,0.90);
+    backdrop-filter: blur(6px);
+    border-radius: 6px;
+    padding: 3px 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .project-badge-photo span {
+    color: var(--color-primary);
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 16px;
+  }
+
+  /* Contenu texte */
+  .project-content {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .project-title {
+    color: #39382B;
+    font-family: var(--font-body);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 26px;
+    margin: 0 0 4px;
+  }
+  .project-desc {
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 22px;
+    margin: 0;
+  }
+
+  /* Footer interactions */
+  .project-footer {
+    border-top: 1px solid rgba(188, 186, 168, 0.10);
+    padding-top: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .project-interactions {
+    display: flex;
+    gap: 16px;
+  }
+  .interaction-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 9999px;
+    transition: background 0.15s;
+  }
+  .interaction-btn:hover { background: #F5F4EA; }
+  .interaction-btn svg {
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    transition: color 0.15s, transform 0.2s;
+  }
+  .interaction-btn.liked svg { color: #E53935; }
+  .interaction-btn.liked svg { transform: scale(1.15); }
+  .interaction-count {
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+  .interaction-btn.liked .interaction-count { color: #E53935; }
+  .save-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 9999px;
+    transition: background 0.15s;
+    color: var(--text-muted);
+    display: flex;
+  }
+  .save-btn:hover { background: #F5F4EA; }
+  .save-btn svg {
+    width: 18px;
+    height: 20px;
+    transition: color 0.15s;
+  }
+  .save-btn.saved svg { color: var(--color-primary); }
+
+  /* ── FAB ── */
+  .fab-btn {
+    position: fixed;
+    right: calc(50% - 195px + 16px);
+    bottom: 90px;
+    width: 60px;
+    height: 60px;
+    background: var(--color-primary);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 40px -5px rgba(35,115,41,0.40);
+    z-index: 40;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .fab-btn:hover { transform: scale(1.07); box-shadow: 0 14px 44px -4px rgba(35,115,41,0.45); }
+  .fab-btn:active { transform: scale(0.95); }
+  .fab-btn svg { width: 26px; height: 26px; color: white; }
+
+  /* Sur petits écrans : FAB collé à droite */
+  @media (max-width: 430px) {
+    .fab-btn {
+      right: 16px;
+    }
+  }
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+<main class="communaute-page">
+
+  <!-- ── Titre + Niveau ── -->
+  <div class="page-hero">
+    <h1>Communauté</h1>
+
+    <div class="level-card">
+      <div class="level-card-top">
+        <span class="level-name">Niveau Éco-Mentor</span>
+        <span class="level-flame">🌿</span>
+      </div>
+      <div class="level-bar-track">
+        <div class="level-bar-fill" style="width: 72%;"></div>
+      </div>
+      <div class="level-card-bottom">
+        <span class="level-pts-current">720 / 1 000 pts</span>
+        <span class="level-pts-remaining">280 restants</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Recherche + filtres ── -->
+  <div class="search-section">
+    <div class="search-row">
+      <div class="search-input-wrap">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input id="searchInput"
+               class="search-input"
+               type="search"
+               placeholder="Rechercher un projet ou un créateur..."
+               autocomplete="off">
+      </div>
+      <button id="filterBtn" class="filter-btn" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="6"  x2="20" y2="6"/>
+          <line x1="8" y1="12" x2="16" y2="12"/>
+          <line x1="11" y1="18" x2="13" y2="18"/>
+        </svg>
+        Filtres
+        <span class="filter-count" id="filterCount">0</span>
+      </button>
+    </div>
+
+    <div class="filter-panel" id="filterPanel" aria-hidden="true">
+      <div class="filter-panel-inner">
+        <div class="filter-panel-content">
+          <div class="filter-group">
+            <p class="filter-group-label">Type de création</p>
+            <div class="filter-chips">
+              <button class="filter-chip" data-filter-key="type" data-filter-val="fait-main">Fait main</button>
+              <button class="filter-chip" data-filter-key="type" data-filter-val="upcycling">Upcycling</button>
+              <button class="filter-chip" data-filter-key="type" data-filter-val="teinture">Teinture naturelle</button>
+              <button class="filter-chip" data-filter-key="type" data-filter-val="patron">Patron</button>
+            </div>
+          </div>
+          <div class="filter-group">
+            <p class="filter-group-label">Niveau</p>
+            <div class="filter-chips">
+              <button class="filter-chip" data-filter-key="niveau" data-filter-val="debutant">Débutant</button>
+              <button class="filter-chip" data-filter-key="niveau" data-filter-val="intermediaire">Intermédiaire</button>
+              <button class="filter-chip" data-filter-key="niveau" data-filter-val="confirme">Confirmé</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Créateur de la semaine ── -->
+  <div class="creator-card">
+    <div class="creator-banner">
+      <img class="creator-banner-img"
+           src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80"
+           alt="Bannière créateur">
+      <div class="creator-banner-badge">
+        <span>Créateur de la semaine</span>
+      </div>
+    </div>
+    <div class="creator-body">
+      <div class="creator-identity">
+        <div class="creator-avatar-ring">
+          <img src="https://i.pravatar.cc/100?img=47" alt="Sophie Marchand">
+        </div>
+        <div>
+          <div class="creator-name">Sophie Marchand</div>
+          <div class="creator-title">Upcycleuse Confirmée · Paris</div>
+        </div>
+      </div>
+      <p class="creator-quote">
+        « Transformer des textiles oubliés en déclarations modernes, c'est plus qu'un savoir-faire — c'est une révolution du dressing. »
+      </p>
+      <button class="btn-follow" id="followCreatorBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <line x1="19" y1="8" x2="19" y2="14"/>
+          <line x1="22" y1="11" x2="16" y2="11"/>
+        </svg>
+        Suivre Sophie
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Hashtags populaires ── -->
+  <div class="hashtags-section">
+    <div class="section-title-row">
+      <h2 class="section-title">Hashtags populaires</h2>
+    </div>
+    <div class="hashtags-scroll" id="hashtagsScroll">
+      <button class="hashtag-pill active" data-tag="astucesdebutant">#AstucesDebutant</button>
+      <button class="hashtag-pill" data-tag="zerodechet">#ZéroDechet</button>
+      <button class="hashtag-pill" data-tag="teinturenaturelle">#TeintureMaison</button>
+      <button class="hashtag-pill" data-tag="amourjean">#AmourDuJean</button>
+      <button class="hashtag-pill" data-tag="chinee">#ChinerRécup</button>
+      <button class="hashtag-pill" data-tag="tissuseco">#TissusNaturels</button>
+      <button class="hashtag-pill" data-tag="upcycling">#Upcycling</button>
+    </div>
+  </div>
+
+  <!-- ── Projets à la une ── -->
+  <div class="projects-section">
+    <div class="projects-header">
+      <h2 class="section-title">Projets à la une</h2>
+      <div class="sort-dropdown-wrap">
+        <button class="sort-toggle" id="sortToggle">
+          <span id="sortLabel">Nouveautés</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <div class="sort-menu" id="sortMenu">
+          <div class="sort-option selected" data-sort="nouveautes">Nouveautés</div>
+          <div class="sort-option" data-sort="populaires">Populaires</div>
+          <div class="sort-option" data-sort="tendances">Tendances</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Carte projet 1 -->
+    <div class="project-card"
+         data-title="tote bag denim recyclé"
+         data-type="fait-main"
+         data-niveau="intermediaire">
+      <div class="project-card-header">
+        <div class="project-author">
+          <div class="project-author-avatar">MD</div>
+          <div>
+            <div class="project-author-name">Marc Dupont</div>
+            <div class="project-author-time">il y a 2 heures</div>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <button class="project-more-btn" data-more="1">
+            <svg width="4" height="16" viewBox="0 0 4 20" fill="currentColor">
+              <circle cx="2" cy="2" r="2"/><circle cx="2" cy="10" r="2"/><circle cx="2" cy="18" r="2"/>
+            </svg>
+          </button>
+          <div class="project-more-menu" id="moreMenu1">
+            <div class="project-more-item">Copier le lien</div>
+            <div class="project-more-item danger">Signaler</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="project-photo-wrap">
+        <img src="https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=600&q=80"
+             alt="Tote Bag en Denim Recyclé">
+        <div class="project-badge-photo"><span>Fait main</span></div>
+      </div>
+
+      <div class="project-content">
+        <div>
+          <p class="project-title">Tote Bag en Denim Recyclé</p>
+          <p class="project-desc">Récupéré trois vieux jeans pour créer ce sac solide du quotidien. Patron zéro déchet, tout a été utilisé !</p>
+        </div>
+        <div class="project-footer">
+          <div class="project-interactions">
+            <button class="interaction-btn" data-action="like" id="like1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+              </svg>
+              <span class="interaction-count" id="likeCount1">124</span>
+            </button>
+            <button class="interaction-btn" data-action="comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+              </svg>
+              <span class="interaction-count">18</span>
+            </button>
+          </div>
+          <button class="save-btn" data-action="save" id="save1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Carte projet 2 -->
+    <div class="project-card"
+         data-title="teinture écorce oignon lin"
+         data-type="teinture"
+         data-niveau="debutant">
+      <div class="project-card-header">
+        <div class="project-author">
+          <div class="project-author-avatar" style="background:#FCC895;color:#7C3C00;">CL</div>
+          <div>
+            <div class="project-author-name">Camille Lefebvre</div>
+            <div class="project-author-time">il y a 5 heures</div>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <button class="project-more-btn" data-more="2">
+            <svg width="4" height="16" viewBox="0 0 4 20" fill="currentColor">
+              <circle cx="2" cy="2" r="2"/><circle cx="2" cy="10" r="2"/><circle cx="2" cy="18" r="2"/>
+            </svg>
+          </button>
+          <div class="project-more-menu" id="moreMenu2">
+            <div class="project-more-item">Copier le lien</div>
+            <div class="project-more-item danger">Signaler</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="project-photo-wrap">
+        <img src="https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=600&q=80"
+             alt="Teinture à l'Écorce d'Oignon">
+        <div class="project-badge-photo"><span>Teinture nat.</span></div>
+      </div>
+
+      <div class="project-content">
+        <div>
+          <p class="project-title">Teinture à l'Écorce d'Oignon</p>
+          <p class="project-desc">Expérience du week-end avec des restes de cuisine ! Cette vieille chemise en lin a maintenant un magnifique reflet doré.</p>
+        </div>
+        <div class="project-footer">
+          <div class="project-interactions">
+            <button class="interaction-btn" data-action="like" id="like2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+              </svg>
+              <span class="interaction-count" id="likeCount2">256</span>
+            </button>
+            <button class="interaction-btn" data-action="comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+              </svg>
+              <span class="interaction-count">42</span>
+            </button>
+          </div>
+          <button class="save-btn" data-action="save" id="save2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.projects-section -->
+
+</main>
+
+<!-- FAB -->
+<button class="fab-btn" id="fabBtn" title="Partager une création">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+       stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <line x1="5"  y1="12" x2="19" y2="12"/>
+  </svg>
+</button>
+
+{% endblock %}
+
+
+{% block bottom_nav %}
+{% with nav_active='communaute' %}
+{% include 'core/bottom_nav.html' %}
+{% endwith %}
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+(function() {
+  'use strict';
+
+  /* ── Filtres (même logique que patrons.html) ── */
+  const filterBtn   = document.getElementById('filterBtn');
+  const filterPanel = document.getElementById('filterPanel');
+  const filterCount = document.getElementById('filterCount');
+  const searchInput = document.getElementById('searchInput');
+  const chips       = Array.from(document.querySelectorAll('.filter-chip'));
+  const cards       = Array.from(document.querySelectorAll('.project-card'));
+
+  filterBtn.addEventListener('click', () => {
+    const open = filterPanel.classList.toggle('open');
+    filterBtn.classList.toggle('active', open);
+    filterBtn.setAttribute('aria-expanded', open);
+    filterPanel.setAttribute('aria-hidden', !open);
+  });
+
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('active');
+      updateFilterCount();
+      applyFilters();
+    });
+  });
+
+  function updateFilterCount() {
+    const n = chips.filter(c => c.classList.contains('active')).length;
+    filterCount.textContent = n;
+    filterCount.classList.toggle('visible', n > 0);
+  }
+
+  searchInput.addEventListener('input', applyFilters);
+
+  function applyFilters() {
+    const query = searchInput.value.toLowerCase().trim();
+    const byKey = {};
+    chips.filter(c => c.classList.contains('active')).forEach(c => {
+      const k = c.dataset.filterKey;
+      if (!byKey[k]) byKey[k] = new Set();
+      byKey[k].add(c.dataset.filterVal);
+    });
+    cards.forEach(card => {
+      const matchSearch  = !query || card.dataset.title.includes(query);
+      const matchFilters = Object.entries(byKey).every(([k, vals]) =>
+        vals.has((card.dataset[k] || '').toLowerCase())
+      );
+      card.closest('.project-card').style.display = (matchSearch && matchFilters) ? '' : 'none';
+    });
+  }
+
+  /* ── Hashtags ── */
+  document.querySelectorAll('.hashtag-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      pill.classList.toggle('active');
+    });
+  });
+
+  /* ── Follow / Unfollow ── */
+  const followBtn = document.getElementById('followCreatorBtn');
+  followBtn.addEventListener('click', () => {
+    const isFollowing = followBtn.classList.toggle('following');
+    if (isFollowing) {
+      followBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Suivi ✓`;
+    } else {
+      followBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <line x1="19" y1="8" x2="19" y2="14"/>
+          <line x1="22" y1="11" x2="16" y2="11"/>
+        </svg>
+        Suivre Sophie`;
+    }
+  });
+
+  /* ── Likes ── */
+  [1, 2].forEach(n => {
+    const btn   = document.getElementById('like' + n);
+    const count = document.getElementById('likeCount' + n);
+    if (!btn) return;
+    let liked = false;
+    const base = parseInt(count.textContent);
+    btn.addEventListener('click', () => {
+      liked = !liked;
+      btn.classList.toggle('liked', liked);
+      count.textContent = base + (liked ? 1 : 0);
+      if (liked) {
+        btn.querySelector('svg').setAttribute('fill', '#E53935');
+        btn.querySelector('svg').setAttribute('stroke', '#E53935');
+      } else {
+        btn.querySelector('svg').setAttribute('fill', 'none');
+        btn.querySelector('svg').setAttribute('stroke', 'currentColor');
+      }
+    });
+  });
+
+  /* ── Sauvegardes ── */
+  [1, 2].forEach(n => {
+    const btn = document.getElementById('save' + n);
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const saved = btn.classList.toggle('saved');
+      if (saved) {
+        btn.querySelector('svg').setAttribute('fill', '#237329');
+        btn.querySelector('svg').setAttribute('stroke', '#237329');
+      } else {
+        btn.querySelector('svg').setAttribute('fill', 'none');
+        btn.querySelector('svg').setAttribute('stroke', 'currentColor');
+      }
+    });
+  });
+
+  /* ── Dropdown tri ── */
+  const sortToggle = document.getElementById('sortToggle');
+  const sortMenu   = document.getElementById('sortMenu');
+  const sortLabel  = document.getElementById('sortLabel');
+
+  sortToggle.addEventListener('click', e => {
+    e.stopPropagation();
+    const open = sortMenu.classList.toggle('open');
+    sortToggle.classList.toggle('open', open);
+  });
+
+  document.querySelectorAll('.sort-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.sort-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      sortLabel.textContent = opt.textContent.trim();
+      sortMenu.classList.remove('open');
+      sortToggle.classList.remove('open');
+    });
+  });
+
+  /* ── Menus "..." des cartes ── */
+  document.querySelectorAll('.project-more-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const menuId = 'moreMenu' + btn.dataset.more;
+      const menu   = document.getElementById(menuId);
+      const isOpen = menu.classList.toggle('open');
+      document.querySelectorAll('.project-more-menu').forEach(m => {
+        if (m.id !== menuId) m.classList.remove('open');
+      });
+    });
+  });
+
+  /* ── FAB ── */
+  document.getElementById('fabBtn').addEventListener('click', () => {
+    alert('La publication de créations arrive bientôt ! 🌿');
+  });
+
+  /* ── Fermer les menus au clic extérieur ── */
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.project-more-menu').forEach(m => m.classList.remove('open'));
+    sortMenu.classList.remove('open');
+    sortToggle.classList.remove('open');
+  });
+
+})();
+</script>
+{% endblock %}
