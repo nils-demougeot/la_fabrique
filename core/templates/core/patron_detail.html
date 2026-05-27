@@ -1,0 +1,727 @@
+{% extends 'core/header.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+
+  body { background: #FFFBFF; }
+
+  .detail-wrapper {
+    max-width: 390px;
+    margin: 0 auto;
+    padding: 16px 16px 130px;
+  }
+
+  /* ── Barre du haut (retour + badge accès) ── */
+  .page-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #65655E;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 8px 0;
+    transition: color 0.15s;
+  }
+  .back-btn:hover { color: #4E6C50; }
+  .back-btn svg { flex-shrink: 0; }
+
+  /* ── Section du haut ── */
+  .top-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  /* ── Carte Informations ── */
+  .info-card {
+    background: #FBFAF0;
+    border-radius: 32px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .info-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .info-card-header .green-dot {
+    width: 14px; height: 14px;
+    background: #237329;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .info-card-header h3 {
+    color: #383832;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 28px;
+  }
+
+  .info-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .info-row {
+    background: white;
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .info-row-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .info-row-icon {
+    width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    color: #845C32;
+  }
+  .info-row-label {
+    color: #65655E;
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .info-row-value {
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .info-row-value.green  { color: #237329; }
+  .info-row-value.neutral{ color: #383832; }
+  .info-row-value.orange { color: #B86300; }
+  .info-row-value.red    { color: #C62828; }
+
+  /* Matériel */
+  .materiel-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .materiel-title {
+    color: #65655E;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+  }
+  .materiel-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .materiel-chip {
+    background: #EFEEE3;
+    border-radius: 9999px;
+    padding: 7px 14px;
+    color: #383832;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    outline: 1px rgba(187, 185, 177, 0.20) solid;
+    outline-offset: -1px;
+  }
+  .chip-dot {
+    width: 5px; height: 5px;
+    background: #65655E;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Badge difficulté ── */
+  .difficulty-badge {
+    background: rgba(252, 200, 149, 0.30);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    outline: 1px rgba(252, 200, 149, 0.20) solid;
+    outline-offset: -1px;
+  }
+  .difficulty-icon-circle {
+    width: 48px; height: 48px;
+    background: #FCC895;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .difficulty-icon-circle svg { color: #634018; }
+  .difficulty-label-small {
+    color: rgba(99, 64, 24, 0.70);
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 16px;
+    margin-bottom: 2px;
+  }
+  .difficulty-value {
+    color: #634018;
+    font-family: 'Manrope', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 24px;
+  }
+
+  /* Accès premium */
+  .access-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .access-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #FCC895;
+    border-radius: 9999px;
+    padding: 3px 10px;
+    color: #634018;
+    font-family: 'Manrope', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .access-badge.free {
+    background: #D2F4D1;
+    color: #2F5E4A;
+  }
+
+  /* ── Carte photo (inclinée) ── */
+  .photo-card-wrapper {
+    transform: rotate(-1.2deg);
+    transform-origin: top left;
+  }
+  .photo-card {
+    background: white;
+    border-radius: 32px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.22);
+    position: relative;
+  }
+  .photo-card img {
+    width: 100%;
+    height: 270px;
+    object-fit: cover;
+    display: block;
+  }
+  .photo-placeholder {
+    width: 100%;
+    height: 270px;
+    background: linear-gradient(135deg, #D2F4D1 0%, #EFEEE3 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .photo-placeholder svg { width: 48px; height: 48px; color: #4E6C50; opacity: 0.4; }
+  .photo-overlay {
+    position: absolute;
+    left: 20px; right: 20px;
+    bottom: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 48px;
+    padding: 12px 22px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .photo-overlay-label {
+    color: #237329;
+    font-family: 'Manrope', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    line-height: 16px;
+    margin-bottom: 2px;
+  }
+  .photo-overlay-title {
+    color: #383832;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 32px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Description ── */
+  .description-section {
+    background: #FBFAF0;
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .description-section p {
+    color: #65655E;
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 26px;
+    margin: 0;
+  }
+
+  /* ── Section instructions ── */
+  .instructions-section {
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+  }
+  .instructions-header h2 {
+    color: #383832;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 36px;
+    margin: 0 0 6px 0;
+  }
+  .instructions-header p {
+    color: #65655E;
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    margin: 0;
+  }
+  .instructions-empty {
+    color: #65655E;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    text-align: center;
+    padding: 24px;
+    background: #FBFAF0;
+    border-radius: 20px;
+  }
+
+  /* ── Steps timeline ── */
+  .steps-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+  .step-item:last-child { margin-bottom: 0; }
+
+  .step-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: stretch;
+    flex-shrink: 0;
+  }
+  .step-number {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: #EAE9DD;
+    color: #383832;
+    font-family: 'Manrope', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .step-number.active {
+    background: #4E6C50;
+    color: white;
+    box-shadow: 0 4px 6px -4px rgba(78,108,80,0.30), 0 10px 15px -3px rgba(78,108,80,0.20);
+  }
+  .step-line {
+    width: 2px;
+    flex: 1;
+    min-height: 32px;
+    margin-top: 12px;
+    background: linear-gradient(180deg, rgba(78,108,80,0.30) 0%, rgba(78,108,80,0) 100%);
+    border-radius: 1px;
+  }
+
+  .step-card {
+    flex: 1;
+    background: #FBFAF0;
+    border-radius: 28px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+  .step-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .step-type-icon {
+    width: 20px; height: 20px;
+    color: #2E7D32;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .step-title {
+    color: #383832;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 26px;
+  }
+  .step-desc {
+    color: #65655E;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 24px;
+    margin: 0;
+  }
+  .step-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #4E6C50;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    margin-top: 4px;
+    transition: opacity 0.15s;
+  }
+  .step-link:hover { opacity: 0.75; }
+  .step-link svg { flex-shrink: 0; }
+
+  /* overlay top row (label + badge accès) */
+  .overlay-top-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2px;
+  }
+
+  /* ── CTA bas fixe ── */
+  .bottom-cta {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 390px;
+    background: rgba(254, 252, 243, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(187, 185, 177, 0.20);
+    box-shadow: 0 -10px 40px rgba(56, 56, 50, 0.06);
+    padding: 16px 24px 20px;
+    box-sizing: border-box;
+    z-index: 50;
+  }
+  .btn-start {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    background: #2E7D32;
+    color: white;
+    border: none;
+    border-radius: 9999px;
+    padding: 14px 24px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    text-align: center;
+  }
+  .btn-start:active { opacity: 0.85; transform: scale(0.98); }
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="detail-wrapper">
+
+  <!-- Barre retour + badge accès -->
+  <div class="page-top-bar">
+    <a href="{% url 'patrons' %}" class="back-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Retour aux patrons
+    </a>
+    {% if patron.estPremium %}
+    <span class="access-badge">✦ Premium</span>
+    {% else %}
+    <span class="access-badge free">✓ Gratuit</span>
+    {% endif %}
+  </div>
+
+  <!-- ═══════════════════════════
+       Photo + Description (haut)
+       ═══════════════════════════ -->
+  <div class="photo-card-wrapper" style="margin-bottom: 16px;">
+    <div class="photo-card">
+      {% if patron.photo %}
+      <img src="{{ patron.photo.url }}" alt="{{ patron.titre }}">
+      {% else %}
+      <div class="photo-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 9a2 2 0 0 1 2-2h.93a2 2 0 0 0 1.664-.89l.812-1.22A2 2 0 0 1 10.07 4h3.86a2 2 0 0 1 1.664.89l.812 1.22A2 2 0 0 0 18.07 7H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"/>
+          <circle cx="12" cy="13" r="3"/>
+        </svg>
+      </div>
+      {% endif %}
+      <div class="photo-overlay">
+        <div class="photo-overlay-label">Patron choisi</div>
+        <div class="photo-overlay-title">{{ patron.titre }}</div>
+      </div>
+    </div>
+  </div>
+
+  {% if patron.description %}
+  <div class="description-section">
+    <p>{{ patron.description }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ═══════════════════════════
+       Informations + Difficulté
+       ═══════════════════════════ -->
+  <div class="top-section">
+
+    <!-- Carte informations -->
+    <div class="info-card">
+      <div class="info-card-header">
+        <span class="green-dot"></span>
+        <h3>Informations</h3>
+      </div>
+
+      <div class="info-rows">
+
+        <!-- Surface -->
+        <div class="info-row">
+          <div class="info-row-left">
+            <div class="info-row-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </div>
+            <span class="info-row-label">Surface de tissu</span>
+          </div>
+          <span class="info-row-value green">{{ patron.surfaceMin }} – {{ patron.surfaceMax }} m²</span>
+        </div>
+
+        <!-- Durée -->
+        {% if patron.duree %}
+        <div class="info-row">
+          <div class="info-row-left">
+            <div class="info-row-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <span class="info-row-label">Durée estimée</span>
+          </div>
+          <span class="info-row-value neutral">{{ patron.duree }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Type -->
+        <div class="info-row">
+          <div class="info-row-left">
+            <div class="info-row-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/>
+              </svg>
+            </div>
+            <span class="info-row-label">Type d'objet</span>
+          </div>
+          <span class="info-row-value neutral">{{ patron.typeObjet }}</span>
+        </div>
+
+        <!-- Compatibilité -->
+        {% if compatibilite %}
+        <div class="info-row">
+          <div class="info-row-left">
+            <div class="info-row-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            </div>
+            <span class="info-row-label">Compatibilité</span>
+          </div>
+          <span class="info-row-value {% if compatibilite >= 80 %}green{% elif compatibilite >= 50 %}orange{% else %}red{% endif %}">
+            {{ compatibilite }}%
+          </span>
+        </div>
+        {% endif %}
+
+        <!-- Matériel -->
+        {% if materiel_list %}
+        <div class="materiel-card">
+          <div class="materiel-title">Matériel nécessaire</div>
+          <div class="materiel-chips">
+            {% for item in materiel_list %}
+            <span class="materiel-chip">
+              <span class="chip-dot"></span>{{ item }}
+            </span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <!-- Badge difficulté -->
+    <div class="difficulty-badge">
+      <div class="difficulty-icon-circle">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="difficulty-label-small">Niveau de difficulté</div>
+        <div class="difficulty-value">{{ difficulte_label }}</div>
+      </div>
+    </div>
+
+  </div><!-- /.top-section -->
+
+  <!-- ═══════════════════════════
+       Instructions (tutoriels)
+       ═══════════════════════════ -->
+  <div class="instructions-section">
+    <div class="instructions-header">
+      <h2>Instructions</h2>
+      <p>Rome ne s'est pas cousue en un jour.</p>
+    </div>
+
+    {% if tutoriels %}
+    <div class="steps-list">
+      {% for tuto in tutoriels %}
+      <div class="step-item">
+
+        <div class="step-indicator">
+          <div class="step-number {% if forloop.first %}active{% endif %}">
+            {{ forloop.counter }}
+          </div>
+          {% if not forloop.last %}
+          <div class="step-line"></div>
+          {% endif %}
+        </div>
+
+        <div class="step-card">
+          <div class="step-card-header">
+            {% with t=tuto.typeTutoriel|lower %}
+            {% if 'vid' in t %}
+            <svg class="step-type-icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            {% elif 'pdf' in t %}
+            <svg class="step-type-icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            {% else %}
+            <svg class="step-type-icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+            {% endif %}
+            {% endwith %}
+            <span class="step-title">{{ tuto.titre }}</span>
+          </div>
+
+          {% if tuto.description %}
+          <p class="step-desc">{{ tuto.description }}</p>
+          {% endif %}
+
+          <a href="{{ tuto.urlVideoOuArticle }}"
+             target="_blank" rel="noopener noreferrer"
+             class="step-link">
+            Voir sur {{ tuto.source }}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </a>
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="instructions-empty">Aucune instruction disponible pour ce patron.</p>
+    {% endif %}
+
+  </div>
+
+</div><!-- /.detail-wrapper -->
+
+<!-- ═══════════════════════════
+     CTA fixe en bas
+     ═══════════════════════════ -->
+<div class="bottom-cta">
+  <button class="btn-start">Démarrer le projet</button>
+</div>
+
+{% endblock %}

@@ -1,10 +1,11 @@
 import json
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
+from django.db.models import Sum
 import math
 
-from core.models import Vetement, Utilisateur
+from core.models import Vetement, Utilisateur, Patron
 
 def home(request):
     context = {
@@ -154,42 +155,60 @@ def ajout_textile(request):
     return render(request, 'core/ajout_textile.html', context)
 
 
+DIFFICULTE_LABELS = {1: 'Débutant', 2: 'Intermédiaire', 3: 'Avancé'}
+
+
+def _compatibilite(surface_user, surface_min):
+    if surface_min and surface_min > 0 and surface_user > 0:
+        return min(100, round((surface_user / surface_min) * 100))
+    return 0
+
+
 @login_required
 def patrons(request):
-    DIFFICULTE_LABELS = {1: 'Débutant', 2: 'Intermédiaire', 3: 'Avancé'}
+    surface_user = (
+        Vetement.objects
+        .filter(utilisateur=request.user)
+        .aggregate(total=Sum('surfaceExploitable'))['total'] or 0.0
+    )
 
-    # TODO: remplacer par Patron.objects.all() avec calcul de compatibilité
-    # depuis sum(Vetement.surfaceExploitable) de l'utilisateur
-    patrons_list = [
-        {
-            'titre': 'Crop Top',
-            'image': None,
-            'compatibilite': 95,
-            'tissu': 'Cotton',
-            'difficulte_label': DIFFICULTE_LABELS[1],
-            'duree': '2h',
-            'est_premium': False,
-        },
-        {
-            'titre': 'Bob',
-            'image': None,
-            'compatibilite': 89,
-            'tissu': 'Jean',
-            'difficulte_label': DIFFICULTE_LABELS[1],
-            'duree': '2h',
-            'est_premium': False,
-        },
-        {
-            'titre': 'Tote bag patchwork',
-            'image': None,
-            'compatibilite': 79,
-            'tissu': 'Laine',
-            'difficulte_label': DIFFICULTE_LABELS[2],
-            'duree': '3h',
-            'est_premium': True,
-        },
-    ]
+    patrons_list = []
+    for p in Patron.objects.all().order_by('difficulte'):
+        patrons_list.append({
+            'id': p.pk,
+            'titre': p.titre,
+            'image': p.photo.url if p.photo else None,
+            'compatibilite': _compatibilite(surface_user, p.surfaceMin),
+            'tissu': p.typeObjet,
+            'difficulte_label': DIFFICULTE_LABELS.get(p.difficulte, str(p.difficulte)),
+            'duree': p.duree or '?',
+            'est_premium': p.estPremium,
+        })
+
     return render(request, 'core/patrons.html', {'patrons': patrons_list})
+
+
+@login_required
+def patron_detail(request, pk):
+    patron = get_object_or_404(Patron, pk=pk)
+    tutoriels = patron.tutoriels.all()
+
+    surface_user = (
+        Vetement.objects
+        .filter(utilisateur=request.user)
+        .aggregate(total=Sum('surfaceExploitable'))['total'] or 0.0
+    )
+
+    materiel_list = [m.strip() for m in patron.materiel.split(',') if m.strip()] if patron.materiel else []
+
+    context = {
+        'patron': patron,
+        'tutoriels': tutoriels,
+        'difficulte_label': DIFFICULTE_LABELS.get(patron.difficulte, str(patron.difficulte)),
+        'compatibilite': _compatibilite(surface_user, patron.surfaceMin),
+        'materiel_list': materiel_list,
+    }
+    return render(request, 'core/patron_detail.html', context)
 
 
 def inscription(request):

@@ -28,23 +28,27 @@ class Vetement(models.Model):
         return f"{self.nomVetement} - {self.utilisateur.username}"
 
 class Patron(models.Model):
-    titre = models.CharField(max_length=30)
-    description = models.CharField(max_length=100)
-    typeObjet = models.CharField(max_length=30)
+    titre = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    typeObjet = models.CharField(max_length=50)
     surfaceMin = models.FloatField()
     surfaceMax = models.FloatField()
     estPremium = models.BooleanField(default=False)
     difficulte = models.IntegerField()
+    photo = models.ImageField(upload_to='patrons/', null=True, blank=True)
+    duree = models.CharField(max_length=20, blank=True, null=True)
+    materiel = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.titre
 
 class Tutoriel(models.Model):
     patron = models.ForeignKey(Patron, on_delete=models.CASCADE, related_name='tutoriels')
-    titre = models.CharField(max_length=30)
+    titre = models.CharField(max_length=100)
     typeTutoriel = models.CharField(max_length=30)
-    urlVideoOuArticle = models.CharField(max_length=100)
-    source = models.CharField(max_length=30)
+    urlVideoOuArticle = models.CharField(max_length=500)
+    source = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.titre
