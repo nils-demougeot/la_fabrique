@@ -4,16 +4,17 @@
      Barre de navigation inférieure
      ========================================= */
   .bottom-nav {
-    height: 72px;
     background: #FEFCF3;
     border-top: 1.5px solid #EEEDE3;
     display: flex;
     align-items: center;
     justify-content: space-around;
     padding: 0 4px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     z-index: 20;
     flex-shrink: 0;
     position: relative;
+    min-height: 72px;
   }
 
   /* Onglet standard */
@@ -27,7 +28,7 @@
     text-decoration: none;
     color: #B3B2A4;
     padding: 8px 0 10px;
-    height: 100%;
+    height: 72px;
     transition: color 0.15s ease;
   }
 
@@ -64,7 +65,7 @@
     line-height: 1;
   }
 
-  /* Scanner — bouton surélevé (action principale) */
+  /* ── Scanner — étoile ── */
   .nav-scanner-wrapper {
     flex: 1;
     display: flex;
@@ -74,30 +75,47 @@
     gap: 5px;
     text-decoration: none;
     padding-bottom: 10px;
-    height: 100%;
+    height: 72px;
   }
 
   .nav-scanner-btn {
-    width: 58px;
-    height: 58px;
-    background: var(--color-primary);
-    border-radius: 50%;
+    width: 62px;
+    height: 62px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin-top: -30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 18px rgba(35, 115, 41, 0.40);
-    border: 4px solid #FEFCF3;
-    margin-top: -34px;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
     flex-shrink: 0;
+    transition: transform 0.15s ease;
   }
 
   .nav-scanner-btn:active {
-    transform: scale(0.93);
-    box-shadow: 0 2px 8px rgba(35, 115, 41, 0.28);
+    transform: scale(0.92);
   }
 
-  .nav-scanner-btn svg {
+  /* Étoile SVG en fond absolu */
+  .star-shape {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 4px 12px rgba(35, 115, 41, 0.45));
+    transition: filter 0.15s ease;
+  }
+
+  .nav-scanner-btn:active .star-shape {
+    filter: drop-shadow(0 2px 6px rgba(35, 115, 41, 0.25));
+  }
+
+  /* Icône caméra au-dessus de l'étoile */
+  .scanner-icon {
+    position: relative;
+    z-index: 1;
     width: 26px;
     height: 26px;
     flex-shrink: 0;
@@ -161,19 +179,40 @@
     <span class="nav-label">Mes pièces</span>
   </a>
 
-  <!-- 3. Scanner — action principale, bouton surélevé -->
+  <!-- 3. Scanner — étoile multi-branches -->
   <a href="{% url 'ajout_textile' %}" class="nav-scanner-wrapper">
     <div class="nav-scanner-btn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+
+      <!-- Étoile 12 branches smooth -->
+      <svg class="star-shape" viewBox="-4 -4 68 68" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <polygon
+          points="
+            30,0  35.69,8.75  45,4.02  45.56,14.44
+            55.98,15  51.25,24.31  60,30  51.25,35.69
+            55.98,45  45.56,45.56  45,55.98  35.69,51.25
+            30,60  24.31,51.25  15,55.98  14.44,45.56
+            4.02,45  8.75,35.69  0,30  8.75,24.31
+            4.02,15  14.44,14.44  15,4.02  24.31,8.75
+          "
+          fill="var(--color-primary)"
+          stroke="var(--color-primary)"
+          stroke-width="5"
+          stroke-linejoin="round"
+        />
+      </svg>
+
+      <!-- Icône caméra -->
+      <svg class="scanner-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
         <circle cx="12" cy="13" r="4"/>
       </svg>
+
     </div>
     <span class="nav-scanner-label">Scanner</span>
   </a>
 
   <!-- 4. Patrons -->
-  <a href="#" class="nav-item {% if nav_active == 'patrons' %}active{% endif %}">
+  <a href="{% url 'patrons' %}" class="nav-item {% if nav_active == 'patrons' %}active{% endif %}">
     <div class="nav-icon-bg">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -195,7 +234,6 @@
           <path d="M23 21v-2a4 4 0 00-3-3.87"/>
           <path d="M16 3.13a4 4 0 010 7.75"/>
         </svg>
-        {# Décommenter + mettre un nombre pour afficher le badge de notif : #}
         {# <span class="nav-badge">3</span> #}
       </div>
     </div>
