@@ -1,0 +1,67 @@
+[
+  {
+    "model": "core.etapepatron",
+    "pk": 1,
+    "fields": {
+      "patron": 1,
+      "numero": 1,
+      "titre": "Préparation du matériel",
+      "description": "Avant de commencer, rassemblez tout votre matériel sur une surface de travail propre et bien éclairée. Inspectez votre tissu en jean : repérez les zones usées, les taches ou les coutures existantes que vous souhaitez conserver ou éviter. Lavez et repassez le tissu si ce n'est pas encore fait — un tissu propre et plat donne des coutures bien plus propres.",
+      "video_url": null,
+      "conseil": "Préparez une petite coupelle avec vos épingles et votre marqueur à tissu bien à portée de main. Un poste de travail organisé évite les erreurs et les recherches en cours de route.",
+      "materiaux_etape": "Tissu en jean recyclé (min. 50 x 80 cm), Ciseaux à tissu, Épingles de couturière, Marqueur à tissu effaçable, Fer à repasser"
+    }
+  },
+  {
+    "model": "core.etapepatron",
+    "pk": 2,
+    "fields": {
+      "patron": 1,
+      "numero": 2,
+      "titre": "Découpe du tissu",
+      "description": "Posez votre tissu bien à plat sur la table. Utilisez le marqueur à tissu pour tracer les pièces selon les dimensions suivantes : deux rectangles de 36 x 40 cm pour le corps du sac, et deux bandes de 8 x 50 cm pour les anses. Vérifiez bien que vous êtes dans le sens du fil avant de couper. Coupez ensuite avec des ciseaux à tissu en suivant précisément les traits.",
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "conseil": "Conservez les chutes de tissu ! Vous pourrez les utiliser pour les poches intérieures ou pour ajouter des détails patchwork décoratifs à votre sac.",
+      "materiaux_etape": "Ciseaux à tissu, Marqueur à tissu effaçable, Règle plate (30 cm minimum), Épingles de couturière"
+    }
+  },
+  {
+    "model": "core.etapepatron",
+    "pk": 3,
+    "fields": {
+      "patron": 1,
+      "numero": 3,
+      "titre": "Assemblage des côtés",
+      "description": "Placez les deux rectangles endroit contre endroit (les faces visibles se font face). Épinglez les trois côtés à assembler : les deux côtés et le fond. Cousez avec un point droit, en laissant une marge de couture de 1 cm. Renforcez les coins en faisant quelques points arrière. Une fois cousu, repassez les marges de couture ouvertes pour un résultat plus net.",
+      "video_url": null,
+      "conseil": "Pour que les coins du fond soient bien carrés, créez des « soufflets » : pincez chaque coin inférieur en formant un triangle de 3 cm, épinglez et cousez perpendiculairement à la couture du fond.",
+      "materiaux_etape": "Machine à coudre, Fil résistant (couleur assortie), Épingles de couturière, Fer à repasser"
+    }
+  },
+  {
+    "model": "core.etapepatron",
+    "pk": 4,
+    "fields": {
+      "patron": 1,
+      "numero": 4,
+      "titre": "Création des anses",
+      "description": "Pliez chaque bande d'anse en deux dans le sens de la longueur, endroit contre endroit, puis cousez le long bord sur toute la longueur avec 0,5 cm de marge. Retournez la bande à l'endroit à l'aide d'une épingle à nourrice. Repassez bien à plat pour que l'anse soit rectiligne. Cousez une rangée de surpiqûre à 3 mm de chaque bord pour solidifier l'anse.",
+      "video_url": null,
+      "conseil": "Pour retourner facilement les anses, attachez une épingle à nourrice à une extrémité, glissez-la à l'intérieur du tube et faites-la glisser jusqu'à l'autre bout. Le tissu se retourne naturellement.",
+      "materiaux_etape": "Machine à coudre, Fil résistant, Épingle à nourrice, Fer à repasser"
+    }
+  },
+  {
+    "model": "core.etapepatron",
+    "pk": 5,
+    "fields": {
+      "patron": 1,
+      "numero": 5,
+      "titre": "Fixation des anses et finitions",
+      "description": "Retournez le sac à l'endroit. Positionnez les anses en les glissant de 5 cm à l'intérieur du bord supérieur du sac, à 8 cm des coutures latérales de chaque côté. Épinglez-les bien droit. Repliez le bord supérieur du sac de 1 cm puis de 3 cm vers l'intérieur pour créer l'ourlet. Cousez tout le tour en passant sur les anses pour les fixer solidement. Faites un carré cousu en X sur chaque point d'attache pour un renfort maximum.",
+      "video_url": null,
+      "conseil": "Avant de coudre définitivement, testez la solidité de vos anses en tirant dessus fermement. Le point carré renforcé en X est la technique professionnelle pour les sacs qui doivent supporter un poids régulier.",
+      "materiaux_etape": "Machine à coudre, Fil résistant, Épingles de couturière, Ciseaux à ongles (pour les fils), Fer à repasser"
+    }
+  }
+]

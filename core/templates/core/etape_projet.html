@@ -1,0 +1,569 @@
+{% extends 'core/header.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+
+  /* ── Barre de progression sticky ── */
+  .progress-bar-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: rgba(255, 251, 255, 0.80);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .progress-track {
+    width: 100%;
+    height: 4px;
+    background: #F7F4DE;
+  }
+  .progress-fill {
+    height: 4px;
+    background: #237329;
+    transition: width 0.4s ease;
+  }
+
+  /* ── Contenu principal ── */
+  .etape-wrapper {
+    padding: 24px 24px 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  /* ── Carte vidéo ── */
+  .video-card {
+    background: #ECE9D1;
+    border-radius: 48px;
+    overflow: hidden;
+    box-shadow: 0 8px 10px -6px rgba(0,0,0,0.10), 0 20px 25px -5px rgba(0,0,0,0.10);
+    position: relative;
+    aspect-ratio: 16/9;
+    cursor: pointer;
+  }
+  .video-card iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+  .video-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .video-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.10);
+    backdrop-filter: blur(1px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .play-btn {
+    width: 80px;
+    height: 80px;
+    background: #237329;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    flex-shrink: 0;
+    transition: transform 0.15s;
+  }
+  .play-btn:hover { transform: scale(1.07); }
+  .play-btn svg {
+    width: 24px;
+    height: 24px;
+    color: white;
+    margin-left: 4px;
+  }
+  .video-hint {
+    background: #FDFAE5;
+    border-radius: 32px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    outline: 1px rgba(188, 186, 168, 0.15) solid;
+    outline-offset: -1px;
+  }
+  .video-hint-icon {
+    width: 18px;
+    height: 18px;
+    color: #237329;
+    flex-shrink: 0;
+  }
+  .video-hint p {
+    color: #666556;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 22px;
+    margin: 0;
+  }
+
+  /* ── Section titre + description ── */
+  .step-header {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .step-badge {
+    display: inline-flex;
+    padding: 4px 16px;
+    background: #FFC4B5;
+    border-radius: 9999px;
+    width: fit-content;
+  }
+  .step-badge span {
+    color: #7C2E19;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 24px;
+  }
+  .step-titre {
+    color: #39382B;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 40px;
+    margin: 0;
+  }
+  .step-description {
+    color: #666556;
+    font-family: 'Manrope', sans-serif;
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 28px;
+    margin: 0;
+  }
+
+  /* ── Carte matériaux ── */
+  .materiaux-card {
+    background: #FBFAF0;
+    border-radius: 32px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+  .materiaux-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .materiaux-header-icon {
+    width: 20px;
+    height: 20px;
+    color: #237329;
+    flex-shrink: 0;
+  }
+  .materiaux-header h3 {
+    color: #39382B;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 28px;
+    margin: 0;
+  }
+  .materiau-item {
+    background: white;
+    border-radius: 32px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .materiau-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .materiau-icon {
+    width: 20px;
+    height: 20px;
+    color: #666556;
+    flex-shrink: 0;
+  }
+  .materiau-label {
+    color: #39382B;
+    font-family: 'Manrope', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
+  }
+
+  /* Cercle de check – owned */
+  .check-circle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #BCBAA8;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .check-circle.owned {
+    background: #237329;
+    border-color: #237329;
+  }
+  .check-circle svg {
+    display: none;
+    width: 13px;
+    height: 13px;
+    color: white;
+  }
+  .check-circle.owned svg {
+    display: block;
+  }
+  /* Item highlight quand owned */
+  .materiau-item.owned-item {
+    outline: 2px solid rgba(35, 115, 41, 0.15);
+    outline-offset: -2px;
+  }
+
+  /* ── Carte conseil ── */
+  .conseil-card {
+    background: rgba(192, 244, 217, 0.30);
+    border-radius: 32px;
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    outline: 1px rgba(62, 110, 89, 0.10) solid;
+    outline-offset: -1px;
+  }
+  .conseil-icon {
+    width: 20px;
+    height: 20px;
+    color: #32614D;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .conseil-text {
+    color: #2F5E4A;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 22px;
+    margin: 0;
+  }
+
+  /* ── Barre navigation bas ── */
+  .bottom-nav-etape {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 390px;
+    padding: 12px 16px 24px;
+    box-sizing: border-box;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* Pilule gauche avec deux icônes */
+  .nav-left-pill {
+    display: flex;
+    align-items: center;
+    background: rgba(253, 250, 229, 0.92);
+    border-radius: 9999px;
+    padding: 10px 12px;
+    gap: 2px;
+    outline: 1px rgba(188, 186, 168, 0.20) solid;
+    outline-offset: -1px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 -10px 40px rgba(57, 56, 43, 0.08);
+    flex-shrink: 0;
+  }
+  .nav-icon-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    color: #666556;
+    text-decoration: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .nav-icon-btn:hover { background: rgba(188, 186, 168, 0.20); }
+  .nav-icon-btn svg { width: 20px; height: 20px; }
+  .nav-pill-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(188, 186, 168, 0.50);
+    flex-shrink: 0;
+  }
+
+  /* Bouton continuer / terminer */
+  .btn-continuer {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #237329;
+    color: white;
+    border: none;
+    border-radius: 9999px;
+    padding: 16px 20px;
+    box-shadow: 0 4px 6px -4px rgba(0,0,0,0.12), 0 10px 15px -3px rgba(0,0,0,0.10);
+    cursor: pointer;
+    text-decoration: none;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 28px;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-continuer:hover { opacity: 0.92; }
+  .btn-continuer:active { transform: scale(0.98); }
+  .btn-continuer svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .btn-terminer { background: #A24A33; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Barre de progression -->
+  <div class="progress-bar-wrapper">
+    <div class="progress-track">
+      <div class="progress-fill" style="width: {{ progression }}%;"></div>
+    </div>
+  </div>
+
+  <div class="etape-wrapper">
+
+    <!-- ── Vidéo ── -->
+    {% if video_embed_id %}
+    <div>
+      <div class="video-card" id="videoCard" data-video-id="{{ video_embed_id }}">
+        <img
+          class="video-thumbnail"
+          src="https://img.youtube.com/vi/{{ video_embed_id }}/hqdefault.jpg"
+          alt="Vignette vidéo"
+        >
+        <div class="video-overlay" id="videoOverlay">
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="video-hint">
+        <svg class="video-hint-icon" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        <p>Regarder : comment réaliser cette étape en vidéo</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── En-tête de l'étape ── -->
+    <div class="step-header">
+      <div class="step-badge">
+        <span>ÉTAPE {{ etape_num|stringformat:"02d" }}</span>
+      </div>
+      <h1 class="step-titre">{{ etape.titre }}</h1>
+      <p class="step-description">{{ etape.description }}</p>
+    </div>
+
+    <!-- ── Matériaux ── -->
+    {% if materiaux_list %}
+    <div class="materiaux-card">
+      <div class="materiaux-header">
+        <svg class="materiaux-header-icon" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 12l2 2 4-4"/>
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+        <h3>Matériel pour cette étape</h3>
+      </div>
+      <div id="materiauxList">
+        {% for materiau in materiaux_list %}
+        <div class="materiau-item" data-mat="{{ materiau }}"
+             {% if not forloop.last %}style="margin-bottom: 12px;"{% endif %}>
+          <div class="materiau-item-left">
+            <svg class="materiau-icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              {% with m=materiau|lower %}
+              {% if 'ciseau' in m or 'cutter' in m %}
+              <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>
+              <line x1="20" y1="4" x2="8.12" y2="15.88"/>
+              <line x1="14.47" y1="14.48" x2="20" y2="20"/>
+              <line x1="8.12" y1="8.12" x2="12" y2="12"/>
+              {% elif 'marqueur' in m or 'craie' in m or 'stylo' in m %}
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              {% elif 'règle' in m or 'regle' in m or 'ruban' in m %}
+              <path d="M21.3 8.7l-8.6 8.6c-.4.4-1 .4-1.4 0L3.3 9.3a1 1 0 010-1.4L11.9.3a1 1 0 011.4 0l8 8c.4.4.4 1 0 1.4z"/>
+              <line x1="7.5" y1="15.5" x2="10" y2="13"/>
+              {% elif 'machine' in m %}
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+              <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+              {% elif 'épingle' in m or 'aiguille' in m or 'fil' in m %}
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+              {% elif 'fer' in m %}
+              <path d="M3 12h13a2 2 0 012 2v3H3v-5z"/>
+              <path d="M3 17v2"/><path d="M18 17v2"/><path d="M14 12V8a2 2 0 00-2-2H8"/>
+              {% else %}
+              <circle cx="12" cy="12" r="4"/>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+              {% endif %}
+              {% endwith %}
+            </svg>
+            <span class="materiau-label">{{ materiau }}</span>
+          </div>
+          <div class="check-circle" data-mat-check="{{ materiau }}">
+            <svg viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="3"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Conseil ── -->
+    {% if etape.conseil %}
+    <div class="conseil-card">
+      <svg class="conseil-icon" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <p class="conseil-text"><strong>Astuce :</strong> {{ etape.conseil }}</p>
+    </div>
+    {% endif %}
+
+  </div><!-- /.etape-wrapper -->
+
+  <!-- ── Barre navigation bas ── -->
+  <div class="bottom-nav-etape">
+
+    <!-- Pilule gauche : retour + aperçu patron -->
+    <div class="nav-left-pill">
+      {% if etape_precedente_num %}
+      <a href="{% url 'etape_projet' patron_pk=patron.pk etape_num=etape_precedente_num %}"
+         class="nav-icon-btn" title="Étape précédente">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </a>
+      {% else %}
+      <a href="{% url 'patron_detail' pk=patron.pk %}"
+         class="nav-icon-btn" title="Retour au patron">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </a>
+      {% endif %}
+
+      <div class="nav-pill-divider"></div>
+
+      <a href="{% url 'patron_detail' pk=patron.pk %}"
+         class="nav-icon-btn" title="Voir le patron">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+      </a>
+    </div>
+
+    <!-- Bouton continuer / terminer -->
+    {% if est_derniere %}
+    <a href="{% url 'patrons' %}" class="btn-continuer btn-terminer">
+      Terminer
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </a>
+    {% else %}
+    <a href="{% url 'etape_projet' patron_pk=patron.pk etape_num=etape_suivante_num %}"
+       class="btn-continuer">
+      Continuer
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </a>
+    {% endif %}
+
+  </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  /* ── Lecture localStorage ── */
+  const STORAGE_KEY = 'lafabrique_owned_materials';
+  function getOwned() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch(e) { return []; }
+  }
+  function normalise(s) { return s.trim().toLowerCase(); }
+
+  /* ── Appliquer l'état owned à chaque matériau ── */
+  const owned = getOwned();
+  document.querySelectorAll('.materiau-item[data-mat]').forEach(item => {
+    const key = normalise(item.dataset.mat);
+    const circle = item.querySelector('.check-circle');
+    if (owned.includes(key)) {
+      circle.classList.add('owned');
+      item.classList.add('owned-item');
+    }
+  });
+
+  /* ── Vidéo : clic pour lancer l'iframe ── */
+  const videoCard = document.getElementById('videoCard');
+  if (videoCard) {
+    videoCard.addEventListener('click', () => {
+      const videoId = videoCard.dataset.videoId;
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+      iframe.allow = 'autoplay; encrypted-media';
+      iframe.allowFullscreen = true;
+      iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;';
+      videoCard.style.position = 'relative';
+      videoCard.innerHTML = '';
+      videoCard.appendChild(iframe);
+    });
+  }
+</script>
+{% endblock %}

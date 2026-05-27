@@ -464,8 +464,44 @@
     cursor: pointer;
     transition: opacity 0.15s, transform 0.1s;
     text-align: center;
+    text-decoration: none;
   }
   .btn-start:active { opacity: 0.85; transform: scale(0.98); }
+
+  /* Matériel clicable */
+  .materiel-chip {
+    background: #EFEEE3;
+    border-radius: 9999px;
+    padding: 7px 14px;
+    color: #383832;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    outline: 1px rgba(187, 185, 177, 0.20) solid;
+    outline-offset: -1px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .materiel-chip .chip-dot {
+    width: 6px;
+    height: 6px;
+    background: #65655E;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .materiel-chip.owned {
+    background: #D2F4D1;
+    color: #1B5E20;
+    outline-color: rgba(35, 115, 41, 0.20);
+  }
+  .materiel-chip.owned .chip-dot {
+    background: #237329;
+  }
 
 </style>
 {% endblock %}
@@ -602,15 +638,37 @@
         </div>
         {% endif %}
 
+        <!-- Nombre d'étapes -->
+        {% if etapes %}
+        <div class="info-row">
+          <div class="info-row-left">
+            <div class="info-row-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+            </div>
+            <span class="info-row-label">Nombre d'étapes</span>
+          </div>
+          <span class="info-row-value neutral">{{ etapes|length }} étape{{ etapes|length|pluralize }}</span>
+        </div>
+        {% endif %}
+
         <!-- Matériel -->
         {% if materiel_list %}
         <div class="materiel-card">
-          <div class="materiel-title">Matériel nécessaire</div>
-          <div class="materiel-chips">
+          <div class="materiel-title">Matériel nécessaire — tap pour cocher ce que tu as</div>
+          <div class="materiel-chips" id="materielChips">
             {% for item in materiel_list %}
-            <span class="materiel-chip">
+            <button class="materiel-chip" data-material="{{ item }}">
               <span class="chip-dot"></span>{{ item }}
-            </span>
+            </button>
             {% endfor %}
           </div>
         </div>
@@ -638,17 +696,17 @@
   </div><!-- /.top-section -->
 
   <!-- ═══════════════════════════
-       Instructions (tutoriels)
+       Instructions (étapes)
        ═══════════════════════════ -->
   <div class="instructions-section">
     <div class="instructions-header">
       <h2>Instructions</h2>
-      <p>Rome ne s'est pas cousue en un jour.</p>
+      <p>{{ etapes|length }} étape{{ etapes|length|pluralize }} pour réaliser ce projet.</p>
     </div>
 
-    {% if tutoriels %}
+    {% if etapes %}
     <div class="steps-list">
-      {% for tuto in tutoriels %}
+      {% for etape in etapes %}
       <div class="step-item">
 
         <div class="step-indicator">
@@ -662,19 +720,11 @@
 
         <div class="step-card">
           <div class="step-card-header">
-            {% with t=tuto.typeTutoriel|lower %}
-            {% if 'vid' in t %}
+            {% if etape.video_url %}
             <svg class="step-type-icon" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round">
               <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
-            {% elif 'pdf' in t %}
-            <svg class="step-type-icon" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
             </svg>
             {% else %}
             <svg class="step-type-icon" viewBox="0 0 24 24" fill="none"
@@ -684,26 +734,10 @@
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
             </svg>
             {% endif %}
-            {% endwith %}
-            <span class="step-title">{{ tuto.titre }}</span>
+            <span class="step-title">{{ etape.titre }}</span>
           </div>
 
-          {% if tuto.description %}
-          <p class="step-desc">{{ tuto.description }}</p>
-          {% endif %}
-
-          <a href="{{ tuto.urlVideoOuArticle }}"
-             target="_blank" rel="noopener noreferrer"
-             class="step-link">
-            Voir sur {{ tuto.source }}
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2.5"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-          </a>
+          <p class="step-desc">{{ etape.description|truncatechars:120 }}</p>
         </div>
 
       </div>
@@ -721,7 +755,44 @@
      CTA fixe en bas
      ═══════════════════════════ -->
 <div class="bottom-cta">
-  <button class="btn-start">Démarrer le projet</button>
+  {% if premiere_etape %}
+  <a href="{% url 'etape_projet' patron_pk=patron.pk etape_num=1 %}" class="btn-start">
+    Démarrer le projet
+  </a>
+  {% else %}
+  <button class="btn-start" disabled style="opacity: 0.5; cursor: not-allowed;">
+    Instructions bientôt disponibles
+  </button>
+  {% endif %}
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const STORAGE_KEY = 'lafabrique_owned_materials';
+
+  function getOwned() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch(e) { return []; }
+  }
+  function saveOwned(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
+  function normalise(s) { return s.trim().toLowerCase(); }
+
+  document.querySelectorAll('.materiel-chip[data-material]').forEach(btn => {
+    if (getOwned().includes(normalise(btn.dataset.material))) btn.classList.add('owned');
+    btn.addEventListener('click', () => {
+      let current = getOwned();
+      const k = normalise(btn.dataset.material);
+      if (current.includes(k)) {
+        current = current.filter(x => x !== k);
+        btn.classList.remove('owned');
+      } else {
+        current.push(k);
+        btn.classList.add('owned');
+      }
+      saveOwned(current);
+    });
+  });
+</script>
 {% endblock %}

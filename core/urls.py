@@ -7,6 +7,7 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('patrons/', views.patrons, name='patrons'),
     path('patrons/<int:pk>/', views.patron_detail, name='patron_detail'),
+    path('patrons/<int:patron_pk>/etape/<int:etape_num>/', views.etape_projet, name='etape_projet'),
     path('ajout_textile/', views.ajout_textile, name='ajout_textile'),
 
     path('connexion/', auth_views.LoginView.as_view(template_name='core/connexion.html'), name='connexion'),

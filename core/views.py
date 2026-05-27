@@ -1,11 +1,12 @@
 import json
+import re
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.db.models import Sum
 import math
 
-from core.models import Vetement, Utilisateur, Patron
+from core.models import Vetement, Utilisateur, Patron, EtapePatron
 
 def home(request):
     context = {
@@ -199,16 +200,81 @@ def patron_detail(request, pk):
         .aggregate(total=Sum('surfaceExploitable'))['total'] or 0.0
     )
 
-    materiel_list = [m.strip() for m in patron.materiel.split(',') if m.strip()] if patron.materiel else []
+    etapes = list(patron.etapes.order_by('numero'))
+    premiere_etape = etapes[0] if etapes else None
+
+    all_materiel_set = []
+    seen = set()
+    if patron.materiel:
+        for m in patron.materiel.split(','):
+            m = m.strip()
+            if m and m.lower() not in seen:
+                seen.add(m.lower())
+                all_materiel_set.append(m)
+    for etape in etapes:
+        if etape.materiaux_etape:
+            for m in etape.materiaux_etape.split(','):
+                m = m.strip()
+                if m and m.lower() not in seen:
+                    seen.add(m.lower())
+                    all_materiel_set.append(m)
 
     context = {
         'patron': patron,
         'tutoriels': tutoriels,
+        'etapes': etapes,
+        'premiere_etape': premiere_etape,
         'difficulte_label': DIFFICULTE_LABELS.get(patron.difficulte, str(patron.difficulte)),
         'compatibilite': _compatibilite(surface_user, patron.surfaceMin),
-        'materiel_list': materiel_list,
+        'materiel_list': all_materiel_set,
     }
     return render(request, 'core/patron_detail.html', context)
+
+
+@login_required
+def etape_projet(request, patron_pk, etape_num):
+    patron = get_object_or_404(Patron, pk=patron_pk)
+    etapes = list(patron.etapes.order_by('numero'))
+
+    if not etapes:
+        return redirect('patron_detail', pk=patron_pk)
+
+    if etape_num < 1 or etape_num > len(etapes):
+        return redirect('patron_detail', pk=patron_pk)
+
+    etape_index = etape_num - 1
+    etape_actuelle = etapes[etape_index]
+    total = len(etapes)
+
+    progression = round((etape_num / total) * 100)
+
+    etape_precedente = etapes[etape_index - 1] if etape_index > 0 else None
+    etape_suivante = etapes[etape_index + 1] if etape_index < total - 1 else None
+
+    materiaux_list = (
+        [m.strip() for m in etape_actuelle.materiaux_etape.split(',') if m.strip()]
+        if etape_actuelle.materiaux_etape else []
+    )
+
+    video_embed_id = None
+    if etape_actuelle.video_url:
+        match = re.search(r'(?:v=|youtu\.be/)([A-Za-z0-9_-]{11})', etape_actuelle.video_url)
+        if match:
+            video_embed_id = match.group(1)
+
+    context = {
+        'patron': patron,
+        'etape': etape_actuelle,
+        'etape_num': etape_num,
+        'total_etapes': total,
+        'progression': progression,
+        'etape_precedente_num': etape_num - 1 if etape_precedente else None,
+        'etape_suivante_num': etape_num + 1 if etape_suivante else None,
+        'materiaux_list': materiaux_list,
+        'video_embed_id': video_embed_id,
+        'est_derniere': etape_suivante is None,
+    }
+    return render(request, 'core/etape_projet.html', context)
 
 
 def inscription(request):

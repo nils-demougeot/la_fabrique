@@ -77,3 +77,18 @@ class AchatPatron(models.Model):
     nombrePieceUtilisees = models.IntegerField(default=0)
     montantEuro = models.FloatField(default=0.0)
     #coucouuu
+
+class EtapePatron(models.Model):
+    patron = models.ForeignKey(Patron, on_delete=models.CASCADE, related_name='etapes')
+    numero = models.IntegerField()
+    titre = models.CharField(max_length=200)
+    description = models.TextField()
+    video_url = models.CharField(max_length=500, blank=True, null=True)
+    conseil = models.TextField(blank=True, null=True)
+    materiaux_etape = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['numero']
+
+    def __str__(self):
+        return f"Étape {self.numero} - {self.titre} ({self.patron.titre})"
