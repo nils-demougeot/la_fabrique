@@ -1,5 +1,7 @@
+import base64
 import json
 import re
+from django.core.files.base import ContentFile
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
@@ -121,7 +123,12 @@ def ajout_textile(request):
                 type_vetement = request.POST.get('clothing_type', 'inconnu')
                 largeur_cm = float(request.POST.get('width', 0))
                 hauteur_cm = float(request.POST.get('height', 0))
-                photo_fichier = request.FILES.get('photo')
+                photo_fichier = None
+                photo_data = request.POST.get('photo_data', '')
+                if photo_data and ';base64,' in photo_data:
+                    fmt, imgstr = photo_data.split(';base64,')
+                    ext = fmt.split('/')[-1]
+                    photo_fichier = ContentFile(base64.b64decode(imgstr), name=f'vetement.{ext}')
 
                 nouveau_vetement = Vetement.objects.create(
                     utilisateur=request.user,
@@ -280,10 +287,6 @@ def etape_projet(request, patron_pk, etape_num):
 @login_required
 def communaute(request):
     return render(request, 'core/communaute.html')
-
-
-def camera_demo(request):
-    return render(request, 'core/camera_demo.html')
 
 
 def inscription(request):

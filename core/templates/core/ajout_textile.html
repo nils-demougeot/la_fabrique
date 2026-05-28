@@ -93,6 +93,87 @@
       color: var(--primary-green);
     }
 
+    /* ── Overlay caméra ── */
+    #camera-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: #000;
+      flex-direction: column;
+    }
+    #camera-overlay.active { display: flex; }
+
+    #camera-viewfinder {
+      position: relative;
+      flex: 1;
+      overflow: hidden;
+    }
+    #camera-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #camera-crop-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      aspect-ratio: 1;
+      border: 2px solid white;
+      border-radius: 4px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+    }
+    #camera-crop-box::before, #camera-crop-box::after,
+    .cam-corner-br, .cam-corner-bl {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      border-color: white;
+      border-style: solid;
+    }
+    #camera-crop-box::before { top:-2px; left:-2px;  border-width:3px 0 0 3px; }
+    #camera-crop-box::after  { top:-2px; right:-2px; border-width:3px 3px 0 0; }
+    .cam-corner-br { bottom:-2px; right:-2px; border-width:0 3px 3px 0; }
+    .cam-corner-bl { bottom:-2px; left:-2px;  border-width:0 0 3px 3px; }
+
+    #camera-controls {
+      padding: 24px 32px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0,0,0,0.6);
+    }
+    #btn-camera-cancel {
+      color: white; background: none; border: none;
+      font-family: var(--font-body); font-size: 16px; font-weight: 600;
+      cursor: pointer; padding: 12px; width: 70px;
+    }
+    #btn-camera-capture {
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      background: white;
+      border: 5px solid rgba(255,255,255,0.4);
+      cursor: pointer;
+      transition: transform 0.1s;
+      outline: none;
+    }
+    #btn-camera-capture:active { transform: scale(0.92); }
+
+    .photo-preview {
+      width: 100%; border-radius: 16px; overflow: hidden; display: none;
+    }
+    .photo-preview img {
+      width: 100%; height: 180px; object-fit: cover; display: block;
+    }
+    .photo-retake-btn {
+      background: none; border: none;
+      color: var(--primary-green); font-family: var(--font-body);
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      text-decoration: underline; margin-top: 8px; display: none;
+    }
+
     .type-grid { 
       display: grid;
       grid-template-columns: repeat(3, 1fr); 
@@ -357,10 +438,13 @@
             <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-scan.svg' %}" alt="Scan">
             Photo du vêtement
           </h2>
-          <div class="upload-zone" id="drop-zone">
-            <input type="file" id="photo-input" accept="image/*" aria-label="Prendre en photo" name="photo-vetement">
+          <div class="upload-zone" id="drop-zone" style="cursor:pointer;">
             <span id="upload-text">📷 Prendre en photo</span>
           </div>
+          <div class="photo-preview" id="photo-preview">
+            <img id="photo-preview-img" src="" alt="Photo prise">
+          </div>
+          <button type="button" class="photo-retake-btn" id="btn-retake">Reprendre la photo</button>
         </section>
 
         <input type="hidden" name="clothing_type" id="clothing_type_input" value="tshirt">
@@ -475,6 +559,7 @@
           <button type="submit" class="btn-primary"><img class="icon-square" src="{% static 'core/images/ajout_textile/icon-analyser.svg' %}" alt="Analyser"> Analyser le tissu</button>
         </div>
 
+        <input type="hidden" name="photo_data" id="photo_data">
         <input type="hidden" name="polygon_coords" id="polygon_coords" value="[]">
         <input type="hidden" name="calibration_coords" id="calibration_coords" value="[]">
         <input type="hidden" name="calibration_distance" id="calibration_distance" value="0">
@@ -509,6 +594,23 @@
           </div>
         </div>
       </form>
+
+      <!-- ── Overlay caméra ── -->
+      <div id="camera-overlay">
+        <div id="camera-viewfinder">
+          <video id="camera-video" autoplay playsinline muted></video>
+          <div id="camera-crop-box">
+            <span class="cam-corner-br"></span>
+            <span class="cam-corner-bl"></span>
+          </div>
+        </div>
+        <div id="camera-controls">
+          <button type="button" id="btn-camera-cancel">Annuler</button>
+          <button type="button" id="btn-camera-capture"></button>
+          <div style="width:70px;"></div>
+        </div>
+      </div>
+      <canvas id="camera-hidden-canvas" style="display:none;"></canvas>
 
       {% if result_ready %}
       <section class="result-card" id="result-section">
@@ -654,68 +756,133 @@
 
 
       // ==========================================
-      // 3. GESTION DE LA PHOTO ET DU CANVAS (Pop-up)
+      // 3. CAMÉRA + CANVAS (Pop-up)
       // ==========================================
-      const photoInput = document.getElementById('photo-input');
-      const uploadText = document.getElementById('upload-text');
-      const dropZone = document.getElementById('drop-zone');
+      const dropZone        = document.getElementById('drop-zone');
+      const uploadText      = document.getElementById('upload-text');
+      const photoPreview    = document.getElementById('photo-preview');
+      const photoPreviewImg = document.getElementById('photo-preview-img');
+      const photoDataInput  = document.getElementById('photo_data');
+      const btnRetake       = document.getElementById('btn-retake');
 
-      const polygonCoordsInput = document.getElementById('polygon_coords');
-      const calibCoordsInput = document.getElementById('calibration_coords');
-      const calibDistanceInput = document.getElementById('calibration_distance');
-      const imageWidthInput = document.getElementById('image_width');
-      const imageHeightInput = document.getElementById('image_height');
+      const cameraOverlay       = document.getElementById('camera-overlay');
+      const cameraVideo         = document.getElementById('camera-video');
+      const cameraCropBox       = document.getElementById('camera-crop-box');
+      const btnCameraCancel     = document.getElementById('btn-camera-cancel');
+      const btnCameraCapture    = document.getElementById('btn-camera-capture');
+      const cameraHiddenCanvas  = document.getElementById('camera-hidden-canvas');
 
-      const modal = document.getElementById('image-modal');
-      const canvas = document.getElementById('drawing-canvas');
-      const ctx = canvas ? canvas.getContext('2d') : null;
-      const btnClear = document.getElementById('btn-clear-canvas');
-      const btnNext = document.getElementById('btn-next-step');
+      const polygonCoordsInput  = document.getElementById('polygon_coords');
+      const calibCoordsInput    = document.getElementById('calibration_coords');
+      const calibDistanceInput  = document.getElementById('calibration_distance');
+      const imageWidthInput     = document.getElementById('image_width');
+      const imageHeightInput    = document.getElementById('image_height');
+
+      const modal       = document.getElementById('image-modal');
+      const canvas      = document.getElementById('drawing-canvas');
+      const ctx         = canvas ? canvas.getContext('2d') : null;
+      const btnClear    = document.getElementById('btn-clear-canvas');
+      const btnNext     = document.getElementById('btn-next-step');
       const btnValidate = document.getElementById('btn-validate-canvas');
-
-      const step1UI = document.getElementById('step-1-ui');
-      const step2UI = document.getElementById('step-2-ui');
+      const step1UI     = document.getElementById('step-1-ui');
+      const step2UI     = document.getElementById('step-2-ui');
       const distanceInput = document.getElementById('calib-distance-input');
 
       let currentStep = 1;
       let polygonPoints = [];
       let calibPoints = [];
       let imageObj = new Image();
+      let cameraStream = null;
 
-      if (photoInput) {
-        photoInput.addEventListener('change', function(event) {
-            if (event.target.files.length > 0) {
-            const file = event.target.files[0];
-            const reader = new FileReader();
-
-            reader.onload = (e) => {
-                imageObj.onload = () => {
-                imageWidthInput.value = imageObj.width;
-                imageHeightInput.value = imageObj.height;
-
-                const maxWidth = window.innerWidth * 0.8;
-                const scale = Math.min(1, maxWidth / imageObj.width);
-                canvas.width = imageObj.width * scale;
-                canvas.height = imageObj.height * scale;
-                
-                currentStep = 1;
-                polygonPoints = [];
-                calibPoints = [];
-                distanceInput.value = '';
-                
-                switchStep(1);
-                redrawCanvas();
-                modal.classList.add('active');
-                };
-                imageObj.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-
-            uploadText.textContent = '✅ Photo ajoutée';
-            dropZone.classList.add('is-uploaded');
-            }
+      function openCamera() {
+        navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+          audio: false
+        }).then(stream => {
+          cameraStream = stream;
+          cameraVideo.srcObject = stream;
+          cameraOverlay.classList.add('active');
+        }).catch(err => {
+          alert('Impossible d\'accéder à la caméra : ' + err.message);
         });
       }
+
+      function stopCamera() {
+        if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+        cameraOverlay.classList.remove('active');
+      }
+
+      function loadImageAndOpenModal(dataUrl) {
+        imageObj = new Image();
+        imageObj.onload = () => {
+          imageWidthInput.value = imageObj.width;
+          imageHeightInput.value = imageObj.height;
+          const maxWidth = window.innerWidth * 0.8;
+          const scale = Math.min(1, maxWidth / imageObj.width);
+          canvas.width  = imageObj.width  * scale;
+          canvas.height = imageObj.height * scale;
+          currentStep = 1;
+          polygonPoints = [];
+          calibPoints = [];
+          distanceInput.value = '';
+          switchStep(1);
+          redrawCanvas();
+          modal.classList.add('active');
+        };
+        imageObj.src = dataUrl;
+      }
+
+      dropZone.addEventListener('click', openCamera);
+
+      btnRetake.addEventListener('click', () => {
+        photoPreview.style.display = 'none';
+        btnRetake.style.display = 'none';
+        dropZone.style.display = 'block';
+        openCamera();
+      });
+
+      btnCameraCancel.addEventListener('click', stopCamera);
+
+      btnCameraCapture.addEventListener('click', () => {
+        const vfEl    = document.getElementById('camera-viewfinder');
+        const vfRect  = vfEl.getBoundingClientRect();
+        const boxRect = cameraCropBox.getBoundingClientRect();
+
+        const videoW = cameraVideo.videoWidth;
+        const videoH = cameraVideo.videoHeight;
+        const scaleX = videoW / vfRect.width;
+        const scaleY = videoH / vfRect.height;
+        const scale  = Math.min(scaleX, scaleY);
+
+        const renderedW = videoW / scale;
+        const renderedH = videoH / scale;
+        const offsetX   = (vfRect.width  - renderedW) / 2;
+        const offsetY   = (vfRect.height - renderedH) / 2;
+        const relX = boxRect.left - vfRect.left;
+        const relY = boxRect.top  - vfRect.top;
+
+        const srcX = (relX - offsetX) * scale;
+        const srcY = (relY - offsetY) * scale;
+        const srcW = boxRect.width  * scale;
+        const srcH = boxRect.height * scale;
+
+        cameraHiddenCanvas.width  = srcW;
+        cameraHiddenCanvas.height = srcH;
+        cameraHiddenCanvas.getContext('2d').drawImage(
+          cameraVideo, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH
+        );
+
+        const dataUrl = cameraHiddenCanvas.toDataURL('image/jpeg', 0.85);
+        stopCamera();
+
+        photoDataInput.value = dataUrl;
+        photoPreviewImg.src  = dataUrl;
+        photoPreview.style.display = 'block';
+        btnRetake.style.display    = 'block';
+        dropZone.style.display     = 'none';
+
+        loadImageAndOpenModal(dataUrl);
+      });
 
       if (canvas) {
         canvas.addEventListener('click', (e) => {
