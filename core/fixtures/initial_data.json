@@ -1,0 +1,323 @@
+[
+{
+  "model": "core.patron",
+  "pk": 1,
+  "fields": {
+    "titre": "Tote bag minimaliste",
+    "description": "Un sac cabas simple et solide, parfait pour recycler un vieux jean ou une chemise en coton. Idéal comme premier projet de couture.",
+    "typeObjet": "Sac",
+    "surfaceMin": 0.3,
+    "surfaceMax": 0.6,
+    "estPremium": false,
+    "difficulte": 1,
+    "photo": "",
+    "duree": "1h30",
+    "materiel": "Fil, Aiguille, Ciseaux, Épingles, Machine à coudre"
+  }
+},
+{
+  "model": "core.patron",
+  "pk": 2,
+  "fields": {
+    "titre": "Pochette zippée",
+    "description": "Une pochette pratique avec fermeture éclair pour ranger vos affaires. Parfaite pour upcycler des chutes de tissu.",
+    "typeObjet": "Pochette",
+    "surfaceMin": 0.15,
+    "surfaceMax": 0.35,
+    "estPremium": false,
+    "difficulte": 1,
+    "photo": "",
+    "duree": "1h",
+    "materiel": "Fil, Aiguille, Fermeture éclair, Ciseaux, Tissu doublure"
+  }
+},
+{
+  "model": "core.patron",
+  "pk": 3,
+  "fields": {
+    "titre": "Coussin patchwork",
+    "description": "Assemblez des carrés de tissus colorés pour créer un coussin unique. Une excellente façon de valoriser les petites chutes.",
+    "typeObjet": "Coussin",
+    "surfaceMin": 0.5,
+    "surfaceMax": 1.0,
+    "estPremium": false,
+    "difficulte": 2,
+    "photo": "",
+    "duree": "3h",
+    "materiel": "Fil, Aiguille, Ciseaux, Règle, Marqueur tissu, Rembourrage"
+  }
+},
+{
+  "model": "core.patron",
+  "pk": 4,
+  "fields": {
+    "titre": "Tablier de cuisine",
+    "description": "Transformez une ancienne chemise ou un pantalon en tablier de cuisine stylé. Pratique et éco-responsable.",
+    "typeObjet": "Tablier",
+    "surfaceMin": 0.8,
+    "surfaceMax": 1.5,
+    "estPremium": false,
+    "difficulte": 2,
+    "photo": "",
+    "duree": "2h30",
+    "materiel": "Fil, Aiguille, Ciseaux, Biais, Épingles"
+  }
+},
+{
+  "model": "core.patron",
+  "pk": 5,
+  "fields": {
+    "titre": "Veste kimono",
+    "description": "Créez une veste kimono légère et élégante à partir de nappes, rideaux ou grandes pièces de tissu. Un classique revisité.",
+    "typeObjet": "Veste",
+    "surfaceMin": 2.0,
+    "surfaceMax": 3.5,
+    "estPremium": true,
+    "difficulte": 3,
+    "photo": "",
+    "duree": "6h",
+    "materiel": "Fil, Aiguille, Ciseaux, Ruban à mesurer, Marqueur tissu, Machine à coudre"
+  }
+},
+{
+  "model": "core.patron",
+  "pk": 6,
+  "fields": {
+    "titre": "Sac à dos upcyclé",
+    "description": "Un sac à dos fonctionnel entièrement réalisé à partir de vêtements récupérés. Projet ambitieux mais très satisfaisant.",
+    "typeObjet": "Sac",
+    "surfaceMin": 1.2,
+    "surfaceMax": 2.0,
+    "estPremium": true,
+    "difficulte": 3,
+    "photo": "",
+    "duree": "8h",
+    "materiel": "Fil résistant, Aiguille jean, Fermetures éclair x2, Sangles, Ciseaux, Rivets"
+  }
+},
+{
+  "model": "core.patron",
+  "pk": 7,
+  "fields": {
+    "titre": "Trousse de toilette",
+    "description": "Une trousse imperméable et solide pour organiser vos affaires. Idéale pour utiliser les tissus épais comme le jean.",
+    "typeObjet": "Trousse",
+    "surfaceMin": 0.25,
+    "surfaceMax": 0.5,
+    "estPremium": false,
+    "difficulte": 2,
+    "photo": "",
+    "duree": "2h",
+    "materiel": "Fil, Aiguille, Fermeture éclair, Tissu enduit ou ciré, Ciseaux"
+  }
+},
+{
+  "model": "core.etapepatron",
+  "pk": 1,
+  "fields": {
+    "patron": 1,
+    "numero": 1,
+    "titre": "Préparation du matériel",
+    "description": "Avant de commencer, rassemblez tout votre matériel sur une surface de travail propre et bien éclairée. Inspectez votre tissu en jean : repérez les zones usées, les taches ou les coutures existantes que vous souhaitez conserver ou éviter. Lavez et repassez le tissu si ce n'est pas encore fait — un tissu propre et plat donne des coutures bien plus propres.",
+    "video_url": null,
+    "conseil": "Préparez une petite coupelle avec vos épingles et votre marqueur à tissu bien à portée de main. Un poste de travail organisé évite les erreurs et les recherches en cours de route.",
+    "materiaux_etape": "Tissu en jean recyclé (min. 50 x 80 cm), Ciseaux à tissu, Épingles de couturière, Marqueur à tissu effaçable, Fer à repasser"
+  }
+},
+{
+  "model": "core.etapepatron",
+  "pk": 2,
+  "fields": {
+    "patron": 1,
+    "numero": 2,
+    "titre": "Découpe du tissu",
+    "description": "Posez votre tissu bien à plat sur la table. Utilisez le marqueur à tissu pour tracer les pièces selon les dimensions suivantes : deux rectangles de 36 x 40 cm pour le corps du sac, et deux bandes de 8 x 50 cm pour les anses. Vérifiez bien que vous êtes dans le sens du fil avant de couper. Coupez ensuite avec des ciseaux à tissu en suivant précisément les traits.",
+    "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "conseil": "Conservez les chutes de tissu ! Vous pourrez les utiliser pour les poches intérieures ou pour ajouter des détails patchwork décoratifs à votre sac.",
+    "materiaux_etape": "Ciseaux à tissu, Marqueur à tissu effaçable, Règle plate (30 cm minimum), Épingles de couturière"
+  }
+},
+{
+  "model": "core.etapepatron",
+  "pk": 3,
+  "fields": {
+    "patron": 1,
+    "numero": 3,
+    "titre": "Assemblage des côtés",
+    "description": "Placez les deux rectangles endroit contre endroit (les faces visibles se font face). Épinglez les trois côtés à assembler : les deux côtés et le fond. Cousez avec un point droit, en laissant une marge de couture de 1 cm. Renforcez les coins en faisant quelques points arrière. Une fois cousu, repassez les marges de couture ouvertes pour un résultat plus net.",
+    "video_url": null,
+    "conseil": "Pour que les coins du fond soient bien carrés, créez des « soufflets » : pincez chaque coin inférieur en formant un triangle de 3 cm, épinglez et cousez perpendiculairement à la couture du fond.",
+    "materiaux_etape": "Machine à coudre, Fil résistant (couleur assortie), Épingles de couturière, Fer à repasser"
+  }
+},
+{
+  "model": "core.etapepatron",
+  "pk": 4,
+  "fields": {
+    "patron": 1,
+    "numero": 4,
+    "titre": "Création des anses",
+    "description": "Pliez chaque bande d'anse en deux dans le sens de la longueur, endroit contre endroit, puis cousez le long bord sur toute la longueur avec 0,5 cm de marge. Retournez la bande à l'endroit à l'aide d'une épingle à nourrice. Repassez bien à plat pour que l'anse soit rectiligne. Cousez une rangée de surpiqûre à 3 mm de chaque bord pour solidifier l'anse.",
+    "video_url": null,
+    "conseil": "Pour retourner facilement les anses, attachez une épingle à nourrice à une extrémité, glissez-la à l'intérieur du tube et faites-la glisser jusqu'à l'autre bout. Le tissu se retourne naturellement.",
+    "materiaux_etape": "Machine à coudre, Fil résistant, Épingle à nourrice, Fer à repasser"
+  }
+},
+{
+  "model": "core.etapepatron",
+  "pk": 5,
+  "fields": {
+    "patron": 1,
+    "numero": 5,
+    "titre": "Fixation des anses et finitions",
+    "description": "Retournez le sac à l'endroit. Positionnez les anses en les glissant de 5 cm à l'intérieur du bord supérieur du sac, à 8 cm des coutures latérales de chaque côté. Épinglez-les bien droit. Repliez le bord supérieur du sac de 1 cm puis de 3 cm vers l'intérieur pour créer l'ourlet. Cousez tout le tour en passant sur les anses pour les fixer solidement. Faites un carré cousu en X sur chaque point d'attache pour un renfort maximum.",
+    "video_url": null,
+    "conseil": "Avant de coudre définitivement, testez la solidité de vos anses en tirant dessus fermement. Le point carré renforcé en X est la technique professionnelle pour les sacs qui doivent supporter un poids régulier.",
+    "materiaux_etape": "Machine à coudre, Fil résistant, Épingles de couturière, Ciseaux à ongles (pour les fils), Fer à repasser"
+  }
+},
+{
+  "model": "core.tutoriel",
+  "pk": 1,
+  "fields": {
+    "patron": 1,
+    "titre": "Tuto tote bag débutant",
+    "typeTutoriel": "video",
+    "urlVideoOuArticle": "https://www.youtube.com/watch?v=example1",
+    "source": "YouTube",
+    "description": "Une vidéo pas à pas qui couvre tout le processus : de la découpe du tissu à la finition des coutures. Idéale pour un premier projet, elle montre aussi comment renforcer les anses pour qu'elles résistent au quotidien."
+  }
+},
+{
+  "model": "core.tutoriel",
+  "pk": 2,
+  "fields": {
+    "patron": 1,
+    "titre": "Patron PDF tote bag",
+    "typeTutoriel": "pdf",
+    "urlVideoOuArticle": "https://www.example.com/tote-bag.pdf",
+    "source": "Couture Facile",
+    "description": "Un patron imprimable avec toutes les mesures, les marges de couture incluses et des conseils sur le choix du tissu. Convient parfaitement aux jeans et cotons épais récupérés."
+  }
+},
+{
+  "model": "core.tutoriel",
+  "pk": 3,
+  "fields": {
+    "patron": 2,
+    "titre": "Coudre une pochette zippée",
+    "typeTutoriel": "video",
+    "urlVideoOuArticle": "https://www.youtube.com/watch?v=example2",
+    "source": "YouTube",
+    "description": "Tutoriel complet sur la pose d'une fermeture éclair sans stress : les astuces pour aligner parfaitement le zip, les points à utiliser et comment obtenir des coins bien nets. Durée : 45 min."
+  }
+},
+{
+  "model": "core.tutoriel",
+  "pk": 4,
+  "fields": {
+    "patron": 3,
+    "titre": "Patchwork pour débutants",
+    "typeTutoriel": "article",
+    "urlVideoOuArticle": "https://www.example.com/patchwork",
+    "source": "Marie Claire Idées",
+    "description": "Un guide illustré qui explique la méthode des carrés en 9 blocs. On y apprend à harmoniser les couleurs, à calculer les quantités de tissu et à assembler sans faire de faux plis."
+  }
+},
+{
+  "model": "core.tutoriel",
+  "pk": 5,
+  "fields": {
+    "patron": 3,
+    "titre": "Coussin patchwork étape par étape",
+    "typeTutoriel": "video",
+    "urlVideoOuArticle": "https://www.youtube.com/watch?v=example3",
+    "source": "YouTube",
+    "description": "Vidéo en temps réel montrant l'assemblage complet de 16 carrés de 12 cm, la mise en place du dos et la fermeture invisible. Inclut un bonus sur les coins renforcés."
+  }
+},
+{
+  "model": "core.tutoriel",
+  "pk": 6,
+  "fields": {
+    "patron": 4,
+    "titre": "Coudre un tablier maison",
+    "typeTutoriel": "video",
+    "urlVideoOuArticle": "https://www.youtube.com/watch?v=example4",
+    "source": "YouTube",
+    "description": "Vidéo montrant comment transformer une vieille chemise en tablier en moins de 3h. Focus sur la pose du biais pour les ourlets et la création des liens ajustables dans le dos."
+  }
+},
+{
+  "model": "core.tutoriel",
+  "pk": 7,
+  "fields": {
+    "patron": 5,
+    "titre": "Patron veste kimono PDF",
+    "typeTutoriel": "pdf",
+    "urlVideoOuArticle": "https://www.example.com/kimono.pdf",
+    "source": "Burda Style",
+    "description": "Patron professionnel avec tailles 36 à 46, marges incluses. Le guide explique comment adapter la largeur des manches et choisir les tissus fluides (voile, viscose, nappe en coton) pour un meilleur drapé."
+  }
+},
+{
+  "model": "core.tutoriel",
+  "pk": 8,
+  "fields": {
+    "patron": 5,
+    "titre": "Tutoriel kimono complet",
+    "typeTutoriel": "video",
+    "urlVideoOuArticle": "https://www.youtube.com/watch?v=example5",
+    "source": "YouTube",
+    "description": "Vidéo en 3 parties couvrant : découpe, assemblage des épaules et des côtés, puis finition des manches et de l'ourlet. Techniques de couture à plat pour un résultat propre sans surjeteuse."
+  }
+},
+{
+  "model": "core.tutoriel",
+  "pk": 9,
+  "fields": {
+    "patron": 5,
+    "titre": "Guide couture kimono",
+    "typeTutoriel": "article",
+    "urlVideoOuArticle": "https://www.example.com/guide-kimono",
+    "source": "La Maison Victor",
+    "description": "Article détaillé avec photos de chaque étape, liste des erreurs courantes à éviter et conseils pour recycler des nappes ou des rideaux légers en kimono élégant."
+  }
+},
+{
+  "model": "core.tutoriel",
+  "pk": 10,
+  "fields": {
+    "patron": 6,
+    "titre": "Sac à dos DIY",
+    "typeTutoriel": "video",
+    "urlVideoOuArticle": "https://www.youtube.com/watch?v=example6",
+    "source": "YouTube",
+    "description": "Tutoriel ambitieux sur la construction complète d'un sac à dos structuré : découpe des panneaux en jean recyclé, pose des zips de poche, assemblage des sangles réglables et fixation des rivets pour les points de contrainte."
+  }
+},
+{
+  "model": "core.tutoriel",
+  "pk": 11,
+  "fields": {
+    "patron": 7,
+    "titre": "Trousse de toilette DIY",
+    "typeTutoriel": "video",
+    "urlVideoOuArticle": "https://www.youtube.com/watch?v=example7",
+    "source": "YouTube",
+    "description": "Vidéo montrant comment coudre une trousse imperméable en utilisant du tissu enduit récupéré (imperméable de pluie, nappe plastifiée). Inclut la technique du soufflet pour donner du volume."
+  }
+},
+{
+  "model": "core.tutoriel",
+  "pk": 12,
+  "fields": {
+    "patron": 7,
+    "titre": "Patron trousse PDF",
+    "typeTutoriel": "pdf",
+    "urlVideoOuArticle": "https://www.example.com/trousse.pdf",
+    "source": "Couture Facile",
+    "description": "Patron avec 3 formats (S/M/L), instructions pour la doublure intérieure et conseils pour remplacer le tissu ciré par du jean doublé d'un sac plastique de récup."
+  }
+}
+]
