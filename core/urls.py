@@ -10,6 +10,7 @@ urlpatterns = [
     path('patrons/<int:patron_pk>/etape/<int:etape_num>/', views.etape_projet, name='etape_projet'),
     path('ajout_textile/', views.ajout_textile, name='ajout_textile'),
     path('communaute/', views.communaute, name='communaute'),
+    path('mes-tissus/', views.mes_tissus, name='mes_tissus'),
 
     path('connexion/', auth_views.LoginView.as_view(template_name='core/connexion.html'), name='connexion'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),

@@ -167,6 +167,86 @@
     .photo-preview img {
       width: 100%; height: 180px; object-fit: cover; display: block;
     }
+    /* ── Étoiles ── */
+    .star-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-gray);
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+    .star-rating {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .star-rating input { display: none; }
+    .star-rating label {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #BCBAA8;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, transform 0.1s;
+      outline: 1.5px solid rgba(187,185,177,0.35);
+      outline-offset: -1px;
+      user-select: none;
+    }
+    .star-rating label:active { transform: scale(0.92); }
+    .star-rating input:checked ~ label,
+    .star-rating label:hover,
+    .star-rating label:hover ~ label {
+      background: #D2F4D1;
+      color: #237329;
+      outline-color: rgba(35,115,41,0.25);
+    }
+    .card-divider {
+      height: 1px;
+      background: rgba(187,185,177,0.3);
+      margin: 4px 0;
+    }
+
+    /* ── Modal résultat ── */
+    #result-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: flex-end;
+    }
+    #result-modal.active { display: flex; }
+    .result-modal-sheet {
+      background: var(--bg-page);
+      border-radius: 32px 32px 0 0;
+      padding: 32px 24px 48px;
+      width: 100%;
+      max-width: 430px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+    .result-modal-handle {
+      width: 40px; height: 4px;
+      background: #BCBAA8;
+      border-radius: 99px;
+      margin-bottom: 8px;
+    }
+
     .photo-retake-btn {
       background: none; border: none;
       color: var(--primary-green); font-family: var(--font-body);
@@ -287,10 +367,16 @@
       transition: all 0.2s ease;
     }
 
+    .tag img {
+      filter: brightness(0) opacity(0.45);
+      transition: filter 0.15s;
+    }
     .hidden-radio:checked + .tag {
       border-color: var(--primary-green);
       color: var(--primary-green);
-      fill: #237329;
+    }
+    .hidden-radio:checked + .tag img {
+      filter: brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(456%) hue-rotate(91deg) brightness(87%) contrast(91%);
     }
 
     input[type=range] { width: 100%; margin: 10px 0; accent-color: var(--primary-green); }
@@ -298,18 +384,48 @@
     .current-slider-value { text-align: center; font-family: var(--font-title); font-weight: 800; color: var(--primary-green); font-size: 18px; margin-bottom: 8px; }
 
     .btn-delete-damage {
-      background: none;
-      border: none;
+      background: rgba(162, 74, 51, 0.07);
+      border: 1.5px solid rgba(162, 74, 51, 0.25);
+      border-radius: 99px;
       color: #A24A33;
       font-family: var(--font-body);
       font-size: 14px;
       font-weight: 700;
       cursor: pointer;
-      margin-top: 16px;
-      text-decoration: underline;
+      margin-top: 8px;
+      padding: 10px 20px;
       display: block;
       width: 100%;
       text-align: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-delete-damage:hover {
+      background: rgba(162, 74, 51, 0.13);
+      border-color: rgba(162, 74, 51, 0.45);
+    }
+
+    .btn-add-damage {
+      width: 100%;
+      background: transparent;
+      border: 2px dashed rgba(35, 115, 41, 0.35);
+      border-radius: 99px;
+      color: var(--primary-green);
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 14px 20px;
+      margin-top: 8px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-add-damage:hover {
+      background: rgba(35, 115, 41, 0.06);
+      border-color: rgba(35, 115, 41, 0.6);
     }
 
     .toggle-icon {
@@ -322,6 +438,47 @@
       box-shadow: 0 8px 20px rgba(35, 115, 41, 0.3); transition: transform 0.2s;
     }
     .btn-primary:hover { transform: translateY(-2px); }
+
+    /* ── Bouton Analyser ── */
+    .btn-analyze {
+      position: relative;
+      width: 100%;
+      border: none;
+      border-radius: 20px;
+      padding: 20px 24px;
+      font-family: var(--font-title);
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: white;
+      cursor: pointer;
+      background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
+      box-shadow: 0 6px 0 #1B5E20, 0 10px 24px rgba(35,115,41,0.35);
+      transform: translateY(0);
+      transition: transform 0.08s, box-shadow 0.08s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      overflow: hidden;
+    }
+    .btn-analyze::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+      border-radius: inherit;
+      pointer-events: none;
+    }
+    .btn-analyze:hover {
+      box-shadow: 0 8px 0 #1B5E20, 0 14px 28px rgba(35,115,41,0.4);
+      transform: translateY(-2px);
+    }
+    .btn-analyze:active {
+      transform: translateY(5px);
+      box-shadow: 0 1px 0 #1B5E20, 0 4px 12px rgba(35,115,41,0.25);
+    }
+    .btn-analyze-icon { font-size: 20px; }
 
     .result-card { background-color: var(--bg-result); border-radius: 32px; padding: 32px 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; }
     .result-icon { width: 80px; height: 80px; background-color: var(--light-green); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 8px; }
@@ -414,16 +571,13 @@
 
 {% block content %}
     <main>
-      {% if user.is_authenticated %}
-        
-      <span style="font-weight: 700; color: var(--text-dark); margin-right: 8px;">
-          Salut, {{ user.username }} !
-      </span>
-
-      {% endif %}
-      <div class="header-titles">
-        <h1>Nouveau vêtement</h1>
-        <p>On passe ton futur chef-d'œuvre au rayon X.</p>
+      <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: inline-flex">
+        <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+          <div style="align-self: stretch; text-align: center; justify-content: center; display: flex; flex-direction: column; color: #237329; font-size: 32px; font-family: Plus Jakarta Sans; font-style: italic; font-weight: 800; text-transform: uppercase; line-height: 40px; word-wrap: break-word">Nouveau vêtement</div>
+        </div>
+        <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+          <div style="align-self: stretch; text-align: center; justify-content: center; display: flex; flex-direction: column; color: #65655E; font-size: 16px; font-family: Manrope; font-weight: 500; line-height: 24px; word-wrap: break-word">On passe ton futur chef-d'œuvre au rayon X.</div>
+        </div>
       </div>
 
       {% if error %}
@@ -432,6 +586,24 @@
 
       <form method="POST" enctype="multipart/form-data" class="form-ajout_textile">
         {% csrf_token %}
+
+        <section class="card">
+          <h2>
+            <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-scan.svg' %}" alt="Scan">
+            Nom du vêtement
+          </h2>
+          <input type="text" name="nom_vetement" class="custom-input" placeholder="Ex : Vieux jean bleu, Chemise rayée…" maxlength="30">
+
+          <div class="card-divider"></div>
+
+          <p class="star-label">Qualité du tissu</p>
+          <div class="star-rating">
+            {% for i in "54321" %}
+            <input type="radio" name="qualite" id="star{{ i }}" value="{{ i }}" {% if i == "3" %}checked{% endif %}>
+            <label for="star{{ i }}">★</label>
+            {% endfor %}
+          </div>
+        </section>
 
         <section class="card">
           <h2>
@@ -552,11 +724,15 @@
 
         </div>
 
-        <button type="button" id="btn-add-damage" class="btn-secondary" style="margin-top: 16px; margin-bottom: 32px; width: 100%;">
-          + Ajouter un autre dégât
+        <button type="button" id="btn-add-damage" class="btn-add-damage">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Ajouter un autre dégât
         </button>
 
-          <button type="submit" class="btn-primary"><img class="icon-square" src="{% static 'core/images/ajout_textile/icon-analyser.svg' %}" alt="Analyser"> Analyser le tissu</button>
+          <button type="submit" class="btn-analyze">
+            <span class="btn-analyze-icon">🔬</span>
+            Analyser le tissu
+          </button>
         </div>
 
         <input type="hidden" name="photo_data" id="photo_data">
@@ -613,28 +789,35 @@
       <canvas id="camera-hidden-canvas" style="display:none;"></canvas>
 
       {% if result_ready %}
-      <section class="result-card" id="result-section">
-        <div class="result-icon">
-          <div class="inner-icon"><img src="{% static 'core/images/ajout_textile/icon-surface.svg' %}" alt="Surface"></div>
-        </div>
-        <div class="result-label">Résultats de l'analyse</div>
-        <div class="result-value">{{ usable_area }} m²</div>
-        
-        <div class="progress-container">
-          <div class="progress-header">
-            <span>Zone réutilisable</span>
-            <span>{{ percentage }}%</span>
+      <div id="result-modal" class="active">
+        <div class="result-modal-sheet">
+          <div class="result-modal-handle"></div>
+          <div class="result-icon">
+            <div class="inner-icon"><img src="{% static 'core/images/ajout_textile/icon-surface.svg' %}" alt="Surface"></div>
           </div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: {{ percentage }}%;"></div>
-          </div>
-        </div>
+          <div class="result-label">Résultats de l'analyse</div>
+          <div class="result-value">{{ usable_area }} m²</div>
 
-        <div class="bonus-badge">
-          <span>🎉</span>
-          <span>+{{ coins_earned }} pièce{% if coins_earned > 1 %}s{% endif %}</span>
+          <div class="progress-container" style="width:100%;">
+            <div class="progress-header">
+              <span>Zone réutilisable</span>
+              <span>{{ percentage }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: {{ percentage }}%;"></div>
+            </div>
+          </div>
+
+          <div class="bonus-badge">
+            <span>🎉</span>
+            <span>+{{ coins_earned }} pièce{% if coins_earned > 1 %}s{% endif %}</span>
+          </div>
+
+          <a href="{% url 'dashboard' %}" class="btn-primary" style="text-align:center; text-decoration:none; margin-top:8px;">
+            Voir mon tableau de bord
+          </a>
         </div>
-      </section>
+      </div>
       {% endif %}
 
   <script>

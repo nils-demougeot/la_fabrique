@@ -342,10 +342,13 @@
   }
 
   .btn-instructions {
-    padding: 12px 24px;
+    height: 48px;
+    padding: 0 24px;
     background: var(--color-primary);
     border-radius: 9999px;
     color: white;
+    display: flex;
+    align-items: center;
     font-family: var(--font-title);
     font-weight: 700;
     font-size: 14px;
@@ -438,8 +441,9 @@
 <main class="patrons-page">
 
   <!-- Titre -->
-  <div class="page-title">
-    <h1>Ton prochain<br><span class="title-accent">chef-d'œuvre</span></h1>
+  <div class="page-title" style="display:flex; flex-direction:column; gap:8px; padding:0 8px;">
+    <div style="text-align:center; color:#237329; font-size:32px; font-family:'Plus Jakarta Sans',sans-serif; font-style:italic; font-weight:800; text-transform:uppercase; line-height:40px;">Patrons</div>
+    <div style="text-align:center; color:#65655E; font-size:16px; font-family:'Manrope',sans-serif; font-weight:500; line-height:24px;">Choisis ton prochain chef-d'œuvre.</div>
   </div>
 
   <!-- Recherche + filtres -->

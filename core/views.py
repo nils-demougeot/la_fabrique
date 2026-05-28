@@ -123,6 +123,9 @@ def ajout_textile(request):
                 type_vetement = request.POST.get('clothing_type', 'inconnu')
                 largeur_cm = float(request.POST.get('width', 0))
                 hauteur_cm = float(request.POST.get('height', 0))
+                nom_vetement = request.POST.get('nom_vetement', '').strip() or f"{type_vetement.capitalize()} de {request.user.username}"
+                qualite = int(request.POST.get('qualite', 3))
+
                 photo_fichier = None
                 photo_data = request.POST.get('photo_data', '')
                 if photo_data and ';base64,' in photo_data:
@@ -132,7 +135,7 @@ def ajout_textile(request):
 
                 nouveau_vetement = Vetement.objects.create(
                     utilisateur=request.user,
-                    nomVetement=f"{type_vetement.capitalize()} de {request.user.username}",
+                    nomVetement=nom_vetement,
                     photoURL=photo_fichier,
                     typeVetement=type_vetement,
                     largeur=largeur_cm,
@@ -141,7 +144,8 @@ def ajout_textile(request):
                     surfaceTaches=total_defect_area_m2,
                     surfaceTrous=0.0,
                     surfaceExploitable=usable_area_m2,
-                    etat="À transformer"
+                    etat="À transformer",
+                    qualite=qualite,
                 )
 
                 coins_earned = 3
@@ -287,6 +291,34 @@ def etape_projet(request, patron_pk, etape_num):
 @login_required
 def communaute(request):
     return render(request, 'core/communaute.html')
+
+
+@login_required
+def mes_tissus(request):
+    vetements = Vetement.objects.filter(utilisateur=request.user).order_by('-id')
+    total_surface = sum(v.surfaceExploitable for v in vetements)
+    total_co2 = round(total_surface * 2.5, 1)
+    objectif = 15.0
+    progression_pct = min(100, int((total_surface / objectif) * 100)) if objectif > 0 else 0
+    circumference = 251
+    stroke_offset = round(circumference * (1 - min(1.0, total_surface / objectif)))
+
+    all_patrons = Patron.objects.all()
+    vetements_data = []
+    for v in vetements:
+        nb_compatibles = sum(1 for p in all_patrons if v.surfaceExploitable >= p.surfaceMin)
+        vetements_data.append({'vetement': v, 'nb_compatibles': nb_compatibles})
+
+    context = {
+        'vetements_data': vetements_data,
+        'total_surface': round(total_surface, 2),
+        'total_co2': total_co2,
+        'nb_vetements': vetements.count(),
+        'progression_pct': progression_pct,
+        'stroke_offset': stroke_offset,
+        'circumference': circumference,
+    }
+    return render(request, 'core/mes_tissus.html', context)
 
 
 def inscription(request):

@@ -169,14 +169,14 @@
     <span class="nav-label">Accueil</span>
   </a>
 
-  <!-- 2. Mes pièces -->
-  <a href="#" class="nav-item {% if nav_active == 'pieces' %}active{% endif %}">
+  <!-- 2. Mes tissus -->
+  <a href="{% url 'mes_tissus' %}" class="nav-item {% if nav_active == 'tissus' %}active{% endif %}">
     <div class="nav-icon-bg">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.57a2 2 0 00-1.34-2.23z"/>
       </svg>
     </div>
-    <span class="nav-label">Mes pièces</span>
+    <span class="nav-label">Mes tissus</span>
   </a>
 
   <!-- 3. Scanner — étoile multi-branches -->

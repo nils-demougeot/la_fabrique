@@ -23,6 +23,7 @@ class Vetement(models.Model):
     surfaceTrous = models.FloatField(default=0.0)
     surfaceExploitable = models.FloatField()
     etat = models.CharField(max_length=30)
+    qualite = models.IntegerField(default=3)
 
     def __str__(self):
         return f"{self.nomVetement} - {self.utilisateur.username}"
