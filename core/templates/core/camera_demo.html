@@ -186,7 +186,8 @@
       // (object-fit: cover — on calcule le scale effectif)
       const scaleX = videoW / vfRect.width;
       const scaleY = videoH / vfRect.height;
-      const scale  = Math.max(scaleX, scaleY); // cover prend le plus grand
+      // object-fit:cover affiche à max(cW/vW, cH/vH), donc 1 CSS px = min(vW/cW, vH/cH) pixels vidéo
+      const scale  = Math.min(scaleX, scaleY);
 
       // Offset dû au centrage de cover
       const renderedW = videoW / scale;
