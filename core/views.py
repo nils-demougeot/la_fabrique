@@ -282,6 +282,10 @@ def communaute(request):
     return render(request, 'core/communaute.html')
 
 
+def camera_demo(request):
+    return render(request, 'core/camera_demo.html')
+
+
 def inscription(request):
     if request.method == 'POST':
         # On sauvegarde l'email et le mdp dans la session
