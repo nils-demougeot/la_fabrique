@@ -3,28 +3,19 @@ set -e
 
 pip install -r requirements.txt
 python manage.py migrate --no-input
+python manage.py loaddata initial_data
 
-# Charge les données initiales uniquement si la base est vide
+# Réinitialise les séquences PostgreSQL pour éviter les conflits de clés après loaddata
 python manage.py shell -c "
-from core.models import Patron
-if not Patron.objects.exists():
-    from django.core.management import call_command
-    from django.db import connection
-    from io import StringIO
-
-    call_command('loaddata', 'initial_data')
-
-    # Réinitialise les séquences PostgreSQL pour éviter les conflits de clés
-    buf = StringIO()
-    call_command('sqlsequencereset', 'core', stdout=buf, no_color=True)
-    sql = buf.getvalue()
-    if sql:
-        with connection.cursor() as cursor:
-            cursor.execute(sql)
-
-    print('Fixtures et séquences initialisés.')
-else:
-    print('Données déjà présentes, chargement ignoré.')
+from django.db import connection
+from django.core.management import call_command
+from io import StringIO
+buf = StringIO()
+call_command('sqlsequencereset', 'core', stdout=buf, no_color=True)
+sql = buf.getvalue()
+if sql:
+    with connection.cursor() as cursor:
+        cursor.execute(sql)
 "
 
 python manage.py create_superuser_if_none
