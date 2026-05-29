@@ -42,22 +42,23 @@
 }
 
 body {
-  background-color: #f0f0f0; /* Fond gris pour contraster avec l'app mobile */
+  background-color: #f0f0f0;
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+  align-items: flex-start;
+  min-height: 100dvh;
 }
 
 /* =========================================
    Layout principal (Simili-Mobile)
    ========================================= */
 .app-container {
-  width: 390px;
-  height: 1017px; /* Fixé comme dans ton exemple, mais idéalement à passer en min-height */
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  min-height: 100dvh;
   position: relative;
   background: var(--bg-main);
-  overflow: hidden;
   font-family: var(--font-body);
 }
 
@@ -250,8 +251,7 @@ body {
 
     <header class="header-section">
       <div class="brand">
-        <div class="brand-logo"><div class="logo-inner"></div></div>
-        <span class="brand-name">La Fabrique</span>
+        <img src="{% static 'core/images/logo-la-fabrique.svg' %}" alt="La Fabrique" style="height: 36px;">
       </div>
       
       <h1 class="main-title">

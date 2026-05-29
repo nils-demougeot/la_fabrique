@@ -116,6 +116,34 @@
   .info-row-value.orange { color: #B86300; }
   .info-row-value.red    { color: #C62828; }
 
+  .info-row-matiere {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .matiere-mini {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #383832;
+  }
+  .matiere-mini + .matiere-mini::before {
+    content: '·';
+    color: #BCBAA8;
+    font-weight: 400;
+    margin-right: 2px;
+  }
+  .matiere-mini-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
   /* Matériel */
   .materiel-card {
     background: white;
@@ -488,6 +516,208 @@
     box-shadow: 0 1px 0 #1B5E20, 0 4px 12px rgba(35,115,41,0.25);
   }
 
+  /* ── Section tissus requis ── */
+  .tissus-card {
+    background: linear-gradient(135deg, rgba(210,244,209,0.35) 0%, rgba(255,255,255,0.8) 100%);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border: 1.5px solid rgba(35,115,41,0.15);
+  }
+  .tissus-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tissus-title {
+    color: #237329;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+  }
+  .tissu-chip {
+    background: white;
+    border-radius: 9999px;
+    padding: 7px 14px;
+    color: #383832;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border: 1.5px solid rgba(35,115,41,0.2);
+  }
+  .tissu-chip .chip-color {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .tissus-surface-hint {
+    color: #4E6C50;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ── Carte sélection vêtements ── */
+  .garments-selection-card {
+    background: #FBFAF0;
+    border-radius: 32px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .garments-selection-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .garments-selection-header h3 {
+    color: #383832;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+  }
+  .garments-hint {
+    color: #65655E;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    margin: -6px 0 0;
+  }
+  .garments-empty {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    text-align: center;
+    color: #65655E;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+  }
+
+  /* ── Carte vêtement individuelle ── */
+  .garment-item {
+    background: white;
+    border-radius: 20px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    user-select: none;
+  }
+  .garment-item:hover {
+    border-color: rgba(35,115,41,0.3);
+    box-shadow: 0 2px 12px rgba(35,115,41,0.08);
+  }
+  .garment-item.selected {
+    border-color: #237329;
+    background: rgba(210,244,209,0.25);
+    box-shadow: 0 2px 12px rgba(35,115,41,0.12);
+  }
+  .garment-item.incompatible {
+    opacity: 0.65;
+  }
+  .garment-thumb {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #EFEEE3;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .garment-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .garment-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .garment-name {
+    color: #383832;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .garment-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .garment-matiere-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .garment-matiere-label {
+    color: #65655E;
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .garment-surface {
+    color: #4E6C50;
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .garment-badges {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .garment-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    border-radius: 9999px;
+    padding: 3px 9px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .badge-ok    { background: #D2F4D1; color: #1B5E20; }
+  .badge-warn  { background: rgba(252,200,149,0.4); color: #7C4A00; }
+  .badge-bad   { background: rgba(198,40,40,0.1); color: #C62828; }
+  .garment-checkbox {
+    width: 22px; height: 22px;
+    border-radius: 7px;
+    border: 2px solid #BCBAA8;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .garment-item.selected .garment-checkbox {
+    background: #237329;
+    border-color: #237329;
+  }
+  .garment-checkbox svg { display: none; }
+  .garment-item.selected .garment-checkbox svg { display: block; }
+
   /* Matériel clicable */
   .materiel-chip {
     background: #EFEEE3;
@@ -543,7 +773,14 @@
     {% if patron.estPremium %}
     <span class="access-badge">✦ Premium</span>
     {% else %}
-    <span class="access-badge free">✓ Gratuit</span>
+    <span class="access-badge free">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="3.5"
+           stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      Gratuit
+    </span>
     {% endif %}
   </div>
 
@@ -638,6 +875,33 @@
           <span class="info-row-value neutral">{{ patron.typeObjet }}</span>
         </div>
 
+        <!-- Matière du tissu -->
+        <div class="info-row">
+          <div class="info-row-left">
+            <div class="info-row-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                <polyline points="2 17 12 22 22 17"/>
+                <polyline points="2 12 12 17 22 12"/>
+              </svg>
+            </div>
+            <span class="info-row-label">Matière du tissu</span>
+          </div>
+          <div class="info-row-matiere">
+            {% if matieres_requises_display %}
+              {% for m in matieres_requises_display %}
+              <span class="matiere-mini">
+                <span class="matiere-mini-dot" style="background: {{ m.color }};"></span>{{ m.label }}
+              </span>
+              {% endfor %}
+            {% else %}
+              <span class="info-row-value neutral">Tout tissu</span>
+            {% endif %}
+          </div>
+        </div>
+
         <!-- Compatibilité -->
         {% if compatibilite %}
         <div class="info-row">
@@ -680,10 +944,40 @@
         </div>
         {% endif %}
 
-        <!-- Matériel -->
+        <!-- Tissus requis -->
+        {% if matieres_requises_display %}
+        <div class="tissus-card">
+          <div class="tissus-card-header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="#237329" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
+              <path d="M12 8v4l3 3"/>
+            </svg>
+            <span class="tissus-title">🧵 Tissus requis</span>
+          </div>
+          <div class="materiel-chips">
+            {% for m in matieres_requises_display %}
+            <span class="tissu-chip">
+              <span class="chip-color" style="background: {{ m.color }};"></span>{{ m.label }}
+            </span>
+            {% endfor %}
+          </div>
+          <div class="tissus-surface-hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Surface nécessaire : {{ patron.surfaceMin }} – {{ patron.surfaceMax }} m²
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Outils nécessaires -->
         {% if materiel_list %}
         <div class="materiel-card">
-          <div class="materiel-title">Matériel nécessaire — tap pour cocher ce que tu as</div>
+          <div class="materiel-title">🔧 Outils nécessaires — tap pour cocher ce que tu as</div>
           <div class="materiel-chips" id="materielChips">
             {% for item in materiel_list %}
             <button class="materiel-chip" data-material="{{ item }}">
@@ -714,6 +1008,82 @@
     </div>
 
   </div><!-- /.top-section -->
+
+  <!-- ═══════════════════════════
+       Sélection des vêtements
+       ═══════════════════════════ -->
+  {% if vetements_compatibles %}
+  <div class="garments-selection-card" style="margin-bottom: 32px;" id="garments-section">
+    <div class="garments-selection-header">
+      <span class="green-dot"></span>
+      <h3>Choisir vos tissus</h3>
+    </div>
+    <p class="garments-hint">
+      Sélectionnez le(s) vêtement(s) que vous souhaitez utiliser pour ce projet.
+    </p>
+
+    {% for item in vetements_compatibles %}
+    <div class="garment-item {% if not item.compatible %}incompatible{% endif %} {% if item.selected %}selected{% endif %}"
+         data-id="{{ item.vetement.id }}"
+         onclick="toggleGarment(this)">
+
+      <!-- Vignette photo -->
+      <div class="garment-thumb">
+        {% if item.vetement.photoURL %}
+        <img src="{{ item.vetement.photoURL.url }}" alt="{{ item.vetement.nomVetement }}">
+        {% else %}
+        <span>🧶</span>
+        {% endif %}
+      </div>
+
+      <!-- Infos -->
+      <div class="garment-info">
+        <div class="garment-name">{{ item.vetement.nomVetement }}</div>
+        <div class="garment-meta">
+          {% if item.dominant_label %}
+          <span class="garment-matiere-dot" style="background: {{ item.dominant_color }};"></span>
+          <span class="garment-matiere-label">{{ item.dominant_label }}</span>
+          <span style="color:#BCBAA8;">·</span>
+          {% endif %}
+          <span class="garment-surface">{{ item.vetement.surfaceExploitable|floatformat:2 }} m²</span>
+        </div>
+      </div>
+
+      <!-- Badges compatibilité -->
+      <div class="garment-badges">
+        {% if item.compatible %}
+        <span class="garment-badge badge-ok">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="3.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Compatible
+        </span>
+        {% else %}
+          {% if not item.surface_ok %}
+          <span class="garment-badge badge-warn">Surface insuff.</span>
+          {% endif %}
+          {% if not item.matiere_ok %}
+          <span class="garment-badge badge-bad">Matière ✗</span>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      <!-- Checkbox -->
+      <div class="garment-checkbox">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+             stroke="white" stroke-width="3"
+             stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+
+    </div>
+    {% endfor %}
+
+  </div>
+  {% endif %}
 
   <!-- ═══════════════════════════
        Instructions (étapes)
@@ -776,9 +1146,13 @@
      ═══════════════════════════ -->
 <div class="bottom-cta">
   {% if premiere_etape %}
-  <a href="{% url 'etape_projet' patron_pk=patron.pk etape_num=1 %}" class="btn-start">
-    🧵 Démarrer le projet
-  </a>
+  <form method="POST" id="start-form">
+    {% csrf_token %}
+    <input type="hidden" name="vetement_ids" id="selected-vetement-ids" value="[]">
+    <button type="submit" class="btn-start" id="btn-demarrer">
+      🧵 Démarrer le projet
+    </button>
+  </form>
   {% else %}
   <button class="btn-start" disabled style="opacity: 0.5; cursor: not-allowed;">
     Instructions bientôt disponibles
@@ -790,8 +1164,8 @@
 
 {% block extra_js %}
 <script>
+  // ── Outils : tap pour cocher (localStorage) ──
   const STORAGE_KEY = 'lafabrique_owned_materials';
-
   function getOwned() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
     catch(e) { return []; }
@@ -814,5 +1188,44 @@
       saveOwned(current);
     });
   });
+
+  // ── Sélection des vêtements ──
+  const selectedIds = new Set();
+  const hiddenInput = document.getElementById('selected-vetement-ids');
+
+  // Pré-sélectionner les vêtements déjà associés au projet (depuis le serveur)
+  document.querySelectorAll('.garment-item.selected').forEach(el => {
+    selectedIds.add(el.dataset.id);
+  });
+  syncHiddenInput();
+
+  function toggleGarment(el) {
+    const id = el.dataset.id;
+    if (selectedIds.has(id)) {
+      selectedIds.delete(id);
+      el.classList.remove('selected');
+    } else {
+      selectedIds.add(id);
+      el.classList.add('selected');
+    }
+    syncHiddenInput();
+    updateStartBtn();
+  }
+
+  function syncHiddenInput() {
+    if (hiddenInput) hiddenInput.value = JSON.stringify([...selectedIds]);
+  }
+
+  function updateStartBtn() {
+    const btn = document.getElementById('btn-demarrer');
+    if (!btn) return;
+    if (selectedIds.size > 0) {
+      btn.textContent = `🧵 Démarrer avec ${selectedIds.size} tissu${selectedIds.size > 1 ? 's' : ''}`;
+    } else {
+      btn.textContent = '🧵 Démarrer le projet';
+    }
+  }
+
+  updateStartBtn();
 </script>
 {% endblock %}

@@ -153,6 +153,7 @@ def ajout_textile(request):
                 nom_vetement = request.POST.get('nom_vetement', '').strip() or f"{type_vetement.capitalize()} de {request.user.username}"
                 qualite = int(request.POST.get('qualite', 3))
                 couleur = request.POST.get('couleur', '')
+                matiere_raw = request.POST.get('material', 'coton:100').strip() or 'coton:100'
 
                 photo_fichier = None
                 photo_data = request.POST.get('photo_data', '')
@@ -175,6 +176,7 @@ def ajout_textile(request):
                     etat="À transformer",
                     qualite=qualite,
                     couleur=couleur,
+                    matiere=matiere_raw,
                 )
 
                 coins_earned = 3
@@ -197,6 +199,40 @@ def ajout_textile(request):
 
 
 DIFFICULTE_LABELS = {1: 'Débutant', 2: 'Intermédiaire', 3: 'Avancé'}
+
+MATERIAL_LABELS = {
+    'coton': 'Coton', 'polyester': 'Polyester', 'laine': 'Laine', 'lin': 'Lin',
+    'soie': 'Soie', 'viscose': 'Viscose', 'nylon': 'Nylon', 'elasthanne': 'Élasthanne',
+    'acrylique': 'Acrylique', 'cachemire': 'Cachemire', 'bambou': 'Bambou', 'velours': 'Velours',
+    'denim': 'Denim', 'cuir': 'Cuir', 'satin': 'Satin', 'modal': 'Modal',
+}
+
+MATERIAL_COLORS = {
+    'coton': '#D4C5A9', 'polyester': '#93A8B8', 'laine': '#C8A96A', 'lin': '#C9B882',
+    'soie': '#C4B0D8', 'viscose': '#7FC9CF', 'nylon': '#F4A06A', 'elasthanne': '#8DC89A',
+    'acrylique': '#F4A0B4', 'cachemire': '#C4AFA9', 'bambou': '#9DBE94', 'velours': '#9A80C8',
+    'denim': '#5B8BB4', 'cuir': '#8D6E63', 'satin': '#F0B0C8', 'modal': '#80C4BE',
+}
+
+
+def get_dominant_material(matiere_str):
+    """Retourne la matière dominante depuis 'coton:70,polyester:30'."""
+    if not matiere_str:
+        return None
+    best_name, best_pct = None, -1
+    for part in matiere_str.split(','):
+        part = part.strip()
+        if ':' in part:
+            name, pct_str = part.rsplit(':', 1)
+            try:
+                pct = int(pct_str)
+                if pct > best_pct:
+                    best_pct, best_name = pct, name.strip().lower()
+            except ValueError:
+                pass
+        elif best_name is None:
+            best_name = part.lower()
+    return best_name
 
 
 def _compatibilite(surface_user, surface_min):
@@ -264,8 +300,26 @@ def patrons(request):
 @login_required
 def patron_detail(request, pk):
     patron = get_object_or_404(Patron, pk=pk)
-    tutoriels = patron.tutoriels.all()
 
+    # ── POST : enregistrer la sélection de vêtements et démarrer le projet ──
+    if request.method == 'POST':
+        ids_json = request.POST.get('vetement_ids', '[]')
+        try:
+            vetement_ids = json.loads(ids_json)
+        except (ValueError, TypeError):
+            vetement_ids = []
+
+        prog, _ = ProgressionProjet.objects.get_or_create(
+            utilisateur=request.user,
+            patron=patron,
+            defaults={'etape_actuelle': 1},
+        )
+        garments = Vetement.objects.filter(utilisateur=request.user, id__in=vetement_ids)
+        prog.vetements_projet.set(garments)
+        return redirect('etape_projet', patron_pk=patron.pk, etape_num=1)
+
+    # ── GET ──
+    tutoriels = patron.tutoriels.all()
     surface_user = (
         Vetement.objects
         .filter(utilisateur=request.user)
@@ -275,21 +329,62 @@ def patron_detail(request, pk):
     etapes = list(patron.etapes.order_by('numero'))
     premiere_etape = etapes[0] if etapes else None
 
-    all_materiel_set = []
+    # Outils nécessaires (materiel du patron + des étapes)
+    outils_set = []
     seen = set()
     if patron.materiel:
         for m in patron.materiel.split(','):
             m = m.strip()
             if m and m.lower() not in seen:
                 seen.add(m.lower())
-                all_materiel_set.append(m)
+                outils_set.append(m)
     for etape in etapes:
         if etape.materiaux_etape:
             for m in etape.materiaux_etape.split(','):
                 m = m.strip()
                 if m and m.lower() not in seen:
                     seen.add(m.lower())
-                    all_materiel_set.append(m)
+                    outils_set.append(m)
+
+    # Matières requises pour ce patron
+    matieres_requises = []
+    if patron.matiere_requise:
+        matieres_requises = [m.strip().lower() for m in patron.matiere_requise.split(',') if m.strip()]
+
+    matieres_requises_display = [
+        {'key': m, 'label': MATERIAL_LABELS.get(m, m.capitalize()), 'color': MATERIAL_COLORS.get(m, '#BCBAA8')}
+        for m in matieres_requises
+    ]
+
+    # Vêtements de l'utilisateur + compatibilité
+    user_vetements = Vetement.objects.filter(utilisateur=request.user).order_by('-surfaceExploitable')
+
+    # Vêtements déjà sélectionnés pour ce projet (si projet en cours)
+    prog_existante = ProgressionProjet.objects.filter(
+        utilisateur=request.user, patron=patron, termine=False
+    ).first()
+    selected_ids = set()
+    if prog_existante:
+        selected_ids = set(prog_existante.vetements_projet.values_list('id', flat=True))
+
+    vetements_compatibles = []
+    for v in user_vetements:
+        surface_ok = v.surfaceExploitable >= patron.surfaceMin
+        dominant = get_dominant_material(v.matiere)
+        if matieres_requises:
+            matiere_ok = bool(dominant and dominant in matieres_requises)
+        else:
+            matiere_ok = True  # pas de contrainte matière
+        vetements_compatibles.append({
+            'vetement': v,
+            'surface_ok': surface_ok,
+            'matiere_ok': matiere_ok,
+            'compatible': surface_ok and matiere_ok,
+            'dominant_material': dominant,
+            'dominant_label': MATERIAL_LABELS.get(dominant, dominant.capitalize()) if dominant else None,
+            'dominant_color': MATERIAL_COLORS.get(dominant, '#BCBAA8') if dominant else '#BCBAA8',
+            'selected': v.id in selected_ids,
+        })
 
     context = {
         'patron': patron,
@@ -298,7 +393,10 @@ def patron_detail(request, pk):
         'premiere_etape': premiere_etape,
         'difficulte_label': DIFFICULTE_LABELS.get(patron.difficulte, str(patron.difficulte)),
         'compatibilite': _compatibilite(surface_user, patron.surfaceMin),
-        'materiel_list': all_materiel_set,
+        'materiel_list': outils_set,
+        'matieres_requises_display': matieres_requises_display,
+        'vetements_compatibles': vetements_compatibles,
+        'has_compatible': any(v['compatible'] for v in vetements_compatibles),
     }
     return render(request, 'core/patron_detail.html', context)
 
@@ -362,7 +460,21 @@ def etape_projet(request, patron_pk, etape_num):
 @login_required
 def terminer_projet(request, pk):
     patron = get_object_or_404(Patron, pk=pk)
-    ProgressionProjet.objects.filter(utilisateur=request.user, patron=patron).update(termine=True)
+    prog = ProgressionProjet.objects.filter(utilisateur=request.user, patron=patron, termine=False).first()
+    if prog:
+        # Déduire la surface utilisée proportionnellement sur les vêtements sélectionnés
+        garments = list(prog.vetements_projet.all())
+        if garments and patron.surfaceMin > 0:
+            total_available = sum(g.surfaceExploitable for g in garments if g.surfaceExploitable > 0)
+            if total_available > 0:
+                for g in garments:
+                    if g.surfaceExploitable > 0:
+                        ratio = g.surfaceExploitable / total_available
+                        to_deduct = min(g.surfaceExploitable, patron.surfaceMin * ratio)
+                        g.surfaceExploitable = round(max(0.0, g.surfaceExploitable - to_deduct), 4)
+                        g.save()
+        prog.termine = True
+        prog.save()
     return redirect('patrons')
 
 

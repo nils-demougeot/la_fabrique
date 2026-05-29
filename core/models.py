@@ -25,6 +25,7 @@ class Vetement(models.Model):
     etat = models.CharField(max_length=30)
     qualite = models.IntegerField(default=3)
     couleur = models.CharField(max_length=30, blank=True, null=True)
+    matiere = models.CharField(max_length=200, blank=True, null=True)  # ex: "coton:70,polyester:30"
 
     def __str__(self):
         return f"{self.nomVetement} - {self.utilisateur.username}"
@@ -40,6 +41,10 @@ class Patron(models.Model):
     photo = models.ImageField(upload_to='patrons/', null=True, blank=True)
     duree = models.CharField(max_length=20, blank=True, null=True)
     materiel = models.TextField(blank=True, null=True)
+    matiere_requise = models.TextField(
+        blank=True, null=True,
+        help_text="Matières acceptées, séparées par des virgules (ex: coton,lin,viscose). Laisser vide = toute matière acceptée."
+    )
 
     def __str__(self):
         return self.titre
@@ -103,6 +108,7 @@ class ProgressionProjet(models.Model):
     date_debut = models.DateTimeField(auto_now_add=True)
     date_derniere_activite = models.DateTimeField(auto_now=True)
     termine = models.BooleanField(default=False)
+    vetements_projet = models.ManyToManyField('Vetement', blank=True, related_name='progressions_projet')
 
     class Meta:
         unique_together = ('utilisateur', 'patron')

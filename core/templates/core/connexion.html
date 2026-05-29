@@ -36,16 +36,17 @@ body {
   background-color: #f0f0f0;
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+  align-items: flex-start;
+  min-height: 100dvh;
 }
 
 .app-container {
-  width: 390px;
-  height: 725px;
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  min-height: 100dvh;
   position: relative;
   background: var(--bg-main);
-  overflow: hidden;
   font-family: var(--font-body);
   display: flex;
   flex-direction: column;
@@ -131,8 +132,7 @@ body {
 
     <div class="scrollable-content">
       <header class="header-brand">
-        <div class="brand-logo"><div class="logo-inner"></div></div>
-        <span class="brand-name">La Fabrique</span>
+        <img src="{% static 'core/images/logo-la-fabrique.svg' %}" alt="La Fabrique" style="height: 36px;">
       </header>
 
       <section class="onboarding-step">

@@ -24,7 +24,12 @@ class PatronAdmin(admin.ModelAdmin):
     inlines       = [EtapePatronInline, TutorielInline]
     fieldsets = [
         (None, {
-            'fields': ['titre', 'photo', 'description', 'typeObjet', 'materiel'],
+            'fields': ['titre', 'photo', 'description', 'typeObjet'],
+        }),
+        ('Matières & Outils', {
+            'fields': ['matiere_requise', 'materiel'],
+            'description': 'matiere_requise : matières acceptées séparées par virgules (ex: coton,lin). '
+                           'materiel : outils nécessaires (aiguille, fil, ciseaux…).',
         }),
         ('Caractéristiques', {
             'fields': ['difficulte', 'duree', 'surfaceMin', 'surfaceMax'],
