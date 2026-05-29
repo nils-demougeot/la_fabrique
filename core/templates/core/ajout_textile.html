@@ -244,9 +244,10 @@
     .color-swatch.maxed { opacity: 0.35; cursor: not-allowed; }
     .color-swatch.maxed:hover { transform: none; }
 
-    /* ── Cache header/nav quand caméra active ── */
+    /* ── Cache header/nav quand caméra ou popup active ── */
     body.camera-open .header-global,
     body.camera-open .bottom-nav { display: none !important; }
+    body.other-open .bottom-nav { display: none !important; }
 
     /* ── Modal résultat ── */
     #result-modal {
@@ -601,6 +602,243 @@
       font-weight: 700;
       cursor: pointer;
     }
+
+    /* ── Autre type modal ── */
+    #other-type-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: flex-end;
+    }
+    #other-type-modal.active { display: flex; }
+    .other-type-sheet {
+      background: var(--bg-page);
+      border-radius: 32px 32px 0 0;
+      padding: 20px 24px 48px;
+      width: 100%;
+      max-width: 430px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      animation: slideUp 0.3s ease;
+    }
+    .other-type-handle {
+      width: 40px; height: 4px;
+      background: #BCBAA8;
+      border-radius: 99px;
+      margin: 0 auto 4px;
+    }
+    .other-type-title {
+      font-family: var(--font-title);
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-dark);
+      text-align: center;
+    }
+    .other-type-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .other-type-btn {
+      background: white;
+      border: 1.5px solid rgba(187,185,177,0.4);
+      border-radius: 14px;
+      padding: 14px 6px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      font-family: var(--font-title);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-light-gray);
+      transition: all 0.18s ease;
+      letter-spacing: 0.5px;
+    }
+    .other-type-btn:hover {
+      border-color: var(--primary-green);
+      color: var(--primary-green);
+      background: rgba(35,115,41,0.04);
+    }
+    .other-type-emoji { font-size: 20px; line-height: 1; }
+    .btn-other-cancel {
+      background: var(--bg-input);
+      border: none;
+      border-radius: 99px;
+      padding: 16px;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-gray);
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s;
+      margin-top: 4px;
+    }
+    .btn-other-cancel:hover { background: #E0DDD1; }
+
+    /* ── Matières ── */
+    .material-input-group { padding: 12px 0; }
+    .material-section { display: flex; flex-direction: column; gap: 10px; }
+    #material-list {
+      background: white;
+      border-radius: 32px;
+      outline: 1.5px solid rgba(187,185,177,0.25);
+      outline-offset: -1px;
+      overflow: hidden;
+      transition: outline-color 0.2s;
+    }
+    #material-list:focus-within { outline-color: rgba(35,115,41,0.4); }
+    .material-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(187,185,177,0.2);
+    }
+    .material-row:last-child { border-bottom: none; }
+    .material-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .material-select-wrapper {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      min-width: 0;
+    }
+    .material-name-select {
+      flex: 1;
+      background: none;
+      border: none;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-dark);
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      min-width: 0;
+      padding-right: 20px;
+    }
+    .material-select-chevron {
+      position: absolute;
+      right: 0;
+      pointer-events: none;
+      color: #BCBAA8;
+      flex-shrink: 0;
+    }
+    .material-percent-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: var(--bg-input);
+      border-radius: 99px;
+      padding: 6px 12px;
+      flex-shrink: 0;
+    }
+    .material-percent-input {
+      width: 38px;
+      background: none;
+      border: none;
+      font-family: var(--font-title);
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--primary-green);
+      text-align: right;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+    .material-percent-input::-webkit-outer-spin-button,
+    .material-percent-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .material-percent-unit {
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-gray);
+    }
+    .material-delete-btn {
+      background: none;
+      border: none;
+      color: #BCBAA8;
+      font-size: 17px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      transition: color 0.15s, background 0.15s;
+      flex-shrink: 0;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .material-delete-btn:hover { color: #A24A33; background: rgba(162,74,51,0.08); }
+    .material-total-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 2px 2px 0;
+    }
+    .material-total-bar-wrapper {
+      flex: 1;
+      height: 6px;
+      background: #EAE9DD;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .material-total-bar-fill {
+      height: 100%;
+      background: var(--primary-green);
+      border-radius: 99px;
+      transition: width 0.3s ease, background 0.3s ease;
+      width: 0%;
+    }
+    .material-total-text {
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+      transition: color 0.3s;
+      min-width: 72px;
+      text-align: right;
+      color: var(--text-gray);
+    }
+    .material-total-text.valid { color: var(--primary-green); }
+    .material-total-text.over  { color: #A24A33; }
+    .btn-add-material {
+      width: 100%;
+      background: transparent;
+      border: 2px dashed rgba(35, 115, 41, 0.35);
+      border-radius: 99px;
+      color: var(--primary-green);
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-add-material:hover {
+      background: rgba(35, 115, 41, 0.06);
+      border-color: rgba(35, 115, 41, 0.6);
+    }
   </style>
 {% endblock %}
 
@@ -686,9 +924,13 @@
               Jupe
             </button>
 
-            <button type="button" class="type-btn" data-type="manteau">
-              <img class="type-icon-img" src="{% static 'core/images/ajout_textile/cardigan.svg' %}" alt="Manteau">
-              Manteau
+            <button type="button" class="type-btn" id="btn-other-type" data-type="">
+              <svg class="type-icon-img" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="7" cy="14" r="2.5" fill="currentColor"/>
+                <circle cx="14" cy="14" r="2.5" fill="currentColor"/>
+                <circle cx="21" cy="14" r="2.5" fill="currentColor"/>
+              </svg>
+              <span class="other-btn-label">Autre</span>
             </button>
 
           </div>
@@ -749,13 +991,22 @@
         </section>
 
         <div class="details-section">
-          <div class="input-group">
-            <label>Matière du vêtement</label>
-            <select name="material" class="custom-select">
-              <option value="laine">Laine</option>
-              <option value="coton">Coton</option>
-              <option value="polyester">Polyester</option>
-            </select>
+          <input type="hidden" name="material" id="material-hidden" value="coton:100">
+          <div class="input-group material-input-group">
+            <label>Matière(s) du vêtement <span style="font-weight:500;text-transform:none;letter-spacing:0;color:#9E9E88;">— indiquer les %</span></label>
+            <div class="material-section">
+              <div id="material-list"></div>
+              <div class="material-total-row">
+                <div class="material-total-bar-wrapper">
+                  <div class="material-total-bar-fill" id="material-total-fill"></div>
+                </div>
+                <span class="material-total-text" id="material-total-text">Total : 0%</span>
+              </div>
+              <button type="button" class="btn-add-material" id="btn-add-material">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Ajouter une matière
+              </button>
+            </div>
           </div>
 
           <section class="card">
@@ -878,6 +1129,53 @@
       </div>
       <canvas id="camera-hidden-canvas" style="display:none;"></canvas>
 
+      <!-- ── Popup "Autre type" ── -->
+      <div id="other-type-modal">
+        <div class="other-type-sheet">
+          <div class="other-type-handle"></div>
+          <p class="other-type-title">Choisir un type</p>
+          <div class="other-type-grid">
+            <button type="button" class="other-type-btn" data-type="manteau">
+              <span class="other-type-emoji">🧥</span>Manteau
+            </button>
+            <button type="button" class="other-type-btn" data-type="veste">
+              <span class="other-type-emoji">🥼</span>Veste
+            </button>
+            <button type="button" class="other-type-btn" data-type="blazer">
+              <span class="other-type-emoji">👔</span>Blazer
+            </button>
+            <button type="button" class="other-type-btn" data-type="pull">
+              <span class="other-type-emoji">🧤</span>Pull
+            </button>
+            <button type="button" class="other-type-btn" data-type="chemise">
+              <span class="other-type-emoji">👕</span>Chemise
+            </button>
+            <button type="button" class="other-type-btn" data-type="short">
+              <span class="other-type-emoji">🩳</span>Short
+            </button>
+            <button type="button" class="other-type-btn" data-type="gilet">
+              <span class="other-type-emoji">🦺</span>Gilet
+            </button>
+            <button type="button" class="other-type-btn" data-type="debardeur">
+              <span class="other-type-emoji">🩱</span>Débardeur
+            </button>
+            <button type="button" class="other-type-btn" data-type="combinaison">
+              <span class="other-type-emoji">👘</span>Combinaison
+            </button>
+            <button type="button" class="other-type-btn" data-type="pyjama">
+              <span class="other-type-emoji">😴</span>Pyjama
+            </button>
+            <button type="button" class="other-type-btn" data-type="accessoire">
+              <span class="other-type-emoji">🎀</span>Accessoire
+            </button>
+            <button type="button" class="other-type-btn" data-type="autre">
+              <span class="other-type-emoji">•••</span>Autre
+            </button>
+          </div>
+          <button type="button" class="btn-other-cancel" id="btn-other-cancel">Annuler</button>
+        </div>
+      </div>
+
       {% if result_ready %}
       <div id="result-modal" class="active">
         <div class="result-modal-sheet">
@@ -918,13 +1216,151 @@
       // ==========================================
       const typeButtons = document.querySelectorAll('.type-btn');
       const hiddenTypeInput = document.getElementById('clothing_type_input');
+      const btnOtherType  = document.getElementById('btn-other-type');
+      const otherTypeModal = document.getElementById('other-type-modal');
+
+      function openOtherModal()  { otherTypeModal && otherTypeModal.classList.add('active');    document.body.classList.add('other-open'); }
+      function closeOtherModal() { otherTypeModal && otherTypeModal.classList.remove('active'); document.body.classList.remove('other-open'); }
 
       typeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
+          if (btn.id === 'btn-other-type') {
+            openOtherModal();
+            return;
+          }
           typeButtons.forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           hiddenTypeInput.value = btn.getAttribute('data-type');
+          if (btnOtherType) btnOtherType.querySelector('.other-btn-label').textContent = 'Autre';
         });
+      });
+
+      document.querySelectorAll('.other-type-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const type  = btn.getAttribute('data-type');
+          const label = btn.textContent.replace(btn.querySelector('.other-type-emoji').textContent, '').trim();
+          typeButtons.forEach(b => b.classList.remove('active'));
+          if (btnOtherType) {
+            btnOtherType.classList.add('active');
+            btnOtherType.querySelector('.other-btn-label').textContent = label;
+          }
+          hiddenTypeInput.value = type;
+          closeOtherModal();
+        });
+      });
+
+      document.getElementById('btn-other-cancel') &&
+        document.getElementById('btn-other-cancel').addEventListener('click', closeOtherModal);
+
+      otherTypeModal && otherTypeModal.addEventListener('click', e => {
+        if (e.target === otherTypeModal) closeOtherModal();
+      });
+
+      // ==========================================
+      // GESTION DES MATIÈRES
+      // ==========================================
+      const MATERIAL_COLORS = {
+        coton:'#D4C5A9', polyester:'#93A8B8', laine:'#C8A96A', lin:'#C9B882',
+        soie:'#C4B0D8', viscose:'#7FC9CF', nylon:'#F4A06A', elasthanne:'#8DC89A',
+        acrylique:'#F4A0B4', cachemire:'#C4AFA9', bambou:'#9DBE94', velours:'#9A80C8',
+        denim:'#5B8BB4', cuir:'#8D6E63', satin:'#F0B0C8', modal:'#80C4BE',
+      };
+      const MATERIALS_LIST = [
+        {value:'coton',      label:'Coton'},
+        {value:'polyester',  label:'Polyester'},
+        {value:'laine',      label:'Laine'},
+        {value:'lin',        label:'Lin'},
+        {value:'soie',       label:'Soie'},
+        {value:'viscose',    label:'Viscose'},
+        {value:'nylon',      label:'Nylon'},
+        {value:'elasthanne', label:'Élasthanne'},
+        {value:'acrylique',  label:'Acrylique'},
+        {value:'cachemire',  label:'Cachemire'},
+        {value:'bambou',     label:'Bambou'},
+        {value:'velours',    label:'Velours'},
+        {value:'denim',      label:'Denim'},
+        {value:'cuir',       label:'Cuir'},
+        {value:'satin',      label:'Satin'},
+        {value:'modal',      label:'Modal'},
+      ];
+
+      const materialListEl    = document.getElementById('material-list');
+      const materialTotalFill = document.getElementById('material-total-fill');
+      const materialTotalText = document.getElementById('material-total-text');
+      const materialHiddenInput = document.getElementById('material-hidden');
+      const btnAddMaterial    = document.getElementById('btn-add-material');
+
+      function getMaterialOptions(selected) {
+        return MATERIALS_LIST.map(m =>
+          `<option value="${m.value}"${m.value === selected ? ' selected' : ''}>${m.label}</option>`
+        ).join('');
+      }
+
+      function updateMaterialTotal() {
+        if (!materialListEl) return;
+        const rows = materialListEl.querySelectorAll('.material-row');
+        let total = 0;
+        rows.forEach(row => { total += parseInt(row.querySelector('.material-percent-input').value) || 0; });
+
+        if (materialTotalFill) {
+          materialTotalFill.style.width = Math.min(total, 100) + '%';
+          materialTotalFill.style.background = total > 100 ? '#A24A33' : total === 100 ? 'var(--primary-green)' : '#C8A96A';
+        }
+        if (materialTotalText) {
+          materialTotalText.textContent = `Total : ${total}%`;
+          materialTotalText.className = 'material-total-text' + (total > 100 ? ' over' : total === 100 ? ' valid' : '');
+        }
+        const parts = [];
+        rows.forEach(row => {
+          const sel = row.querySelector('.material-name-select');
+          const inp = row.querySelector('.material-percent-input');
+          if (sel && inp && inp.value) parts.push(`${sel.value}:${inp.value}`);
+        });
+        if (materialHiddenInput) materialHiddenInput.value = parts.join(',');
+
+        rows.forEach(row => {
+          const sel = row.querySelector('.material-name-select');
+          const dot = row.querySelector('.material-dot');
+          if (sel && dot) dot.style.background = MATERIAL_COLORS[sel.value] || '#BCBAA8';
+        });
+      }
+
+      function createMaterialRow(matValue, percent) {
+        const row = document.createElement('div');
+        row.className = 'material-row';
+        row.innerHTML = `
+          <span class="material-dot" style="background:${MATERIAL_COLORS[matValue] || '#BCBAA8'};"></span>
+          <div class="material-select-wrapper">
+            <select class="material-name-select">${getMaterialOptions(matValue)}</select>
+            <svg class="material-select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="material-percent-wrapper">
+            <input type="number" class="material-percent-input" min="0" max="100" value="${percent}">
+            <span class="material-percent-unit">%</span>
+          </div>
+          <button type="button" class="material-delete-btn" title="Supprimer">×</button>
+        `;
+        row.querySelector('.material-name-select').addEventListener('change', updateMaterialTotal);
+        row.querySelector('.material-percent-input').addEventListener('input', updateMaterialTotal);
+        row.querySelector('.material-delete-btn').addEventListener('click', () => {
+          if (materialListEl.querySelectorAll('.material-row').length > 1) {
+            row.remove();
+            updateMaterialTotal();
+          }
+        });
+        return row;
+      }
+
+      if (materialListEl) {
+        materialListEl.appendChild(createMaterialRow('coton', 100));
+        updateMaterialTotal();
+      }
+
+      btnAddMaterial && btnAddMaterial.addEventListener('click', () => {
+        const used = [...materialListEl.querySelectorAll('.material-name-select')].map(s => s.value);
+        const next = MATERIALS_LIST.find(m => !used.includes(m.value)) || MATERIALS_LIST[1];
+        materialListEl.appendChild(createMaterialRow(next.value, 0));
+        updateMaterialTotal();
       });
 
       // ── Couleur : multi-select checkbox (max 3) → hidden input ──
