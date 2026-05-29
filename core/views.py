@@ -296,6 +296,14 @@ def communaute(request):
 
 
 @login_required
+def supprimer_vetements(request):
+    if request.method == 'POST':
+        ids = request.POST.getlist('vetement_ids[]')
+        Vetement.objects.filter(utilisateur=request.user, id__in=ids).delete()
+    return redirect('mes_tissus')
+
+
+@login_required
 def mes_tissus(request):
     vetements = Vetement.objects.filter(utilisateur=request.user).order_by('-id')
     total_surface = sum(v.surfaceExploitable for v in vetements)

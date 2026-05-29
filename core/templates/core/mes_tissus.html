@@ -17,65 +17,60 @@
   /* ── Titre ── */
   .page-heading { display: flex; flex-direction: column; gap: 6px; }
   .page-heading-title {
-    text-align: center;
-    color: #237329;
-    font-size: 32px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-style: italic;
-    font-weight: 800;
-    text-transform: uppercase;
-    line-height: 40px;
+    text-align: center; color: #237329;
+    font-size: 32px; font-family: 'Plus Jakarta Sans', sans-serif;
+    font-style: italic; font-weight: 800; text-transform: uppercase; line-height: 40px;
   }
   .page-heading-sub {
-    text-align: center;
-    color: #65655E;
-    font-size: 16px;
-    font-family: 'Manrope', sans-serif;
-    font-weight: 500;
-    line-height: 24px;
+    text-align: center; color: #65655E;
+    font-size: 16px; font-family: 'Manrope', sans-serif; font-weight: 500; line-height: 24px;
   }
 
-  /* ── Carte réserve (verte) ── */
-  .reserve-card {
-    background: linear-gradient(135deg, #237329 0%, #2E7D32 60%, #388E3C 100%);
-    border-radius: 32px;
-    padding: 24px;
+  /* ── Stats row (3 cartes) ── */
+  .stats-row {
     display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .stat-col {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 20px;
-    position: relative;
+  }
+  .stat-card {
+    width: 100%;
+    height: 104px;
+    padding: 20px 12px;
+    background: #FDFAE5;
+    box-shadow: 0px 10px 40px -15px rgba(57, 56, 43, 0.06);
     overflow: hidden;
+    border-radius: 32px;
+    outline: 2px rgba(0,0,0,0.02) solid;
+    outline-offset: -2px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
   }
-  .reserve-card::after {
-    content: '';
-    position: absolute;
-    width: 140px; height: 140px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 50%;
-    top: -30px; right: -30px;
-    filter: blur(20px);
+  .stat-card-number {
+    color: #237329;
+    font-size: 36px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
   }
-  .ring-wrap { position: relative; flex-shrink: 0; width: 100px; height: 100px; }
-  .ring-wrap svg { transform: rotate(-90deg); }
-  .ring-bg   { fill: none; stroke: rgba(255,255,255,0.15); stroke-width: 8; }
-  .ring-fill { fill: none; stroke: #9DF197; stroke-width: 8; stroke-linecap: round;
-               transition: stroke-dashoffset 1s ease; }
-  .ring-label {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
+  .stat-card-unit {
+    color: #39382B;
+    font-size: 14px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 1;
+    letter-spacing: 0.02em;
   }
-  .ring-pct  { color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; line-height: 1; }
-  .ring-unit { color: rgba(255,255,255,0.7); font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 600; margin-top: 2px; }
-  .reserve-stats { display: flex; flex-direction: column; gap: 10px; flex: 1; }
-  .stat-pill {
-    background: rgba(255,255,255,0.12);
-    border-radius: 12px; padding: 8px 12px;
-    display: flex; flex-direction: column; gap: 1px;
-  }
-  .stat-pill-label { color: rgba(255,255,255,0.65); font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
-  .stat-pill-value { color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; line-height: 1.2; }
-  .stat-pill-value span { color: #9DF197; }
 
   /* ── Filtres ── */
   .filter-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
@@ -88,159 +83,272 @@
   }
   .filter-chip.active { background: #237329; color: white; }
 
-  /* ── Liste cartes ── */
+  /* ── Liste ── */
   .vcard-list { display: flex; flex-direction: column; gap: 14px; }
 
-  /* ── Carte vêtement ── */
+  /* ── Carte (base commune) ── */
   .vcard {
-    position: relative;
-    overflow: visible;          /* l'illustration peut déborder */
-    padding: 15px 20px;
     background: white;
-    box-shadow: 0px 20px 50px rgba(0, 0, 0, 0.08);
+    box-shadow: 0px 20px 50px rgba(0,0,0,0.08);
     border-radius: 32px;
+    padding: 15px 20px 15px 15px; /* moins à gauche : place pour la photo */
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: flex-start;
     gap: 10px;
   }
 
-  /* Zone titre — hauteur min pour que l'image ne touche pas les badges */
-  .vcard-title-row {
-    min-height: 80px;           /* image (100px) – overflow top (20px) = 80px dans la carte */
-    padding-right: 96px;        /* espace pour l'illustration */
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
+  /* Variante photo à droite */
+  .vcard--right {
+    flex-direction: row-reverse;
+    padding: 15px 15px 15px 20px; /* moins à droite : place pour la photo */
   }
 
-  .vcard-name {
-    color: #39382B;
-    font-size: 18px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-weight: 700;
-    line-height: 28px;
-    word-wrap: break-word;
-  }
-
-  /* Illustration 3D — absolute top-right, déborde légèrement */
-  .vcard-illu-img {
-    position: absolute;
-    top: -20px;
-    right: -12px;
-    width: 100px;
-    height: 100px;
-    object-fit: contain;
-    pointer-events: none;
-    z-index: 2;
-    /* Placeholder visible tant que pas de vraie image */
-    font-size: 64px;
-    line-height: 100px;
-    text-align: center;
-    user-select: none;
-  }
-
-  /* Placeholder emoji (même positionnement) */
-  .vcard-illu-placeholder {
-    position: absolute;
-    top: -20px;
-    right: -12px;
-    width: 100px;
-    height: 100px;
+  /* ── Photo / illustration ── */
+  .vcard-photo {
+    flex-shrink: 0;
+    width: 90px;
+    height: 128px;
+    border-radius: 20px;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 64px;
-    pointer-events: none;
-    z-index: 2;
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.12));
   }
 
-  /* ── Badges row ── */
-  .vcard-badges {
+  /* Gradients fallback par type */
+  .illu-tshirt  { background: linear-gradient(145deg, #DBEAFE, #93C5FD); }
+  .illu-jean    { background: linear-gradient(145deg, #EFF6FF, #BFDBFE); }
+  .illu-hoodie  { background: linear-gradient(145deg, #FED7AA, #FDBA74); }
+  .illu-robe    { background: linear-gradient(145deg, #FCE7F3, #F9A8D4); }
+  .illu-jupe    { background: linear-gradient(145deg, #EDE9FE, #DDD6FE); }
+  .illu-manteau { background: linear-gradient(145deg, #D1FAE5, #6EE7B7); }
+  .illu-default { background: linear-gradient(145deg, #F3F4F6, #E5E7EB); }
+
+  .vcard-photo img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .vcard-photo-emoji {
+    font-size: 48px; line-height: 1;
+  }
+
+  /* ── Contenu ── */
+  .vcard-content {
+    flex: 1 1 0;
     display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-end;   /* badges calés côté opposé à la photo */
+    gap: 12px;
+  }
+
+  /* Quand la photo est à droite, le contenu s'aligne à gauche */
+  .vcard--right .vcard-content {
+    align-items: flex-start;
+  }
+
+  .vcard-name {
+    align-self: stretch;
+    color: #39382B;
+    font-size: 18px; font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700; line-height: 28px; word-wrap: break-word;
+  }
+
+  /* ── Badges ── */
+  .vcard-badges {
+    display: inline-flex;
     justify-content: flex-start;
     align-items: flex-start;
     gap: 12px;
   }
 
-  /* Colonne badge : pill + label dessous */
   .badge-col {
-    display: flex;
+    display: inline-flex;
     flex-direction: column;
+    justify-content: center;
     align-items: center;
-    gap: 0;
   }
 
-  /* Pill commun */
   .badge-pill {
-    width: 60px;
-    height: 60px;
+    width: 60px; height: 60px;
     background: #F7F4DE;
     border-radius: 20px;
   }
 
-  /* Surface : colonne centrée */
+  /* Surface */
   .badge-pill--surface {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 8px 0;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    gap: 1px;
   }
   .badge-pill--surface .badge-num {
     color: #237329;
-    font-size: 25px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-weight: 700;
-    line-height: 1;
+    font-size: 22px; font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700; line-height: 1;
+    letter-spacing: -0.04em; /* réduit l'espace autour de la virgule */
   }
   .badge-pill--surface .badge-unit {
     color: #39382B;
-    font-size: 10px;
-    font-family: 'Manrope', sans-serif;
-    font-weight: 700;
-    text-transform: uppercase;
-    line-height: 1.6;
+    font-size: 10px; font-family: 'Manrope', sans-serif;
+    font-weight: 700; text-transform: uppercase; line-height: 1;
   }
 
-  /* Qualité : ligne centrée */
+  /* Qualité */
   .badge-pill--qualite {
-    display: inline-flex;
+    display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: center; /* centre le groupe dans la case */
+  }
+  .qualite-inner {
+    display: inline-flex;
+    align-items: baseline; /* aligne les bas de "2" et "/5" */
   }
   .badge-pill--qualite .badge-num {
     color: #237329;
-    font-size: 25px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-weight: 700;
-    line-height: 28px;
+    font-size: 25px; font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700; line-height: 1;
   }
   .badge-pill--qualite .badge-denom {
     color: #39382B;
-    font-size: 12px;
-    font-family: 'Manrope', sans-serif;
-    font-weight: 700;
-    text-transform: uppercase;
-    line-height: 28px;
-    align-self: flex-end;
-    margin-bottom: 4px;
+    font-size: 12px; font-family: 'Manrope', sans-serif;
+    font-weight: 700; text-transform: uppercase; line-height: 1;
   }
 
-  /* Couleur : juste la swatch */
+  /* Couleur */
   .badge-pill--color {
-    border: 3px solid rgba(0, 0, 0, 0.20);
-    background: #CCCCCC;        /* overridé par JS selon la couleur */
+    border: 3px solid rgba(0,0,0,0.20);
+    background: #CCCCCC;
   }
 
-  /* Label sous chaque badge */
   .badge-lbl {
     color: #666556;
-    font-size: 8px;
+    font-size: 10px; font-family: 'Manrope', sans-serif;
+    font-weight: 700; text-transform: uppercase; line-height: 14px;
+    text-align: center;
+  }
+
+  /* Labels des stat-cols légèrement plus grands, retour à la ligne autorisé */
+  .stat-col > .badge-lbl {
+    font-size: 13px;
+    line-height: 17px;
+    margin-top: 6px;
+  }
+
+  /* ── Barre de recherche + bouton sélectionner ── */
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .search-input-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    width: 16px; height: 16px;
+    color: #65655E;
+    pointer-events: none;
+    flex-shrink: 0;
+  }
+  .search-input {
+    width: 100%;
+    height: 44px;
+    padding: 0 14px 0 42px;
+    background: #EFEEE3;
+    border: 2px solid transparent;
+    border-radius: 9999px;
     font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    color: #39382B;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .search-input::placeholder { color: #9B9A8E; }
+  .search-input:focus { background: white; border-color: #237329; }
+
+  .btn-select {
+    flex-shrink: 0;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 9999px;
+    border: 2px solid #DDDCD2;
+    background: white;
+    color: #39382B;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
     font-weight: 700;
-    text-transform: uppercase;
-    line-height: 28px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .btn-select.active {
+    background: #39382B;
+    border-color: #39382B;
+    color: white;
+  }
+
+  /* ── Mode sélection ── */
+  .vcard.selectable { cursor: pointer; transition: outline 0.12s; }
+  .vcard.selected   { outline: 3px solid #237329; outline-offset: 2px; }
+
+  .select-check {
+    display: none;
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 24px; height: 24px;
+    background: white;
+    border: 2px solid #DDDCD2;
+    border-radius: 50%;
+    align-items: center; justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .selectable .select-check      { display: flex; }
+  .selected  .select-check       { background: #237329; border-color: #237329; }
+  .selected  .select-check svg   { display: block; }
+  .select-check svg { display: none; width: 13px; height: 13px; color: white; }
+
+  /* ── Barre d'action suppression (collée au-dessus de la nav) ── */
+  .delete-bar {
+    display: none;
+    position: fixed;
+    bottom: 80px; left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 358px;
+    background: #A24A33;
+    border-radius: 9999px;
+    padding: 14px 24px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(162,74,51,0.35);
+  }
+  .delete-bar.visible { display: flex; }
+  .delete-bar-label {
+    color: white;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .delete-bar-btn {
+    background: white;
+    color: #A24A33;
+    border: none;
+    border-radius: 9999px;
+    padding: 8px 20px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
   }
 
   /* ── Empty state ── */
@@ -258,34 +366,42 @@
     <div class="page-heading-sub">Ton stock de matières à transformer.</div>
   </div>
 
-  <!-- Carte réserve -->
-  <div class="reserve-card">
-    <div class="ring-wrap">
-      <svg width="100" height="100" viewBox="0 0 100 100">
-        <circle class="ring-bg" cx="50" cy="50" r="40"/>
-        <circle class="ring-fill" cx="50" cy="50" r="40"
-          stroke-dasharray="{{ circumference }}"
-          stroke-dashoffset="{{ stroke_offset }}"/>
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-col">
+      <div class="stat-card">
+        <span class="stat-card-number">{{ nb_vetements }}</span>
+      </div>
+      <span class="badge-lbl">Nombre de tissus</span>
+    </div>
+    <div class="stat-col">
+      <div class="stat-card">
+        <span class="stat-card-number">{{ total_surface|floatformat:2 }}</span>
+        <span class="stat-card-unit">m²</span>
+      </div>
+      <span class="badge-lbl">Surface totale</span>
+    </div>
+    <div class="stat-col">
+      <div class="stat-card">
+        <span class="stat-card-number">{{ total_co2 }}</span>
+        <span class="stat-card-unit">kg CO₂</span>
+      </div>
+      <span class="badge-lbl">CO₂ économisé</span>
+    </div>
+  </div>
+
+  <!-- Barre de recherche + bouton sélectionner -->
+  <div class="toolbar">
+    <div class="search-input-wrap">
+      <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
-      <div class="ring-label">
-        <span class="ring-pct">{{ progression_pct }}%</span>
-        <span class="ring-unit">objectif</span>
-      </div>
+      <input id="searchInput" class="search-input" type="search"
+             placeholder="Rechercher un vêtement…" autocomplete="off">
     </div>
-    <div class="reserve-stats">
-      <div class="stat-pill">
-        <span class="stat-pill-label">Surface exploitable</span>
-        <span class="stat-pill-value">{{ total_surface }} <span>m²</span></span>
-      </div>
-      <div class="stat-pill">
-        <span class="stat-pill-label">CO₂ économisé</span>
-        <span class="stat-pill-value">{{ total_co2 }} <span>kg</span></span>
-      </div>
-      <div class="stat-pill">
-        <span class="stat-pill-label">Vêtements scannés</span>
-        <span class="stat-pill-value"><span>{{ nb_vetements }}</span> pièce{% if nb_vetements > 1 %}s{% endif %}</span>
-      </div>
-    </div>
+    <button id="btnSelect" class="btn-select">Sélectionner</button>
   </div>
 
   <!-- Filtres -->
@@ -304,54 +420,67 @@
   <div class="vcard-list" id="vetement-grid">
     {% for item in vetements_data %}
     {% with v=item.vetement %}
-    <div class="vcard" data-type="{{ v.typeVetement }}">
 
-      <!-- ✦ Illustration 3D — à remplacer par <img> selon le type de vêtement -->
-      <div class="vcard-illu-placeholder">
-        {% if v.typeVetement == 'tshirt' %}👕
-        {% elif v.typeVetement == 'jean' %}👖
-        {% elif v.typeVetement == 'hoodie' %}🧥
-        {% elif v.typeVetement == 'robe' %}👗
-        {% elif v.typeVetement == 'jupe' %}👗
-        {% elif v.typeVetement == 'manteau' %}🧥
-        {% else %}🎽
+    {# Impairs → photo à gauche | pairs → photo à droite #}
+    <div class="vcard {% if forloop.counter|divisibleby:2 %}vcard--right{% endif %}"
+         data-type="{{ v.typeVetement }}"
+         data-id="{{ v.id }}"
+         style="position:relative;">
+
+      <!-- Indicateur de sélection -->
+      <div class="select-check" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+
+      <!-- Photo / illustration -->
+      <div class="vcard-photo illu-{{ v.typeVetement|default:'default' }}">
+        {% if v.photoURL %}
+          <img src="{{ v.photoURL.url }}" alt="{{ v.nomVetement }}">
+        {% else %}
+          <span class="vcard-photo-emoji">
+            {% if v.typeVetement == 'tshirt' %}👕
+            {% elif v.typeVetement == 'jean' %}👖
+            {% elif v.typeVetement == 'hoodie' %}🧥
+            {% elif v.typeVetement == 'robe' %}👗
+            {% elif v.typeVetement == 'jupe' %}👗
+            {% elif v.typeVetement == 'manteau' %}🧥
+            {% else %}🎽{% endif %}
+          </span>
         {% endif %}
       </div>
 
-      <!-- Nom du vêtement -->
-      <div class="vcard-title-row">
+      <!-- Contenu -->
+      <div class="vcard-content">
         <div class="vcard-name">{{ v.nomVetement }}</div>
+        <div class="vcard-badges">
+          <div class="badge-col">
+            <div class="badge-pill badge-pill--surface">
+              <span class="badge-num">{{ v.surfaceExploitable|floatformat:2 }}</span>
+              <span class="badge-unit">m²</span>
+            </div>
+            <span class="badge-lbl">surface</span>
+          </div>
+          <div class="badge-col">
+            <div class="badge-pill badge-pill--qualite">
+              <div class="qualite-inner">
+                <span class="badge-num">{{ v.qualite }}</span>
+                <span class="badge-denom">/5</span>
+              </div>
+            </div>
+            <span class="badge-lbl">qualité</span>
+          </div>
+          <div class="badge-col">
+            <div class="badge-pill badge-pill--color" data-couleur="{{ v.couleur|default:'' }}"></div>
+            <span class="badge-lbl">couleur</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Badges -->
-      <div class="vcard-badges">
-
-        <!-- Surface -->
-        <div class="badge-col">
-          <div class="badge-pill badge-pill--surface">
-            <span class="badge-num">{{ v.surfaceExploitable|floatformat:-2 }}</span>
-            <span class="badge-unit">m²</span>
-          </div>
-          <span class="badge-lbl">surface</span>
-        </div>
-
-        <!-- Qualité -->
-        <div class="badge-col">
-          <div class="badge-pill badge-pill--qualite">
-            <span class="badge-num">{{ v.qualite }}</span>
-            <span class="badge-denom">/5</span>
-          </div>
-          <span class="badge-lbl">qualité</span>
-        </div>
-
-        <!-- Couleur -->
-        <div class="badge-col">
-          <div class="badge-pill badge-pill--color" data-couleur="{{ v.couleur|default:'' }}"></div>
-          <span class="badge-lbl">couleur</span>
-        </div>
-
-      </div>
     </div>
+
     {% endwith %}
     {% endfor %}
   </div>
@@ -364,47 +493,133 @@
 
 </div>
 
+<!-- Barre de suppression (fixed bottom) -->
+<div class="delete-bar" id="deleteBar">
+  <span class="delete-bar-label" id="deleteLabel">0 sélectionné</span>
+  <button class="delete-bar-btn" id="deleteBtn">Supprimer</button>
+</div>
+
+<!-- Formulaire caché pour la suppression -->
+<form id="deleteForm" method="post" action="{% url 'supprimer_vetements' %}" style="display:none">
+  {% csrf_token %}
+  <div id="deleteInputs"></div>
+</form>
+
 <script>
-  /* ── Filtres ── */
+  const COLOR_MAP = {
+    'ivoire':       '#F2EDD7', 'beige':        '#D4B896', 'camel':        '#C19A6B',
+    'terracotta':   '#C2694F', 'rouge':        '#CC2936', 'bordeaux':     '#7B0C0C',
+    'rose':         '#F4A0B0', 'mauve':        '#967BB6', 'lavande':      '#B57EDC',
+    'marine':       '#1F305C', 'bleu ciel':    '#89CFF0', 'vert sauge':   '#9CAF88',
+    'vert forêt':   '#228B22', 'moutarde':     '#C8A415', 'gris ardoise': '#708090',
+    'noir':         '#1A1A1A', 'blanc':        '#F0EEE8', 'gris':         '#A0A09A',
+  };
+  document.querySelectorAll('.badge-pill--color[data-couleur]').forEach(el => {
+    const raw = el.dataset.couleur.trim().toLowerCase();
+    if (!raw) return;
+    const hex = COLOR_MAP[raw.split(',')[0].trim()];
+    if (hex) el.style.background = hex;
+  });
+
+  /* ── Filtres par type ── */
+  const allCards = () => document.querySelectorAll('.vcard[data-type]');
+  let activeFilter = 'tous';
+  let searchQuery  = '';
+
+  function applyVisibility() {
+    allCards().forEach(card => {
+      const matchFilter = activeFilter === 'tous' || card.dataset.type === activeFilter;
+      const matchSearch = card.querySelector('.vcard-name')
+                              .textContent.toLowerCase()
+                              .includes(searchQuery);
+      card.style.display = (matchFilter && matchSearch) ? '' : 'none';
+    });
+  }
+
   document.querySelectorAll('.filter-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
-      const f = chip.dataset.filter;
-      document.querySelectorAll('.vcard').forEach(card => {
-        card.style.display = (f === 'tous' || card.dataset.type === f) ? 'flex' : 'none';
-      });
+      activeFilter = chip.dataset.filter;
+      applyVisibility();
     });
   });
 
-  /* ── Couleurs → hex ── */
-  const COLOR_MAP = {
-    'ivoire':       '#F2EDD7',
-    'beige':        '#D4B896',
-    'camel':        '#C19A6B',
-    'terracotta':   '#C2694F',
-    'rouge':        '#CC2936',
-    'bordeaux':     '#7B0C0C',
-    'rose':         '#F4A0B0',
-    'mauve':        '#967BB6',
-    'lavande':      '#B57EDC',
-    'marine':       '#1F305C',
-    'bleu ciel':    '#89CFF0',
-    'vert sauge':   '#9CAF88',
-    'vert forêt':   '#228B22',
-    'moutarde':     '#C8A415',
-    'gris ardoise': '#708090',
-    'noir':         '#1A1A1A',
-    'blanc':        '#F0EEE8',
-    'gris':         '#A0A09A',
-  };
+  /* ── Recherche ── */
+  document.getElementById('searchInput').addEventListener('input', e => {
+    searchQuery = e.target.value.toLowerCase().trim();
+    applyVisibility();
+  });
 
-  document.querySelectorAll('.badge-pill--color[data-couleur]').forEach(el => {
-    const raw = el.dataset.couleur.trim().toLowerCase();
-    if (!raw) return;
-    const first = raw.split(',')[0].trim();
-    const hex = COLOR_MAP[first];
-    if (hex) el.style.background = hex;
+  /* ── Mode sélection ── */
+  const btnSelect  = document.getElementById('btnSelect');
+  const deleteBar  = document.getElementById('deleteBar');
+  const deleteLabel= document.getElementById('deleteLabel');
+  const deleteBtn  = document.getElementById('deleteBtn');
+  const deleteForm = document.getElementById('deleteForm');
+  const deleteInputs = document.getElementById('deleteInputs');
+
+  let selectMode = false;
+  const selected = new Set();
+
+  function updateDeleteBar() {
+    const n = selected.size;
+    deleteLabel.textContent = n === 1 ? '1 vêtement sélectionné' : `${n} vêtements sélectionnés`;
+    deleteBar.classList.toggle('visible', n > 0);
+  }
+
+  btnSelect.addEventListener('click', () => {
+    selectMode = !selectMode;
+    btnSelect.textContent = selectMode ? 'Annuler' : 'Sélectionner';
+    btnSelect.classList.toggle('active', selectMode);
+
+    allCards().forEach(card => {
+      card.classList.toggle('selectable', selectMode);
+      if (!selectMode) {
+        card.classList.remove('selected');
+      }
+    });
+
+    if (!selectMode) {
+      selected.clear();
+      deleteBar.classList.remove('visible');
+    }
+  });
+
+  /* Clic sur une carte en mode sélection */
+  document.getElementById('vetement-grid')?.addEventListener('click', e => {
+    if (!selectMode) return;
+    const card = e.target.closest('.vcard[data-id]');
+    if (!card) return;
+
+    const id = card.dataset.id;
+    if (selected.has(id)) {
+      selected.delete(id);
+      card.classList.remove('selected');
+    } else {
+      selected.add(id);
+      card.classList.add('selected');
+    }
+    updateDeleteBar();
+  });
+
+  /* Suppression */
+  deleteBtn.addEventListener('click', () => {
+    if (selected.size === 0) return;
+    const label = selected.size === 1
+      ? 'Supprimer ce vêtement ?'
+      : `Supprimer ces ${selected.size} vêtements ?`;
+    if (!confirm(label)) return;
+
+    deleteInputs.innerHTML = '';
+    selected.forEach(id => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'vetement_ids[]';
+      input.value = id;
+      deleteInputs.appendChild(input);
+    });
+    deleteForm.submit();
   });
 </script>
 {% endblock %}

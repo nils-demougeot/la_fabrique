@@ -1,8 +1,5 @@
 {% load static %}
 <style>
-  /* =========================================
-     Barre de navigation inférieure
-     ========================================= */
   .bottom-nav {
     background: #FEFCF3;
     border-top: 1.5px solid #EEEDE3;
@@ -17,13 +14,13 @@
     min-height: 72px;
   }
 
-  /* Onglet standard */
+  /* ── Onglet standard ── */
   .nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
-    gap: 4px;
+    justify-content: center;
+    gap: 5px;
     flex: 1;
     text-decoration: none;
     color: #B3B2A4;
@@ -32,17 +29,15 @@
     transition: color 0.15s ease;
   }
 
-  .nav-item.active {
-    color: var(--color-primary);
-  }
-
-  .nav-item.active .nav-icon-bg {
-    background: #D2F4D1;
-  }
+  .nav-item.active { color: var(--color-primary); }
 
   .nav-icon-bg {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
+    aspect-ratio: 1;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -51,49 +46,54 @@
     transition: background 0.15s ease;
   }
 
+  .nav-item.active .nav-icon-bg { background: #D2F4D1; }
+
   .nav-item svg {
-    width: 22px;
-    height: 22px;
+    width: 23px;
+    height: 23px;
     flex-shrink: 0;
+    fill: currentColor;
   }
 
   .nav-label {
-    font-family: var(--font-body);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.1px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     line-height: 1;
   }
 
-  /* ── Scanner — bouton rond ── */
+  /* ── Scanner ── */
   .nav-scanner-wrapper {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
+    justify-content: flex-end;  /* label collé en bas comme les autres */
+    gap: 5px;
     text-decoration: none;
     padding-bottom: 10px;
     height: 72px;
+    color: #B3B2A4;             /* gris par défaut */
   }
 
   .nav-scanner-btn {
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     background: linear-gradient(160deg, #43A047 0%, #2E7D32 100%);
     box-shadow: 0 5px 0 #1B5E20, 0 10px 24px rgba(35,115,41,0.35);
-    margin-top: -42px;
+    margin-top: -62px;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     flex-shrink: 0;
     transition: transform 0.08s, box-shadow 0.08s;
-    transform: translateY(0);
     overflow: hidden;
     border: none;
+    color: white;
   }
 
   .nav-scanner-btn::before {
@@ -110,46 +110,41 @@
     box-shadow: 0 1px 0 #1B5E20, 0 4px 10px rgba(35,115,41,0.20);
   }
 
-  .scanner-icon {
-    width: 24px;
-    height: 24px;
+  .nav-scanner-btn svg {
+    width: 22px;
+    height: 22px;
     flex-shrink: 0;
     position: relative;
     z-index: 1;
+    fill: currentColor;
   }
 
   .nav-scanner-label {
-    font-family: var(--font-body);
-    font-size: 10px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 9px;
     font-weight: 700;
-    color: var(--color-primary);
-    letter-spacing: 0.1px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     line-height: 1;
+    color: #B3B2A4;
   }
 
-  /* Badge notification (communauté) */
-  .nav-badge-wrap {
-    position: relative;
-    display: inline-flex;
+  .nav-scanner-wrapper.active .nav-scanner-label {
+    color: var(--color-primary);
   }
 
+  /* Badge notification */
+  .nav-badge-wrap { position: relative; display: inline-flex; }
   .nav-badge {
     position: absolute;
-    top: -3px;
-    right: -6px;
-    min-width: 15px;
-    height: 15px;
+    top: -3px; right: -6px;
+    min-width: 15px; height: 15px;
     background: #E53935;
     border-radius: 8px;
     border: 2px solid #FEFCF3;
-    font-size: 7px;
-    font-weight: 700;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 2px;
-    line-height: 1;
+    font-size: 7px; font-weight: 700; color: white;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 2px; line-height: 1;
   }
 </style>
 
@@ -158,9 +153,8 @@
   <!-- 1. Accueil -->
   <a href="{% url 'dashboard' %}" class="nav-item {% if nav_active == 'accueil' %}active{% endif %}">
     <div class="nav-icon-bg">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
-        <polyline points="9,21 9,12 15,12 15,21"/>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19,24H5c-2.757,0-5-2.243-5-5V9.724c0-1.665,.824-3.215,2.204-4.145L9.203,.855c1.699-1.146,3.895-1.146,5.594,0l7,4.724c1.379,.93,2.203,2.479,2.203,4.145v9.276c0,2.757-2.243,5-5,5ZM12,1.997c-.584,0-1.168,.172-1.678,.517L3.322,7.237c-.828,.558-1.322,1.487-1.322,2.486v9.276c0,1.654,1.346,3,3,3h14c1.654,0,3-1.346,3-3V9.724c0-.999-.494-1.929-1.321-2.486L13.678,2.514c-.51-.345-1.094-.517-1.678-.517Z"/>
       </svg>
     </div>
     <span class="nav-label">Accueil</span>
@@ -169,19 +163,18 @@
   <!-- 2. Mes tissus -->
   <a href="{% url 'mes_tissus' %}" class="nav-item {% if nav_active == 'tissus' %}active{% endif %}">
     <div class="nav-icon-bg">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.57a2 2 0 00-1.34-2.23z"/>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="m22.751,17.411l-9.108-6.47c2.639-2.166,3.844-3.16,3.175-6.087-.417-1.822-1.862-3.268-3.684-3.684-1.514-.345-3.068,0-4.259.952-1.192.95-1.875,2.369-1.875,3.891,0,.552.448,1,1,1s1-.448,1-1c0-.911.409-1.759,1.122-2.328.724-.578,1.635-.779,2.568-.565,1.061.242,1.937,1.118,2.179,2.179.383,1.678.148,1.927-2.505,4.106l-.968.799L1.222,17.431c-.765.583-1.222,1.506-1.222,2.467,0,1.71,1.392,3.102,3.102,3.102h17.796c1.71,0,3.102-1.392,3.102-3.102,0-.961-.457-1.884-1.249-2.487Zm-1.853,3.589H3.102c-.608,0-1.102-.494-1.102-1.102,0-.341.163-.669.407-.856l9.593-6.815,9.565,6.795c.272.207.435.535.435.876,0,.608-.494,1.102-1.102,1.102Z"/>
       </svg>
     </div>
     <span class="nav-label">Mes tissus</span>
   </a>
 
-  <!-- 3. Scanner — bouton gamifié -->
-  <a href="{% url 'ajout_textile' %}" class="nav-scanner-wrapper">
+  <!-- 3. Scanner -->
+  <a href="{% url 'ajout_textile' %}" class="nav-scanner-wrapper {% if nav_active == 'scanner' %}active{% endif %}">
     <div class="nav-scanner-btn">
-      <svg class="scanner-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-        <circle cx="12" cy="13" r="4"/>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="m24,12c0,.552-.448,1-1,1H1c-.552,0-1-.448-1-1s.448-1,1-1h22c.552,0,1,.448,1,1ZM7,22h-2c-1.654,0-3-1.346-3-3v-2c0-.552-.448-1-1-1s-1,.448-1,1v2c0,2.757,2.243,5,5,5h2c.552,0,1-.448,1-1s-.448-1-1-1Zm16-6c-.552,0-1,.448-1,1v2c0,1.654-1.346,3-3,3h-2c-.552,0-1,.448-1,1s.448,1,1,1h2c2.757,0,5-2.243,5-5v-2c0-.552-.448-1-1-1ZM19,0h-2c-.552,0-1,.448-1,1s.448,1,1,1h2c1.654,0,3,1.346,3,3v2c0,.552.448,1,1,1s1-.448,1-1v-2c0-2.757-2.243-5-5-5ZM1,8c.552,0,1-.448,1-1v-2c0-1.654,1.346-3,3-3h2c.552,0,1-.448,1-1s-.448-1-1-1h-2C2.243,0,0,2.243,0,5v2c0,.552.448,1,1,1Z"/>
       </svg>
     </div>
     <span class="nav-scanner-label">Scanner</span>
@@ -190,11 +183,8 @@
   <!-- 4. Patrons -->
   <a href="{% url 'patrons' %}" class="nav-item {% if nav_active == 'patrons' %}active{% endif %}">
     <div class="nav-icon-bg">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="7" height="7" rx="1"/>
-        <rect x="14" y="3" width="7" height="7" rx="1"/>
-        <rect x="14" y="14" width="7" height="7" rx="1"/>
-        <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="m24 19.984c0 2.204-1.794 3.997-4 3.997s-4-1.793-4-3.997c0-1.42.537-2.657 1.158-4.088.863-1.989 1.842-4.242 1.842-7.902-.012-.638-.096-1.411-.176-1.604-.21-.507.026-1.095.533-1.309.486-.207 1.038.006 1.272.473.666-.562.846-.728.893-.775.636-.635.636-1.668 0-2.303-.614-.614-1.689-.616-2.305 0-.517.516-5.765 6.88-11.133 13.427 2.593-2.129 5.386-4.419 7.589-6.222.429-.349 1.058-.287 1.407.141.351.427.287 1.056-.14 1.406-5.684 4.649-15.285 12.544-15.286 12.544-.396.327-.978.3-1.342-.065-.363-.363-.411-.96-.087-1.357 1.353-1.657 11.137-13.634 15.519-18.878-1.184-.534-3.883-1.473-8.244-1.473-2.82 0-6.192.951-6.226.961-.535.154-1.084-.156-1.236-.686-.151-.532.156-1.085.687-1.236.148-.042 3.67-1.038 6.775-1.038 5.344 0 8.452 1.309 9.573 1.893.367-.43.625-.724.73-.83 1.372-1.372 3.765-1.37 5.133 0 1.415 1.414 1.415 3.715 0 5.129-.075.075-.275.275-1.926 1.651l-.014.011c.044 4.064-1.106 6.791-2.004 8.838-.555 1.278-.993 2.288-.993 3.293 0 1.102.897 1.998 2 1.998s2-.896 2-1.998c0-.552.447-.999 1-.999s1 .447 1 .999z"/>
       </svg>
     </div>
     <span class="nav-label">Patrons</span>
@@ -204,11 +194,8 @@
   <a href="{% url 'communaute' %}" class="nav-item {% if nav_active == 'communaute' %}active{% endif %}">
     <div class="nav-icon-bg">
       <div class="nav-badge-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 00-3-3.87"/>
-          <path d="M16 3.13a4 4 0 010 7.75"/>
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="m7.5 13a4.5 4.5 0 1 1 4.5-4.5 4.505 4.505 0 0 1 -4.5 4.5zm0-7a2.5 2.5 0 1 0 2.5 2.5 2.5 2.5 0 0 0 -2.5-2.5zm7.5 17v-.5a7.5 7.5 0 0 0 -15 0v.5a1 1 0 0 0 2 0v-.5a5.5 5.5 0 0 1 11 0v.5a1 1 0 0 0 2 0zm9-5a7 7 0 0 0 -11.667-5.217 1 1 0 1 0 1.334 1.49 5 5 0 0 1 8.333 3.727 1 1 0 0 0 2 0zm-6.5-9a4.5 4.5 0 1 1 4.5-4.5 4.505 4.505 0 0 1 -4.5 4.5zm0-7a2.5 2.5 0 1 0 2.5 2.5 2.5 2.5 0 0 0 -2.5-2.5z"/>
         </svg>
         {# <span class="nav-badge">3</span> #}
       </div>

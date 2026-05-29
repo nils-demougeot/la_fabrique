@@ -11,6 +11,7 @@ urlpatterns = [
     path('ajout_textile/', views.ajout_textile, name='ajout_textile'),
     path('communaute/', views.communaute, name='communaute'),
     path('mes-tissus/', views.mes_tissus, name='mes_tissus'),
+    path('mes-tissus/supprimer/', views.supprimer_vetements, name='supprimer_vetements'),
 
     path('connexion/', auth_views.LoginView.as_view(template_name='core/connexion.html'), name='connexion'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
