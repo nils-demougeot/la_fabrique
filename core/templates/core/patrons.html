@@ -26,6 +26,114 @@
   .title-accent { color: var(--color-primary); }
 
   /* =========================================
+     Section "En cours"
+     ========================================= */
+  .en-cours-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .section-label {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    color: var(--text-muted);
+    padding: 0 4px;
+  }
+
+  .en-cours-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    /* Masquer scrollbar */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .en-cours-scroll::-webkit-scrollbar { display: none; }
+
+  .en-cours-card {
+    flex-shrink: 0;
+    width: 148px;
+    background: white;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s;
+  }
+  .en-cours-card:active { transform: scale(0.97); }
+
+  .en-cours-img {
+    width: 100%;
+    height: 96px;
+    object-fit: cover;
+    display: block;
+    background: #ECE9D1;
+  }
+
+  .en-cours-body {
+    padding: 10px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .en-cours-name {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-dark);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .en-cours-step {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .en-cours-progress-track {
+    width: 100%;
+    height: 4px;
+    background: #F0EFE5;
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+
+  .en-cours-progress-fill {
+    height: 4px;
+    background: var(--color-primary);
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+  }
+
+  .en-cours-continue {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--color-primary);
+    padding: 4px 10px;
+    background: rgba(35,115,41,0.08);
+    border-radius: 9999px;
+    width: fit-content;
+  }
+  .en-cours-continue svg { width: 10px; height: 10px; }
+
+  /* =========================================
      Barre de recherche + filtres
      ========================================= */
   .search-section {
@@ -170,8 +278,12 @@
     color: var(--text-dark);
     cursor: pointer;
     transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 
+  .filter-chip svg { width: 13px; height: 13px; flex-shrink: 0; }
   .filter-chip:hover { background: #EFEEE3; }
 
   .filter-chip.active {
@@ -179,6 +291,11 @@
     color: white;
     border-color: var(--color-primary);
   }
+
+  /* Chip "Mes likés" style spécial */
+  .filter-chip.likes-chip { background: #FFF0ED; color: #7C2E19; }
+  .filter-chip.likes-chip:hover { background: #FFE4DE; }
+  .filter-chip.likes-chip.active { background: #A24A33; border-color: #A24A33; color: white; }
 
   /* =========================================
      Liste de patrons
@@ -203,10 +320,10 @@
     background: white;
     border-radius: 48px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
-    overflow: visible;      /* stamps dépassent */
+    overflow: visible;
     position: relative;
     will-change: transform;
-    touch-action: pan-y;    /* scroll vertical préservé */
+    touch-action: pan-y;
     cursor: grab;
     user-select: none;
   }
@@ -333,7 +450,8 @@
   .patron-icon-btn:active { transform: scale(0.88); }
 
   .patron-icon-btn.skip    { background: #F7F4DE; }
-  .patron-icon-btn.like-btn { background: #FFC4B5; }
+  .patron-icon-btn.like-btn { background: #FFC4B5; transition: transform 0.15s, background 0.2s; }
+  .patron-icon-btn.like-btn.liked { background: #A24A33; }
 
   .patron-icon-btn svg {
     width: 20px;
@@ -446,6 +564,41 @@
     <div style="text-align:center; color:#65655E; font-size:16px; font-family:'Manrope',sans-serif; font-weight:500; line-height:24px;">Choisis ton prochain chef-d'œuvre.</div>
   </div>
 
+  <!-- ==========================================
+       Projets en cours
+       ========================================== -->
+  {% if projets_en_cours %}
+  <section class="en-cours-section">
+    <p class="section-label">Reprendre là où tu t'es arrêté·e</p>
+    <div class="en-cours-scroll">
+      {% for prog in projets_en_cours %}
+      <a href="{% url 'etape_projet' patron_pk=prog.patron_id etape_num=prog.etape_actuelle %}"
+         class="en-cours-card">
+        {% if prog.image %}
+        <img class="en-cours-img" src="{{ prog.image }}" alt="{{ prog.titre }}">
+        {% else %}
+        <div class="en-cours-img"></div>
+        {% endif %}
+        <div class="en-cours-body">
+          <span class="en-cours-name">{{ prog.titre }}</span>
+          <div class="en-cours-progress-track">
+            <div class="en-cours-progress-fill" style="width:{{ prog.progression_pct }}%;"></div>
+          </div>
+          <span class="en-cours-step">Étape {{ prog.etape_actuelle }}/{{ prog.total_etapes }}</span>
+          <span class="en-cours-continue">
+            Continuer
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   <!-- Recherche + filtres -->
   <div class="search-section">
     <div class="search-row">
@@ -494,6 +647,18 @@
               <button class="filter-chip" data-filter-key="premium" data-filter-val="true">Premium</button>
             </div>
           </div>
+          <div class="filter-group">
+            <p class="filter-group-label">Mes favoris</p>
+            <div class="filter-chips">
+              <button class="filter-chip likes-chip" id="likesFilterChip" data-filter-key="liked" data-filter-val="true">
+                <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                Mes likés
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -503,9 +668,11 @@
   <div class="patrons-list" id="patronsList">
     {% for patron in patrons %}
     <div class="patron-wrap"
+         data-patron-id="{{ patron.id }}"
          data-title="{{ patron.titre|lower }}"
          data-difficulty="{{ patron.difficulte_label|lower }}"
-         data-premium="{{ patron.est_premium|yesno:'true,false' }}">
+         data-premium="{{ patron.est_premium|yesno:'true,false' }}"
+         data-liked="{{ patron.est_liked|yesno:'true,false' }}">
 
       <div class="patron-card">
         <!-- Stamps -->
@@ -547,7 +714,7 @@
           <!-- Actions -->
           <div class="patron-actions">
             <div class="patron-icon-group">
-              <!-- Bouton skip (gauche) -->
+              <!-- Bouton skip -->
               <button class="patron-icon-btn skip" title="Passer">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                      fill="none" stroke="#A24A33" stroke-width="2.5"
@@ -556,11 +723,16 @@
                   <line x1="6"  y1="6" x2="18" y2="18"/>
                 </svg>
               </button>
-              <!-- Bouton like (droite) -->
-              <button class="patron-icon-btn like-btn" title="J'adore">
+              <!-- Bouton like (cœur) — toggle persistant -->
+              <button class="patron-icon-btn like-btn {% if patron.est_liked %}liked{% endif %}"
+                      title="J'aime"
+                      data-patron-id="{{ patron.id }}"
+                      data-liked="{{ patron.est_liked|yesno:'true,false' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                     fill="#7C2E19" stroke="#7C2E19" stroke-width="1.5"
-                     stroke-linecap="round" stroke-linejoin="round">
+                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                     class="like-icon"
+                     fill="{% if patron.est_liked %}white{% else %}#7C2E19{% endif %}"
+                     stroke="{% if patron.est_liked %}white{% else %}#7C2E19{% endif %}">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </svg>
               </button>
@@ -599,6 +771,11 @@
 <script>
 (function () {
   'use strict';
+
+  /* ── Config ───────────────────────────────────────────── */
+  const CSRF_TOKEN = '{{ csrf_token }}';
+  // liked IDs initiaux (depuis le serveur)
+  const likedIds = new Set({{ liked_ids_json|safe }});
 
   /* ── Refs ─────────────────────────────────────────────── */
   const searchInput = document.getElementById('searchInput');
@@ -659,7 +836,7 @@
     setTimeout(() => collapseWrap(wrap), 200);
   }
 
-  function doLike(card, wrap) {
+  function doSwipeLike(card, wrap) {
     const stamp = card.querySelector('.stamp-like');
     if (stamp) { stamp.style.opacity = '1'; stamp.style.transform = 'rotate(-15deg) scale(1.15)'; }
     spawnHearts(card);
@@ -669,6 +846,47 @@
       card.style.opacity    = '0';
       setTimeout(() => collapseWrap(wrap), 200);
     }, 350);
+  }
+
+  /* ── Like persistant (bouton cœur) ───────────────────── */
+  function toggleLike(btn, wrap) {
+    const patronId = parseInt(btn.dataset.patronId, 10);
+    const wasLiked = btn.dataset.liked === 'true';
+    const icon = btn.querySelector('.like-icon');
+
+    // Optimistic UI
+    const nowLiked = !wasLiked;
+    btn.dataset.liked = nowLiked ? 'true' : 'false';
+    wrap.dataset.liked = nowLiked ? 'true' : 'false';
+    btn.classList.toggle('liked', nowLiked);
+    if (icon) {
+      icon.setAttribute('fill', nowLiked ? 'white' : '#7C2E19');
+      icon.setAttribute('stroke', nowLiked ? 'white' : '#7C2E19');
+    }
+    if (nowLiked) {
+      likedIds.add(patronId);
+      spawnHearts(btn.closest('.patron-card'));
+    } else {
+      likedIds.delete(patronId);
+    }
+
+    // Appel serveur
+    fetch(`/patrons/${patronId}/like/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/json' },
+    }).catch(() => {
+      // Rollback en cas d'erreur réseau
+      btn.dataset.liked = wasLiked ? 'true' : 'false';
+      wrap.dataset.liked = wasLiked ? 'true' : 'false';
+      btn.classList.toggle('liked', wasLiked);
+      if (icon) {
+        icon.setAttribute('fill', wasLiked ? 'white' : '#7C2E19');
+        icon.setAttribute('stroke', wasLiked ? 'white' : '#7C2E19');
+      }
+      wasLiked ? likedIds.add(patronId) : likedIds.delete(patronId);
+    });
+
+    applyAll();
   }
 
   /* ── Swipe drag ───────────────────────────────────────── */
@@ -701,7 +919,7 @@
     function endDrag() {
       if (!dragging) return;
       dragging = false;
-      if      (curX >  THRESHOLD) doLike(card, wrap);
+      if      (curX >  THRESHOLD) doSwipeLike(card, wrap);
       else if (curX < -THRESHOLD) doSkip(card, wrap);
       else {
         card.style.transition = 'transform 0.42s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
@@ -714,15 +932,21 @@
     card.addEventListener('pointerup',     endDrag);
     card.addEventListener('pointercancel', endDrag);
 
+    // Skip
     card.querySelector('.patron-icon-btn.skip')
       ?.addEventListener('click', e => { e.stopPropagation(); if (!wrap.dataset.dismissed) doSkip(card, wrap); });
-    card.querySelector('.patron-icon-btn.like-btn')
-      ?.addEventListener('click', e => { e.stopPropagation(); if (!wrap.dataset.dismissed) doLike(card, wrap); });
+
+    // Like — toggle persistant, pas de dismiss
+    const likeBtn = card.querySelector('.patron-icon-btn.like-btn');
+    if (likeBtn) {
+      likeBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (!wrap.dataset.dismissed) toggleLike(likeBtn, wrap);
+      });
+    }
   }
 
   /* ── Filtres ──────────────────────────────────────────── */
-
-  /* Toggle panneau */
   filterBtn.addEventListener('click', () => {
     const open = filterPanel.classList.toggle('open');
     filterBtn.classList.toggle('active', open);
@@ -730,10 +954,15 @@
     filterPanel.setAttribute('aria-hidden', !open);
   });
 
-  /* Chips */
   chips.forEach(chip => {
     chip.addEventListener('click', () => {
-      chip.classList.toggle('active');
+      const key = chip.dataset.filterKey;
+      // Pour les clés à sélection unique (liked), désactiver les autres du même groupe
+      if (key === 'liked') {
+        chip.classList.toggle('active');
+      } else {
+        chip.classList.toggle('active');
+      }
       updateFilterCount();
       applyAll();
     });
@@ -752,7 +981,6 @@
   function applyAll() {
     const query = searchInput.value.toLowerCase().trim();
 
-    /* Regrouper les filtres actifs par clé (OR intra-clé, AND inter-clés) */
     const byKey = {};
     chips.filter(c => c.classList.contains('active')).forEach(c => {
       const k = c.dataset.filterKey;
@@ -763,9 +991,18 @@
     wraps.forEach(wrap => {
       if (wrap.dataset.dismissed) return;
       const matchSearch  = !query || wrap.dataset.title.includes(query);
-      const matchFilters = Object.entries(byKey).every(([k, vals]) =>
-        vals.has((wrap.dataset[k] || '').toLowerCase())
-      );
+
+      let matchFilters = true;
+      for (const [k, vals] of Object.entries(byKey)) {
+        if (k === 'liked') {
+          // Filtre spécial : utiliser le dataset.liked live
+          const isLiked = wrap.dataset.liked === 'true';
+          if (vals.has('true') && !isLiked) { matchFilters = false; break; }
+        } else {
+          if (!vals.has((wrap.dataset[k] || '').toLowerCase())) { matchFilters = false; break; }
+        }
+      }
+
       wrap.style.display = (matchSearch && matchFilters) ? '' : 'none';
     });
 

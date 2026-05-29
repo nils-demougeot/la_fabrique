@@ -1203,72 +1203,204 @@
   }
 
   /* =========================================
-     Section Inspiration
+     Section Mes Créations
      ========================================= */
-  .inspiration-section {
+  .creations-section {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
   }
 
-  .inspiration-header {
+  .creations-header {
     display: flex;
+    align-items: baseline;
     justify-content: space-between;
-    align-items: flex-end;
+    gap: 8px;
   }
 
-  .see-more-link {
-    font-family: 'Be Vietnam Pro', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    color: var(--color-primary);
-    text-decoration: none;
-  }
-
-  .inspiration-scroll {
-    display: flex;
+  /* Bandeau stats créations */
+  .creations-stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 12px;
+  }
+
+  .creation-stat-pill {
+    background: white;
+    border-radius: 24px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  }
+
+  .creation-stat-value {
+    font-family: var(--font-title);
+    font-weight: 900;
+    font-size: 32px;
+    line-height: 1;
+    color: var(--text-dark);
+  }
+
+  .creation-stat-label {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  /* Scroll horizontal des cartes terminées */
+  .creations-scroll {
+    display: flex;
+    gap: 14px;
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
     padding-bottom: 4px;
   }
+  .creations-scroll::-webkit-scrollbar { display: none; }
 
-  .inspiration-scroll::-webkit-scrollbar {
-    display: none;
-  }
-
-  .inspiration-card {
-    position: relative;
-    border-radius: 32px;
-    overflow: hidden;
+  .creation-card {
     flex-shrink: 0;
-    width: 163px;
-    height: 217px;
+    width: 170px;
+    background: white;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    position: relative;
   }
 
-  .inspiration-card img {
+  .creation-card-img {
     width: 100%;
-    height: 100%;
+    height: 120px;
     object-fit: cover;
     display: block;
+    background: #ECE9D1;
   }
 
-  .inspiration-card-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.60) 0%, rgba(0, 0, 0, 0) 55%);
+  .creation-card-img-placeholder {
+    width: 100%;
+    height: 120px;
+    background: linear-gradient(135deg, #ECE9D1, #D8D4B8);
     display: flex;
-    align-items: flex-end;
-    padding: 16px;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
   }
 
-  .inspiration-card-title {
-    font-family: 'Manrope', sans-serif;
+  .creation-card-body {
+    padding: 12px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .creation-card-name {
+    font-family: var(--font-title);
     font-weight: 700;
     font-size: 14px;
-    line-height: 1.4;
+    color: var(--text-dark);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .creation-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .creation-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: #F5F4EA;
+    padding: 3px 8px;
+    border-radius: 9999px;
+  }
+
+  .creation-done-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(35,115,41,0.90);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-radius: 9999px;
+    padding: 4px 10px 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 11px;
     color: white;
+  }
+
+  .creation-done-badge svg { width: 11px; height: 11px; }
+
+  .creation-date {
+    font-family: var(--font-body);
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  /* État vide créations */
+  .creations-empty {
+    background: #FDFAE5;
+    border-radius: 32px;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .creations-empty-emoji { font-size: 40px; }
+
+  .creations-empty-title {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-dark);
+  }
+
+  .creations-empty-sub {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    max-width: 220px;
+  }
+
+  .creations-empty-cta {
+    margin-top: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--color-primary);
+    color: white;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 9999px;
+    text-decoration: none;
   }
 
 </style>
@@ -1365,38 +1497,76 @@
     </div>
   </div>
 
-  <!-- Inspiration -->
-  <div class="inspiration-section">
-    <div class="inspiration-header">
-      <h2 class="section-title">Inspiration</h2>
-      <a href="#" class="see-more-link">Voir plus</a>
+  <!-- Mes Créations terminées -->
+  <div class="creations-section">
+    <div class="creations-header">
+      <h2 class="section-title">Mes créations</h2>
     </div>
-    <div class="inspiration-scroll">
-      <div class="inspiration-card">
-        <img src="https://placehold.co/163x217" alt="Restes de laine">
-        <div class="inspiration-card-overlay">
-          <span class="inspiration-card-title">Restes de laine</span>
-        </div>
+
+    {% if nb_projets_termines > 0 %}
+
+    <!-- Stats -->
+    <div class="creations-stats-row">
+      <div class="creation-stat-pill">
+        <span class="creation-stat-value">{{ nb_projets_termines }}</span>
+        <span class="creation-stat-label">projet{{ nb_projets_termines|pluralize }} terminé{{ nb_projets_termines|pluralize }}</span>
       </div>
-      <div class="inspiration-card">
-        <img src="https://placehold.co/163x217" alt="Réutilisation de jeans">
-        <div class="inspiration-card-overlay">
-          <span class="inspiration-card-title">Réutilisation de jeans</span>
-        </div>
-      </div>
-      <div class="inspiration-card">
-        <img src="https://placehold.co/163x217" alt="Nouvelle collection">
-        <div class="inspiration-card-overlay">
-          <span class="inspiration-card-title">Nouvelle collection</span>
-        </div>
-      </div>
-      <div class="inspiration-card">
-        <img src="https://placehold.co/163x217" alt="Textures en laine">
-        <div class="inspiration-card-overlay">
-          <span class="inspiration-card-title">Textures en laine</span>
-        </div>
+      <div class="creation-stat-pill">
+        <span class="creation-stat-value">{{ nb_etapes_realisees }}</span>
+        <span class="creation-stat-label">étape{{ nb_etapes_realisees|pluralize }} réalisée{{ nb_etapes_realisees|pluralize }}</span>
       </div>
     </div>
+
+    <!-- Cartes projets terminés -->
+    <div class="creations-scroll">
+      {% for projet in projets_termines %}
+      <a href="{% url 'patron_detail' pk=projet.patron_id %}" class="creation-card">
+        <!-- Badge terminé -->
+        <div class="creation-done-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Terminé
+        </div>
+
+        <!-- Image -->
+        {% if projet.image %}
+        <img class="creation-card-img" src="{{ projet.image }}" alt="{{ projet.titre }}">
+        {% else %}
+        <div class="creation-card-img-placeholder">✂️</div>
+        {% endif %}
+
+        <!-- Infos -->
+        <div class="creation-card-body">
+          <span class="creation-card-name">{{ projet.titre }}</span>
+          <div class="creation-card-meta">
+            <span class="creation-meta-pill">{{ projet.difficulte_label }}</span>
+            <span class="creation-meta-pill">{{ projet.duree }}</span>
+          </div>
+          <span class="creation-date">{{ projet.date_fin|date:"d/m/Y" }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+
+    {% else %}
+
+    <!-- État vide -->
+    <div class="creations-empty">
+      <span class="creations-empty-emoji">🧵</span>
+      <p class="creations-empty-title">Ton atelier t'attend !</p>
+      <p class="creations-empty-sub">Termine ton premier patron pour voir tes créations apparaître ici.</p>
+      <a href="{% url 'patrons' %}" class="creations-empty-cta">
+        Découvrir les patrons
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </a>
+    </div>
+
+    {% endif %}
   </div>
 
 </main>

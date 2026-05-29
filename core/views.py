@@ -8,7 +8,8 @@ from django.contrib.auth import login
 from django.db.models import Sum
 import math
 
-from core.models import Vetement, Utilisateur, Patron, EtapePatron
+from django.http import JsonResponse
+from core.models import Vetement, Utilisateur, Patron, EtapePatron, ProgressionProjet, PatronLike
 
 def home(request):
     context = {
@@ -22,13 +23,36 @@ def dashboard(request):
     user = request.user
     OBJECTIF_M2 = 15.0
 
-    # TODO: remplacer par Vetement.objects.filter(utilisateur=user).aggregate(total=Sum('surfaceExploitable'))
-    surface_totale = 12.4
-    # TODO: remplacer par surface_totale * facteur_CO2 (ex: 1 m² ≈ 1.13 kg CO2 économisé)
-    co2_economise = 14
+    surface_totale = round(
+        Vetement.objects.filter(utilisateur=user).aggregate(total=Sum('surfaceExploitable'))['total'] or 0.0,
+        2
+    )
+    co2_economise = round(surface_totale * 2.5, 1)
 
-    surface_pourcentage = round((surface_totale / OBJECTIF_M2) * 100)
-    surface_restante = round(OBJECTIF_M2 - surface_totale, 1)
+    surface_pourcentage = min(100, round((surface_totale / OBJECTIF_M2) * 100))
+    surface_restante = round(max(0, OBJECTIF_M2 - surface_totale), 1)
+
+    # Projets terminés
+    termines_qs = (
+        ProgressionProjet.objects
+        .filter(utilisateur=user, termine=True)
+        .select_related('patron')
+        .order_by('-date_derniere_activite')
+    )
+    projets_termines = []
+    nb_etapes_realisees = 0
+    for prog in termines_qs:
+        p = prog.patron
+        total_etapes = p.etapes.count()
+        nb_etapes_realisees += total_etapes
+        projets_termines.append({
+            'titre': p.titre,
+            'image': p.photo.url if p.photo else None,
+            'difficulte_label': DIFFICULTE_LABELS.get(p.difficulte, str(p.difficulte)),
+            'duree': p.duree or '?',
+            'date_fin': prog.date_derniere_activite,
+            'patron_id': p.pk,
+        })
 
     context = {
         'surface_totale': surface_totale,
@@ -37,6 +61,9 @@ def dashboard(request):
         'surface_restante': surface_restante,
         'credits': user.soldePieces,
         'co2_economise': co2_economise,
+        'projets_termines': projets_termines,
+        'nb_projets_termines': len(projets_termines),
+        'nb_etapes_realisees': nb_etapes_realisees,
     }
     return render(request, 'core/dashboard.html', context)
 
@@ -186,6 +213,17 @@ def patrons(request):
         .aggregate(total=Sum('surfaceExploitable'))['total'] or 0.0
     )
 
+    liked_ids = set(
+        PatronLike.objects.filter(utilisateur=request.user).values_list('patron_id', flat=True)
+    )
+
+    progressions_qs = (
+        ProgressionProjet.objects
+        .filter(utilisateur=request.user, termine=False)
+        .select_related('patron')
+    )
+    en_cours_patron_ids = {p.patron_id for p in progressions_qs}
+
     patrons_list = []
     for p in Patron.objects.all().order_by('difficulte'):
         patrons_list.append({
@@ -197,9 +235,30 @@ def patrons(request):
             'difficulte_label': DIFFICULTE_LABELS.get(p.difficulte, str(p.difficulte)),
             'duree': p.duree or '?',
             'est_premium': p.estPremium,
+            'est_liked': p.pk in liked_ids,
+            'en_cours': p.pk in en_cours_patron_ids,
         })
 
-    return render(request, 'core/patrons.html', {'patrons': patrons_list})
+    projets_en_cours = []
+    for prog in progressions_qs:
+        p = prog.patron
+        total_etapes = p.etapes.count()
+        pct = round((prog.etape_actuelle / total_etapes) * 100) if total_etapes > 0 else 0
+        projets_en_cours.append({
+            'patron_id': p.pk,
+            'titre': p.titre,
+            'image': p.photo.url if p.photo else None,
+            'etape_actuelle': prog.etape_actuelle,
+            'total_etapes': total_etapes,
+            'progression_pct': pct,
+            'difficulte_label': DIFFICULTE_LABELS.get(p.difficulte, str(p.difficulte)),
+        })
+
+    return render(request, 'core/patrons.html', {
+        'patrons': patrons_list,
+        'projets_en_cours': projets_en_cours,
+        'liked_ids_json': list(liked_ids),
+    })
 
 
 @login_required
@@ -275,6 +334,16 @@ def etape_projet(request, patron_pk, etape_num):
         if match:
             video_embed_id = match.group(1)
 
+    # Sauvegarde / mise à jour de la progression
+    prog, created = ProgressionProjet.objects.get_or_create(
+        utilisateur=request.user,
+        patron=patron,
+        defaults={'etape_actuelle': etape_num},
+    )
+    if not created and etape_num > prog.etape_actuelle:
+        prog.etape_actuelle = etape_num
+        prog.save()
+
     context = {
         'patron': patron,
         'etape': etape_actuelle,
@@ -288,6 +357,27 @@ def etape_projet(request, patron_pk, etape_num):
         'est_derniere': etape_suivante is None,
     }
     return render(request, 'core/etape_projet.html', context)
+
+
+@login_required
+def terminer_projet(request, pk):
+    patron = get_object_or_404(Patron, pk=pk)
+    ProgressionProjet.objects.filter(utilisateur=request.user, patron=patron).update(termine=True)
+    return redirect('patrons')
+
+
+@login_required
+def toggle_like(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    patron = get_object_or_404(Patron, pk=pk)
+    like, created = PatronLike.objects.get_or_create(utilisateur=request.user, patron=patron)
+    if not created:
+        like.delete()
+        is_liked = False
+    else:
+        is_liked = True
+    return JsonResponse({'liked': is_liked})
 
 
 @login_required

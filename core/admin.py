@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Utilisateur, Vetement, Patron, EtapePatron, Tutoriel, Projet, Recommandation, AchatPatron
+from .models import Utilisateur, Vetement, Patron, EtapePatron, Tutoriel, Projet, Recommandation, AchatPatron, ProgressionProjet, PatronLike
 
 
 class EtapePatronInline(admin.StackedInline):
@@ -46,3 +46,5 @@ admin.site.register(Vetement)
 admin.site.register(Projet)
 admin.site.register(Recommandation)
 admin.site.register(AchatPatron)
+admin.site.register(ProgressionProjet)
+admin.site.register(PatronLike)

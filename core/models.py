@@ -94,3 +94,30 @@ class EtapePatron(models.Model):
 
     def __str__(self):
         return f"Étape {self.numero} - {self.titre} ({self.patron.titre})"
+
+
+class ProgressionProjet(models.Model):
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='progressions')
+    patron = models.ForeignKey(Patron, on_delete=models.CASCADE, related_name='progressions')
+    etape_actuelle = models.IntegerField(default=1)
+    date_debut = models.DateTimeField(auto_now_add=True)
+    date_derniere_activite = models.DateTimeField(auto_now=True)
+    termine = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('utilisateur', 'patron')
+
+    def __str__(self):
+        return f"{self.utilisateur.username} – {self.patron.titre} (étape {self.etape_actuelle})"
+
+
+class PatronLike(models.Model):
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='patron_likes')
+    patron = models.ForeignKey(Patron, on_delete=models.CASCADE, related_name='likes')
+    date_like = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('utilisateur', 'patron')
+
+    def __str__(self):
+        return f"{self.utilisateur.username} aime {self.patron.titre}"
