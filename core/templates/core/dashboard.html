@@ -51,14 +51,14 @@
 
   .card-banque::before {
     content: '';
-    width: 192px;
-    height: 192px;
+    width: 220px;
+    height: 220px;
     position: absolute;
-    right: -24px;
-    top: -48px;
-    background: rgba(157, 241, 151, 0.30);
+    right: -40px;
+    top: -60px;
+    background: radial-gradient(circle, rgba(157, 241, 151, 0.55) 0%, transparent 70%);
     border-radius: 50%;
-    filter: blur(32px);
+    filter: blur(28px);
     pointer-events: none;
   }
 
@@ -131,6 +131,873 @@
 
   .card-credits .stat-card-icon svg { fill: #7C2E19; }
   .card-eco    .stat-card-icon svg { fill: #2F5E4A; }
+
+  /* =========================================
+     Modal Crédits
+     ========================================= */
+  @keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+  }
+
+  .credits-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    align-items: stretch;
+    justify-content: center;
+  }
+
+  .credits-overlay.active { display: flex; }
+
+  .credits-sheet {
+    background: var(--bg-main);
+    border-radius: 0;
+    width: 100%;
+    max-width: 430px;
+    max-height: 100dvh;
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding-bottom: 64px;
+    animation: slideInRight 0.3s cubic-bezier(0.33, 1, 0.68, 1);
+  }
+
+  .credits-sheet::-webkit-scrollbar { display: none; }
+
+  /* Page header (commun aux deux modales plein écran) */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 20px 16px;
+    position: sticky;
+    top: 0;
+    background: var(--bg-main);
+    z-index: 10;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+
+  .back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #EEEDE3;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-dark);
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .back-btn:active { background: #DEDAD0; }
+  .back-btn svg { display: block; }
+
+  .page-title {
+    font-family: var(--font-title);
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--text-dark);
+    text-align: center;
+    flex: 1;
+  }
+
+  .page-header-spacer { width: 40px; flex-shrink: 0; }
+
+  /* Balance Hero */
+  .balance-hero {
+    margin: 20px 20px 0;
+    background: linear-gradient(145deg, #FFE599, #FFD15C, #F5A623);
+    border-radius: 32px;
+    padding: 28px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .balance-hero::before {
+    content: '';
+    position: absolute;
+    top: -55px;
+    right: -55px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, transparent 68%);
+    filter: blur(22px);
+    pointer-events: none;
+  }
+
+  .balance-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -45px;
+    left: -45px;
+    width: 140px;
+    height: 140px;
+    background: radial-gradient(circle, rgba(180,90,0,0.25) 0%, transparent 70%);
+    filter: blur(20px);
+    pointer-events: none;
+  }
+
+  .coin-hero {
+    width: 92px;
+    height: 92px;
+    background: radial-gradient(circle at 35% 32%, #FFFDE0, #FFD700 45%, #E6930A 85%);
+    border-radius: 50%;
+    border: 5px solid rgba(255, 255, 255, 0.35);
+    box-shadow:
+      inset 0 -5px 10px rgba(0, 0, 0, 0.15),
+      inset 0 5px 10px rgba(255, 255, 255, 0.32),
+      0 8px 0 #B8690A,
+      0 12px 28px rgba(140, 80, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    animation: coinFloat 3s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  .coin-letter {
+    font-family: var(--font-title);
+    font-weight: 900;
+    font-size: 32px;
+    color: #8B5E0A;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 -1px 0 rgba(255, 255, 255, 0.4);
+    position: relative;
+    z-index: 1;
+    user-select: none;
+  }
+
+  .coin-shine {
+    position: absolute;
+    top: 13%;
+    left: 17%;
+    width: 30%;
+    height: 18%;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    filter: blur(5px);
+    pointer-events: none;
+    animation: coinShine 3s ease-in-out infinite;
+  }
+
+  @keyframes coinFloat {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-9px); }
+  }
+
+  @keyframes coinShine {
+    0%, 100% { opacity: 0.7; }
+    50%       { opacity: 1; }
+  }
+
+  .balance-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    z-index: 1;
+  }
+
+  .balance-big {
+    font-family: var(--font-title);
+    font-weight: 900;
+    font-size: 60px;
+    line-height: 1;
+    color: #3D2200;
+    letter-spacing: -1px;
+  }
+
+  .balance-label {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    color: rgba(61, 34, 0, 0.6);
+    letter-spacing: 0.3px;
+  }
+
+  .level-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.52);
+    border-radius: 99px;
+    padding: 9px 20px;
+    z-index: 1;
+  }
+
+  .level-pill-icon { font-size: 18px; }
+
+  .level-pill-name {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 15px;
+    color: #3D2200;
+  }
+
+  /* Level Progress Section */
+  .level-section {
+    margin: 16px 20px 0;
+    background: #F5F3E7;
+    border-radius: 24px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .level-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .level-current-label {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-dark);
+  }
+
+  .level-next-label {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: right;
+    max-width: 130px;
+    line-height: 1.3;
+  }
+
+  .level-bar {
+    height: 10px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .level-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary), #5BCF6A);
+    border-radius: 99px;
+    transition: width 0.9s cubic-bezier(0.25, 1, 0.5, 1);
+    width: 0%;
+  }
+
+  .level-milestones {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .milestone-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .milestone-icon {
+    font-size: 15px;
+    opacity: 0.3;
+    transition: all 0.3s ease;
+  }
+
+  .milestone-icon.done   { opacity: 1; }
+  .milestone-icon.active { opacity: 1; transform: scale(1.3); }
+
+  .milestone-name {
+    font-family: var(--font-body);
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  /* Shop Section */
+  .shop-section {
+    margin: 24px 0 0;
+  }
+
+  .section-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0 20px;
+    margin-bottom: 14px;
+  }
+
+  .modal-section-title {
+    font-family: var(--font-title);
+    font-weight: 800;
+    font-size: 19px;
+    color: var(--text-dark);
+  }
+
+  .modal-section-sub {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .shop-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 4px 20px 8px;
+  }
+
+  .shop-scroll::-webkit-scrollbar { display: none; }
+
+  .shop-item {
+    flex-shrink: 0;
+    width: 148px;
+    background: #F5F3E7;
+    border-radius: 24px;
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .shop-item-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .shop-item-name {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-dark);
+    line-height: 1.3;
+  }
+
+  .shop-item-desc {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    flex-grow: 1;
+  }
+
+  .shop-item-footer {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .shop-item-price {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .shop-price-coin { font-size: 14px; }
+
+  .shop-price-amount {
+    font-family: var(--font-title);
+    font-weight: 800;
+    font-size: 18px;
+    color: #7C2E19;
+    line-height: 1;
+  }
+
+  .shop-btn {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 99px;
+    padding: 9px 10px;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity 0.15s;
+    text-align: center;
+  }
+
+  .shop-btn:active { opacity: 0.75; }
+
+  .shop-btn.locked {
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    font-size: 11px;
+  }
+
+  /* Recharge Section */
+  .recharge-section {
+    margin: 24px 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .packs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .pack-card {
+    border-radius: 24px;
+    padding: 18px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pack-starter { background: linear-gradient(145deg, #E8F5E9, #BDDBBA); }
+  .pack-popular { background: linear-gradient(145deg, #FFF3E0, #FFD9A0); }
+  .pack-atelier { background: linear-gradient(145deg, #E8EAF6, #C5CAE9); }
+  .pack-maitre  { background: linear-gradient(145deg, #FFFDE7, #FFF176); }
+
+  .pack-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--color-accent);
+    color: white;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 8px;
+    padding: 3px 7px;
+    border-radius: 99px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .pack-icon { font-size: 26px; }
+
+  .pack-name {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-dark);
+  }
+
+  .pack-coins {
+    font-family: var(--font-title);
+    font-weight: 900;
+    font-size: 26px;
+    color: var(--text-dark);
+    line-height: 1;
+  }
+
+  .pack-coins-unit {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .pack-price {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .pack-btn {
+    background: rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 99px;
+    padding: 9px;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-dark);
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.15s;
+    text-align: center;
+  }
+
+  .pack-btn:hover  { background: rgba(0, 0, 0, 0.16); }
+  .pack-btn:active { background: rgba(0, 0, 0, 0.22); }
+
+  /* =========================================
+     Carte Éco — cliquable
+     ========================================= */
+  .card-eco {
+    cursor: pointer;
+    transition: transform 0.15s ease;
+    user-select: none;
+  }
+  .card-eco:active { transform: scale(0.97); }
+
+  /* =========================================
+     Modal CO₂ Bilan
+     ========================================= */
+  .eco-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    align-items: stretch;
+    justify-content: center;
+  }
+  .eco-overlay.active { display: flex; }
+
+  .eco-sheet {
+    background: var(--bg-main);
+    border-radius: 0;
+    width: 100%;
+    max-width: 430px;
+    max-height: 100dvh;
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding-bottom: 64px;
+    animation: slideInRight 0.3s cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  .eco-sheet::-webkit-scrollbar { display: none; }
+
+  /* Hero vert */
+  .eco-hero {
+    margin: 20px 20px 0;
+    background: linear-gradient(145deg, #A8EDBC, #3DAF65, #1B5E20);
+    border-radius: 32px;
+    padding: 28px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .eco-hero::before {
+    content: '';
+    position: absolute;
+    top: -55px; right: -55px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(255,255,255,0.38) 0%, transparent 68%);
+    filter: blur(22px);
+    pointer-events: none;
+  }
+  .eco-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -45px; left: -45px;
+    width: 140px; height: 140px;
+    background: radial-gradient(circle, rgba(0,60,20,0.3) 0%, transparent 70%);
+    filter: blur(20px);
+    pointer-events: none;
+  }
+
+  .eco-globe {
+    width: 92px;
+    height: 92px;
+    background: radial-gradient(circle at 36% 32%, #E0FFEE, #43A047 42%, #1A5C1E 86%);
+    border-radius: 50%;
+    border: 5px solid rgba(255,255,255,0.28);
+    box-shadow:
+      inset 0 -5px 10px rgba(0,0,0,0.14),
+      inset 0 5px 10px rgba(255,255,255,0.22),
+      0 8px 0 #0A3512,
+      0 12px 28px rgba(10,60,20,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    font-size: 40px;
+    animation: leafFloat 3.5s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes leafFloat {
+    0%, 100% { transform: translateY(0px) rotate(-2deg); }
+    50%       { transform: translateY(-9px) rotate(2deg); }
+  }
+
+  .eco-globe-shine {
+    position: absolute;
+    top: 13%; left: 16%;
+    width: 28%; height: 18%;
+    background: rgba(255,255,255,0.6);
+    border-radius: 50%;
+    filter: blur(5px);
+    pointer-events: none;
+    animation: coinShine 3.5s ease-in-out infinite;
+  }
+
+  .eco-balance-display {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    z-index: 1;
+  }
+  .eco-minus {
+    font-family: var(--font-title);
+    font-weight: 900;
+    font-size: 38px;
+    color: rgba(255,255,255,0.8);
+    line-height: 1;
+  }
+  .eco-big {
+    font-family: var(--font-title);
+    font-weight: 900;
+    font-size: 64px;
+    line-height: 1;
+    color: white;
+    letter-spacing: -2px;
+  }
+  .eco-unit {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 18px;
+    color: rgba(255,255,255,0.78);
+    line-height: 1;
+  }
+  .eco-hero-sub {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.82);
+    z-index: 1;
+    text-align: center;
+  }
+  .eco-rank-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 99px;
+    padding: 9px 20px;
+    z-index: 1;
+  }
+  .eco-rank-icon { font-size: 18px; }
+  .eco-rank-name {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 15px;
+    color: white;
+  }
+
+  /* Comparaisons concrètes */
+  .comparisons-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 4px 20px 8px;
+  }
+  .comparisons-scroll::-webkit-scrollbar { display: none; }
+
+  .cmp-card {
+    flex-shrink: 0;
+    width: 146px;
+    border-radius: 24px;
+    padding: 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .cmp-emoji { font-size: 30px; line-height: 1; }
+  .cmp-value {
+    font-family: var(--font-title);
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--text-dark);
+    line-height: 1;
+    margin-top: 4px;
+  }
+  .cmp-desc {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-dark);
+    line-height: 1.3;
+  }
+  .cmp-fun {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    font-style: italic;
+  }
+
+  /* Compteur communautaire */
+  .eco-community {
+    margin: 24px 20px 0;
+    background: #1B4332;
+    border-radius: 32px;
+    padding: 24px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .eco-community::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(110,232,154,0.2) 0%, transparent 70%);
+    filter: blur(30px);
+    pointer-events: none;
+  }
+  .eco-community::after {
+    content: '';
+    position: absolute;
+    bottom: -50px; left: -30px;
+    width: 140px; height: 140px;
+    background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+    filter: blur(24px);
+    pointer-events: none;
+  }
+  .community-title {
+    font-family: var(--font-title);
+    font-weight: 800;
+    font-size: 17px;
+    color: white;
+  }
+  .community-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .community-stat { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .community-stat-value {
+    font-family: var(--font-title);
+    font-weight: 900;
+    font-size: 20px;
+    color: white;
+    line-height: 1;
+  }
+  .community-stat-label {
+    font-family: var(--font-body);
+    font-size: 10px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.35;
+  }
+  .community-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .community-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .community-bar-label {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+  }
+  .community-bar-pct {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 12px;
+    color: #6EE89A;
+  }
+  .community-progress-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .community-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF73, #A8F0C8);
+    border-radius: 99px;
+    width: 0%;
+    transition: width 1.4s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  /* Fun facts */
+  .eco-facts { margin: 24px 0 0; }
+  .facts-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 4px 20px 8px;
+  }
+  .facts-scroll::-webkit-scrollbar { display: none; }
+  .fact-card {
+    flex-shrink: 0;
+    width: 210px;
+    border-radius: 24px;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .fact-emoji { font-size: 26px; }
+  .fact-title {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-dark);
+    line-height: 1.35;
+  }
+  .fact-body {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+
+  /* Défi personnel */
+  .eco-challenge {
+    margin: 24px 20px 0;
+    background: linear-gradient(135deg, #FFF9C4, #FFF176);
+    border-radius: 24px;
+    padding: 20px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .challenge-icon { font-size: 32px; flex-shrink: 0; }
+  .challenge-body { display: flex; flex-direction: column; gap: 6px; }
+  .challenge-title {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-dark);
+  }
+  .challenge-text {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .challenge-progress {
+    margin-top: 6px;
+    height: 8px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .challenge-progress-fill {
+    height: 100%;
+    background: #F5A623;
+    border-radius: 99px;
+    width: 0%;
+    transition: width 1s cubic-bezier(0.25,1,0.5,1);
+  }
 
   /* Barre de progression */
   .progress-section {
@@ -253,6 +1120,13 @@
   /* Couleurs carte Crédits */
   .card-credits {
     background: #FFC4B5;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    user-select: none;
+  }
+
+  .card-credits:active {
+    transform: scale(0.97);
   }
 
   .card-credits .stat-card-label { color: #7C2E19; }
@@ -439,7 +1313,7 @@
     </a>
 
     <!-- Crédits -->
-    <div class="stat-card card-credits">
+    <div class="stat-card card-credits" onclick="openCreditsModal()" role="button" tabindex="0">
       <div class="stat-card-header">
         <span class="stat-card-label">Crédits</span>
         <div class="stat-card-icon">
@@ -455,7 +1329,7 @@
     </div>
 
     <!-- Impact écologique -->
-    <div class="stat-card card-eco">
+    <div class="stat-card card-eco" onclick="openEcoModal()" role="button" tabindex="0">
       <div class="stat-card-header">
         <span class="stat-card-label">Impact écologique</span>
         <div class="stat-card-icon">
@@ -526,10 +1400,420 @@
   </div>
 
 </main>
+
+<!-- ======================================================
+     MODAL CRÉDITS
+     ====================================================== -->
+<div id="credits-modal" class="credits-overlay">
+  <div class="credits-sheet">
+
+    <!-- Header page -->
+    <div class="page-header">
+      <button class="back-btn" onclick="closeCreditsModal()" aria-label="Retour">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M5 12l7 7M5 12l7-7"/></svg>
+      </button>
+      <span class="page-title">Mes Pièces</span>
+      <div class="page-header-spacer"></div>
+    </div>
+
+    <!-- Balance Hero Card -->
+    <div class="balance-hero">
+      <div class="coin-hero">
+        <span class="coin-letter">P</span>
+        <div class="coin-shine"></div>
+      </div>
+      <div class="balance-display">
+        <span class="balance-big">{{ credits }}</span>
+        <span class="balance-label">pièces disponibles</span>
+      </div>
+    </div>
+
+    <!-- Boutique -->
+    <div class="shop-section">
+      <div class="section-header-row">
+        <h3 class="modal-section-title">Boutique</h3>
+        <span class="modal-section-sub">Dépensez vos pièces</span>
+      </div>
+      <div class="shop-scroll">
+
+        <div class="shop-item">
+          <div class="shop-item-icon" style="background:#DCF5E0;">🪡</div>
+          <span class="shop-item-name">Patron Tote Bag Éco</span>
+          <span class="shop-item-desc">Un sac stylé cousu de chutes de tissu récupérées</span>
+          <div class="shop-item-footer">
+            <div class="shop-item-price">
+              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-amount">15</span>
+            </div>
+            <button class="shop-btn" data-price="15" onclick="buyItem(this)">Obtenir</button>
+          </div>
+        </div>
+
+        <div class="shop-item">
+          <div class="shop-item-icon" style="background:#FFF0E8;">👗</div>
+          <span class="shop-item-name">Patron Robe Fluide</span>
+          <span class="shop-item-desc">Coupe intemporelle, zéro déchet de coupe</span>
+          <div class="shop-item-footer">
+            <div class="shop-item-price">
+              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-amount">35</span>
+            </div>
+            <button class="shop-btn" data-price="35" onclick="buyItem(this)">Obtenir</button>
+          </div>
+        </div>
+
+        <div class="shop-item">
+          <div class="shop-item-icon" style="background:#E8F4FD;">🎨</div>
+          <span class="shop-item-name">Guide Teinture Naturelle</span>
+          <span class="shop-item-desc">Indigo, garance et kaki 100% naturels</span>
+          <div class="shop-item-footer">
+            <div class="shop-item-price">
+              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-amount">25</span>
+            </div>
+            <button class="shop-btn" data-price="25" onclick="buyItem(this)">Obtenir</button>
+          </div>
+        </div>
+
+        <div class="shop-item">
+          <div class="shop-item-icon" style="background:#F4E8FF;">✂️</div>
+          <span class="shop-item-name">Patron Veste Upcyclée</span>
+          <span class="shop-item-desc">Transformez un vieux jean en veste tendance</span>
+          <div class="shop-item-footer">
+            <div class="shop-item-price">
+              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-amount">45</span>
+            </div>
+            <button class="shop-btn" data-price="45" onclick="buyItem(this)">Obtenir</button>
+          </div>
+        </div>
+
+        <div class="shop-item">
+          <div class="shop-item-icon" style="background:#FFF3CD;">🌿</div>
+          <span class="shop-item-name">Badge Éco Warrior</span>
+          <span class="shop-item-desc">Badge exclusif affiché sur votre profil</span>
+          <div class="shop-item-footer">
+            <div class="shop-item-price">
+              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-amount">10</span>
+            </div>
+            <button class="shop-btn" data-price="10" onclick="buyItem(this)">Obtenir</button>
+          </div>
+        </div>
+
+        <div class="shop-item">
+          <div class="shop-item-icon" style="background:#FFEBEE;">📦</div>
+          <span class="shop-item-name">Pack Zéro Déchet</span>
+          <span class="shop-item-desc">4 patrons + guide couture responsable complet</span>
+          <div class="shop-item-footer">
+            <div class="shop-item-price">
+              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-amount">55</span>
+            </div>
+            <button class="shop-btn" data-price="55" onclick="buyItem(this)">Obtenir</button>
+          </div>
+        </div>
+
+        <div class="shop-item">
+          <div class="shop-item-icon" style="background:#FFF9C4;">⭐</div>
+          <span class="shop-item-name">Accès Premium</span>
+          <span class="shop-item-desc">Tous les patrons en illimité pendant 1 mois</span>
+          <div class="shop-item-footer">
+            <div class="shop-item-price">
+              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-amount">80</span>
+            </div>
+            <button class="shop-btn" data-price="80" onclick="buyItem(this)">Obtenir</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Recharger mes pièces -->
+    <div class="recharge-section">
+      <div class="section-header-row" style="padding:0;">
+        <h3 class="modal-section-title">Recharger mes pièces</h3>
+      </div>
+      <div class="packs-grid">
+
+        <div class="pack-card pack-starter">
+          <span class="pack-icon">🌱</span>
+          <span class="pack-name">Graine</span>
+          <div class="pack-coins">50 <span class="pack-coins-unit">🪙</span></div>
+          <span class="pack-price">0,99 €</span>
+          <button class="pack-btn" onclick="buyPack(50, '0,99')">Acheter</button>
+        </div>
+
+        <div class="pack-card pack-popular">
+          <div class="pack-badge">Populaire</div>
+          <span class="pack-icon">🧵</span>
+          <span class="pack-name">Bobine</span>
+          <div class="pack-coins">150 <span class="pack-coins-unit">🪙</span></div>
+          <span class="pack-price">2,49 €</span>
+          <button class="pack-btn" onclick="buyPack(150, '2,49')">Acheter</button>
+        </div>
+
+        <div class="pack-card pack-atelier">
+          <span class="pack-icon">✂️</span>
+          <span class="pack-name">Atelier</span>
+          <div class="pack-coins">400 <span class="pack-coins-unit">🪙</span></div>
+          <span class="pack-price">5,99 €</span>
+          <button class="pack-btn" onclick="buyPack(400, '5,99')">Acheter</button>
+        </div>
+
+        <div class="pack-card pack-maitre">
+          <div class="pack-badge">Meilleure valeur</div>
+          <span class="pack-icon">🏆</span>
+          <span class="pack-name">Maître</span>
+          <div class="pack-coins">1000 <span class="pack-coins-unit">🪙</span></div>
+          <span class="pack-price">12,99 €</span>
+          <button class="pack-btn" onclick="buyPack(1000, '12,99')">Acheter</button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ======================================================
+     MODAL CO₂ BILAN
+     ====================================================== -->
+<div id="eco-modal" class="eco-overlay">
+  <div class="eco-sheet">
+
+    <!-- Header page -->
+    <div class="page-header">
+      <button class="back-btn" onclick="closeEcoModal()" aria-label="Retour">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M5 12l7 7M5 12l7-7"/></svg>
+      </button>
+      <span class="page-title">Bilan CO₂</span>
+      <div class="page-header-spacer"></div>
+    </div>
+
+    <!-- Hero vert -->
+    <div class="eco-hero">
+      <div class="eco-globe">
+        🌍
+        <div class="eco-globe-shine"></div>
+      </div>
+      <div class="eco-balance-display">
+        <span class="eco-minus">−</span>
+        <span class="eco-big">{{ co2_economise }}</span>
+        <span class="eco-unit">kg CO₂</span>
+      </div>
+      <p class="eco-hero-sub">économisés grâce à toi 🎉</p>
+    </div>
+
+    <!-- Comparaisons concrètes -->
+    <div style="margin-top:24px;">
+      <div class="section-header-row">
+        <h3 class="modal-section-title">C'est équivalent à...</h3>
+      </div>
+      <div class="comparisons-scroll" id="eco-comparisons"></div>
+    </div>
+
+    <!-- Compteur communautaire -->
+    <div class="eco-community">
+      <div class="community-title">🌍 La Fabrique ensemble</div>
+      <div class="community-stats">
+        <div class="community-stat">
+          <span class="community-stat-value" id="comm-co2">0</span>
+          <span class="community-stat-label">kg CO₂<br>économisés</span>
+        </div>
+        <div class="community-stat">
+          <span class="community-stat-value" id="comm-users">0</span>
+          <span class="community-stat-label">héros<br>écolos actifs</span>
+        </div>
+        <div class="community-stat">
+          <span class="community-stat-value" id="comm-pieces">0</span>
+          <span class="community-stat-label">pièces de tissu<br>sauvées</span>
+        </div>
+      </div>
+      <div class="community-bar-wrap">
+        <div class="community-bar-header">
+          <span class="community-bar-label">Objectif communautaire : 2 000 kg CO₂</span>
+          <span class="community-bar-pct" id="comm-pct">0%</span>
+        </div>
+        <div class="community-progress-bar">
+          <div class="community-progress-fill" id="comm-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fun facts -->
+    <div class="eco-facts">
+      <div class="section-header-row" style="margin-top:24px;">
+        <h3 class="modal-section-title">Le saviez-vous ? 💡</h3>
+      </div>
+      <div class="facts-scroll">
+        <div class="fact-card" style="background:#EDFFF4;">
+          <span class="fact-emoji">🔥</span>
+          <span class="fact-title">La mode, c'est sérieux</span>
+          <p class="fact-body">L'industrie textile génère 10% des émissions mondiales de CO₂ — plus que tous les vols internationaux réunis !</p>
+        </div>
+        <div class="fact-card" style="background:#EFF6FF;">
+          <span class="fact-emoji">💧</span>
+          <span class="fact-title">Un jean très gourmand</span>
+          <p class="fact-body">Fabriquer un seul jean consomme 7 500 litres d'eau. Soit l'eau que tu bois pendant 10 ans.</p>
+        </div>
+        <div class="fact-card" style="background:#FFF4ED;">
+          <span class="fact-emoji">🗑️</span>
+          <span class="fact-title">Honte par seconde</span>
+          <p class="fact-body">Chaque seconde dans le monde, l'équivalent d'un camion de vêtements est mis en décharge ou brûlé.</p>
+        </div>
+        <div class="fact-card" style="background:#F5F3FF;">
+          <span class="fact-emoji">♻️</span>
+          <span class="fact-title">La seconde main, ça déchire</span>
+          <p class="fact-body">Acheter un vêtement de seconde main réduit son empreinte carbone de 82%. Pas mal, non ?</p>
+        </div>
+        <div class="fact-card" style="background:#FAFFF0;">
+          <span class="fact-emoji">🌿</span>
+          <span class="fact-title">Le slow fashion, ça marche</span>
+          <p class="fact-body">Doubler la durée de vie d'un vêtement réduit de 44% son impact environnemental total.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 {% endblock %}
 
 {% block bottom_nav %}
   {% with nav_active='accueil' %}
     {% include 'core/bottom_nav.html' %}
   {% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CREDITS = parseInt('{{ credits }}') || 0;
+const CO2_KG  = parseFloat('{{ co2_economise }}') || 0;
+
+const _header   = document.querySelector('.header-global');
+const _bottomNav = document.querySelector('.bottom-nav');
+
+function _hideChrome()  { if(_header) _header.style.display='none'; if(_bottomNav) _bottomNav.style.display='none'; }
+function _showChrome()  { if(_header) _header.style.display='';     if(_bottomNav) _bottomNav.style.display='';    }
+
+/* =========================================================
+   MODAL CRÉDITS
+   ========================================================= */
+function openCreditsModal() {
+  document.getElementById('credits-modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  _hideChrome();
+
+  document.querySelectorAll('.shop-btn').forEach(btn => {
+    const price = parseInt(btn.dataset.price) || 0;
+    if (price > CREDITS) {
+      btn.classList.add('locked');
+      btn.textContent = `Manque ${price - CREDITS} 🪙`;
+    } else {
+      btn.classList.remove('locked');
+      btn.textContent = 'Obtenir';
+    }
+  });
+}
+
+function closeCreditsModal() {
+  document.getElementById('credits-modal').classList.remove('active');
+  document.body.style.overflow = '';
+  _showChrome();
+}
+
+function buyItem(btn) {
+  const price = parseInt(btn.dataset.price) || 0;
+  if (CREDITS < price) return;
+  alert(`✅ Achat simulé – ${price} pièces dépensées.\n(La transaction sera implémentée prochainement.)`);
+}
+
+function buyPack(coins, price) {
+  alert(`🪙 Achat simulé – Pack de ${coins} pièces pour ${price} €.\n(Le paiement sera implémenté prochainement.)`);
+}
+
+/* =========================================================
+   MODAL CO₂ BILAN
+   ========================================================= */
+function buildComparisons(co2) {
+  const kmVoiture = Math.round(co2 / 0.12);
+  const steaks    = Math.round(co2 / 2.5);
+  const netflix   = Math.round(co2 / 0.036);
+  const arbre     = Math.round(co2 / 0.022);
+
+  const villeVoiture =
+    kmVoiture >= 700 ? 'Tu aurais pu aller à Bordeaux !' :
+    kmVoiture >= 465 ? 'Tu aurais pu aller à Lyon !' :
+    kmVoiture >= 200 ? 'Tu aurais pu aller à Tours !' :
+    kmVoiture >= 100 ? 'Tu aurais pu aller à Orléans !' :
+                       'Non mais sérieux, bravo 🙌';
+
+  return [
+    { emoji:'🚗', bg:'#FFF3E0', value:`${kmVoiture} km`,          desc:'en voiture',             fun: villeVoiture },
+    { emoji:'🍔', bg:'#FCE4EC', value:`${steaks}`,                desc: steaks>1?'steaks de bœuf':'steak de bœuf', fun:'La planète te dit merci 🐄' },
+    { emoji:'📺', bg:'#F3E5F5', value:`${netflix}h`,              desc:'de Netflix',             fun:`soit ${Math.round(netflix/24)} jours de binge-watching !` },
+    { emoji:'🌲', bg:'#E8F5E9', value:`${arbre} jours`,           desc:"d'absorption d'un arbre",fun: arbre>=365?`${(arbre/365).toFixed(1)} ans pour un seul arbre 🥹`:'pour un seul arbre' },
+    { emoji:'👕', bg:'#E3F2FD', value:`${(co2/5).toFixed(1)}`,   desc:'t-shirts fast fashion',  fun:'que tu as évité de faire fabriquer' },
+    { emoji:'✈️', bg:'#FFF8E1', value:`${Math.round(co2/0.255)} km`, desc:'évités en avion',    fun:'Moins de kérosène, plus de karma ✨' },
+  ];
+}
+
+function animateCounter(el, target, duration) {
+  const start = Date.now();
+  const tick = () => {
+    const t    = Math.min((Date.now()-start)/duration, 1);
+    const ease = 1 - Math.pow(1-t, 3);
+    el.textContent = Math.round(ease*target).toLocaleString('fr-FR');
+    if (t < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+function openEcoModal() {
+  document.getElementById('eco-modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  _hideChrome();
+
+  const container = document.getElementById('eco-comparisons');
+  container.innerHTML = '';
+  buildComparisons(CO2_KG).forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'cmp-card';
+    div.style.background = c.bg;
+    div.innerHTML = `<span class="cmp-emoji">${c.emoji}</span><span class="cmp-value">${c.value}</span><span class="cmp-desc">${c.desc}</span><span class="cmp-fun">${c.fun}</span>`;
+    container.appendChild(div);
+  });
+
+  const TOTAL_CO2    = 1247;
+  const TOTAL_USERS  = 312;
+  const TOTAL_PIECES = 8941;
+  const GOAL_CO2     = 2000;
+  const pctGoal      = Math.round((TOTAL_CO2 / GOAL_CO2) * 100);
+
+  setTimeout(() => {
+    animateCounter(document.getElementById('comm-co2'),    TOTAL_CO2,    1300);
+    animateCounter(document.getElementById('comm-users'),  TOTAL_USERS,  900);
+    animateCounter(document.getElementById('comm-pieces'), TOTAL_PIECES, 1600);
+    document.getElementById('comm-bar').style.width = pctGoal + '%';
+    document.getElementById('comm-pct').textContent = pctGoal + '%';
+  }, 100);
+}
+
+function closeEcoModal() {
+  document.getElementById('eco-modal').classList.remove('active');
+  document.body.style.overflow = '';
+  _showChrome();
+  document.getElementById('comm-co2').textContent    = '0';
+  document.getElementById('comm-users').textContent  = '0';
+  document.getElementById('comm-pieces').textContent = '0';
+  document.getElementById('comm-bar').style.width    = '0%';
+  document.getElementById('comm-pct').textContent    = '0%';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeCreditsModal(); closeEcoModal(); }
+});
+</script>
 {% endblock %}
