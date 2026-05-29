@@ -125,6 +125,7 @@ def ajout_textile(request):
                 hauteur_cm = float(request.POST.get('height', 0))
                 nom_vetement = request.POST.get('nom_vetement', '').strip() or f"{type_vetement.capitalize()} de {request.user.username}"
                 qualite = int(request.POST.get('qualite', 3))
+                couleur = request.POST.get('couleur', '')
 
                 photo_fichier = None
                 photo_data = request.POST.get('photo_data', '')
@@ -146,6 +147,7 @@ def ajout_textile(request):
                     surfaceExploitable=usable_area_m2,
                     etat="À transformer",
                     qualite=qualite,
+                    couleur=couleur,
                 )
 
                 coins_earned = 3

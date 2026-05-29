@@ -24,6 +24,7 @@ class Vetement(models.Model):
     surfaceExploitable = models.FloatField()
     etat = models.CharField(max_length=30)
     qualite = models.IntegerField(default=3)
+    couleur = models.CharField(max_length=30, blank=True, null=True)
 
     def __str__(self):
         return f"{self.nomVetement} - {self.utilisateur.username}"

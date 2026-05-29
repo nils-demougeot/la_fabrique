@@ -213,6 +213,41 @@
       margin: 4px 0;
     }
 
+    /* ── Palette couleurs ── */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 8px;
+    }
+    .color-swatch-input { display: none; }
+    .color-swatch {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
+      border: 2px solid transparent;
+    }
+    .color-swatch:hover { transform: scale(1.12); }
+    .color-swatch-input:checked + .color-swatch {
+      border-color: white;
+      box-shadow: 0 0 0 2.5px #237329;
+      transform: scale(1.12);
+    }
+    .color-swatch-input:checked + .color-swatch::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.28);
+    }
+    .color-swatch.maxed { opacity: 0.35; cursor: not-allowed; }
+    .color-swatch.maxed:hover { transform: none; }
+
+    /* ── Cache header/nav quand caméra active ── */
+    body.camera-open .header-global,
+    body.camera-open .bottom-nav { display: none !important; }
+
     /* ── Modal résultat ── */
     #result-modal {
       display: none;
@@ -603,6 +638,7 @@
             <label for="star{{ i }}">★</label>
             {% endfor %}
           </div>
+
         </section>
 
         <section class="card">
@@ -655,6 +691,60 @@
               Manteau
             </button>
 
+          </div>
+
+          <div class="card-divider"></div>
+
+          <p class="star-label">Couleur(s) <span style="font-weight:500;text-transform:none;letter-spacing:0;color:#9E9E88;">— 3 max</span></p>
+          <input type="hidden" name="couleur" id="couleur-input" value="">
+          <div class="color-grid">
+            <input type="checkbox" name="couleur_pick" id="c-ivoire"     class="color-swatch-input" value="ivoire">
+            <label for="c-ivoire"     class="color-swatch" style="background:#F5F0E8;outline:1px solid rgba(0,0,0,0.1);outline-offset:-1px;" title="Ivoire"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-beige"      class="color-swatch-input" value="beige">
+            <label for="c-beige"      class="color-swatch" style="background:#D4C5A9;" title="Beige"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-camel"      class="color-swatch-input" value="camel">
+            <label for="c-camel"      class="color-swatch" style="background:#C19A6B;" title="Camel"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-terracotta" class="color-swatch-input" value="terracotta">
+            <label for="c-terracotta" class="color-swatch" style="background:#C8604A;" title="Terracotta"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-rouge"      class="color-swatch-input" value="rouge">
+            <label for="c-rouge"      class="color-swatch" style="background:#C0392B;" title="Rouge"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-bordeaux"   class="color-swatch-input" value="bordeaux">
+            <label for="c-bordeaux"   class="color-swatch" style="background:#722F37;" title="Bordeaux"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-rose"       class="color-swatch-input" value="rose">
+            <label for="c-rose"       class="color-swatch" style="background:#F2C4CE;outline:1px solid rgba(0,0,0,0.07);outline-offset:-1px;" title="Rose"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-mauve"      class="color-swatch-input" value="mauve">
+            <label for="c-mauve"      class="color-swatch" style="background:#C9A8D4;" title="Mauve"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-lavande"    class="color-swatch-input" value="lavande">
+            <label for="c-lavande"    class="color-swatch" style="background:#B39DDB;" title="Lavande"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-marine"     class="color-swatch-input" value="marine">
+            <label for="c-marine"     class="color-swatch" style="background:#1F3461;" title="Marine"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-ciel"       class="color-swatch-input" value="bleu ciel">
+            <label for="c-ciel"       class="color-swatch" style="background:#6AAFE6;" title="Bleu ciel"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-sauge"      class="color-swatch-input" value="vert sauge">
+            <label for="c-sauge"      class="color-swatch" style="background:#8FAF8A;" title="Vert sauge"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-foret"      class="color-swatch-input" value="vert forêt">
+            <label for="c-foret"      class="color-swatch" style="background:#355E3B;" title="Vert forêt"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-moutarde"   class="color-swatch-input" value="moutarde">
+            <label for="c-moutarde"   class="color-swatch" style="background:#D4A017;" title="Moutarde"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-ardoise"    class="color-swatch-input" value="gris ardoise">
+            <label for="c-ardoise"    class="color-swatch" style="background:#607D8B;" title="Gris ardoise"></label>
+
+            <input type="checkbox" name="couleur_pick" id="c-noir"       class="color-swatch-input" value="noir">
+            <label for="c-noir"       class="color-swatch" style="background:#2C2C2C;" title="Noir"></label>
           </div>
         </section>
 
@@ -831,12 +921,37 @@
 
       typeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-          // Enlever la classe active de tous les boutons
           typeButtons.forEach(b => b.classList.remove('active'));
-          // Ajouter la classe active au bouton cliqué
           btn.classList.add('active');
-          // Mettre à jour l'input caché pour le formulaire
           hiddenTypeInput.value = btn.getAttribute('data-type');
+        });
+      });
+
+      // ── Couleur : multi-select checkbox (max 3) → hidden input ──
+      const couleurInput = document.getElementById('couleur-input');
+      const MAX_COLORS = 3;
+
+      function syncCouleur() {
+        const checked = [...document.querySelectorAll('.color-swatch-input:checked')];
+        couleurInput.value = checked.map(c => c.value).join(',');
+        const atMax = checked.length >= MAX_COLORS;
+        document.querySelectorAll('.color-swatch-input').forEach(cb => {
+          const label = cb.nextElementSibling;
+          if (!cb.checked && atMax) {
+            label.classList.add('maxed');
+          } else {
+            label.classList.remove('maxed');
+          }
+        });
+      }
+
+      document.querySelectorAll('.color-swatch-input').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const checked = document.querySelectorAll('.color-swatch-input:checked');
+          if (checked.length > MAX_COLORS) {
+            cb.checked = false;
+          }
+          syncCouleur();
         });
       });
 
@@ -985,6 +1100,7 @@
           cameraStream = stream;
           cameraVideo.srcObject = stream;
           cameraOverlay.classList.add('active');
+          document.body.classList.add('camera-open');
         }).catch(err => {
           alert('Impossible d\'accéder à la caméra : ' + err.message);
         });
@@ -993,6 +1109,7 @@
       function stopCamera() {
         if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
         cameraOverlay.classList.remove('active');
+        document.body.classList.remove('camera-open');
       }
 
       function loadImageAndOpenModal(dataUrl) {
