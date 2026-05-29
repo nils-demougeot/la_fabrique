@@ -26,7 +26,7 @@
 
   /* ── Contenu principal ── */
   .etape-wrapper {
-    padding: 24px 24px 140px;
+    padding: 24px 24px 130px;
     display: flex;
     flex-direction: column;
     gap: 32px;
@@ -268,77 +268,132 @@
     transform: translateX(-50%);
     width: 100%;
     max-width: 390px;
-    padding: 12px 16px 24px;
+    padding: 14px 20px 36px;
     box-sizing: border-box;
     z-index: 50;
     display: flex;
-    align-items: center;
-    gap: 12px;
+    align-items: flex-end;
+    gap: 10px;
+    background: rgba(254, 252, 243, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(187, 185, 177, 0.20);
+    box-shadow: 0 -10px 40px rgba(56, 56, 50, 0.06);
   }
 
-  /* Pilule gauche avec deux icônes */
-  .nav-left-pill {
-    display: flex;
+  /* Indicateur sauvegarde */
+  .save-indicator {
+    display: inline-flex;
     align-items: center;
-    background: rgba(253, 250, 229, 0.92);
+    gap: 5px;
+    background: rgba(35, 115, 41, 0.09);
     border-radius: 9999px;
-    padding: 10px 12px;
-    gap: 2px;
-    outline: 1px rgba(188, 186, 168, 0.20) solid;
-    outline-offset: -1px;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 -10px 40px rgba(57, 56, 43, 0.08);
-    flex-shrink: 0;
+    padding: 4px 11px 4px 8px;
+    color: #237329;
+    font-family: 'Manrope', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
   }
-  .nav-icon-btn {
-    width: 44px;
-    height: 44px;
+  .save-indicator svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .step-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Base commune boutons carrés */
+  .btn-nav-sq {
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 9999px;
-    color: #666556;
+    flex-shrink: 0;
     text-decoration: none;
     border: none;
-    background: none;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: transform 0.08s, box-shadow 0.08s;
+    transform: translateY(0);
+    position: relative;
+    overflow: hidden;
   }
-  .nav-icon-btn:hover { background: rgba(188, 186, 168, 0.20); }
-  .nav-icon-btn svg { width: 20px; height: 20px; }
-  .nav-pill-divider {
-    width: 1px;
-    height: 24px;
-    background: rgba(188, 186, 168, 0.50);
-    flex-shrink: 0;
+  .btn-nav-sq::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.13) 0%, transparent 55%);
+    border-radius: inherit;
+    pointer-events: none;
   }
+  .btn-nav-sq svg { width: 20px; height: 20px; position: relative; z-index: 1; }
+  .btn-nav-sq:active { transform: translateY(4px); }
 
-  /* Bouton continuer / terminer */
-  .btn-continuer {
+  /* Retour — beige neutre */
+  .btn-nav-back {
+    background: #EFEEE3;
+    box-shadow: 0 5px 0 #C5C3B2;
+    color: #39382B;
+  }
+  .btn-nav-back:active { box-shadow: 0 1px 0 #C5C3B2; }
+
+  /* Quitter — terracotta */
+  .btn-nav-quit {
+    background: #A24A33;
+    box-shadow: 0 5px 0 #7A3125;
+    color: white;
+  }
+  .btn-nav-quit:active { box-shadow: 0 1px 0 #7A3125; }
+
+  /* Continuer / Terminer */
+  .btn-nav-continue {
     flex: 1;
+    height: 56px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    background: #237329;
-    color: white;
-    border: none;
-    border-radius: 9999px;
-    padding: 16px 20px;
-    box-shadow: 0 4px 6px -4px rgba(0,0,0,0.12), 0 10px 15px -3px rgba(0,0,0,0.10);
-    cursor: pointer;
     text-decoration: none;
+    border: none;
+    cursor: pointer;
     font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 28px;
-    transition: opacity 0.15s, transform 0.1s;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    color: white;
+    background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
+    box-shadow: 0 6px 0 #1B5E20, 0 10px 24px rgba(35,115,41,0.35);
+    transition: transform 0.08s, box-shadow 0.08s;
+    transform: translateY(0);
+    position: relative;
+    overflow: hidden;
   }
-  .btn-continuer:hover { opacity: 0.92; }
-  .btn-continuer:active { transform: scale(0.98); }
-  .btn-continuer svg { width: 18px; height: 18px; flex-shrink: 0; }
-  .btn-terminer { background: #A24A33; }
+  .btn-nav-continue::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .btn-nav-continue span,
+  .btn-nav-continue svg { position: relative; z-index: 1; }
+  .btn-nav-continue svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .btn-nav-continue:active {
+    transform: translateY(5px);
+    box-shadow: 0 1px 0 #1B5E20, 0 4px 12px rgba(35,115,41,0.25);
+  }
+  .btn-nav-terminer {
+    background: linear-gradient(135deg, #7A3125 0%, #A24A33 100%);
+    box-shadow: 0 6px 0 #5C2119, 0 10px 24px rgba(162,74,51,0.35);
+  }
+  .btn-nav-terminer:active {
+    box-shadow: 0 1px 0 #5C2119, 0 4px 12px rgba(162,74,51,0.25);
+  }
 
 </style>
 {% endblock %}
@@ -384,8 +439,19 @@
 
     <!-- ── En-tête de l'étape ── -->
     <div class="step-header">
-      <div class="step-badge">
-        <span>ÉTAPE {{ etape_num|stringformat:"02d" }}</span>
+      <div class="step-header-top">
+        <div class="step-badge">
+          <span>ÉTAPE {{ etape_num|stringformat:"02d" }}</span>
+        </div>
+        <div class="save-indicator">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Progression sauvegardée
+        </div>
       </div>
       <h1 class="step-titre">{{ etape.titre }}</h1>
       <p class="step-description">{{ etape.description }}</p>
@@ -470,45 +536,39 @@
   <!-- ── Barre navigation bas ── -->
   <div class="bottom-nav-etape">
 
-    <!-- Pilule gauche : retour + aperçu patron -->
-    <div class="nav-left-pill">
-      {% if etape_precedente_num %}
-      <a href="{% url 'etape_projet' patron_pk=patron.pk etape_num=etape_precedente_num %}"
-         class="nav-icon-btn" title="Étape précédente">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
-      </a>
-      {% else %}
-      <a href="{% url 'patron_detail' pk=patron.pk %}"
-         class="nav-icon-btn" title="Retour au patron">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
-      </a>
-      {% endif %}
+    <!-- Retour -->
+    {% if etape_precedente_num %}
+    <a href="{% url 'etape_projet' patron_pk=patron.pk etape_num=etape_precedente_num %}"
+       class="btn-nav-sq btn-nav-back" title="Étape précédente">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </a>
+    {% else %}
+    <a href="{% url 'patron_detail' pk=patron.pk %}"
+       class="btn-nav-sq btn-nav-back" title="Retour au patron">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </a>
+    {% endif %}
 
-      <div class="nav-pill-divider"></div>
+    <!-- Quitter -->
+    <a href="{% url 'patron_detail' pk=patron.pk %}"
+       class="btn-nav-sq btn-nav-quit" title="Quitter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </a>
 
-      <a href="{% url 'patron_detail' pk=patron.pk %}"
-         class="nav-icon-btn" title="Voir le patron">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
-        </svg>
-      </a>
-    </div>
-
-    <!-- Bouton continuer / terminer -->
+    <!-- Continuer / Terminer -->
     {% if est_derniere %}
-    <a href="{% url 'patrons' %}" class="btn-continuer btn-terminer">
-      Terminer
+    <a href="{% url 'patrons' %}" class="btn-nav-continue btn-nav-terminer">
+      <span>Terminer</span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="20 6 9 17 4 12"/>
@@ -516,8 +576,8 @@
     </a>
     {% else %}
     <a href="{% url 'etape_projet' patron_pk=patron.pk etape_num=etape_suivante_num %}"
-       class="btn-continuer">
-      Continuer
+       class="btn-nav-continue">
+      <span>Continuer</span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="9 18 15 12 9 6"/>

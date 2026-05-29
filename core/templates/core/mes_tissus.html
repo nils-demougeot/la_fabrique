@@ -3,7 +3,7 @@
 
 {% block extra_css %}
 <style>
-  body { background: #FFFBFF; }
+  body { background: #F5F4EE; }
 
   .page-wrapper {
     max-width: 390px;
@@ -11,7 +11,7 @@
     padding: 28px 16px 120px;
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 24px;
   }
 
   /* ── Titre ── */
@@ -55,150 +55,196 @@
     top: -30px; right: -30px;
     filter: blur(20px);
   }
-
-  /* Anneau SVG */
   .ring-wrap { position: relative; flex-shrink: 0; width: 100px; height: 100px; }
   .ring-wrap svg { transform: rotate(-90deg); }
-  .ring-bg    { fill: none; stroke: rgba(255,255,255,0.15); stroke-width: 8; }
-  .ring-fill  { fill: none; stroke: #9DF197; stroke-width: 8; stroke-linecap: round;
-                transition: stroke-dashoffset 1s ease; }
+  .ring-bg   { fill: none; stroke: rgba(255,255,255,0.15); stroke-width: 8; }
+  .ring-fill { fill: none; stroke: #9DF197; stroke-width: 8; stroke-linecap: round;
+               transition: stroke-dashoffset 1s ease; }
   .ring-label {
     position: absolute; inset: 0;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
   }
-  .ring-pct {
-    color: white; font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 20px; font-weight: 800; line-height: 1;
-  }
-  .ring-unit {
-    color: rgba(255,255,255,0.7); font-family: 'Manrope', sans-serif;
-    font-size: 10px; font-weight: 600; margin-top: 2px;
-  }
-
-  /* Stats côté droit */
+  .ring-pct  { color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; line-height: 1; }
+  .ring-unit { color: rgba(255,255,255,0.7); font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 600; margin-top: 2px; }
   .reserve-stats { display: flex; flex-direction: column; gap: 10px; flex: 1; }
   .stat-pill {
     background: rgba(255,255,255,0.12);
-    border-radius: 12px;
-    padding: 8px 12px;
+    border-radius: 12px; padding: 8px 12px;
     display: flex; flex-direction: column; gap: 1px;
   }
-  .stat-pill-label {
-    color: rgba(255,255,255,0.65);
-    font-family: 'Manrope', sans-serif;
-    font-size: 10px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.8px;
-  }
-  .stat-pill-value {
-    color: white;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 15px; font-weight: 700; line-height: 1.2;
-  }
+  .stat-pill-label { color: rgba(255,255,255,0.65); font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+  .stat-pill-value { color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; line-height: 1.2; }
   .stat-pill-value span { color: #9DF197; }
 
   /* ── Filtres ── */
-  .filter-row {
-    display: flex; gap: 8px; overflow-x: auto;
-    padding-bottom: 4px; scrollbar-width: none;
-  }
+  .filter-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
   .filter-row::-webkit-scrollbar { display: none; }
   .filter-chip {
-    padding: 8px 18px;
-    border-radius: 9999px;
-    border: none; cursor: pointer;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 13px; font-weight: 600;
-    white-space: nowrap;
-    background: #EFEEE3; color: #65655E;
-    transition: background 0.15s, color 0.15s;
-    flex-shrink: 0;
+    padding: 8px 18px; border-radius: 9999px; border: none; cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 600;
+    white-space: nowrap; background: #E0DFD4; color: #65655E;
+    transition: background 0.15s, color 0.15s; flex-shrink: 0;
   }
   .filter-chip.active { background: #237329; color: white; }
 
   /* ── Liste cartes ── */
-  .vcard-list { display: flex; flex-direction: column; gap: 16px; }
+  .vcard-list { display: flex; flex-direction: column; gap: 14px; }
 
   /* ── Carte vêtement ── */
   .vcard {
+    position: relative;
+    overflow: visible;          /* l'illustration peut déborder */
+    padding: 15px 20px;
     background: white;
-    border-radius: 48px;
-    padding: 16px;
-    display: flex; flex-direction: column; gap: 16px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.08);
-    position: relative;
-  }
-
-  /* Zone photo */
-  .vcard-img-wrap {
-    height: 256px;
+    box-shadow: 0px 20px 50px rgba(0, 0, 0, 0.08);
     border-radius: 32px;
-    overflow: hidden;
-    position: relative;
-    display: flex; align-items: stretch;
-  }
-  .vcard-img-wrap img {
-    width: 100%; height: 100%; object-fit: cover;
-    position: absolute; inset: 0;
-  }
-  /* Gradients par type quand pas de photo */
-  .vcard-img-wrap.jean    { background: linear-gradient(145deg,#1A237E,#5C6BC0); }
-  .vcard-img-wrap.tshirt  { background: linear-gradient(145deg,#BF360C,#FFAB91); }
-  .vcard-img-wrap.hoodie  { background: linear-gradient(145deg,#37474F,#90A4AE); }
-  .vcard-img-wrap.robe    { background: linear-gradient(145deg,#880E4F,#F48FB1); }
-  .vcard-img-wrap.jupe    { background: linear-gradient(145deg,#4A148C,#CE93D8); }
-  .vcard-img-wrap.manteau { background: linear-gradient(145deg,#4E342E,#BCAAA4); }
-  .vcard-img-wrap.default { background: linear-gradient(145deg,#1B5E20,#81C784); }
-
-  .vcard-type-badge {
-    position: absolute; top: 12px; left: 12px; z-index: 1;
-    background: rgba(255,255,255,0.90);
-    backdrop-filter: blur(6px);
-    border-radius: 9999px;
-    padding: 4px 12px;
-    color: #237329;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 12px; font-weight: 700;
-    text-transform: uppercase; line-height: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 
-  /* Infos */
-  .vcard-info { display: flex; flex-direction: column; gap: 4px; padding-top: 4px; }
+  /* Zone titre — hauteur min pour que l'image ne touche pas les badges */
+  .vcard-title-row {
+    min-height: 80px;           /* image (100px) – overflow top (20px) = 80px dans la carte */
+    padding-right: 96px;        /* espace pour l'illustration */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
   .vcard-name {
     color: #39382B;
+    font-size: 18px;
     font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 20px; font-weight: 700; line-height: 28px;
+    font-weight: 700;
+    line-height: 28px;
+    word-wrap: break-word;
   }
-  .vcard-meta {
-    display: flex; align-items: center; gap: 8px;
-    color: #666556;
-    font-family: 'Manrope', sans-serif;
-    font-size: 14px; font-weight: 400; line-height: 20px;
-  }
-  .vcard-meta svg { flex-shrink: 0; color: #666556; }
 
-  /* Bouton */
-  .vcard-btn {
-    display: block; width: 100%;
-    padding: 12px;
-    background: #A24A33;
-    border-radius: 9999px;
-    border: none; cursor: pointer;
-    text-align: center; text-decoration: none;
-    color: white;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 14px; font-weight: 700; line-height: 20px;
-    transition: opacity 0.15s;
+  /* Illustration 3D — absolute top-right, déborde légèrement */
+  .vcard-illu-img {
+    position: absolute;
+    top: -20px;
+    right: -12px;
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    pointer-events: none;
+    z-index: 2;
+    /* Placeholder visible tant que pas de vraie image */
+    font-size: 64px;
+    line-height: 100px;
+    text-align: center;
+    user-select: none;
   }
-  .vcard-btn:hover { opacity: 0.88; }
+
+  /* Placeholder emoji (même positionnement) */
+  .vcard-illu-placeholder {
+    position: absolute;
+    top: -20px;
+    right: -12px;
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    pointer-events: none;
+    z-index: 2;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.12));
+  }
+
+  /* ── Badges row ── */
+  .vcard-badges {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  /* Colonne badge : pill + label dessous */
+  .badge-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  /* Pill commun */
+  .badge-pill {
+    width: 60px;
+    height: 60px;
+    background: #F7F4DE;
+    border-radius: 20px;
+  }
+
+  /* Surface : colonne centrée */
+  .badge-pill--surface {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0;
+  }
+  .badge-pill--surface .badge-num {
+    color: #237329;
+    font-size: 25px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .badge-pill--surface .badge-unit {
+    color: #39382B;
+    font-size: 10px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 1.6;
+  }
+
+  /* Qualité : ligne centrée */
+  .badge-pill--qualite {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .badge-pill--qualite .badge-num {
+    color: #237329;
+    font-size: 25px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    line-height: 28px;
+  }
+  .badge-pill--qualite .badge-denom {
+    color: #39382B;
+    font-size: 12px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 28px;
+    align-self: flex-end;
+    margin-bottom: 4px;
+  }
+
+  /* Couleur : juste la swatch */
+  .badge-pill--color {
+    border: 3px solid rgba(0, 0, 0, 0.20);
+    background: #CCCCCC;        /* overridé par JS selon la couleur */
+  }
+
+  /* Label sous chaque badge */
+  .badge-lbl {
+    color: #666556;
+    font-size: 8px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 28px;
+  }
 
   /* ── Empty state ── */
-  .empty-state {
-    text-align: center;
-    padding: 48px 24px;
-    color: #65655E;
-    font-family: 'Manrope', sans-serif;
-  }
+  .empty-state { text-align: center; padding: 48px 24px; color: #65655E; font-family: 'Manrope', sans-serif; }
   .empty-state p { margin-top: 12px; font-size: 15px; }
 </style>
 {% endblock %}
@@ -212,7 +258,7 @@
     <div class="page-heading-sub">Ton stock de matières à transformer.</div>
   </div>
 
-  <!-- Carte réserve + anneau -->
+  <!-- Carte réserve -->
   <div class="reserve-card">
     <div class="ring-wrap">
       <svg width="100" height="100" viewBox="0 0 100 100">
@@ -226,7 +272,6 @@
         <span class="ring-unit">objectif</span>
       </div>
     </div>
-
     <div class="reserve-stats">
       <div class="stat-pill">
         <span class="stat-pill-label">Surface exploitable</span>
@@ -254,39 +299,58 @@
     <button class="filter-chip" data-filter="manteau">Manteau</button>
   </div>
 
-  <!-- Liste cartes -->
+  <!-- Cartes vêtements -->
   {% if vetements_data %}
   <div class="vcard-list" id="vetement-grid">
     {% for item in vetements_data %}
     {% with v=item.vetement %}
     <div class="vcard" data-type="{{ v.typeVetement }}">
 
-      <div class="vcard-img-wrap {% if v.typeVetement == 'jean' %}jean{% elif v.typeVetement == 'tshirt' %}tshirt{% elif v.typeVetement == 'hoodie' %}hoodie{% elif v.typeVetement == 'robe' %}robe{% elif v.typeVetement == 'jupe' %}jupe{% elif v.typeVetement == 'manteau' %}manteau{% else %}default{% endif %}">
-        {% if v.photoURL %}
-        <img src="{{ v.photoURL.url }}" alt="{{ v.nomVetement }}">
+      <!-- ✦ Illustration 3D — à remplacer par <img> selon le type de vêtement -->
+      <div class="vcard-illu-placeholder">
+        {% if v.typeVetement == 'tshirt' %}👕
+        {% elif v.typeVetement == 'jean' %}👖
+        {% elif v.typeVetement == 'hoodie' %}🧥
+        {% elif v.typeVetement == 'robe' %}👗
+        {% elif v.typeVetement == 'jupe' %}👗
+        {% elif v.typeVetement == 'manteau' %}🧥
+        {% else %}🎽
         {% endif %}
-        <span class="vcard-type-badge">{{ v.typeVetement }}</span>
       </div>
 
-      <div class="vcard-info">
+      <!-- Nom du vêtement -->
+      <div class="vcard-title-row">
         <div class="vcard-name">{{ v.nomVetement }}</div>
-        <div class="vcard-meta">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-          {{ v.surfaceExploitable }} m² exploitable
-        </div>
-        <div class="vcard-meta">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          {% if v.qualite >= 5 %}Excellent état
-          {% elif v.qualite >= 4 %}Très bon état
-          {% elif v.qualite >= 3 %}Bon état
-          {% elif v.qualite >= 2 %}État correct
-          {% else %}À évaluer
-          {% endif %}
-        </div>
       </div>
 
-      <a href="{% url 'patrons' %}" class="vcard-btn">Utiliser dans un projet</a>
+      <!-- Badges -->
+      <div class="vcard-badges">
 
+        <!-- Surface -->
+        <div class="badge-col">
+          <div class="badge-pill badge-pill--surface">
+            <span class="badge-num">{{ v.surfaceExploitable|floatformat:-2 }}</span>
+            <span class="badge-unit">m²</span>
+          </div>
+          <span class="badge-lbl">surface</span>
+        </div>
+
+        <!-- Qualité -->
+        <div class="badge-col">
+          <div class="badge-pill badge-pill--qualite">
+            <span class="badge-num">{{ v.qualite }}</span>
+            <span class="badge-denom">/5</span>
+          </div>
+          <span class="badge-lbl">qualité</span>
+        </div>
+
+        <!-- Couleur -->
+        <div class="badge-col">
+          <div class="badge-pill badge-pill--color" data-couleur="{{ v.couleur|default:'' }}"></div>
+          <span class="badge-lbl">couleur</span>
+        </div>
+
+      </div>
     </div>
     {% endwith %}
     {% endfor %}
@@ -301,16 +365,46 @@
 </div>
 
 <script>
-  // Filtres
+  /* ── Filtres ── */
   document.querySelectorAll('.filter-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
-      const filter = chip.dataset.filter;
+      const f = chip.dataset.filter;
       document.querySelectorAll('.vcard').forEach(card => {
-        card.style.display = (filter === 'tous' || card.dataset.type === filter) ? 'flex' : 'none';
+        card.style.display = (f === 'tous' || card.dataset.type === f) ? 'flex' : 'none';
       });
     });
+  });
+
+  /* ── Couleurs → hex ── */
+  const COLOR_MAP = {
+    'ivoire':       '#F2EDD7',
+    'beige':        '#D4B896',
+    'camel':        '#C19A6B',
+    'terracotta':   '#C2694F',
+    'rouge':        '#CC2936',
+    'bordeaux':     '#7B0C0C',
+    'rose':         '#F4A0B0',
+    'mauve':        '#967BB6',
+    'lavande':      '#B57EDC',
+    'marine':       '#1F305C',
+    'bleu ciel':    '#89CFF0',
+    'vert sauge':   '#9CAF88',
+    'vert forêt':   '#228B22',
+    'moutarde':     '#C8A415',
+    'gris ardoise': '#708090',
+    'noir':         '#1A1A1A',
+    'blanc':        '#F0EEE8',
+    'gris':         '#A0A09A',
+  };
+
+  document.querySelectorAll('.badge-pill--color[data-couleur]').forEach(el => {
+    const raw = el.dataset.couleur.trim().toLowerCase();
+    if (!raw) return;
+    const first = raw.split(',')[0].trim();
+    const hex = COLOR_MAP[first];
+    if (hex) el.style.background = hex;
   });
 </script>
 {% endblock %}
