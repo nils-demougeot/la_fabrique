@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>La Fabrique - Étape 03</title>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&family=Manrope:wght@600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 
 <style>
 /* =========================================
@@ -30,7 +30,7 @@
   --text-tag-selected: #7C2E19;
 
   --font-title: 'Plus Jakarta Sans', sans-serif;
-  --font-body: 'Be Vietnam Pro', sans-serif;
+  --font-body: 'Manrope', sans-serif;
 }
 
 /* =========================================
@@ -42,16 +42,17 @@ body {
   background-color: #f0f0f0;
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+  align-items: flex-start;
+  min-height: 100dvh;
 }
 
 .app-container {
-  width: 390px;
-  height: 725px;
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
   position: relative;
   background: var(--bg-main);
-  overflow: hidden;
+  overflow-x: hidden;
   font-family: var(--font-body);
   display: flex;
   flex-direction: column;
@@ -65,7 +66,7 @@ body {
 
 .scrollable-content {
   flex: 1; overflow-y: auto; position: relative; z-index: 1;
-  padding: 48px 24px 100px 24px;
+  padding: 48px 24px 0 24px;
 }
 
 .sr-only {
@@ -124,20 +125,31 @@ body {
    Barre d'actions (Sticky Footer)
    ========================================= */
 .bottom-actions {
-  position: absolute; bottom: 0; left: 0; width: 100%; padding: 24px;
-  background: rgba(255, 255, 255, 0.80); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  flex-shrink: 0;
+  position: sticky; bottom: 0; width: 100%; padding: 18px 24px;
+  background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   display: flex; justify-content: space-between; align-items: center; z-index: 10;
+  border-top: 1px solid rgba(0,0,0,0.05);
 }
 
 .btn-skip { background: transparent; border: none; padding: 16px 8px; color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer; }
 .btn-next {
-  background: var(--color-accent); border: none; border-radius: 9999px; padding: 16px 24px;
-  display: flex; align-items: center; gap: 8px; color: var(--color-white);
+  position: relative;
+  border: none; border-radius: 9999px; padding: 15px 26px;
+  background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
+  box-shadow: 0 5px 0 #1B5E20, 0 8px 20px rgba(35,115,41,0.35);
+  transform: translateY(0); transition: transform 0.08s, box-shadow 0.08s;
+  display: flex; align-items: center; gap: 8px; color: white;
   font-size: 16px; font-family: var(--font-title); font-weight: 700; cursor: pointer;
-  box-shadow: 0px 10px 15px -3px rgba(162, 74, 51, 0.30); transition: transform 0.2s ease;
+  overflow: hidden;
 }
-.btn-next:hover { transform: translateY(-2px); box-shadow: 0px 12px 18px -3px rgba(162, 74, 51, 0.40); }
-.icon-arrow { width: 6px; height: 10px; background: var(--color-white); clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.btn-next::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.13) 0%, transparent 55%);
+  border-radius: inherit; pointer-events: none;
+}
+.btn-next:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #1B5E20, 0 12px 24px rgba(35,115,41,0.4); }
+.btn-next:active { transform: translateY(4px); box-shadow: 0 1px 0 #1B5E20, 0 3px 10px rgba(35,115,41,0.25); }
 </style>
 
 </head>
@@ -148,8 +160,9 @@ body {
 
     <div class="scrollable-content">
       <header class="header-brand">
-        <div class="brand-logo"><div class="logo-inner"></div></div>
-        <span class="brand-name">La Fabrique</span>
+        <a href="{% url 'home' %}" style="line-height: 0; display: block;">
+          <img src="{% static 'core/images/logo-la-fabrique.svg' %}" alt="La Fabrique" style="height: 28px;">
+        </a>
       </header>
 
       <section class="onboarding-step">
@@ -204,7 +217,7 @@ body {
             </div>
           </fieldset>
         </form>
-
+        <div style="height: 32px;"></div>
       </section>
     </div>
 
@@ -213,7 +226,7 @@ body {
       
       <button type="submit" form="form-etape-3" class="btn-next">
         Terminer
-        <span class="icon-arrow"></span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
     </footer>
   </main>

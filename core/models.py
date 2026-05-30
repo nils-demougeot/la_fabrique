@@ -7,6 +7,11 @@ class Utilisateur(AbstractUser):
 
     niveau_couture = models.CharField(max_length=30, blank=True, null=True)
     envies_creation = models.CharField(max_length=255, blank=True, null=True)
+    avatar = models.CharField(max_length=50, default='image 11.png', blank=True)
+
+    @property
+    def avatar_url(self):
+        return f'core/images/avatars/{self.avatar or "image 11.png"}'
 
     def __str__(self):
         return self.username

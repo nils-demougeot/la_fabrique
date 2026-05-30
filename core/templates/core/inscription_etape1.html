@@ -5,15 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>La Fabrique - Étape 01</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&family=Manrope:wght@600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 
 <style>
-/* =========================================
-   Variables CSS (Design System)
-   ========================================= */
 :root {
-  /* Couleurs */
   --bg-main: #FFFBFF;
   --bg-input: #EFEEE3;
   --bg-progress-track: #ECE9D1;
@@ -25,42 +20,31 @@
   --color-accent: #A24A33;
   --color-white: #FFFFFF;
   --blur-color: rgba(157, 241, 151, 0.30);
-
-  /* Polices */
   --font-title: 'Plus Jakarta Sans', sans-serif;
-  --font-body: 'Be Vietnam Pro', sans-serif;
+  --font-body: 'Manrope', sans-serif;
   --font-input: 'Manrope', sans-serif;
 }
 
-/* =========================================
-   Reset basique
-   ========================================= */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background-color: #f0f0f0;
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+  align-items: flex-start;
+  min-height: 100dvh;
+  font-family: var(--font-body);
 }
 
-/* =========================================
-   Layout principal (Simili-Mobile)
-   ========================================= */
 .app-container {
-  width: 390px;
-  height: 725px;
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
   position: relative;
   background: var(--bg-main);
-  overflow: hidden;
-  font-family: var(--font-body);
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 .decorative-blur {
@@ -81,17 +65,14 @@ body {
   overflow-y: auto;
   position: relative;
   z-index: 1;
-  padding: 48px 24px 100px 24px; /* Padding bottom généreux pour la barre sticky */
+  padding: 48px 24px 0 24px;
 }
 
-/* =========================================
-   En-tête (Marque)
-   ========================================= */
 .header-brand {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 56px;
+  margin-bottom: 48px;
 }
 
 .brand-logo {
@@ -104,11 +85,7 @@ body {
   align-items: center;
 }
 
-.logo-inner {
-  width: 13.5px;
-  height: 13.5px;
-  background: var(--color-white);
-}
+.logo-inner { width: 13.5px; height: 13.5px; background: var(--color-white); }
 
 .brand-name {
   color: var(--text-dark);
@@ -117,24 +94,16 @@ body {
   font-weight: 800;
 }
 
-/* =========================================
-   Contenu de l'étape
-   ========================================= */
 .onboarding-step {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 28px;
 }
 
-/* Progression */
-.progress-container {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
+.progress-container { display: flex; align-items: center; gap: 16px; }
 
 .progress-track {
-  width: 249px;
+  flex: 1;
   height: 4px;
   background: var(--bg-progress-track);
   border-radius: 9999px;
@@ -142,7 +111,7 @@ body {
 }
 
 .progress-fill {
-  width: 33.33%; /* Étape 1 sur 3 */
+  width: 33.33%;
   height: 100%;
   background: var(--color-primary);
   border-radius: 9999px;
@@ -154,14 +123,10 @@ body {
   font-family: var(--font-title);
   font-weight: 700;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
-/* Textes */
-.step-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+.step-header { display: flex; flex-direction: column; gap: 6px; }
 
 .step-title {
   color: var(--text-dark);
@@ -173,16 +138,11 @@ body {
 
 .step-subtitle {
   color: var(--text-muted);
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.5;
 }
 
-/* Formulaire */
-.step-form {
-  display: flex;
-  flex-direction: column;
-}
-
+/* ---- Input username ---- */
 .input-pill {
   width: 100%;
   height: 56px;
@@ -196,38 +156,168 @@ body {
   color: var(--text-dark);
   outline: none;
   transition: box-shadow 0.2s ease;
+  display: block;
 }
 
-.input-pill::placeholder {
-  color: var(--text-placeholder);
+.input-pill::placeholder { color: var(--text-placeholder); }
+.input-pill:focus { box-shadow: 0 0 0 2px var(--color-primary); }
+
+/* ---- Séparateur ---- */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  margin: 8px 0 4px;
 }
 
-.input-pill:focus {
-  box-shadow: 0 0 0 2px var(--color-primary);
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #E5E3D6;
 }
 
-/* =========================================
-   Barre d'actions (Sticky Footer)
-   ========================================= */
-.bottom-actions {
+/* ---- Avatar preview ---- */
+.avatar-preview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #F5F4EA;
+  border-radius: 20px;
+  padding: 14px 18px;
+}
+
+.avatar-preview-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--color-primary);
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.avatar-preview-text { display: flex; flex-direction: column; gap: 2px; }
+
+.avatar-preview-name {
+  color: var(--text-dark);
+  font-size: 15px;
+  font-family: var(--font-title);
+  font-weight: 700;
+}
+
+.avatar-preview-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* ---- Grille d'avatars ---- */
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.avatar-option {
+  position: relative;
+  cursor: pointer;
+}
+
+.avatar-option input[type="radio"] {
   position: absolute;
-  bottom: 0;
-  left: 0;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.avatar-img-wrap {
   width: 100%;
-  padding: 24px;
-  background: rgba(255, 255, 255, 0.80);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2.5px solid transparent;
+  transition: border-color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+  background: #ECE9D1;
+}
+
+.avatar-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-option input[type="radio"]:checked + .avatar-img-wrap {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary);
+  transform: scale(1.07);
+}
+
+.avatar-option:not(:has(input:checked)):hover .avatar-img-wrap {
+  transform: scale(1.04);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+}
+
+/* Badge check vert sur l'avatar sélectionné */
+.avatar-check-badge {
+  display: none;
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  border: 2px solid white;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-check-badge::after {
+  content: '';
+  width: 5px;
+  height: 3px;
+  border-left: 2px solid white;
+  border-bottom: 2px solid white;
+  transform: rotate(-45deg) translateY(-1px);
+  display: block;
+  margin-left: 1px;
+}
+
+.avatar-option input[type="radio"]:checked ~ .avatar-check-badge {
+  display: flex;
+}
+
+/* Espace avant le footer */
+.spacer-bottom { height: 32px; }
+
+/* ---- Footer sticky ---- */
+.bottom-actions {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 18px 24px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: flex;
   justify-content: space-between;
   align-items: center;
   z-index: 10;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  position: sticky;
+  bottom: 0;
 }
 
 .btn-skip {
   background: transparent;
   border: none;
-  padding: 16px 8px;
+  padding: 14px 8px;
   color: var(--text-muted);
   font-size: 14px;
   font-family: var(--font-body);
@@ -235,54 +325,59 @@ body {
   cursor: pointer;
 }
 
-.btn-skip:hover {
-  color: var(--text-dark);
-}
+.btn-skip:hover { color: var(--text-dark); }
 
 .btn-next {
-  background: var(--color-accent);
+  position: relative;
   border: none;
   border-radius: 9999px;
-  padding: 16px 24px;
+  padding: 15px 26px;
+  background: linear-gradient(135deg, #8B3A24 0%, #A24A33 100%);
+  box-shadow: 0 5px 0 #6B2A14, 0 8px 20px rgba(162,74,51,0.35);
+  transform: translateY(0);
+  transition: transform 0.08s, box-shadow 0.08s;
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--color-white);
+  color: white;
   font-size: 16px;
   font-family: var(--font-title);
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0px 10px 15px -3px rgba(162, 74, 51, 0.30);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
 }
-
-.btn-next:hover {
-  transform: translateY(-2px);
-  box-shadow: 0px 12px 18px -3px rgba(162, 74, 51, 0.40);
+.btn-next::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.13) 0%, transparent 55%);
+  border-radius: inherit; pointer-events: none;
 }
+.btn-next:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #6B2A14, 0 12px 24px rgba(162,74,51,0.4); }
+.btn-next:active { transform: translateY(4px); box-shadow: 0 1px 0 #6B2A14, 0 3px 10px rgba(162,74,51,0.25); }
 
-.icon-arrow {
-  width: 6px;
-  height: 10px;
-  background: var(--color-white);
-  clip-path: polygon(0 0, 100% 50%, 0 100%); /* Fausse icône flèche en pur CSS */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0;
+  margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border-width: 0;
 }
 </style>
-
 </head>
 <body>
+
+{% get_static_prefix as STATIC_PREFIX %}
 
   <main class="app-container">
     <div class="decorative-blur"></div>
 
     <div class="scrollable-content">
       <header class="header-brand">
-        <div class="brand-logo"><div class="logo-inner"></div></div>
-        <span class="brand-name">La Fabrique</span>
+        <a href="{% url 'home' %}" style="line-height: 0; display: block;">
+          <img src="{% static 'core/images/logo-la-fabrique.svg' %}" alt="La Fabrique" style="height: 28px;">
+        </a>
       </header>
 
       <section class="onboarding-step">
-        
+
         <div class="progress-container">
           <div class="progress-track">
             <div class="progress-fill"></div>
@@ -295,9 +390,47 @@ body {
           <p class="step-subtitle">Ton matricule officiel de dompteur de fibres.</p>
         </div>
 
-        <form class="step-form" id="form-etape-1" method="POST">
-        {% csrf_token %}
-          <input type="text" name="username"class="input-pill" placeholder="nom d’utilisateur" required>
+        <form id="form-etape-1" method="POST">
+          {% csrf_token %}
+
+          <input type="text" name="username" class="input-pill" placeholder="nom d'utilisateur" required>
+
+          <div class="divider" style="margin-top: 28px;">Votre avatar</div>
+
+          <!-- Aperçu de l'avatar sélectionné -->
+          <div class="avatar-preview" style="margin-top: 12px;">
+            <img id="avatarPreviewImg"
+                 class="avatar-preview-img"
+                 src="{{ STATIC_PREFIX }}core/images/avatars/image 11.png"
+                 alt="Avatar sélectionné">
+            <div class="avatar-preview-text">
+              <span class="avatar-preview-name">Votre avatar</span>
+              <span class="avatar-preview-hint">Faites votre choix parmi les options ci-dessous</span>
+            </div>
+          </div>
+
+          <!-- Grille de sélection -->
+          <fieldset style="border:none; margin-top: 16px;">
+            <legend class="sr-only">Choisissez votre avatar</legend>
+            <div class="avatar-grid">
+              {% for avatar_file in avatars %}
+              <label class="avatar-option">
+                <input type="radio" name="avatar"
+                       value="{{ avatar_file }}"
+                       {% if forloop.first %}checked{% endif %}
+                       onchange="updatePreview(this)">
+                <div class="avatar-img-wrap">
+                  <img src="{{ STATIC_PREFIX }}core/images/avatars/{{ avatar_file }}"
+                       alt="Avatar {{ forloop.counter }}"
+                       loading="lazy">
+                </div>
+                <span class="avatar-check-badge"></span>
+              </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+
+          <div class="spacer-bottom"></div>
         </form>
 
       </section>
@@ -307,10 +440,19 @@ body {
       <button type="button" class="btn-skip">Passer</button>
       <button type="submit" class="btn-next" form="form-etape-1">
         Etape suivante
-        <span class="icon-arrow"></span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
     </footer>
   </main>
+
+<script>
+  const STATIC_PREFIX = "{{ STATIC_PREFIX }}";
+
+  function updatePreview(radio) {
+    document.getElementById('avatarPreviewImg').src =
+      STATIC_PREFIX + 'core/images/avatars/' + radio.value;
+  }
+</script>
 
 </body>
 </html>

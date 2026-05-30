@@ -542,13 +542,15 @@ def inscription(request):
     
     return render(request, 'core/inscription.html')
 
+AVATAR_FILENAMES = [f'image {i}.png' for i in range(11, 27)]
+
 def inscription_etape1(request):
     if request.method == 'POST':
-        # On sauvegarde le pseudo
         request.session['reg_username'] = request.POST.get('username')
+        request.session['reg_avatar'] = request.POST.get('avatar', 'image 11.png')
         return redirect('inscription_etape2')
-        
-    return render(request, 'core/inscription_etape1.html')
+
+    return render(request, 'core/inscription_etape1.html', {'avatars': AVATAR_FILENAMES})
 
 def inscription_etape2(request):
     if request.method == 'POST':
@@ -569,6 +571,7 @@ def inscription_etape3(request):
         password = request.session.get('reg_password')
         username = request.session.get('reg_username')
         niveau = request.session.get('reg_niveau')
+        avatar = request.session.get('reg_avatar', 'image 11.png')
 
         # 3. On créé le compte dans la session
         nouvel_utilisateur = Utilisateur.objects.create_user(
@@ -576,11 +579,12 @@ def inscription_etape3(request):
             email=email,
             password=password,
             niveau_couture=niveau,
-            envies_creation=cibles_str
+            envies_creation=cibles_str,
+            avatar=avatar,
         )
 
         # 4. On nettoie la session
-        keys_to_delete = ['reg_email', 'reg_password', 'reg_username', 'reg_niveau']
+        keys_to_delete = ['reg_email', 'reg_password', 'reg_username', 'reg_niveau', 'reg_avatar']
         for key in keys_to_delete:
             if key in request.session:
                 del request.session[key]

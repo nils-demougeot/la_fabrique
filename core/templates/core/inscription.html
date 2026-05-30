@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>La Fabrique - Connexion</title>
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Manrope:wght@700&family=Plus+Jakarta+Sans:ital,wght@0,700;0,800;1,800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,700;0,800;1,800&display=swap" rel="stylesheet">
 
 <style>
 /* =========================================
@@ -28,7 +28,7 @@
 
   /* Polices */
   --font-title: 'Plus Jakarta Sans', sans-serif;
-  --font-body: 'Be Vietnam Pro', sans-serif;
+  --font-body: 'Manrope', sans-serif;
   --font-btn: 'Manrope', sans-serif;
 }
 
@@ -189,35 +189,40 @@ body {
 
 /* Bouton Soumettre */
 .btn-submit {
+  position: relative;
   width: 100%;
   padding: 20px;
   margin-top: 8px;
-  background: var(--color-primary);
   border: none;
   border-radius: 9999px;
+  background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
+  box-shadow: 0 6px 0 #1B5E20, 0 10px 24px rgba(35,115,41,0.35);
+  transform: translateY(0);
+  transition: transform 0.08s, box-shadow 0.08s;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 17px;
+  gap: 10px;
   color: var(--color-white);
   font-size: 18px;
   font-family: var(--font-btn);
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0px 20px 25px -5px rgba(35, 115, 41, 0.20);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
 }
-
+.btn-submit::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.13) 0%, transparent 55%);
+  border-radius: inherit; pointer-events: none;
+}
 .btn-submit:hover {
   transform: translateY(-2px);
-  box-shadow: 0px 25px 30px -5px rgba(35, 115, 41, 0.30);
+  box-shadow: 0 8px 0 #1B5E20, 0 14px 28px rgba(35,115,41,0.4);
 }
-
-.btn-icon {
-  width: 16px;
-  height: 16px;
-  background: var(--color-white);
-  display: inline-block;
+.btn-submit:active {
+  transform: translateY(5px);
+  box-shadow: 0 1px 0 #1B5E20, 0 4px 12px rgba(35,115,41,0.25);
 }
 
 /* Pied de carte */
@@ -251,7 +256,9 @@ body {
 
     <header class="header-section">
       <div class="brand">
-        <img src="{% static 'core/images/logo-la-fabrique.svg' %}" alt="La Fabrique" style="height: 36px;">
+        <a href="{% url 'home' %}" style="line-height: 0; display: block;">
+          <img src="{% static 'core/images/logo-la-fabrique.svg' %}" alt="La Fabrique" style="height: 34px;">
+        </a>
       </div>
       
       <h1 class="main-title">
@@ -275,7 +282,7 @@ body {
 
       <button type="submit" class="btn-submit">
         Débuter l’aventure
-        <span class="btn-icon"></span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
 
       <div class="login-footer">

@@ -1,12 +1,11 @@
 {% load static %}
-<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>La Fabrique</title>
   
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&family=Manrope:wght@400;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 
   <style>
     /* =========================================
@@ -22,7 +21,7 @@
       --color-accent: #A24A33;
       --color-white: #FFFFFF;
       --font-title: 'Plus Jakarta Sans', sans-serif;
-      --font-body: 'Be Vietnam Pro', sans-serif;
+      --font-body: 'Manrope', sans-serif;
     }
 
     /* Le reset basique de ton design */
@@ -191,8 +190,9 @@
         {% if user.is_authenticated %}
           <span class="coins">{{ user.soldePieces }} 🪙</span>
           <div class="avatar-menu">
+            {% get_static_prefix as STATIC_PREFIX %}
             <img class="avatar"
-                 src="{% static 'core/images/page-accueil/profile-picture.jpg' %}"
+                 src="{{ STATIC_PREFIX }}{{ user.avatar_url }}"
                  alt="Avatar"
                  id="avatarBtn">
             <div class="dropdown-menu" id="dropdownMenu">
