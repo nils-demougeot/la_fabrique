@@ -1256,9 +1256,11 @@
     display: flex;
     gap: 14px;
     overflow-x: auto;
+    /* padding vertical pour que l'ombre des cards ne soit pas coupée */
+    padding: 10px 0 30px;
+    margin: -10px 0 -30px;         /* compense dans le layout */
     scrollbar-width: none;
     -ms-overflow-style: none;
-    padding-bottom: 4px;
   }
   .creations-scroll::-webkit-scrollbar { display: none; }
 

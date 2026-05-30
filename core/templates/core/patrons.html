@@ -48,8 +48,9 @@
     display: flex;
     gap: 12px;
     overflow-x: auto;
-    padding-bottom: 4px;
-    /* Masquer scrollbar */
+    /* padding vertical pour que l'ombre des cards ne soit pas coupée */
+    padding: 10px 4px 28px;
+    margin: -10px 0 -28px;          /* compense dans le layout */
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
@@ -309,7 +310,7 @@
   /* Wrapper animable — collapse au dismiss */
   .patron-wrap {
     padding-bottom: 24px;
-    overflow: hidden;
+    overflow: visible;            /* overflow:hidden n'est mis qu'en JS pendant le collapse */
     transition: padding-bottom 0.35s ease;
   }
 
