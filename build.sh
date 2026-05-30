@@ -20,4 +20,5 @@ if sql:
 
 python manage.py create_superuser_if_none
 python manage.py create_sample_vetements
+python manage.py populate_demo_patrons
 python manage.py collectstatic --no-input
