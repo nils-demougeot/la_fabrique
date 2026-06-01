@@ -76,22 +76,33 @@
     .card h2 { font-family: var(--font-title); font-size: 16px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; }
     .icon-square { width: 16px; height: 16px; }
 
-    .upload-zone {
-      background-color: rgba(255, 255, 255, 0.9); border: 2px dashed rgba(187, 185, 177, 0.5);
-      border-radius: 24px; padding: 40px 20px; text-align: center; cursor: pointer; position: relative;
+    .photo-source-picker {
+      display: flex;
+      gap: 12px;
     }
-    .upload-zone:hover { border-color: var(--primary-green); background-color: rgba(35, 115, 41, 0.05); }
-    .upload-zone span { color: var(--text-gray); font-weight: 600; font-size: 14px; }
-    .upload-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-
-    .upload-zone.is-uploaded {
-      background-color: var(--light-green);
-      border: 2px solid var(--primary-green);
+    .photo-source-btn {
+      flex: 1;
+      background-color: rgba(255, 255, 255, 0.9);
+      border: 2px dashed rgba(187, 185, 177, 0.5);
+      border-radius: 18px;
+      padding: 28px 12px;
+      text-align: center;
+      cursor: pointer;
+      color: var(--text-gray);
+      font-weight: 600;
+      font-size: 13px;
+      font-family: var(--font-body);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      transition: border-color 0.15s, background-color 0.15s;
     }
-
-    .upload-zone.is-uploaded span {
-      color: var(--primary-green);
+    .photo-source-btn:hover {
+      border-color: var(--primary-green);
+      background-color: rgba(35, 115, 41, 0.05);
     }
+    .photo-source-btn .src-icon { font-size: 26px; }
 
     /* ── Overlay caméra ── */
     #camera-overlay {
@@ -467,6 +478,58 @@
     .toggle-icon {
       transition: transform 0.3s ease-in-out;
     }
+
+    .no-damage-row {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 16px;
+      margin-bottom: 12px;
+      border: 1.5px solid rgba(187, 185, 177, 0.3);
+      overflow: hidden;
+    }
+    .no-damage-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 14px 16px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-dark);
+      gap: 12px;
+    }
+    .toggle-sw-wrap {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .toggle-sw-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-sw-track {
+      position: absolute;
+      inset: 0;
+      background: rgba(187, 185, 177, 0.5);
+      border-radius: 99px;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .toggle-sw-track::before {
+      content: '';
+      position: absolute;
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle-sw-wrap input:checked + .toggle-sw-track { background: var(--primary-green); }
+    .toggle-sw-wrap input:checked + .toggle-sw-track::before { transform: translateX(20px); }
 
     .btn-primary {
       background-color: var(--primary-green); color: white; border: none; border-radius: 30px; padding: 20px;
@@ -884,8 +947,16 @@
             <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-scan.svg' %}" alt="Scan">
             Photo du vêtement
           </h2>
-          <div class="upload-zone" id="drop-zone" style="cursor:pointer;">
-            <span id="upload-text">📷 Prendre en photo</span>
+          <div class="photo-source-picker" id="photo-source-picker">
+            <button type="button" class="photo-source-btn" id="btn-pick-file">
+              <span class="src-icon">🖼️</span>
+              Depuis mes fichiers
+            </button>
+            <button type="button" class="photo-source-btn" id="btn-open-camera">
+              <span class="src-icon">📷</span>
+              Caméra
+            </button>
+            <input type="file" id="file-input-photo" accept="image/*" style="display:none;" required>
           </div>
           <div class="photo-preview" id="photo-preview">
             <img id="photo-preview-img" src="" alt="Photo prise">
@@ -961,8 +1032,8 @@
             <input type="checkbox" name="couleur_pick" id="c-rose"       class="color-swatch-input" value="rose">
             <label for="c-rose"       class="color-swatch" style="background:#F2C4CE;outline:1px solid rgba(0,0,0,0.07);outline-offset:-1px;" title="Rose"></label>
 
-            <input type="checkbox" name="couleur_pick" id="c-mauve"      class="color-swatch-input" value="mauve">
-            <label for="c-mauve"      class="color-swatch" style="background:#C9A8D4;" title="Mauve"></label>
+            <input type="checkbox" name="couleur_pick" id="c-marron"     class="color-swatch-input" value="marron">
+            <label for="c-marron"     class="color-swatch" style="background:#7B4226;" title="Marron"></label>
 
             <input type="checkbox" name="couleur_pick" id="c-lavande"    class="color-swatch-input" value="lavande">
             <label for="c-lavande"    class="color-swatch" style="background:#B39DDB;" title="Lavande"></label>
@@ -1028,6 +1099,16 @@
               </div>
             </div>
           </section>
+
+          <div class="no-damage-row">
+            <label class="no-damage-label" for="no-damage-toggle">
+              <span>Aucun dégât</span>
+              <div class="toggle-sw-wrap">
+                <input type="checkbox" id="no-damage-toggle" name="no_damage" value="1">
+                <span class="toggle-sw-track"></span>
+              </div>
+            </label>
+          </div>
 
           <div id="damages-container" class="details-section">
   
@@ -1399,6 +1480,20 @@
       const btnAddDamage = document.getElementById('btn-add-damage');
       let damageCount = 1;
 
+      const noDamageToggle = document.getElementById('no-damage-toggle');
+      if (noDamageToggle) {
+        noDamageToggle.addEventListener('change', () => {
+          const noDamage = noDamageToggle.checked;
+          damagesContainer.style.display = noDamage ? 'none' : '';
+          btnAddDamage.style.display     = noDamage ? 'none' : '';
+          if (noDamage) {
+            damagesContainer.querySelectorAll('.damage-slider').forEach(s => s.disabled = true);
+          } else {
+            damagesContainer.querySelectorAll('.damage-slider').forEach(s => s.disabled = false);
+          }
+        });
+      }
+
       function attachSliderEvent(card) {
         const slider = card.querySelector('.damage-slider');
         const display = card.querySelector('.current-slider-value');
@@ -1492,8 +1587,10 @@
       // ==========================================
       // 3. CAMÉRA + CANVAS (Pop-up)
       // ==========================================
-      const dropZone        = document.getElementById('drop-zone');
-      const uploadText      = document.getElementById('upload-text');
+      const photoSourcePicker = document.getElementById('photo-source-picker');
+      const btnPickFile     = document.getElementById('btn-pick-file');
+      const btnOpenCamera   = document.getElementById('btn-open-camera');
+      const fileInputPhoto  = document.getElementById('file-input-photo');
       const photoPreview    = document.getElementById('photo-preview');
       const photoPreviewImg = document.getElementById('photo-preview-img');
       const photoDataInput  = document.getElementById('photo_data');
@@ -1568,13 +1665,33 @@
         imageObj.src = dataUrl;
       }
 
-      dropZone.addEventListener('click', openCamera);
+      btnOpenCamera.addEventListener('click', openCamera);
+
+      btnPickFile.addEventListener('click', () => {
+        fileInputPhoto.click();
+      });
+
+      fileInputPhoto.addEventListener('change', () => {
+        const file = fileInputPhoto.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target.result;
+          photoDataInput.value = dataUrl;
+          photoPreviewImg.src  = dataUrl;
+          photoSourcePicker.style.display = 'none';
+          photoPreview.style.display = 'block';
+          btnRetake.style.display    = 'block';
+          loadImageAndOpenModal(dataUrl);
+        };
+        reader.readAsDataURL(file);
+      });
 
       btnRetake.addEventListener('click', () => {
         photoPreview.style.display = 'none';
         btnRetake.style.display = 'none';
-        dropZone.style.display = 'block';
-        openCamera();
+        photoSourcePicker.style.display = 'flex';
+        fileInputPhoto.value = '';
       });
 
       btnCameraCancel.addEventListener('click', stopCamera);
@@ -1615,7 +1732,7 @@
         photoPreviewImg.src  = dataUrl;
         photoPreview.style.display = 'block';
         btnRetake.style.display    = 'block';
-        dropZone.style.display     = 'none';
+        photoSourcePicker.style.display = 'none';
 
         loadImageAndOpenModal(dataUrl);
       });
