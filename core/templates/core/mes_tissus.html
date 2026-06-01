@@ -293,6 +293,10 @@
     color: white;
   }
 
+  /* ── Clic normal (vers détail) ── */
+  .vcard { cursor: pointer; transition: outline 0.12s, transform 0.12s; }
+  .vcard:hover { transform: translateY(-2px); }
+
   /* ── Mode sélection ── */
   .vcard.selectable { cursor: pointer; transition: outline 0.12s; }
   .vcard.selected   { outline: 3px solid #237329; outline-offset: 2px; }
@@ -425,6 +429,7 @@
     <div class="vcard {% if forloop.counter|divisibleby:2 %}vcard--right{% endif %}"
          data-type="{{ v.typeVetement }}"
          data-id="{{ v.id }}"
+         data-url="{% url 'detail_vetement' v.id %}"
          style="position:relative;">
 
       <!-- Indicateur de sélection -->
@@ -586,21 +591,25 @@
     }
   });
 
-  /* Clic sur une carte en mode sélection */
+  /* Clic sur une carte */
   document.getElementById('vetement-grid')?.addEventListener('click', e => {
-    if (!selectMode) return;
     const card = e.target.closest('.vcard[data-id]');
     if (!card) return;
 
-    const id = card.dataset.id;
-    if (selected.has(id)) {
-      selected.delete(id);
-      card.classList.remove('selected');
+    if (selectMode) {
+      const id = card.dataset.id;
+      if (selected.has(id)) {
+        selected.delete(id);
+        card.classList.remove('selected');
+      } else {
+        selected.add(id);
+        card.classList.add('selected');
+      }
+      updateDeleteBar();
     } else {
-      selected.add(id);
-      card.classList.add('selected');
+      // Navigation vers le détail
+      if (card.dataset.url) window.location.href = card.dataset.url;
     }
-    updateDeleteBar();
   });
 
   /* Suppression */

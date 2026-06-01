@@ -1,0 +1,663 @@
+{% extends 'core/header.html' %}
+{% load static %}
+{% block extra_css %}
+<style>
+  :root {
+    --bg-page: #FFFBFF;
+    --bg-card: #FBFAF0;
+    --bg-input: #EFEEE3;
+    --primary-green: #237329;
+    --dark-green: #4E6C50;
+    --light-green: #D2F4D1;
+    --text-dark: #383832;
+    --text-gray: #65655E;
+    --text-light-gray: #666556;
+    --font-title: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Manrope', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background-color: #f4f4f4; font-family: var(--font-body); display: flex; justify-content: center; }
+  .app-container { width: 100%; max-width: 430px; background-color: var(--bg-page); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+
+  .page-topbar {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-page);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .btn-back {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--bg-input); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dark); flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .btn-back:hover { background: #E0DDD1; }
+  .topbar-title {
+    font-family: var(--font-title); font-size: 17px; font-weight: 800;
+    color: var(--text-dark); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  main { padding: 24px 20px 100px; display: flex; flex-direction: column; gap: 20px; }
+
+  .card { background: var(--bg-card); padding: 20px; border-radius: 28px; display: flex; flex-direction: column; gap: 14px; }
+  .card h2 { font-family: var(--font-title); font-size: 15px; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px; }
+  .card-divider { height: 1px; background: rgba(187,185,177,0.3); }
+  .icon-square { width: 16px; height: 16px; }
+
+  .custom-input {
+    background: var(--bg-input); border: none; border-radius: 99px;
+    padding: 14px 20px; width: 100%;
+    font-family: var(--font-body); font-size: 15px; font-weight: 600;
+    color: var(--text-dark); outline: none;
+    transition: box-shadow 0.2s;
+  }
+  .custom-input:focus { box-shadow: 0 0 0 2px var(--primary-green); }
+
+  /* ── Photo ── */
+  .photo-current {
+    width: 100%; border-radius: 16px; overflow: hidden;
+    background: #EAE9DD; aspect-ratio: 4/3;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 64px;
+  }
+  .photo-current img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .btn-change-photo {
+    background: none; border: 2px dashed rgba(35,115,41,0.35); border-radius: 99px;
+    color: var(--primary-green); font-family: var(--font-body); font-size: 14px; font-weight: 700;
+    cursor: pointer; padding: 11px 20px; width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn-change-photo:hover { background: rgba(35,115,41,0.05); border-color: rgba(35,115,41,0.6); }
+
+  /* ── Étoiles ── */
+  .star-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-gray); letter-spacing: 1px; }
+  .star-rating { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 6px; }
+  .star-rating input { display: none; }
+  .star-rating label {
+    width: 44px; height: 44px; border-radius: 12px; background: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: #BCBAA8; cursor: pointer;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+    outline: 1.5px solid rgba(187,185,177,0.35); outline-offset: -1px; user-select: none;
+  }
+  .star-rating label:active { transform: scale(0.92); }
+  .star-rating input:checked ~ label,
+  .star-rating label:hover,
+  .star-rating label:hover ~ label { background: #D2F4D1; color: #237329; outline-color: rgba(35,115,41,0.25); }
+
+  /* ── Type ── */
+  .type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .type-btn {
+    background: white; border: 2px solid transparent; padding: 10px 4px; border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+    font-family: var(--font-title); font-size: 10px; font-weight: 700; text-transform: uppercase;
+    color: var(--text-light-gray); transition: all 0.15s ease;
+  }
+  .type-btn.active { background: var(--primary-green); color: white; box-shadow: 0 4px 12px rgba(35,115,41,0.2); }
+  .type-icon-img { width: 26px; height: 26px; transition: filter 0.15s; }
+  .type-btn.active .type-icon-img { filter: brightness(0) invert(1); }
+
+  /* ── Couleurs ── */
+  .color-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 7px; }
+  .color-swatch-input { display: none; }
+  .color-swatch {
+    aspect-ratio: 1; border-radius: 9px; cursor: pointer; position: relative;
+    transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s; border: 2px solid transparent;
+  }
+  .color-swatch:hover { transform: scale(1.12); }
+  .color-swatch-input:checked + .color-swatch {
+    border-color: white; box-shadow: 0 0 0 2.5px #237329; transform: scale(1.12);
+  }
+  .color-swatch-input:checked + .color-swatch::after {
+    content: ''; position: absolute; inset: 0; border-radius: 7px; background: rgba(255,255,255,0.28);
+  }
+  .color-swatch.maxed { opacity: 0.35; cursor: not-allowed; }
+  .color-swatch.maxed:hover { transform: none; }
+
+  /* ── Matières ── */
+  #material-list {
+    background: white; border-radius: 28px;
+    outline: 1.5px solid rgba(187,185,177,0.25); outline-offset: -1px; overflow: hidden;
+  }
+  .material-row {
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    border-bottom: 1px solid rgba(187,185,177,0.2);
+  }
+  .material-row:last-child { border-bottom: none; }
+  .material-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .material-select-wrapper { flex: 1; position: relative; display: flex; align-items: center; min-width: 0; }
+  .material-name-select {
+    flex: 1; background: none; border: none;
+    font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--text-dark);
+    outline: none; cursor: pointer; appearance: none; -webkit-appearance: none;
+    min-width: 0; padding-right: 18px;
+  }
+  .material-select-chevron { position: absolute; right: 0; pointer-events: none; color: #BCBAA8; }
+  .material-percent-wrapper {
+    display: flex; align-items: center; gap: 2px;
+    background: var(--bg-input); border-radius: 99px; padding: 5px 10px; flex-shrink: 0;
+  }
+  .material-percent-input {
+    width: 36px; background: none; border: none;
+    font-family: var(--font-title); font-size: 14px; font-weight: 800;
+    color: var(--primary-green); text-align: right; outline: none; -moz-appearance: textfield;
+  }
+  .material-percent-input::-webkit-outer-spin-button,
+  .material-percent-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .material-percent-unit { font-family: var(--font-title); font-size: 12px; font-weight: 700; color: var(--text-gray); }
+  .material-delete-btn {
+    background: none; border: none; color: #BCBAA8; font-size: 16px; cursor: pointer;
+    padding: 0; line-height: 1; flex-shrink: 0; border-radius: 50%;
+    width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+    transition: color 0.15s, background 0.15s;
+  }
+  .material-delete-btn:hover { color: #A24A33; background: rgba(162,74,51,0.08); }
+  .material-total-row { display: flex; align-items: center; gap: 12px; padding: 2px 2px 0; }
+  .material-total-bar-wrapper { flex: 1; height: 5px; background: #EAE9DD; border-radius: 99px; overflow: hidden; }
+  .material-total-bar-fill { height: 100%; background: var(--primary-green); border-radius: 99px; transition: width 0.3s, background 0.3s; width: 0%; }
+  .material-total-text { font-family: var(--font-title); font-size: 12px; font-weight: 800; white-space: nowrap; min-width: 70px; text-align: right; color: var(--text-gray); }
+  .material-total-text.valid { color: var(--primary-green); }
+  .material-total-text.over  { color: #A24A33; }
+  .btn-add-material {
+    width: 100%; background: transparent; border: 2px dashed rgba(35,115,41,0.35); border-radius: 99px;
+    color: var(--primary-green); font-family: var(--font-body); font-size: 13px; font-weight: 700;
+    cursor: pointer; padding: 11px 20px; display: flex; align-items: center; justify-content: center;
+    gap: 8px; transition: background 0.15s, border-color 0.15s;
+  }
+  .btn-add-material:hover { background: rgba(35,115,41,0.06); border-color: rgba(35,115,41,0.6); }
+
+  /* ── Infos surface (lecture seule) ── */
+  .info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .info-box {
+    background: white; border-radius: 18px; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 2px;
+    outline: 1px solid rgba(187,185,177,0.25); outline-offset: -1px;
+  }
+  .info-box-val { font-family: var(--font-title); font-size: 22px; font-weight: 800; color: var(--primary-green); line-height: 1; }
+  .info-box-unit { font-size: 11px; font-weight: 700; color: var(--text-gray); text-transform: uppercase; }
+  .info-box-lbl { font-size: 11px; font-weight: 600; color: #9B9A8E; margin-top: 2px; }
+
+  /* ── Bouton sauvegarder ── */
+  .btn-save {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    width: calc(100% - 40px); max-width: 390px;
+    border: none; border-radius: 99px; padding: 18px;
+    background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
+    box-shadow: 0 5px 0 #1B5E20, 0 8px 20px rgba(35,115,41,0.35);
+    color: white; font-family: var(--font-title); font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: transform 0.08s, box-shadow 0.08s; z-index: 50;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-save:hover  { transform: translateX(-50%) translateY(-2px); box-shadow: 0 7px 0 #1B5E20, 0 12px 24px rgba(35,115,41,0.4); }
+  .btn-save:active { transform: translateX(-50%) translateY(3px);  box-shadow: 0 2px 0 #1B5E20, 0 4px 10px rgba(35,115,41,0.25); }
+
+  /* ── Popup autre type ── */
+  #other-type-modal { display: none; position: fixed; inset: 0; z-index: 3000; background: rgba(0,0,0,0.5); justify-content: center; align-items: flex-end; }
+  #other-type-modal.active { display: flex; }
+  .other-type-sheet { background: var(--bg-page); border-radius: 32px 32px 0 0; padding: 20px 20px 40px; width: 100%; max-width: 430px; display: flex; flex-direction: column; gap: 14px; animation: slideUp 0.28s ease; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .other-type-handle { width: 38px; height: 4px; background: #BCBAA8; border-radius: 99px; margin: 0 auto 2px; }
+  .other-type-title { font-family: var(--font-title); font-size: 15px; font-weight: 800; color: var(--text-dark); text-align: center; }
+  .other-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .other-type-btn { background: white; border: 1.5px solid rgba(187,185,177,0.4); border-radius: 12px; padding: 12px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; font-family: var(--font-title); font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-light-gray); transition: all 0.15s; }
+  .other-type-btn:hover { border-color: var(--primary-green); color: var(--primary-green); }
+  .other-type-emoji { font-size: 18px; line-height: 1; }
+  .btn-other-cancel { background: var(--bg-input); border: none; border-radius: 99px; padding: 14px; font-family: var(--font-body); font-size: 14px; font-weight: 700; color: var(--text-gray); cursor: pointer; width: 100%; }
+  .btn-other-cancel:hover { background: #E0DDD1; }
+
+  /* ── Caméra ── */
+  #camera-overlay { display: none; position: fixed; inset: 0; z-index: 2000; background: #000; flex-direction: column; }
+  #camera-overlay.active { display: flex; }
+  #camera-viewfinder { position: relative; flex: 1; overflow: hidden; }
+  #camera-video { width: 100%; height: 100%; object-fit: cover; }
+  #camera-crop-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 80%; aspect-ratio: 1; border: 2px solid white; border-radius: 4px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); }
+  #camera-crop-box::before,#camera-crop-box::after,.cam-corner-br,.cam-corner-bl { content:''; position:absolute; width:18px; height:18px; border-color:white; border-style:solid; }
+  #camera-crop-box::before { top:-2px; left:-2px; border-width:3px 0 0 3px; }
+  #camera-crop-box::after  { top:-2px; right:-2px; border-width:3px 3px 0 0; }
+  .cam-corner-br { bottom:-2px; right:-2px; border-width:0 3px 3px 0; }
+  .cam-corner-bl { bottom:-2px; left:-2px;  border-width:0 0 3px 3px; }
+  #camera-controls { padding: 20px 32px 44px; display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.6); }
+  #btn-camera-cancel { color: white; background: none; border: none; font-family: var(--font-body); font-size: 15px; font-weight: 600; cursor: pointer; padding: 10px; width: 60px; }
+  #btn-camera-capture { width: 64px; height: 64px; border-radius: 50%; background: white; border: 4px solid rgba(255,255,255,0.4); cursor: pointer; transition: transform 0.1s; outline: none; }
+  #btn-camera-capture:active { transform: scale(0.92); }
+  body.camera-open .header-global, body.camera-open .bottom-nav { display: none !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-topbar">
+  <a href="{% url 'mes_tissus' %}" class="btn-back" aria-label="Retour">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </a>
+  <span class="topbar-title">{{ vetement.nomVetement }}</span>
+</div>
+
+<form method="POST" id="edit-form">
+  {% csrf_token %}
+  <input type="hidden" name="clothing_type" id="clothing_type_input" value="{{ vetement.typeVetement }}">
+  <input type="hidden" name="couleur" id="couleur-input" value="{{ vetement.couleur|default:'' }}">
+  <input type="hidden" name="material" id="material-hidden" value="{{ vetement.matiere|default:'coton:100' }}">
+  <input type="hidden" name="photo_data" id="photo_data" value="">
+
+  <main>
+
+    <!-- Photo -->
+    <section class="card">
+      <h2>
+        <svg class="icon-square" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="14" height="10" rx="2"/><circle cx="8" cy="8" r="2.5"/></svg>
+        Photo
+      </h2>
+      <div class="photo-current" id="photo-display">
+        {% if vetement.photoURL %}
+          <img id="photo-preview-img" src="{{ vetement.photoURL.url }}" alt="{{ vetement.nomVetement }}">
+        {% else %}
+          <span id="photo-emoji">
+            {% if vetement.typeVetement == 'tshirt' %}👕
+            {% elif vetement.typeVetement == 'jean' %}👖
+            {% elif vetement.typeVetement == 'hoodie' or vetement.typeVetement == 'manteau' %}🧥
+            {% elif vetement.typeVetement == 'robe' or vetement.typeVetement == 'jupe' %}👗
+            {% else %}🎽{% endif %}
+          </span>
+        {% endif %}
+      </div>
+      <button type="button" class="btn-change-photo" id="btn-change-photo">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Changer la photo
+      </button>
+    </section>
+
+    <!-- Nom + Qualité -->
+    <section class="card">
+      <h2>
+        <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-scan.svg' %}" alt="">
+        Nom &amp; Qualité
+      </h2>
+      <input type="text" name="nom_vetement" class="custom-input"
+             value="{{ vetement.nomVetement }}" placeholder="Nom du vêtement" maxlength="30">
+
+      <div class="card-divider"></div>
+
+      <p class="star-label">Qualité du tissu</p>
+      <div class="star-rating">
+        {% for i in "54321" %}
+        <input type="radio" name="qualite" id="star{{ i }}" value="{{ i }}"
+               {% if vetement.qualite == i|add:0 %}checked{% endif %}>
+        <label for="star{{ i }}">★</label>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Type -->
+    <section class="card">
+      <h2>
+        <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-shirt.svg' %}" alt="">
+        Type de vêtement
+      </h2>
+      <div class="type-grid">
+        <button type="button" class="type-btn {% if vetement.typeVetement == 'tshirt' %}active{% endif %}" data-type="tshirt">
+          <img class="type-icon-img" src="{% static 'core/images/ajout_textile/shirt.svg' %}" alt="">T-Shirt
+        </button>
+        <button type="button" class="type-btn {% if vetement.typeVetement == 'jean' %}active{% endif %}" data-type="jean">
+          <img class="type-icon-img" src="{% static 'core/images/ajout_textile/pants.svg' %}" alt="">Jean
+        </button>
+        <button type="button" class="type-btn {% if vetement.typeVetement == 'hoodie' %}active{% endif %}" data-type="hoodie">
+          <img class="type-icon-img" src="{% static 'core/images/ajout_textile/hoodie.svg' %}" alt="">Hoodie
+        </button>
+        <button type="button" class="type-btn {% if vetement.typeVetement == 'robe' %}active{% endif %}" data-type="robe">
+          <img class="type-icon-img" src="{% static 'core/images/ajout_textile/dress.svg' %}" alt="">Robe
+        </button>
+        <button type="button" class="type-btn {% if vetement.typeVetement == 'jupe' %}active{% endif %}" data-type="jupe">
+          <img class="type-icon-img" src="{% static 'core/images/ajout_textile/skirt.svg' %}" alt="">Jupe
+        </button>
+        <button type="button" class="type-btn {% if vetement.typeVetement not in 'tshirt,jean,hoodie,robe,jupe' %}active{% endif %}" id="btn-other-type" data-type="">
+          <svg class="type-icon-img" viewBox="0 0 28 28" fill="none"><circle cx="7" cy="14" r="2.5" fill="currentColor"/><circle cx="14" cy="14" r="2.5" fill="currentColor"/><circle cx="21" cy="14" r="2.5" fill="currentColor"/></svg>
+          <span class="other-btn-label">{% if vetement.typeVetement not in 'tshirt,jean,hoodie,robe,jupe' %}{{ vetement.typeVetement|capfirst }}{% else %}Autre{% endif %}</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Couleurs -->
+    <section class="card">
+      <h2>
+        <svg class="icon-square" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 2 A6 6 0 0 1 14 8"/></svg>
+        Couleur(s) <span style="font-size:11px;font-weight:500;text-transform:none;letter-spacing:0;color:#9E9E88;margin-left:4px;">— 3 max</span>
+      </h2>
+      <div class="color-grid">
+        {% with current_colors=vetement.couleur|default:'' %}
+        <input type="checkbox" id="c-ivoire"     class="color-swatch-input" value="ivoire"      {% if 'ivoire'      in current_colors %}checked{% endif %}>
+        <label for="c-ivoire"     class="color-swatch" style="background:#F5F0E8;outline:1px solid rgba(0,0,0,0.1);outline-offset:-1px;" title="Ivoire"></label>
+        <input type="checkbox" id="c-beige"      class="color-swatch-input" value="beige"       {% if 'beige'       in current_colors %}checked{% endif %}>
+        <label for="c-beige"      class="color-swatch" style="background:#D4C5A9;" title="Beige"></label>
+        <input type="checkbox" id="c-camel"      class="color-swatch-input" value="camel"       {% if 'camel'       in current_colors %}checked{% endif %}>
+        <label for="c-camel"      class="color-swatch" style="background:#C19A6B;" title="Camel"></label>
+        <input type="checkbox" id="c-terracotta" class="color-swatch-input" value="terracotta"  {% if 'terracotta'  in current_colors %}checked{% endif %}>
+        <label for="c-terracotta" class="color-swatch" style="background:#C8604A;" title="Terracotta"></label>
+        <input type="checkbox" id="c-rouge"      class="color-swatch-input" value="rouge"       {% if 'rouge'       in current_colors %}checked{% endif %}>
+        <label for="c-rouge"      class="color-swatch" style="background:#C0392B;" title="Rouge"></label>
+        <input type="checkbox" id="c-bordeaux"   class="color-swatch-input" value="bordeaux"    {% if 'bordeaux'    in current_colors %}checked{% endif %}>
+        <label for="c-bordeaux"   class="color-swatch" style="background:#722F37;" title="Bordeaux"></label>
+        <input type="checkbox" id="c-rose"       class="color-swatch-input" value="rose"        {% if 'rose'        in current_colors %}checked{% endif %}>
+        <label for="c-rose"       class="color-swatch" style="background:#F2C4CE;outline:1px solid rgba(0,0,0,0.07);outline-offset:-1px;" title="Rose"></label>
+        <input type="checkbox" id="c-mauve"      class="color-swatch-input" value="mauve"       {% if 'mauve'       in current_colors %}checked{% endif %}>
+        <label for="c-mauve"      class="color-swatch" style="background:#C9A8D4;" title="Mauve"></label>
+        <input type="checkbox" id="c-lavande"    class="color-swatch-input" value="lavande"     {% if 'lavande'     in current_colors %}checked{% endif %}>
+        <label for="c-lavande"    class="color-swatch" style="background:#B39DDB;" title="Lavande"></label>
+        <input type="checkbox" id="c-marine"     class="color-swatch-input" value="marine"      {% if 'marine'      in current_colors %}checked{% endif %}>
+        <label for="c-marine"     class="color-swatch" style="background:#1F3461;" title="Marine"></label>
+        <input type="checkbox" id="c-ciel"       class="color-swatch-input" value="bleu ciel"   {% if 'bleu ciel'   in current_colors %}checked{% endif %}>
+        <label for="c-ciel"       class="color-swatch" style="background:#6AAFE6;" title="Bleu ciel"></label>
+        <input type="checkbox" id="c-sauge"      class="color-swatch-input" value="vert sauge"  {% if 'vert sauge'  in current_colors %}checked{% endif %}>
+        <label for="c-sauge"      class="color-swatch" style="background:#8FAF8A;" title="Vert sauge"></label>
+        <input type="checkbox" id="c-foret"      class="color-swatch-input" value="vert forêt"  {% if 'vert forêt'  in current_colors %}checked{% endif %}>
+        <label for="c-foret"      class="color-swatch" style="background:#355E3B;" title="Vert forêt"></label>
+        <input type="checkbox" id="c-moutarde"   class="color-swatch-input" value="moutarde"    {% if 'moutarde'    in current_colors %}checked{% endif %}>
+        <label for="c-moutarde"   class="color-swatch" style="background:#D4A017;" title="Moutarde"></label>
+        <input type="checkbox" id="c-ardoise"    class="color-swatch-input" value="gris ardoise" {% if 'gris ardoise' in current_colors %}checked{% endif %}>
+        <label for="c-ardoise"    class="color-swatch" style="background:#607D8B;" title="Gris ardoise"></label>
+        <input type="checkbox" id="c-noir"       class="color-swatch-input" value="noir"        {% if 'noir'        in current_colors %}checked{% endif %}>
+        <label for="c-noir"       class="color-swatch" style="background:#2C2C2C;" title="Noir"></label>
+        {% endwith %}
+      </div>
+    </section>
+
+    <!-- Matières -->
+    <section class="card">
+      <h2>
+        <svg class="icon-square" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3 Q8 1 13 3 Q8 5 3 3Z"/><path d="M3 8 Q8 6 13 8 Q8 10 3 8Z"/><path d="M3 13 Q8 11 13 13"/></svg>
+        Matière(s) <span style="font-size:11px;font-weight:500;text-transform:none;letter-spacing:0;color:#9E9E88;margin-left:4px;">— indiquer les %</span>
+      </h2>
+      <div id="material-list"></div>
+      <div class="material-total-row">
+        <div class="material-total-bar-wrapper">
+          <div class="material-total-bar-fill" id="material-total-fill"></div>
+        </div>
+        <span class="material-total-text" id="material-total-text">Total : 0%</span>
+      </div>
+      <button type="button" class="btn-add-material" id="btn-add-material">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Ajouter une matière
+      </button>
+    </section>
+
+    <!-- Surface (lecture seule) -->
+    <section class="card">
+      <h2>
+        <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-surface.svg' %}" alt="">
+        Surface calculée
+      </h2>
+      <div class="info-row">
+        <div class="info-box">
+          <span class="info-box-val">{{ vetement.surfaceExploitable|floatformat:2 }}</span>
+          <span class="info-box-unit">m² exploitables</span>
+          <span class="info-box-lbl">Surface utile</span>
+        </div>
+        <div class="info-box">
+          <span class="info-box-val">{{ vetement.surfaceTotale|floatformat:2 }}</span>
+          <span class="info-box-unit">m² total</span>
+          <span class="info-box-lbl">Surface brute</span>
+        </div>
+      </div>
+      <p style="font-size:12px;color:#9B9A8E;font-family:var(--font-body);line-height:1.5;">
+        La surface est calculée lors du scan. Elle ne change pas en modifiant les infos.
+      </p>
+    </section>
+
+  </main>
+
+  <button type="submit" class="btn-save">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    Enregistrer les modifications
+  </button>
+</form>
+
+<!-- Popup autre type -->
+<div id="other-type-modal">
+  <div class="other-type-sheet">
+    <div class="other-type-handle"></div>
+    <p class="other-type-title">Choisir un type</p>
+    <div class="other-type-grid">
+      <button type="button" class="other-type-btn" data-type="manteau"><span class="other-type-emoji">🧥</span>Manteau</button>
+      <button type="button" class="other-type-btn" data-type="veste"><span class="other-type-emoji">🥼</span>Veste</button>
+      <button type="button" class="other-type-btn" data-type="blazer"><span class="other-type-emoji">👔</span>Blazer</button>
+      <button type="button" class="other-type-btn" data-type="pull"><span class="other-type-emoji">🧤</span>Pull</button>
+      <button type="button" class="other-type-btn" data-type="chemise"><span class="other-type-emoji">👕</span>Chemise</button>
+      <button type="button" class="other-type-btn" data-type="short"><span class="other-type-emoji">🩳</span>Short</button>
+      <button type="button" class="other-type-btn" data-type="gilet"><span class="other-type-emoji">🦺</span>Gilet</button>
+      <button type="button" class="other-type-btn" data-type="debardeur"><span class="other-type-emoji">🩱</span>Débardeur</button>
+      <button type="button" class="other-type-btn" data-type="combinaison"><span class="other-type-emoji">👘</span>Combinaison</button>
+      <button type="button" class="other-type-btn" data-type="pyjama"><span class="other-type-emoji">😴</span>Pyjama</button>
+      <button type="button" class="other-type-btn" data-type="accessoire"><span class="other-type-emoji">🎀</span>Accessoire</button>
+      <button type="button" class="other-type-btn" data-type="autre"><span class="other-type-emoji">•••</span>Autre</button>
+    </div>
+    <button type="button" class="btn-other-cancel" id="btn-other-cancel">Annuler</button>
+  </div>
+</div>
+
+<!-- Overlay caméra -->
+<div id="camera-overlay">
+  <div id="camera-viewfinder">
+    <video id="camera-video" autoplay playsinline muted></video>
+    <div id="camera-crop-box"><span class="cam-corner-br"></span><span class="cam-corner-bl"></span></div>
+  </div>
+  <div id="camera-controls">
+    <button type="button" id="btn-camera-cancel">Annuler</button>
+    <button type="button" id="btn-camera-capture"></button>
+    <div style="width:60px;"></div>
+  </div>
+</div>
+<canvas id="camera-hidden-canvas" style="display:none;"></canvas>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  // ── Type de vêtement ──
+  const typeButtons    = document.querySelectorAll('.type-btn');
+  const hiddenType     = document.getElementById('clothing_type_input');
+  const btnOtherType   = document.getElementById('btn-other-type');
+  const otherTypeModal = document.getElementById('other-type-modal');
+
+  function openOtherModal()  { otherTypeModal.classList.add('active'); }
+  function closeOtherModal() { otherTypeModal.classList.remove('active'); }
+
+  typeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.id === 'btn-other-type') { openOtherModal(); return; }
+      typeButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      hiddenType.value = btn.dataset.type;
+      btnOtherType.querySelector('.other-btn-label').textContent = 'Autre';
+    });
+  });
+  document.querySelectorAll('.other-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type  = btn.dataset.type;
+      const label = btn.querySelector('.other-type-emoji').nextSibling.textContent.trim();
+      typeButtons.forEach(b => b.classList.remove('active'));
+      btnOtherType.classList.add('active');
+      btnOtherType.querySelector('.other-btn-label').textContent = label;
+      hiddenType.value = type;
+      closeOtherModal();
+    });
+  });
+  document.getElementById('btn-other-cancel').addEventListener('click', closeOtherModal);
+  otherTypeModal.addEventListener('click', e => { if (e.target === otherTypeModal) closeOtherModal(); });
+
+  // ── Matières ──
+  const MATERIAL_COLORS = {
+    coton:'#D4C5A9', polyester:'#93A8B8', laine:'#C8A96A', lin:'#C9B882',
+    soie:'#C4B0D8', viscose:'#7FC9CF', nylon:'#F4A06A', elasthanne:'#8DC89A',
+    acrylique:'#F4A0B4', cachemire:'#C4AFA9', bambou:'#9DBE94', velours:'#9A80C8',
+    denim:'#5B8BB4', cuir:'#8D6E63', satin:'#F0B0C8', modal:'#80C4BE',
+  };
+  const MATERIALS_LIST = [
+    {value:'coton',label:'Coton'},{value:'polyester',label:'Polyester'},{value:'laine',label:'Laine'},
+    {value:'lin',label:'Lin'},{value:'soie',label:'Soie'},{value:'viscose',label:'Viscose'},
+    {value:'nylon',label:'Nylon'},{value:'elasthanne',label:'Élasthanne'},{value:'acrylique',label:'Acrylique'},
+    {value:'cachemire',label:'Cachemire'},{value:'bambou',label:'Bambou'},{value:'velours',label:'Velours'},
+    {value:'denim',label:'Denim'},{value:'cuir',label:'Cuir'},{value:'satin',label:'Satin'},{value:'modal',label:'Modal'},
+  ];
+  const materialListEl    = document.getElementById('material-list');
+  const materialTotalFill = document.getElementById('material-total-fill');
+  const materialTotalText = document.getElementById('material-total-text');
+  const materialHidden    = document.getElementById('material-hidden');
+
+  function getMaterialOptions(selected) {
+    return MATERIALS_LIST.map(m =>
+      `<option value="${m.value}"${m.value===selected?' selected':''}>${m.label}</option>`
+    ).join('');
+  }
+
+  function updateMaterialTotal() {
+    const rows = materialListEl.querySelectorAll('.material-row');
+    let total = 0;
+    rows.forEach(r => { total += parseInt(r.querySelector('.material-percent-input').value)||0; });
+    materialTotalFill.style.width = Math.min(total,100)+'%';
+    materialTotalFill.style.background = total>100?'#A24A33':total===100?'var(--primary-green)':'#C8A96A';
+    materialTotalText.textContent = `Total : ${total}%`;
+    materialTotalText.className = 'material-total-text'+(total>100?' over':total===100?' valid':'');
+    const parts = [];
+    rows.forEach(r => {
+      const sel = r.querySelector('.material-name-select');
+      const inp = r.querySelector('.material-percent-input');
+      if (sel && inp && inp.value) parts.push(`${sel.value}:${inp.value}`);
+    });
+    materialHidden.value = parts.join(',');
+    rows.forEach(r => {
+      const sel = r.querySelector('.material-name-select');
+      const dot = r.querySelector('.material-dot');
+      if (sel && dot) dot.style.background = MATERIAL_COLORS[sel.value]||'#BCBAA8';
+    });
+  }
+
+  function createMaterialRow(matValue, percent) {
+    const row = document.createElement('div');
+    row.className = 'material-row';
+    row.innerHTML = `
+      <span class="material-dot" style="background:${MATERIAL_COLORS[matValue]||'#BCBAA8'};"></span>
+      <div class="material-select-wrapper">
+        <select class="material-name-select">${getMaterialOptions(matValue)}</select>
+        <svg class="material-select-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="material-percent-wrapper">
+        <input type="number" class="material-percent-input" min="0" max="100" value="${percent}">
+        <span class="material-percent-unit">%</span>
+      </div>
+      <button type="button" class="material-delete-btn" title="Supprimer">×</button>
+    `;
+    row.querySelector('.material-name-select').addEventListener('change', updateMaterialTotal);
+    row.querySelector('.material-percent-input').addEventListener('input', updateMaterialTotal);
+    row.querySelector('.material-delete-btn').addEventListener('click', () => {
+      if (materialListEl.querySelectorAll('.material-row').length > 1) {
+        row.remove(); updateMaterialTotal();
+      }
+    });
+    return row;
+  }
+
+  // Pré-remplir les matières existantes
+  const initialMaterial = '{{ vetement.matiere|default:"coton:100" }}';
+  const parts = initialMaterial.split(',').filter(Boolean);
+  parts.forEach(part => {
+    const [name, pct] = part.split(':');
+    if (name) materialListEl.appendChild(createMaterialRow(name.trim(), parseInt(pct)||0));
+  });
+  if (parts.length === 0) materialListEl.appendChild(createMaterialRow('coton', 100));
+  updateMaterialTotal();
+
+  document.getElementById('btn-add-material').addEventListener('click', () => {
+    const used = [...materialListEl.querySelectorAll('.material-name-select')].map(s => s.value);
+    const next = MATERIALS_LIST.find(m => !used.includes(m.value)) || MATERIALS_LIST[1];
+    materialListEl.appendChild(createMaterialRow(next.value, 0));
+    updateMaterialTotal();
+  });
+
+  // ── Couleurs ──
+  const couleurInput = document.getElementById('couleur-input');
+  const MAX_COLORS = 3;
+
+  function syncCouleur() {
+    const checked = [...document.querySelectorAll('.color-swatch-input:checked')];
+    couleurInput.value = checked.map(c => c.value).join(',');
+    const atMax = checked.length >= MAX_COLORS;
+    document.querySelectorAll('.color-swatch-input').forEach(cb => {
+      cb.nextElementSibling.classList.toggle('maxed', !cb.checked && atMax);
+    });
+  }
+  document.querySelectorAll('.color-swatch-input').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (document.querySelectorAll('.color-swatch-input:checked').length > MAX_COLORS) cb.checked = false;
+      syncCouleur();
+    });
+  });
+  syncCouleur();
+
+  // ── Caméra (pour changer la photo) ──
+  const photoDataInput  = document.getElementById('photo_data');
+  const photoDisplay    = document.getElementById('photo-display');
+  const cameraOverlay   = document.getElementById('camera-overlay');
+  const cameraVideo     = document.getElementById('camera-video');
+  const cameraCropBox   = document.getElementById('camera-crop-box');
+  const cameraHiddenCanvas = document.getElementById('camera-hidden-canvas');
+  let cameraStream = null;
+
+  function openCamera() {
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false
+    }).then(stream => {
+      cameraStream = stream;
+      cameraVideo.srcObject = stream;
+      cameraOverlay.classList.add('active');
+      document.body.classList.add('camera-open');
+    }).catch(err => alert('Impossible d\'accéder à la caméra : ' + err.message));
+  }
+
+  function stopCamera() {
+    if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+    cameraOverlay.classList.remove('active');
+    document.body.classList.remove('camera-open');
+  }
+
+  document.getElementById('btn-change-photo').addEventListener('click', openCamera);
+  document.getElementById('btn-camera-cancel').addEventListener('click', stopCamera);
+
+  document.getElementById('btn-camera-capture').addEventListener('click', () => {
+    const vfEl   = document.getElementById('camera-viewfinder');
+    const vfRect = vfEl.getBoundingClientRect();
+    const boxRect = cameraCropBox.getBoundingClientRect();
+    const vW = cameraVideo.videoWidth, vH = cameraVideo.videoHeight;
+    const scale = Math.min(vW / vfRect.width, vH / vfRect.height);
+    const rendW = vW / scale, rendH = vH / scale;
+    const offX  = (vfRect.width - rendW) / 2, offY = (vfRect.height - rendH) / 2;
+    const srcX  = (boxRect.left - vfRect.left - offX) * scale;
+    const srcY  = (boxRect.top  - vfRect.top  - offY) * scale;
+    const srcW  = boxRect.width * scale, srcH = boxRect.height * scale;
+    cameraHiddenCanvas.width = srcW; cameraHiddenCanvas.height = srcH;
+    cameraHiddenCanvas.getContext('2d').drawImage(cameraVideo, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
+    const dataUrl = cameraHiddenCanvas.toDataURL('image/jpeg', 0.85);
+    stopCamera();
+    photoDataInput.value = dataUrl;
+    // Mettre à jour l'affichage
+    let img = photoDisplay.querySelector('img');
+    if (!img) {
+      photoDisplay.innerHTML = '';
+      img = document.createElement('img');
+      img.id = 'photo-preview-img';
+      photoDisplay.appendChild(img);
+    }
+    img.src = dataUrl;
+  });
+
+});
+</script>
+{% endblock %}
+
+{% block bottom_nav %}
+  {% with nav_active='tissus' %}
+    {% include 'core/bottom_nav.html' %}
+  {% endwith %}
+{% endblock %}
