@@ -23,11 +23,9 @@ def dashboard(request):
     user = request.user
     OBJECTIF_M2 = 15.0
 
-    surface_totale = round(
-        Vetement.objects.filter(utilisateur=user).aggregate(total=Sum('surfaceExploitable'))['total'] or 0.0,
-        2
-    )
-    co2_economise = round(surface_totale * 2.5, 1)
+    vetements_user = Vetement.objects.filter(utilisateur=user)
+    surface_totale = round(sum(v.surfaceExploitable for v in vetements_user), 2)
+    co2_economise = round(sum(calculer_co2_vetement(v) for v in vetements_user), 1)
 
     surface_pourcentage = min(100, round((surface_totale / OBJECTIF_M2) * 100))
     surface_restante = round(max(0, OBJECTIF_M2 - surface_totale), 1)
@@ -206,6 +204,55 @@ MATERIAL_LABELS = {
     'acrylique': 'Acrylique', 'cachemire': 'Cachemire', 'bambou': 'Bambou', 'velours': 'Velours',
     'denim': 'Denim', 'cuir': 'Cuir', 'satin': 'Satin', 'modal': 'Modal',
 }
+
+# kg CO₂eq évités par kg de textile non jeté
+# Représente les émissions de fin de vie évitées : transport vers tri/export + incinération/enfouissement
+# N'inclut PAS les émissions évitées de production d'un vêtement neuf
+CO2_PAR_MATIERE = {
+    'coton':        1.3,   # Fibre cellulosique, incinération ~1.8 kg CO₂/kg, enfouissement ~0.3 kg
+    'lin':          1.2,
+    'viscose':      1.2,
+    'bambou':       1.1,
+    'modal':        1.2,
+    'laine':        1.4,   # Décomposition anaérobie avec dégagement de méthane
+    'cachemire':    1.4,
+    'soie':         1.5,
+    'velours':      1.3,
+    'satin':        1.3,
+    'denim':        1.3,   # Essentiellement du coton traité
+    'polyester':    1.8,   # Synthétique, incinération ~2.5 kg CO₂/kg (haute teneur en carbone)
+    'nylon':        1.9,
+    'acrylique':    1.7,
+    'elasthanne':   1.7,
+    'cuir':         2.0,   # Produits chimiques de tannage + transport
+}
+
+# Grammage moyen par type de vêtement (g/m²), pour convertir surface en masse
+GRAMMAGE_PAR_TYPE = {
+    'tshirt':   170,
+    'jean':     380,
+    'hoodie':   320,
+    'robe':     130,
+    'jupe':     150,
+    'manteau':  420,
+}
+
+def calculer_co2_vetement(vetement):
+    """Calcule le CO₂ évité (kg) pour un vêtement upcyclé, basé sur sa matière et son type."""
+    grammage = GRAMMAGE_PAR_TYPE.get(vetement.typeVetement, 200)
+    masse_kg = vetement.surfaceExploitable * grammage / 1000
+
+    if not vetement.matiere:
+        return masse_kg * 1.3
+
+    co2 = 0.0
+    for part in vetement.matiere.split(','):
+        if ':' in part:
+            nom, pct = part.strip().split(':', 1)
+            facteur = CO2_PAR_MATIERE.get(nom.strip().lower(), 1.3)
+            co2 += masse_kg * (float(pct) / 100) * facteur
+
+    return co2 if co2 > 0 else masse_kg * 1.3
 
 MATERIAL_COLORS = {
     'coton': '#D4C5A9', 'polyester': '#93A8B8', 'laine': '#C8A96A', 'lin': '#C9B882',
@@ -509,7 +556,7 @@ def supprimer_vetements(request):
 def mes_tissus(request):
     vetements = Vetement.objects.filter(utilisateur=request.user).order_by('-id')
     total_surface = sum(v.surfaceExploitable for v in vetements)
-    total_co2 = round(total_surface * 2.5, 1)
+    total_co2 = round(sum(calculer_co2_vetement(v) for v in vetements), 1)
     objectif = 15.0
     progression_pct = min(100, int((total_surface / objectif) * 100)) if objectif > 0 else 0
     circumference = 251
