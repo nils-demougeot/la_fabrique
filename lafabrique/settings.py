@@ -144,6 +144,10 @@ if CLOUDINARY_URL:
 
 AUTH_USER_MODEL = 'core.Utilisateur'
 
+AUTHENTICATION_BACKENDS = [
+    'core.backends.EmailOrUsernameBackend',
+]
+
 
 LOGIN_REDIRECT_URL = 'dashboard'
 

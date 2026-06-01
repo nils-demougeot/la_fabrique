@@ -88,6 +88,31 @@ body {
 .input-pill::placeholder { color: var(--text-placeholder); }
 .input-pill:focus { box-shadow: 0 0 0 2px var(--color-primary); }
 
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+.password-wrapper .input-pill {
+  padding-right: 56px;
+}
+.btn-toggle-pw {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+.btn-toggle-pw:hover { color: var(--text-dark); }
+.btn-toggle-pw svg { width: 20px; height: 20px; }
+
 /* Message d'erreur Django */
 .error-msg {
   color: var(--color-accent);
@@ -163,9 +188,22 @@ body {
         <form id="login-form" class="step-form" method="POST">
           {% csrf_token %}
           
-          <input type="text" name="username" class="input-pill" placeholder="Nom d'utilisateur" required>
-          
-          <input type="password" name="password" class="input-pill" placeholder="Mot de passe" required>
+          <input type="text" name="username" class="input-pill" placeholder="Nom d'utilisateur ou e-mail" autocomplete="username" required>
+
+          <div class="password-wrapper">
+            <input type="password" id="password-input" name="password" class="input-pill" placeholder="Mot de passe" autocomplete="current-password" required>
+            <button type="button" class="btn-toggle-pw" id="toggle-pw" aria-label="Afficher/masquer le mot de passe">
+              <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg id="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            </button>
+          </div>
         </form>
 
       </section>
@@ -181,5 +219,18 @@ body {
     </footer>
   </main>
 
+<script>
+  const toggleBtn = document.getElementById('toggle-pw');
+  const pwInput = document.getElementById('password-input');
+  const iconEye = document.getElementById('icon-eye');
+  const iconEyeOff = document.getElementById('icon-eye-off');
+
+  toggleBtn.addEventListener('click', () => {
+    const isHidden = pwInput.type === 'password';
+    pwInput.type = isHidden ? 'text' : 'password';
+    iconEye.style.display = isHidden ? 'none' : '';
+    iconEyeOff.style.display = isHidden ? '' : 'none';
+  });
+</script>
 </body>
 </html>
