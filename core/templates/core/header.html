@@ -164,6 +164,7 @@
 
     .dropdown-icon img { width: 16px; height: 16px; }
     .icon-dashboard { background: #D2F4D1; }
+    .icon-profile   { background: #DDE8FF; }
     .icon-logout    { background: #FFE4DC; }
 
     .dropdown-divider {
@@ -204,6 +205,12 @@
                   <img src="{% static 'core/images/page-accueil/icon-analyser.svg' %}" alt="">
                 </span>
                 Dashboard
+              </a>
+              <a href="{% url 'mon_profil' %}" class="dropdown-item">
+                <span class="dropdown-icon icon-profile">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B5FC0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                Profil
               </a>
               <div class="dropdown-divider"></div>
               <form action="{% url 'logout' %}" method="post">

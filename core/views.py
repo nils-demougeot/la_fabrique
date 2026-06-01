@@ -8,6 +8,7 @@ import qrcode as qrcode_lib
 
 from django.core.files.base import ContentFile
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.db.models import Sum, Count, Q
@@ -990,13 +991,72 @@ def mes_tissus(request):
     return render(request, 'core/mes_tissus.html', context)
 
 
+@login_required
+def mon_profil(request):
+    user = request.user
+    errors = {}
+
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        bio = request.POST.get('bio', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        avatar = request.POST.get('avatar', user.avatar)
+        niveau_couture = request.POST.get('niveau_couture', user.niveau_couture)
+        envies_list = request.POST.getlist('envies_creation')
+
+        if username and username != user.username:
+            if Utilisateur.objects.filter(username=username).exclude(pk=user.pk).exists():
+                errors['username'] = "Ce pseudo est déjà pris."
+            else:
+                user.username = username
+        elif not username:
+            errors['username'] = "Le pseudo ne peut pas être vide."
+
+        if email and email != user.email:
+            if Utilisateur.objects.filter(email=email).exclude(pk=user.pk).exists():
+                errors['email'] = "Cette adresse e-mail est déjà utilisée."
+            else:
+                user.email = email
+
+        if not errors:
+            user.bio = bio or None
+            user.first_name = first_name
+            user.last_name = last_name
+            if avatar in AVATAR_FILENAMES:
+                user.avatar = avatar
+            user.niveau_couture = niveau_couture or None
+            user.envies_creation = ', '.join(envies_list) if envies_list else None
+            user.save()
+            return redirect(reverse('mon_profil') + '?saved=1')
+
+    ENVIES_CHOICES = [
+        ('sacs', 'Sacs'),
+        ('hauts', 'Hauts'),
+        ('accessoires', 'Accessoires'),
+        ('jeans', 'Jeans'),
+        ('manteaux', 'Manteaux'),
+        ('decorations', 'Décorations'),
+    ]
+    current_envies = [e.strip() for e in (user.envies_creation or '').split(',') if e.strip()]
+    return render(request, 'core/mon_profil.html', {
+        'avatars': AVATAR_FILENAMES,
+        'current_envies': current_envies,
+        'envies_choices': ENVIES_CHOICES,
+        'level_info': _get_user_level(user),
+        'errors': errors,
+        'saved': request.GET.get('saved') == '1',
+    })
+
+
 def inscription(request):
     if request.method == 'POST':
         # On sauvegarde l'email et le mdp dans la session
         request.session['reg_email'] = request.POST.get('email')
         request.session['reg_password'] = request.POST.get('password')
         return redirect('inscription_etape1')
-    
+
     return render(request, 'core/inscription.html')
 
 AVATAR_FILENAMES = [f'image {i}.png' for i in range(11, 27)]

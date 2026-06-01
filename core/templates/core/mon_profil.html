@@ -1,0 +1,628 @@
+{% extends 'core/header.html' %}
+{% load static %}
+{% get_static_prefix as STATIC_PREFIX %}
+
+{% block extra_css %}
+<style>
+  .profil-page {
+    padding: 0 0 100px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Bannière haut avec avatar */
+  .profil-banner {
+    background: linear-gradient(160deg, #D2F4D1 0%, #FFFBFF 60%);
+    padding: 28px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .profil-back-btn {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-primary);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 8px;
+  }
+
+  .profil-back-btn:hover { opacity: 0.75; }
+
+  .profil-avatar-wrap {
+    position: relative;
+    width: 88px;
+    height: 88px;
+  }
+
+  .profil-avatar-big {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--color-primary);
+    background: #D2F4D1;
+  }
+
+  .profil-username {
+    font-family: var(--font-title);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-dark);
+  }
+
+  .profil-level-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #F5F4EA;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  /* Section formulaire */
+  .profil-form-section {
+    padding: 24px 24px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .input-pill {
+    width: 100%;
+    height: 52px;
+    background: var(--bg-input);
+    border: none;
+    border-radius: 9999px;
+    padding: 0 20px;
+    font-size: 15px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    color: var(--text-dark);
+    outline: none;
+    transition: box-shadow 0.2s;
+  }
+  .input-pill::placeholder { color: rgba(101,101,94,0.5); }
+  .input-pill:focus { box-shadow: 0 0 0 2px var(--color-primary); }
+
+  .input-pill.input-error { box-shadow: 0 0 0 2px var(--color-accent); }
+
+  .textarea-pill {
+    width: 100%;
+    background: var(--bg-input);
+    border: none;
+    border-radius: 20px;
+    padding: 14px 20px;
+    font-size: 15px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    color: var(--text-dark);
+    outline: none;
+    resize: none;
+    min-height: 90px;
+    transition: box-shadow 0.2s;
+    line-height: 1.5;
+  }
+  .textarea-pill::placeholder { color: rgba(101,101,94,0.5); }
+  .textarea-pill:focus { box-shadow: 0 0 0 2px var(--color-primary); }
+
+  .error-msg {
+    color: var(--color-accent);
+    font-size: 12px;
+    font-weight: 600;
+    padding-left: 12px;
+  }
+
+  .input-readonly {
+    width: 100%;
+    height: 52px;
+    background: #F5F4EA;
+    border-radius: 9999px;
+    padding: 0 20px;
+    font-size: 15px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .readonly-badge {
+    font-size: 10px;
+    font-weight: 700;
+    background: #DDD;
+    color: #888;
+    border-radius: 6px;
+    padding: 2px 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  /* Séparateur section */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+  .section-divider::before, .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #E5E3D6;
+  }
+
+  /* Sélection d'avatar dans le formulaire */
+  .avatar-select-preview {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #F5F4EA;
+    border-radius: 20px;
+    padding: 12px 16px;
+  }
+
+  .avatar-select-preview-img {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  .avatar-select-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .avatar-option { position: relative; cursor: pointer; }
+
+  .avatar-option input[type="radio"] {
+    position: absolute; opacity: 0; width: 0; height: 0;
+  }
+
+  .avatar-img-wrap {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2.5px solid transparent;
+    transition: border-color 0.18s, transform 0.15s, box-shadow 0.18s;
+    background: #ECE9D1;
+  }
+
+  .avatar-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .avatar-option input[type="radio"]:checked + .avatar-img-wrap {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary);
+    transform: scale(1.07);
+  }
+
+  .avatar-option:not(:has(input:checked)):hover .avatar-img-wrap {
+    transform: scale(1.04);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  }
+
+  .avatar-check-badge {
+    display: none;
+    position: absolute;
+    bottom: 2px; right: 2px;
+    width: 18px; height: 18px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    border: 2px solid white;
+    align-items: center;
+    justify-content: center;
+  }
+  .avatar-check-badge::after {
+    content: '';
+    width: 5px; height: 3px;
+    border-left: 2px solid white;
+    border-bottom: 2px solid white;
+    transform: rotate(-45deg) translateY(-1px);
+    display: block;
+    margin-left: 1px;
+  }
+  .avatar-option input[type="radio"]:checked ~ .avatar-check-badge { display: flex; }
+
+  /* Niveau de couture */
+  .level-options { display: flex; flex-direction: column; gap: 10px; }
+
+  .level-radio-card { cursor: pointer; display: block; }
+
+  .level-radio-card input[type="radio"] {
+    position: absolute; opacity: 0; width: 0; height: 0;
+  }
+
+  .level-card-inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    background: #F5F4EA;
+    border-radius: 20px;
+    border: 2px solid transparent;
+    transition: border-color 0.18s, background 0.18s;
+  }
+
+  .level-radio-card input[type="radio"]:checked + .level-card-inner {
+    border-color: var(--color-primary);
+    background: #EAF7EA;
+  }
+
+  .level-emoji { font-size: 22px; line-height: 1; }
+
+  .level-card-text { display: flex; flex-direction: column; gap: 2px; }
+  .level-card-name { font-size: 15px; font-weight: 700; color: var(--text-dark); }
+  .level-card-desc { font-size: 12px; color: var(--text-muted); }
+
+  /* Tags envies */
+  .tags-wrap { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  .tag-chip { cursor: pointer; display: inline-block; }
+  .tag-chip input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+
+  .tag-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    background: #ECE9D1;
+    color: var(--text-muted);
+    border-radius: 6px;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.18s;
+    user-select: none;
+  }
+
+  .tag-chip input[type="checkbox"]:checked + .tag-content {
+    background: #FFC4B5;
+    color: #7C2E19;
+  }
+
+  .tag-chip:hover .tag-content { transform: translateY(-1px); }
+
+  /* Info readonly section */
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: #F5F4EA;
+    border-radius: 16px;
+  }
+
+  .info-row-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .info-row-value {
+    font-size: 14px;
+    color: var(--text-dark);
+    font-weight: 700;
+  }
+
+  /* Toast succès */
+  .toast-success {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--color-primary);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: 0 4px 16px rgba(35,115,41,0.4);
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 200;
+    white-space: nowrap;
+  }
+  .toast-success.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Bouton sauvegarder sticky */
+  .save-bar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    padding: 14px 24px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid rgba(0,0,0,0.06);
+    z-index: 50;
+  }
+
+  .btn-save {
+    width: 100%;
+    position: relative;
+    border: none;
+    border-radius: 9999px;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
+    box-shadow: 0 5px 0 #1B5E20, 0 8px 20px rgba(35,115,41,0.3);
+    transform: translateY(0);
+    transition: transform 0.08s, box-shadow 0.08s;
+    color: white;
+    font-size: 16px;
+    font-family: var(--font-title);
+    font-weight: 700;
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-save::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.13) 0%, transparent 55%);
+    border-radius: inherit; pointer-events: none;
+  }
+  .btn-save:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #1B5E20, 0 12px 24px rgba(35,115,41,0.4); }
+  .btn-save:active { transform: translateY(4px); box-shadow: 0 1px 0 #1B5E20, 0 3px 10px rgba(35,115,41,0.25); }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% get_static_prefix as STATIC_PREFIX %}
+
+{% if saved %}
+<div class="toast-success" id="toastSaved">Profil mis à jour ✓</div>
+{% endif %}
+
+<div class="profil-page">
+
+  <!-- Bannière avatar -->
+  <div class="profil-banner">
+    <a href="{% url 'home' %}" class="profil-back-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Accueil
+    </a>
+    <img class="profil-avatar-big"
+         id="bannerAvatar"
+         src="{{ STATIC_PREFIX }}{{ user.avatar_url }}"
+         alt="Avatar">
+    <span class="profil-username">{{ user.username }}</span>
+    {% if level_info %}
+    <span class="profil-level-badge">{{ level_info.emoji }} {{ level_info.level }}</span>
+    {% endif %}
+  </div>
+
+  <!-- Formulaire -->
+  <form id="profilForm" method="POST" class="profil-form-section">
+    {% csrf_token %}
+
+    <!-- Avatar -->
+    <div class="form-group">
+      <span class="form-label">Photo de profil</span>
+      <div class="avatar-select-preview">
+        <img class="avatar-select-preview-img" id="avatarPreviewSmall"
+             src="{{ STATIC_PREFIX }}{{ user.avatar_url }}" alt="">
+        <span class="avatar-select-hint">Choisissez parmi les avatars ci-dessous</span>
+      </div>
+      <fieldset style="border:none; margin-top: 12px;">
+        <legend class="sr-only">Choisissez votre avatar</legend>
+        <div class="avatar-grid">
+          {% for av in avatars %}
+          <label class="avatar-option">
+            <input type="radio" name="avatar"
+                   value="{{ av }}"
+                   {% if user.avatar == av %}checked{% endif %}
+                   onchange="updateAvatarPreview(this)">
+            <div class="avatar-img-wrap">
+              <img src="{{ STATIC_PREFIX }}core/images/avatars/{{ av }}" alt="Avatar" loading="lazy">
+            </div>
+            <span class="avatar-check-badge"></span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="section-divider">Identité</div>
+
+    <!-- Pseudo -->
+    <div class="form-group">
+      <label class="form-label" for="id_username">Pseudo</label>
+      <input id="id_username" type="text" name="username" class="input-pill {% if errors.username %}input-error{% endif %}"
+             value="{{ user.username }}" required maxlength="150">
+      {% if errors.username %}<span class="error-msg">{{ errors.username }}</span>{% endif %}
+    </div>
+
+    <!-- Prénom + Nom -->
+    <div class="form-group">
+      <label class="form-label" for="id_first_name">Prénom</label>
+      <input id="id_first_name" type="text" name="first_name" class="input-pill"
+             value="{{ user.first_name }}" maxlength="150" placeholder="Ton prénom">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="id_last_name">Nom</label>
+      <input id="id_last_name" type="text" name="last_name" class="input-pill"
+             value="{{ user.last_name }}" maxlength="150" placeholder="Ton nom">
+    </div>
+
+    <!-- Email -->
+    <div class="form-group">
+      <label class="form-label" for="id_email">Adresse e-mail</label>
+      <input id="id_email" type="email" name="email" class="input-pill {% if errors.email %}input-error{% endif %}"
+             value="{{ user.email }}" placeholder="ton@email.com">
+      {% if errors.email %}<span class="error-msg">{{ errors.email }}</span>{% endif %}
+    </div>
+
+    <!-- Bio -->
+    <div class="form-group">
+      <label class="form-label" for="id_bio">Bio</label>
+      <textarea id="id_bio" name="bio" class="textarea-pill"
+                maxlength="300" placeholder="Dis quelque chose sur toi...">{{ user.bio|default:'' }}</textarea>
+    </div>
+
+    <div class="section-divider">Couture</div>
+
+    <!-- Niveau de couture -->
+    <div class="form-group">
+      <span class="form-label">Niveau de couture</span>
+      <div class="level-options">
+        <label class="level-radio-card">
+          <input type="radio" name="niveau_couture" value="debutant"
+                 {% if user.niveau_couture == 'debutant' or not user.niveau_couture %}checked{% endif %}>
+          <div class="level-card-inner">
+            <span class="level-emoji">🌱</span>
+            <div class="level-card-text">
+              <span class="level-card-name">Débutant</span>
+              <span class="level-card-desc">En plein combat avec mon premier fil</span>
+            </div>
+          </div>
+        </label>
+        <label class="level-radio-card">
+          <input type="radio" name="niveau_couture" value="intermediaire"
+                 {% if user.niveau_couture == 'intermediaire' %}checked{% endif %}>
+          <div class="level-card-inner">
+            <span class="level-emoji">🧵</span>
+            <div class="level-card-text">
+              <span class="level-card-name">Intermédiaire</span>
+              <span class="level-card-desc">Je ne perds plus le fil</span>
+            </div>
+          </div>
+        </label>
+        <label class="level-radio-card">
+          <input type="radio" name="niveau_couture" value="avance"
+                 {% if user.niveau_couture == 'avance' %}checked{% endif %}>
+          <div class="level-card-inner">
+            <span class="level-emoji">✂️</span>
+            <div class="level-card-text">
+              <span class="level-card-name">Avancé</span>
+              <span class="level-card-desc">Au sommet de la chaîne</span>
+            </div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Envies de création -->
+    <div class="form-group">
+      <span class="form-label">Envies de création</span>
+      <div class="tags-wrap">
+        {% for tag, label in envies_choices %}
+        <label class="tag-chip">
+          <input type="checkbox" name="envies_creation" value="{{ tag }}"
+                 {% if tag in current_envies %}checked{% endif %}
+                 class="sr-only">
+          <span class="tag-content">{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="section-divider">Infos du compte</div>
+
+    <!-- Infos readonly -->
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="info-row">
+        <span class="info-row-label">🪙 Pièces</span>
+        <span class="info-row-value">{{ user.soldePieces }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-row-label">📅 Membre depuis</span>
+        <span class="info-row-value">{{ user.date_joined|date:"d/m/Y" }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-row-label">✅ Consentement RGPD</span>
+        <span class="info-row-value">{% if user.consentementRGPD %}Accepté{% else %}Non renseigné{% endif %}</span>
+      </div>
+    </div>
+
+    <div style="height: 20px;"></div>
+  </form>
+</div>
+
+<!-- Barre de sauvegarde sticky -->
+<div class="save-bar">
+  <button type="submit" form="profilForm" class="btn-save">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    Enregistrer les modifications
+  </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const STATIC_PREFIX = "{{ STATIC_PREFIX }}";
+
+  function updateAvatarPreview(radio) {
+    const src = STATIC_PREFIX + 'core/images/avatars/' + radio.value;
+    document.getElementById('avatarPreviewSmall').src = src;
+    document.getElementById('bannerAvatar').src = src;
+  }
+
+  // Toast succès après redirect
+  {% if saved %}
+  const toast = document.getElementById('toastSaved');
+  if (toast) {
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2800);
+    });
+  }
+  {% endif %}
+</script>
+{% endblock %}

@@ -28,6 +28,8 @@ urlpatterns = [
     path('mes-tissus/<int:pk>/', views.detail_vetement, name='detail_vetement'),
     path('mes-tissus/supprimer/', views.supprimer_vetements, name='supprimer_vetements'),
 
+    path('mon-profil/', views.mon_profil, name='mon_profil'),
+
     path('connexion/', auth_views.LoginView.as_view(template_name='core/connexion.html'), name='connexion'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
