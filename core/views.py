@@ -593,4 +593,25 @@ def inscription_etape3(request):
         login(request, nouvel_utilisateur)
         return redirect('home')
 
-    return render(request, 'core/inscription_etape3.html')
+
+@login_required
+def detail_vetement(request, pk):
+    vetement = get_object_or_404(Vetement, pk=pk, utilisateur=request.user)
+
+    if request.method == 'POST':
+        vetement.nomVetement = request.POST.get('nom_vetement', vetement.nomVetement).strip() or vetement.nomVetement
+        vetement.typeVetement = request.POST.get('clothing_type', vetement.typeVetement)
+        vetement.qualite = int(request.POST.get('qualite', vetement.qualite))
+        vetement.couleur = request.POST.get('couleur', vetement.couleur)
+        vetement.matiere = request.POST.get('material', vetement.matiere)
+
+        photo_data = request.POST.get('photo_data', '')
+        if photo_data and ';base64,' in photo_data:
+            fmt, imgstr = photo_data.split(';base64,')
+            ext = fmt.split('/')[-1]
+            vetement.photoURL = ContentFile(base64.b64decode(imgstr), name=f'vetement.{ext}')
+
+        vetement.save()
+        return redirect('mes_tissus')
+
+    return render(request, 'core/detail_vetement.html', {'vetement': vetement})
