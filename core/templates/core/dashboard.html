@@ -1916,10 +1916,10 @@ function buildComparisons(co2) {
   const arbre     = Math.round(co2 / 0.022);
 
   const villeVoiture =
-    kmVoiture >= 700 ? 'Tu aurais pu aller à Bordeaux !' :
-    kmVoiture >= 465 ? 'Tu aurais pu aller à Lyon !' :
-    kmVoiture >= 200 ? 'Tu aurais pu aller à Tours !' :
-    kmVoiture >= 100 ? 'Tu aurais pu aller à Orléans !' :
+    kmVoiture >= 700 ? "C'est l'équivalent d'un aller-retour à Bordeaux !" :
+    kmVoiture >= 465 ? "C'est l'équivalent d'un aller-retour à Lyon !" :
+    kmVoiture >= 200 ? "C'est l'équivalent d'un aller-retour à Tours !" :
+    kmVoiture >= 100 ? "C'est l'équivalent d'un aller-retour à Orléans !" :
                        'Non mais sérieux, bravo 🙌';
 
   return [
@@ -1987,5 +1987,9 @@ function closeEcoModal() {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeCreditsModal(); closeEcoModal(); }
 });
+
+if (new URLSearchParams(window.location.search).get('credits') === '1') {
+  openCreditsModal();
+}
 </script>
 {% endblock %}

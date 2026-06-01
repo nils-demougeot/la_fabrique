@@ -83,7 +83,10 @@
       padding: 6px 12px;
       border-radius: 20px;
       font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
     }
+    .coins:active { opacity: 0.75; }
     .avatar {
       width: 40px;
       height: 40px;
@@ -188,7 +191,7 @@
       
       <div class="user-stats">
         {% if user.is_authenticated %}
-          <span class="coins">{{ user.soldePieces }} 🪙</span>
+          <a href="{% url 'dashboard' %}?credits=1" class="coins">{{ user.soldePieces }} 🪙</a>
           <div class="avatar-menu">
             {% get_static_prefix as STATIC_PREFIX %}
             <img class="avatar"
