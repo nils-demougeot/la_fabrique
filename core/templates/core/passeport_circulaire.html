@@ -1,0 +1,681 @@
+{% extends 'core/header.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+
+  .passeport-page {
+    padding-bottom: 110px;
+  }
+
+  /* ── Hero célébration ── */
+  .hero-celebration {
+    position: relative;
+    padding: 40px 24px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .blob-celebration {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .blob-1 {
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(35,115,41,0.18) 0%, transparent 70%);
+    top: -40px; left: -40px;
+  }
+  .blob-2 {
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(162,74,51,0.14) 0%, transparent 70%);
+    top: -20px; right: -20px;
+  }
+  .blob-3 {
+    width: 150px; height: 150px;
+    background: radial-gradient(circle, rgba(252,200,149,0.20) 0%, transparent 70%);
+    bottom: -20px; left: 30%;
+  }
+
+  .confetti-emoji {
+    font-size: 52px;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+    animation: bounceIn 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+
+  @keyframes bounceIn {
+    0%   { transform: scale(0.3); opacity: 0; }
+    50%  { transform: scale(1.1); }
+    70%  { transform: scale(0.95); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .hero-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: #39382B;
+    line-height: 1.1;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+    animation: fadeUp 0.5s 0.15s ease both;
+  }
+
+  .hero-subtitle {
+    font-family: 'Manrope', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: #666556;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+    animation: fadeUp 0.5s 0.25s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .coins-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #FFF3CD, #FFE083);
+    border-radius: 9999px;
+    padding: 8px 18px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #7A5800;
+    box-shadow: 0 4px 12px rgba(122,88,0,0.18);
+    position: relative;
+    z-index: 1;
+    animation: fadeUp 0.5s 0.35s ease both;
+  }
+
+  /* ── Stats ── */
+  .stats-row {
+    display: flex;
+    gap: 10px;
+    padding: 0 20px;
+    margin-bottom: 28px;
+    animation: fadeUp 0.5s 0.4s ease both;
+  }
+
+  .stat-mini {
+    flex: 1;
+    border-radius: 20px;
+    padding: 14px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+  }
+  .stat-mini.water  { background: #E8F4FD; }
+  .stat-mini.co2    { background: #EAFAF1; }
+  .stat-mini.steps  { background: #FEF9E7; }
+
+  .stat-mini-icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+  .stat-mini-value {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 17px;
+    font-weight: 800;
+    color: #39382B;
+    line-height: 1.1;
+  }
+  .stat-mini.water  .stat-mini-value { color: #1565C0; }
+  .stat-mini.co2    .stat-mini-value { color: #1E8449; }
+  .stat-mini.steps  .stat-mini-value { color: #B7770D; }
+
+  .stat-mini-label {
+    font-family: 'Manrope', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: #888779;
+  }
+
+  /* ── Section titre ── */
+  .section-label {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #888779;
+    padding: 0 24px;
+    margin-bottom: 12px;
+  }
+
+  /* ── Carte passeport ── */
+  .passeport-card {
+    margin: 0 16px;
+    border-radius: 32px;
+    background: #FDFAF2;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.11), 0 2px 8px rgba(0,0,0,0.06);
+    overflow: hidden;
+    animation: fadeUp 0.5s 0.5s ease both;
+  }
+
+  /* Header vert de la carte */
+  .card-top-band {
+    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #43A047 100%);
+    padding: 20px 24px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-top-band::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .card-band-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+  }
+  .card-brand-block {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .card-brand-name {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+  }
+  .card-passport-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 19px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: 0.2px;
+  }
+  .card-passport-icon {
+    font-size: 32px;
+    line-height: 1;
+  }
+
+  /* Champ nom de création */
+  .nom-creation-section {
+    padding: 20px 24px 0;
+  }
+  .nom-label {
+    display: block;
+    font-family: 'Manrope', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #888779;
+    margin-bottom: 6px;
+  }
+  .nom-input {
+    width: 100%;
+    background: #F5F2E4;
+    border: 1.5px solid transparent;
+    border-radius: 14px;
+    padding: 11px 14px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: #39382B;
+    outline: none;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+  }
+  .nom-input:focus {
+    border-color: rgba(35,115,41,0.4);
+    background: #F0EDD8;
+  }
+  .nom-hint {
+    font-family: 'Manrope', sans-serif;
+    font-size: 11px;
+    color: #AEAD9C;
+    margin-top: 5px;
+    padding-left: 2px;
+  }
+
+  /* Lignes d'info */
+  .card-infos {
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(188,186,168,0.2);
+    gap: 12px;
+  }
+  .info-row:last-child { border-bottom: none; }
+
+  .info-key {
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #888779;
+    flex-shrink: 0;
+  }
+  .info-value {
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #39382B;
+    text-align: right;
+    word-break: break-word;
+  }
+
+  .info-row.highlight-water .info-value { color: #1565C0; }
+  .info-row.highlight-co2   .info-value { color: #1E8449; }
+
+  /* Séparateur pointillé */
+  .card-dashed-separator {
+    margin: 0 16px;
+    border: none;
+    border-top: 2px dashed rgba(188,186,168,0.4);
+  }
+
+  /* Zone QR Code */
+  .qr-section {
+    padding: 20px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .qr-container {
+    width: 148px;
+    height: 148px;
+    background: white;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    padding: 10px;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  #qr-img {
+    width: 128px;
+    height: 128px;
+    border-radius: 8px;
+    display: block;
+    transition: opacity 0.2s;
+  }
+  #qr-img.loading { opacity: 0.4; }
+
+  .qr-hint-text {
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #AEAD9C;
+    text-align: center;
+  }
+
+  /* Footer de la carte */
+  .card-footer-band {
+    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+    padding: 10px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-footer-text {
+    font-family: 'Manrope', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+  }
+  .card-footer-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+  }
+
+  /* ── Bouton imprimer ── */
+  .btn-print-wrapper {
+    padding: 14px 16px 0;
+    animation: fadeUp 0.5s 0.6s ease both;
+  }
+  .btn-print {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #EFEEE3;
+    border: none;
+    border-radius: 18px;
+    padding: 14px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #39382B;
+    cursor: pointer;
+    transition: background 0.15s;
+    box-shadow: 0 4px 0 #C5C3B2;
+    transform: translateY(0);
+    transition: transform 0.08s, box-shadow 0.08s;
+  }
+  .btn-print:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #C5C3B2;
+  }
+  .btn-print svg { width: 16px; height: 16px; }
+
+  /* ── Actions bottom ── */
+  .actions-section {
+    padding: 20px 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    animation: fadeUp 0.5s 0.7s ease both;
+  }
+
+  .btn-share {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
+    border-radius: 18px;
+    padding: 16px;
+    text-decoration: none;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: white;
+    box-shadow: 0 6px 0 #1B5E20, 0 10px 24px rgba(35,115,41,0.30);
+    transform: translateY(0);
+    transition: transform 0.08s, box-shadow 0.08s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-share::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .btn-share:active {
+    transform: translateY(5px);
+    box-shadow: 0 1px 0 #1B5E20;
+  }
+  .btn-share svg { width: 18px; height: 18px; position: relative; z-index: 1; flex-shrink: 0; }
+  .btn-share span { position: relative; z-index: 1; }
+
+  .btn-patrons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #EFEEE3;
+    border-radius: 18px;
+    padding: 14px;
+    text-decoration: none;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #39382B;
+    box-shadow: 0 4px 0 #C5C3B2;
+    transform: translateY(0);
+    transition: transform 0.08s, box-shadow 0.08s;
+  }
+  .btn-patrons:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #C5C3B2;
+  }
+
+  .btn-dashboard {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: transparent;
+    border-radius: 18px;
+    padding: 14px;
+    text-decoration: none;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #666556;
+  }
+
+  /* ── Print ── */
+  @media print {
+    .header-global,
+    .bottom-nav,
+    .hero-celebration,
+    .stats-row,
+    .section-label,
+    .btn-print-wrapper,
+    .actions-section { display: none !important; }
+
+    body { background: white; }
+    .app-container { max-width: 100%; height: auto; overflow: visible; }
+    .scrollable-content { overflow: visible; }
+    .passeport-card {
+      margin: 20px;
+      box-shadow: none;
+      border: 1.5px solid #ddd;
+      animation: none;
+    }
+    .nom-input {
+      border: 1px solid #ccc;
+    }
+  }
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="passeport-page">
+
+  <!-- ── Héro célébration ── -->
+  <div class="hero-celebration">
+    <div class="blob-celebration blob-1"></div>
+    <div class="blob-celebration blob-2"></div>
+    <div class="blob-celebration blob-3"></div>
+    <div class="confetti-emoji">🎉</div>
+    <h1 class="hero-title">Félicitations !</h1>
+    <p class="hero-subtitle">Votre création est terminée</p>
+    <div class="coins-badge">
+      +{{ coins_gagnes }} 🪙 gagnés
+    </div>
+  </div>
+
+  <!-- ── Stats rapides ── -->
+  <div class="stats-row">
+    <div class="stat-mini water">
+      <div class="stat-mini-icon">💧</div>
+      <div class="stat-mini-value">{{ eau_litres }}L</div>
+      <div class="stat-mini-label">Eau sauvée</div>
+    </div>
+    <div class="stat-mini co2">
+      <div class="stat-mini-icon">🌿</div>
+      <div class="stat-mini-value">{{ co2_economise }} kg</div>
+      <div class="stat-mini-label">CO₂ évité</div>
+    </div>
+    <div class="stat-mini steps">
+      <div class="stat-mini-icon">✅</div>
+      <div class="stat-mini-value">{{ total_etapes }}</div>
+      <div class="stat-mini-label">Étapes</div>
+    </div>
+  </div>
+
+  <!-- ── Passeport ── -->
+  <p class="section-label">Votre Passeport Circulaire</p>
+
+  <div class="passeport-card" id="passeportCard">
+
+    <!-- Bandeau vert supérieur -->
+    <div class="card-top-band">
+      <div class="card-band-row">
+        <div class="card-brand-block">
+          <span class="card-brand-name">La Fabrique</span>
+          <span class="card-passport-title">Passeport Circulaire</span>
+        </div>
+        <span class="card-passport-icon">🌿</span>
+      </div>
+    </div>
+
+    <!-- Nom de la création -->
+    <div class="nom-creation-section">
+      <label class="nom-label" for="nomCreation">Nom de votre création</label>
+      <input
+        type="text"
+        id="nomCreation"
+        class="nom-input"
+        value="{{ patron.titre }}"
+        placeholder="Ex: Chemise Coucher de Soleil"
+        maxlength="60"
+      />
+      <p class="nom-hint">Personnalisez le nom — le QR code se met à jour automatiquement</p>
+    </div>
+
+    <!-- Infos -->
+    <div class="card-infos">
+      <div class="info-row">
+        <span class="info-key">Créé par</span>
+        <span class="info-value">@{{ user.username }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Anciennement</span>
+        <span class="info-value">{{ noms_tissus_str }}</span>
+      </div>
+      <div class="info-row highlight-water">
+        <span class="info-key">💧 Eau sauvée</span>
+        <span class="info-value">{{ eau_litres }} L</span>
+      </div>
+      <div class="info-row highlight-co2">
+        <span class="info-key">🌱 CO₂ évité</span>
+        <span class="info-value">{{ co2_economise }} kg</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Patron</span>
+        <span class="info-value">{{ patron.titre }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Date</span>
+        <span class="info-value">{{ date_creation|date:"d/m/Y" }}</span>
+      </div>
+    </div>
+
+    <hr class="card-dashed-separator">
+
+    <!-- QR Code -->
+    <div class="qr-section">
+      <div class="qr-container">
+        <img id="qr-img" alt="QR Code Passeport">
+      </div>
+      <p class="qr-hint-text">Scannez pour lire l'histoire de cette pièce</p>
+    </div>
+
+    <!-- Bandeau vert inférieur -->
+    <div class="card-footer-band">
+      <span class="card-footer-text">Mode circulaire</span>
+      <span class="card-footer-dot"></span>
+      <span class="card-footer-text">La Fabrique</span>
+    </div>
+
+  </div><!-- /.passeport-card -->
+
+  <!-- Bouton imprimer -->
+  <div class="btn-print-wrapper">
+    <button class="btn-print" onclick="window.print()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 6 2 18 2 18 9"/>
+        <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      Imprimer / Sauvegarder
+    </button>
+  </div>
+
+  <!-- ── Actions ── -->
+  <div class="actions-section">
+    <a href="{% url 'creer_post' %}" class="btn-share">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+        <polyline points="16 6 12 2 8 6"/>
+        <line x1="12" y1="2" x2="12" y2="15"/>
+      </svg>
+      <span>Partager à la communauté</span>
+    </a>
+    <a href="{% url 'patrons' %}" class="btn-patrons">
+      Retour aux patrons
+    </a>
+    <a href="{% url 'dashboard' %}" class="btn-dashboard">
+      Voir mon tableau de bord
+    </a>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block bottom_nav %}
+{% include 'core/bottom_nav.html' with nav_active='patrons' %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const PASSEPORT_PATH = "{% url 'passeport_public' patron_pk=patron.pk user_pk=user.pk %}";
+  const QR_ENDPOINT   = "{% url 'qrcode_view' %}";
+  const img = document.getElementById('qr-img');
+  let debounce = null;
+
+  function majQR() {
+    const nom = document.getElementById('nomCreation').value.trim()
+                || '{{ patron.titre|escapejs }}';
+    const target = window.location.origin + PASSEPORT_PATH + '?nom=' + encodeURIComponent(nom);
+    img.classList.add('loading');
+    img.src = QR_ENDPOINT + '?url=' + encodeURIComponent(target);
+  }
+
+  img.addEventListener('load',  () => img.classList.remove('loading'));
+  img.addEventListener('error', () => img.classList.remove('loading'));
+
+  majQR();
+
+  document.getElementById('nomCreation').addEventListener('input', function () {
+    clearTimeout(debounce);
+    debounce = setTimeout(majQR, 350);
+  });
+</script>
+{% endblock %}

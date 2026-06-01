@@ -1,6 +1,11 @@
 import base64
 import json
 import re
+import urllib.parse
+from io import BytesIO
+
+import qrcode as qrcode_lib
+
 from django.core.files.base import ContentFile
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -11,7 +16,7 @@ from django.utils import timezone
 from datetime import timedelta
 import math
 
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from core.models import (Vetement, Utilisateur, Patron, EtapePatron, ProgressionProjet, PatronLike,
                          PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag)
 
@@ -231,6 +236,26 @@ CO2_PAR_MATIERE = {
     'cuir':         2.0,   # Produits chimiques de tannage + transport
 }
 
+# Litres d'eau par kg de textile (empreinte eau production évitée)
+EAU_PAR_MATIERE = {
+    'coton':        15000,
+    'lin':           6000,
+    'laine':        15000,
+    'soie':          8000,
+    'viscose':       5000,
+    'bambou':        2000,
+    'modal':         5000,
+    'velours':      12000,
+    'satin':         8000,
+    'denim':        15000,
+    'polyester':      500,
+    'nylon':          500,
+    'acrylique':      500,
+    'elasthanne':     500,
+    'cachemire':    20000,
+    'cuir':         17000,
+}
+
 # Grammage moyen par type de vêtement (g/m²), pour convertir surface en masse
 GRAMMAGE_PAR_TYPE = {
     'tshirt':   170,
@@ -257,6 +282,23 @@ def calculer_co2_vetement(vetement):
             co2 += masse_kg * (float(pct) / 100) * facteur
 
     return co2 if co2 > 0 else masse_kg * 1.3
+
+def calculer_stats_passeport(patron, garments):
+    """Retourne (eau_litres, co2_kg) pour un projet terminé, basé sur surfaceMin du patron."""
+    surface = patron.surfaceMin
+    if not garments:
+        masse_kg = surface * GRAMMAGE_PAR_TYPE.get(patron.typeObjet.lower(), 200) / 1000
+        return round(masse_kg * 15000), round(masse_kg * 1.3, 2)
+    grammages = [GRAMMAGE_PAR_TYPE.get(g.typeVetement, 200) for g in garments]
+    masse_kg = surface * (sum(grammages) / len(grammages)) / 1000
+    all_mats = {}
+    for g in garments:
+        dom = get_dominant_material(g.matiere)
+        if dom:
+            all_mats[dom] = all_mats.get(dom, 0) + 1
+    mat = max(all_mats, key=all_mats.get) if all_mats else 'coton'
+    return round(masse_kg * EAU_PAR_MATIERE.get(mat, 15000)), round(masse_kg * CO2_PAR_MATIERE.get(mat, 1.3), 2)
+
 
 MATERIAL_COLORS = {
     'coton': '#D4C5A9', 'polyester': '#93A8B8', 'laine': '#C8A96A', 'lin': '#C9B882',
@@ -513,7 +555,6 @@ def terminer_projet(request, pk):
     patron = get_object_or_404(Patron, pk=pk)
     prog = ProgressionProjet.objects.filter(utilisateur=request.user, patron=patron, termine=False).first()
     if prog:
-        # Déduire la surface utilisée proportionnellement sur les vêtements sélectionnés
         garments = list(prog.vetements_projet.all())
         if garments and patron.surfaceMin > 0:
             total_available = sum(g.surfaceExploitable for g in garments if g.surfaceExploitable > 0)
@@ -526,7 +567,86 @@ def terminer_projet(request, pk):
                         g.save()
         prog.termine = True
         prog.save()
-    return redirect('patrons')
+        request.user.soldePieces += 20
+        request.user.save()
+    return redirect('passeport_circulaire', pk=patron.pk)
+
+
+@login_required
+def passeport_circulaire(request, pk):
+    patron = get_object_or_404(Patron, pk=pk)
+    prog = (
+        ProgressionProjet.objects
+        .filter(utilisateur=request.user, patron=patron, termine=True)
+        .order_by('-date_derniere_activite')
+        .first()
+    )
+    if not prog:
+        return redirect('patrons')
+
+    garments = list(prog.vetements_projet.all())
+    eau_litres, co2_kg = calculer_stats_passeport(patron, garments)
+    noms_tissus = [g.nomVetement for g in garments]
+
+    return render(request, 'core/passeport_circulaire.html', {
+        'patron': patron,
+        'garments': garments,
+        'noms_tissus_str': ', '.join(noms_tissus) if noms_tissus else 'Tissu recyclé',
+        'eau_litres': eau_litres,
+        'co2_economise': co2_kg,
+        'total_etapes': patron.etapes.count(),
+        'date_creation': prog.date_derniere_activite,
+        'coins_gagnes': 20,
+    })
+
+
+def qrcode_view(request):
+    url = request.GET.get('url', '')
+    if not url:
+        return HttpResponse(status=400)
+    qr = qrcode_lib.QRCode(
+        version=None,
+        error_correction=qrcode_lib.constants.ERROR_CORRECT_M,
+        box_size=8,
+        border=2,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color=(35, 115, 41), back_color=(255, 251, 255))
+    buf = BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    return HttpResponse(buf.read(), content_type='image/png')
+
+
+def passeport_public(request, patron_pk, user_pk):
+    patron = get_object_or_404(Patron, pk=patron_pk)
+    utilisateur = get_object_or_404(Utilisateur, pk=user_pk)
+    prog = (
+        ProgressionProjet.objects
+        .filter(utilisateur=utilisateur, patron=patron, termine=True)
+        .order_by('-date_derniere_activite')
+        .first()
+    )
+    if not prog:
+        return redirect('home')
+
+    garments = list(prog.vetements_projet.all())
+    eau_litres, co2_kg = calculer_stats_passeport(patron, garments)
+    noms_tissus = [g.nomVetement for g in garments]
+    nom_creation = request.GET.get('nom', patron.titre)
+
+    return render(request, 'core/passeport_public.html', {
+        'patron': patron,
+        'utilisateur': utilisateur,
+        'nom_creation': nom_creation,
+        'noms_tissus_str': ', '.join(noms_tissus) if noms_tissus else 'Tissu recyclé',
+        'noms_tissus': noms_tissus,
+        'eau_litres': eau_litres,
+        'co2_economise': co2_kg,
+        'total_etapes': patron.etapes.count(),
+        'date_creation': prog.date_derniere_activite,
+    })
 
 
 @login_required
