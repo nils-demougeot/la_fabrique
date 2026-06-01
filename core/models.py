@@ -8,6 +8,7 @@ class Utilisateur(AbstractUser):
     niveau_couture = models.CharField(max_length=30, blank=True, null=True)
     envies_creation = models.CharField(max_length=255, blank=True, null=True)
     avatar = models.CharField(max_length=50, default='image 11.png', blank=True)
+    bio = models.TextField(blank=True, null=True, max_length=300)
 
     @property
     def avatar_url(self):
@@ -132,3 +133,101 @@ class PatronLike(models.Model):
 
     def __str__(self):
         return f"{self.utilisateur.username} aime {self.patron.titre}"
+
+
+# ── Modèles Communauté ──────────────────────────────────────────────────────
+
+class Hashtag(models.Model):
+    nom = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return f"#{self.nom}"
+
+
+class PostCommunaute(models.Model):
+    TYPE_CHOICES = [
+        ('fait-main', 'Fait main'),
+        ('upcycling', 'Upcycling'),
+        ('teinture', 'Teinture naturelle'),
+        ('patron', 'Patron'),
+        ('reparation', 'Réparation'),
+    ]
+    NIVEAU_CHOICES = [
+        ('debutant', 'Débutant'),
+        ('intermediaire', 'Intermédiaire'),
+        ('confirme', 'Confirmé'),
+    ]
+
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='posts_communaute')
+    titre = models.CharField(max_length=200)
+    description = models.TextField()
+    image = models.ImageField(upload_to='posts/', null=True, blank=True)
+    type_creation = models.CharField(max_length=30, choices=TYPE_CHOICES, default='fait-main')
+    niveau = models.CharField(max_length=30, choices=NIVEAU_CHOICES, default='debutant')
+    patron_lie = models.ForeignKey(Patron, on_delete=models.SET_NULL, null=True, blank=True, related_name='posts_communaute')
+    date_creation = models.DateTimeField(auto_now_add=True)
+    nb_vues = models.PositiveIntegerField(default=0)
+    hashtags = models.ManyToManyField(Hashtag, blank=True, related_name='posts')
+
+    class Meta:
+        ordering = ['-date_creation']
+
+    def __str__(self):
+        return f"{self.titre} par {self.utilisateur.username}"
+
+    @property
+    def nb_likes(self):
+        return self.likes.count()
+
+    @property
+    def nb_commentaires(self):
+        return self.commentaires.count()
+
+
+class LikePost(models.Model):
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='post_likes')
+    post = models.ForeignKey(PostCommunaute, on_delete=models.CASCADE, related_name='likes')
+    date_like = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('utilisateur', 'post')
+
+    def __str__(self):
+        return f"{self.utilisateur.username} aime {self.post.titre}"
+
+
+class SauvegardePost(models.Model):
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='sauvegardes')
+    post = models.ForeignKey(PostCommunaute, on_delete=models.CASCADE, related_name='sauvegardes')
+    date_sauvegarde = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('utilisateur', 'post')
+
+    def __str__(self):
+        return f"{self.utilisateur.username} a sauvegardé {self.post.titre}"
+
+
+class CommentairePost(models.Model):
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='commentaires_posts')
+    post = models.ForeignKey(PostCommunaute, on_delete=models.CASCADE, related_name='commentaires')
+    contenu = models.TextField()
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['date_creation']
+
+    def __str__(self):
+        return f"Commentaire de {self.utilisateur.username} sur {self.post.titre}"
+
+
+class Suivi(models.Model):
+    suiveur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='suivis')
+    suivi = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='followers')
+    date_suivi = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('suiveur', 'suivi')
+
+    def __str__(self):
+        return f"{self.suiveur.username} suit {self.suivi.username}"

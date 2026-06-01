@@ -1,0 +1,317 @@
+{% extends 'core/header.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  .profil-page {
+    padding: 0 16px 110px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  /* Header */
+  .profil-header {
+    padding-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .back-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: #F5F4EA; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dark); flex-shrink: 0;
+    transition: background .15s; text-decoration: none;
+  }
+  .back-btn:hover { background: #EFEEE3; }
+
+  /* Carte profil */
+  .profil-card {
+    background: #FDFAE5;
+    border-radius: 48px;
+    padding: 32px 24px;
+    outline: 1px rgba(188,186,168,.15) solid;
+    outline-offset: -1px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    text-align: center;
+  }
+  .profil-avatar-ring {
+    width: 88px; height: 88px; border-radius: 50%;
+    background: var(--color-primary); padding: 3px;
+    display: flex; flex-shrink: 0;
+  }
+  .profil-avatar-ring img {
+    width: 100%; height: 100%; border-radius: 50%;
+    border: 3px solid #ECE9D1; object-fit: cover; display: block;
+  }
+  .profil-username {
+    font-family: var(--font-title); font-size: 24px; font-weight: 800; color: #39382B;
+  }
+  .profil-bio {
+    font-family: var(--font-body); font-size: 15px; color: var(--text-muted); line-height: 1.6;
+  }
+  .profil-level-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #D2F4D1; border-radius: 9999px; padding: 6px 18px;
+    color: var(--color-primary); font-family: var(--font-body); font-size: 13px; font-weight: 700;
+  }
+  .profil-stats {
+    display: flex; gap: 0; width: 100%;
+    border-top: 1px solid rgba(188,186,168,.20); padding-top: 20px;
+    justify-content: space-around;
+  }
+  .profil-stat { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .profil-stat-num {
+    font-family: var(--font-title); font-size: 22px; font-weight: 800; color: #39382B;
+  }
+  .profil-stat-label {
+    font-family: var(--font-body); font-size: 12px; color: var(--text-muted); font-weight: 500;
+  }
+  .profil-stat-sep { width: 1px; background: rgba(188,186,168,.30); align-self: stretch; }
+
+  /* Bouton follow */
+  .btn-follow-profile {
+    width: 100%; padding: 14px;
+    font-family: var(--font-body); font-weight: 700; font-size: 16px;
+    border: none; border-radius: 9999px; cursor: pointer; transition: all .15s;
+  }
+  .btn-follow-profile.not-following {
+    background: var(--color-primary); color: white;
+    box-shadow: 0 8px 24px rgba(35,115,41,.25);
+  }
+  .btn-follow-profile.following {
+    background: #EFEEE3; color: var(--text-dark);
+  }
+
+  /* Niveau progress */
+  .level-mini {
+    width: 100%; background: #F7F4DE; border-radius: 9999px;
+    height: 8px; overflow: hidden;
+  }
+  .level-mini-fill { height: 100%; background: var(--color-primary); border-radius: 9999px; }
+
+  /* Grille posts */
+  .posts-grid-title {
+    font-family: var(--font-title); font-size: 22px; font-weight: 800; color: #383832;
+  }
+  .posts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .post-grid-item {
+    border-radius: 24px; overflow: hidden;
+    aspect-ratio: 1/1; position: relative;
+    background: #F5F4EA;
+    text-decoration: none; display: block;
+    transition: transform .15s;
+  }
+  .post-grid-item:hover { transform: scale(.98); }
+  .post-grid-item img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .post-grid-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+  }
+  .post-grid-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.35) 0%, transparent 50%);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 10px;
+  }
+  .post-grid-title {
+    color: white; font-family: var(--font-body); font-size: 12px;
+    font-weight: 700; line-height: 1.3;
+    text-shadow: 0 1px 3px rgba(0,0,0,.4);
+  }
+  .post-grid-likes {
+    display: flex; align-items: center; gap: 4px;
+    color: rgba(255,255,255,.85); font-family: var(--font-body); font-size: 11px;
+    margin-top: 3px;
+  }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+  .empty-state p { font-family: var(--font-body); font-size: 15px; margin-top: 12px; }
+
+  /* Gradient placeholder */
+  .grad-fait-main   { background: linear-gradient(135deg,#D2F4D1,#A8D5A2); }
+  .grad-upcycling   { background: linear-gradient(135deg,#ECE9D1,#C9B882); }
+  .grad-teinture    { background: linear-gradient(135deg,#FCC895,#F4836A); }
+  .grad-patron      { background: linear-gradient(135deg,#D5D2F4,#9A80C8); }
+  .grad-reparation  { background: linear-gradient(135deg,#D1EEF4,#7FC9CF); }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<main class="profil-page">
+
+  <!-- Header -->
+  <div class="profil-header">
+    <a href="javascript:history.back()" class="back-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </a>
+    {% if is_own %}
+      <a href="{% url 'mes_posts' %}" style="color:var(--color-primary);font-family:var(--font-body);font-size:14px;font-weight:700;text-decoration:none;">
+        Gérer mes posts
+      </a>
+    {% else %}
+      <div></div>
+    {% endif %}
+  </div>
+
+  <!-- Carte profil -->
+  <div class="profil-card">
+    <div class="profil-avatar-ring">
+      <img src="{% static profil.avatar_url %}" alt="{{ profil.username }}">
+    </div>
+    <div>
+      <div class="profil-username">{{ profil.username }}</div>
+      {% if profil.bio %}
+        <div class="profil-bio" style="margin-top:8px;">{{ profil.bio }}</div>
+      {% elif profil.niveau_couture %}
+        <div class="profil-bio" style="margin-top:8px;">Niveau : {{ profil.niveau_couture }}</div>
+      {% endif %}
+    </div>
+    <div class="profil-level-badge">
+      {{ level_info.emoji }} {{ level_info.nom }}
+    </div>
+    {% if level_info.restants > 0 %}
+    <div style="width:100%;">
+      <div class="level-mini">
+        <div class="level-mini-fill" style="width:{{ level_info.pourcentage }}%;"></div>
+      </div>
+      <div style="font-family:var(--font-body);font-size:12px;color:var(--text-muted);margin-top:4px;text-align:right;">
+        {{ level_info.points }} / {{ level_info.points_max }} pts
+      </div>
+    </div>
+    {% endif %}
+    <div class="profil-stats">
+      <div class="profil-stat">
+        <span class="profil-stat-num">{{ nb_posts }}</span>
+        <span class="profil-stat-label">Publication{{ nb_posts|pluralize }}</span>
+      </div>
+      <div class="profil-stat-sep"></div>
+      <div class="profil-stat">
+        <span class="profil-stat-num" id="followersCount">{{ nb_followers }}</span>
+        <span class="profil-stat-label">Abonné{{ nb_followers|pluralize }}</span>
+      </div>
+      <div class="profil-stat-sep"></div>
+      <div class="profil-stat">
+        <span class="profil-stat-num">{{ nb_following }}</span>
+        <span class="profil-stat-label">Abonnements</span>
+      </div>
+    </div>
+
+    {% if not is_own %}
+    <button class="btn-follow-profile {% if is_following %}following{% endif %}"
+            id="followProfileBtn"
+            data-url="{% url 'toggle_suivi' profil.pk %}">
+      {% if is_following %}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px;"><polyline points="20 6 9 17 4 12"/></svg>
+        Suivi ✓
+      {% else %}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px;"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Suivre {{ profil.username }}
+      {% endif %}
+    </button>
+    {% else %}
+    <a href="{% url 'creer_post' %}" style="width:100%;padding:14px;background:var(--color-primary);color:white;border-radius:9999px;text-align:center;font-family:var(--font-body);font-weight:700;font-size:16px;text-decoration:none;display:block;box-shadow:0 8px 24px rgba(35,115,41,.25);">
+      + Partager une création
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Publications -->
+  <div>
+    <div class="posts-grid-title" style="margin-bottom:16px;">
+      Publications
+    </div>
+    {% if posts_data %}
+    <div class="posts-grid">
+      {% for item in posts_data %}
+      {% with post=item.post %}
+      <a href="{% url 'detail_post' post.pk %}" class="post-grid-item">
+        {% if post.image %}
+          <img src="{{ post.image.url }}" alt="{{ post.titre }}">
+        {% else %}
+          <div class="post-grid-placeholder grad-{{ post.type_creation|default:'fait-main' }}">
+            {% if post.type_creation == 'fait-main' %}🧵
+            {% elif post.type_creation == 'upcycling' %}♻️
+            {% elif post.type_creation == 'teinture' %}🎨
+            {% elif post.type_creation == 'patron' %}📐
+            {% elif post.type_creation == 'reparation' %}🪡
+            {% else %}🌿{% endif %}
+          </div>
+        {% endif %}
+        <div class="post-grid-overlay">
+          <div class="post-grid-title">{{ post.titre|truncatechars:30 }}</div>
+          <div class="post-grid-likes">
+            ❤️ {{ item.nb_likes }}
+          </div>
+        </div>
+      </a>
+      {% endwith %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div style="font-size:48px;">🌿</div>
+      {% if is_own %}
+        <p>Vous n'avez pas encore partagé de création.<br>
+        <a href="{% url 'creer_post' %}" style="color:var(--color-primary);font-weight:700;">Partager ma première création</a></p>
+      {% else %}
+        <p>{{ profil.username }} n'a pas encore partagé de création.</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+</main>
+{% endblock %}
+
+
+{% block bottom_nav %}
+{% with nav_active='communaute' %}
+{% include 'core/bottom_nav.html' %}
+{% endwith %}
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+(function() {
+  'use strict';
+  const CSRF = '{{ csrf_token }}';
+
+  const followBtn = document.getElementById('followProfileBtn');
+  const followersCount = document.getElementById('followersCount');
+  if (followBtn) {
+    followBtn.addEventListener('click', () => {
+      fetch(followBtn.dataset.url, {method:'POST', headers:{'X-CSRFToken':CSRF}})
+      .then(r => r.json())
+      .then(data => {
+        followBtn.classList.toggle('not-following', !data.following);
+        followBtn.classList.toggle('following', data.following);
+        followersCount.textContent = data.nb_followers;
+        const name = '{{ profil.username }}';
+        if (data.following) {
+          followBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px;"><polyline points="20 6 9 17 4 12"/></svg> Suivi ✓`;
+        } else {
+          followBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px;"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Suivre ${name}`;
+        }
+      });
+    });
+  }
+})();
+</script>
+{% endblock %}

@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Utilisateur, Vetement, Patron, EtapePatron, Tutoriel, Projet, Recommandation, AchatPatron, ProgressionProjet, PatronLike
+from .models import (Utilisateur, Vetement, Patron, EtapePatron, Tutoriel, Projet, Recommandation,
+                     AchatPatron, ProgressionProjet, PatronLike,
+                     PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag)
 
 
 class EtapePatronInline(admin.StackedInline):
@@ -53,3 +55,26 @@ admin.site.register(Recommandation)
 admin.site.register(AchatPatron)
 admin.site.register(ProgressionProjet)
 admin.site.register(PatronLike)
+
+
+class CommentairePostInline(admin.TabularInline):
+    model = CommentairePost
+    extra = 0
+    fields = ['utilisateur', 'contenu', 'date_creation']
+    readonly_fields = ['date_creation']
+
+
+@admin.register(PostCommunaute)
+class PostCommunauteAdmin(admin.ModelAdmin):
+    list_display  = ['titre', 'utilisateur', 'type_creation', 'niveau', 'date_creation', 'nb_vues']
+    list_filter   = ['type_creation', 'niveau']
+    search_fields = ['titre', 'description', 'utilisateur__username']
+    inlines       = [CommentairePostInline]
+    readonly_fields = ['date_creation', 'nb_vues']
+
+
+admin.site.register(Hashtag)
+admin.site.register(LikePost)
+admin.site.register(SauvegardePost)
+admin.site.register(CommentairePost)
+admin.site.register(Suivi)

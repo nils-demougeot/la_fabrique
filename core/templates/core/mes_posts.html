@@ -1,0 +1,232 @@
+{% extends 'core/header.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  .mes-posts-page {
+    padding: 0 16px 110px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .page-hero {
+    padding-top: 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .back-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: #F5F4EA; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dark); flex-shrink: 0;
+    transition: background .15s; text-decoration: none;
+  }
+  .back-btn:hover { background: #EFEEE3; }
+  .page-title {
+    font-family: var(--font-title); font-size: 26px; font-weight: 800;
+    font-style: italic; text-transform: uppercase; color: var(--color-primary); line-height: 1;
+  }
+
+  /* Niveau */
+  .level-card-mini {
+    background: #FDFAE5; border-radius: 32px; padding: 20px;
+    outline: 1px rgba(188,186,168,.15) solid; outline-offset: -1px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .level-card-mini-top { display: flex; justify-content: space-between; align-items: center; }
+  .level-name-mini { color: var(--color-primary); font-family: var(--font-title); font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; }
+  .level-bar-mini { width: 100%; height: 10px; background: #F7F4DE; border-radius: 9999px; overflow: hidden; }
+  .level-bar-mini-fill { height: 100%; background: var(--color-primary); border-radius: 9999px; }
+  .level-pts-mini { color: var(--text-muted); font-family: var(--font-body); font-size: 13px; }
+
+  /* Bouton créer */
+  .create-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--color-primary); color: white; border: none;
+    border-radius: 9999px; padding: 16px;
+    font-family: var(--font-body); font-weight: 700; font-size: 16px;
+    text-decoration: none;
+    box-shadow: 0 8px 24px rgba(35,115,41,.25); transition: opacity .15s;
+  }
+  .create-btn:hover { opacity: .9; }
+
+  /* Section titre */
+  .section-title {
+    font-family: var(--font-title); font-size: 22px; font-weight: 800; color: #383832;
+  }
+
+  /* Post item */
+  .post-item {
+    background: white; border-radius: 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.05);
+    outline: 1px rgba(188,186,168,.10) solid; outline-offset: -1px;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  .post-item-link { text-decoration: none; display: flex; align-items: stretch; }
+  .post-item-thumb {
+    width: 96px; flex-shrink: 0;
+    background: #F5F4EA; position: relative; overflow: hidden;
+  }
+  .post-item-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .post-item-thumb-placeholder {
+    width: 100%; height: 100%; min-height: 96px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+  }
+  .post-item-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .post-item-title { font-family: var(--font-body); font-size: 15px; font-weight: 700; color: #39382B; line-height: 1.3; }
+  .post-item-type-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 9999px;
+    background: #F1EFD7; color: var(--text-muted);
+    font-family: var(--font-body); font-size: 12px; font-weight: 600;
+    align-self: flex-start;
+  }
+  .post-item-stats { display: flex; gap: 12px; align-items: center; margin-top: 4px; }
+  .post-item-stat { color: var(--text-muted); font-family: var(--font-body); font-size: 13px; display: flex; align-items: center; gap: 4px; }
+  .post-item-stat svg { width: 14px; height: 14px; }
+
+  /* Actions */
+  .post-item-actions {
+    border-top: 1px solid #F0EFE0;
+    padding: 10px 16px;
+    display: flex; gap: 8px; justify-content: flex-end;
+  }
+  .action-btn-danger {
+    padding: 8px 16px; border-radius: 9999px;
+    background: none; border: 1px solid #F4836A;
+    color: #C62828; cursor: pointer;
+    font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    transition: background .15s; display: flex; align-items: center; gap: 6px;
+  }
+  .action-btn-danger:hover { background: #FFF0EC; }
+
+  /* Gradient placeholder */
+  .grad-fait-main   { background: linear-gradient(135deg,#D2F4D1,#A8D5A2); }
+  .grad-upcycling   { background: linear-gradient(135deg,#ECE9D1,#C9B882); }
+  .grad-teinture    { background: linear-gradient(135deg,#FCC895,#F4836A); }
+  .grad-patron      { background: linear-gradient(135deg,#D5D2F4,#9A80C8); }
+  .grad-reparation  { background: linear-gradient(135deg,#D1EEF4,#7FC9CF); }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+  .empty-state p { font-family: var(--font-body); font-size: 15px; margin-top: 12px; line-height: 1.6; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<main class="mes-posts-page">
+
+  <div class="page-hero">
+    <a href="{% url 'communaute' %}" class="back-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </a>
+    <h1 class="page-title">Mes publications</h1>
+  </div>
+
+  <!-- Niveau -->
+  <div class="level-card-mini">
+    <div class="level-card-mini-top">
+      <span class="level-name-mini">{{ level_info.emoji }} {{ level_info.nom }}</span>
+      <span style="font-family:var(--font-body);font-size:13px;color:var(--color-primary);font-weight:600;">
+        {{ level_info.points }} pts
+      </span>
+    </div>
+    <div class="level-bar-mini">
+      <div class="level-bar-mini-fill" style="width:{{ level_info.pourcentage }}%;"></div>
+    </div>
+    <div class="level-pts-mini">
+      {% if level_info.restants > 0 %}{{ level_info.restants }} pts pour le niveau suivant{% else %}Niveau maximum atteint !{% endif %}
+    </div>
+  </div>
+
+  <!-- Créer un post -->
+  <a href="{% url 'creer_post' %}" class="create-btn">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Partager une nouvelle création
+  </a>
+
+  <!-- Liste -->
+  <div>
+    <div class="section-title" style="margin-bottom:16px;">
+      {{ posts_data|length }} publication{{ posts_data|length|pluralize }}
+    </div>
+
+    {% if posts_data %}
+      {% for item in posts_data %}
+      {% with post=item.post %}
+      <div class="post-item" style="margin-bottom:12px;">
+        <a href="{% url 'detail_post' post.pk %}" class="post-item-link">
+          <div class="post-item-thumb">
+            {% if post.image %}
+              <img src="{{ post.image.url }}" alt="{{ post.titre }}">
+            {% else %}
+              <div class="post-item-thumb-placeholder grad-{{ post.type_creation|default:'fait-main' }}">
+                {% if post.type_creation == 'fait-main' %}🧵
+                {% elif post.type_creation == 'upcycling' %}♻️
+                {% elif post.type_creation == 'teinture' %}🎨
+                {% elif post.type_creation == 'patron' %}📐
+                {% elif post.type_creation == 'reparation' %}🪡
+                {% else %}🌿{% endif %}
+              </div>
+            {% endif %}
+          </div>
+          <div class="post-item-body">
+            <span class="post-item-type-badge">{{ post.get_type_creation_display }}</span>
+            <div class="post-item-title">{{ post.titre }}</div>
+            <div class="post-item-stats">
+              <span class="post-item-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                {{ item.nb_likes }}
+              </span>
+              <span class="post-item-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                {{ item.nb_commentaires }}
+              </span>
+              <span class="post-item-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                {{ post.nb_vues }}
+              </span>
+            </div>
+          </div>
+        </a>
+        <div class="post-item-actions">
+          <form method="post" action="{% url 'supprimer_post' post.pk %}"
+                onsubmit="return confirm('Supprimer « {{ post.titre|escapejs }} » ?')"
+                style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="action-btn-danger">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+              </svg>
+              Supprimer
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endwith %}
+      {% endfor %}
+    {% else %}
+    <div class="empty-state">
+      <div style="font-size:56px;">🌿</div>
+      <p>Vous n'avez pas encore partagé de création.<br>
+      Partager vos projets vous rapporte <strong style="color:var(--color-primary);">+5 pièces</strong> et fait monter votre niveau !</p>
+    </div>
+    {% endif %}
+  </div>
+
+</main>
+{% endblock %}
+
+
+{% block bottom_nav %}
+{% with nav_active='communaute' %}
+{% include 'core/bottom_nav.html' %}
+{% endwith %}
+{% endblock %}

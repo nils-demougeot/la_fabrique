@@ -1,0 +1,271 @@
+{% extends 'core/header.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  .creer-page {
+    padding: 0 16px 110px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .page-hero {
+    padding-top: 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .back-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: #F5F4EA; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dark); flex-shrink: 0;
+    transition: background .15s;
+    text-decoration: none;
+  }
+  .back-btn:hover { background: #EFEEE3; }
+  .page-title {
+    font-family: var(--font-title);
+    font-size: 26px; font-weight: 800; font-style: italic;
+    text-transform: uppercase; color: var(--color-primary); line-height: 1;
+  }
+
+  /* Photo upload */
+  .photo-upload-zone {
+    border-radius: 32px; overflow: hidden;
+    background: #F5F4EA;
+    aspect-ratio: 1/1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; cursor: pointer; transition: background .15s;
+    border: 2px dashed #BCBAA8;
+    position: relative;
+  }
+  .photo-upload-zone:hover { background: #EFEEE3; border-color: var(--color-primary); }
+  .photo-upload-zone.has-photo { border: none; }
+  .photo-upload-zone img {
+    width: 100%; height: 100%; object-fit: cover;
+    position: absolute; inset: 0; border-radius: 30px;
+  }
+  .photo-upload-icon { font-size: 40px; }
+  .photo-upload-text {
+    color: var(--text-muted); font-family: var(--font-body);
+    font-size: 15px; font-weight: 500; text-align: center; padding: 0 24px;
+  }
+  .photo-upload-sub { color: #BCBAA8; font-family: var(--font-body); font-size: 13px; }
+  #photoFileInput { display: none; }
+
+  /* Formulaire */
+  .form-section { display: flex; flex-direction: column; gap: 20px; }
+  .form-group { display: flex; flex-direction: column; gap: 8px; }
+  .form-label {
+    font-family: var(--font-title); font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 14px 18px;
+    background: #F5F4EA; border: 2px solid transparent; border-radius: 20px;
+    font-family: var(--font-body); font-size: 15px; color: var(--text-dark);
+    outline: none; transition: border-color .2s, background .2s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    background: white; border-color: var(--color-primary);
+  }
+  .form-input::placeholder, .form-textarea::placeholder { color: var(--text-muted); }
+  .form-textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+  .form-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666556' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* Hashtags */
+  .hashtag-input-wrap { position: relative; }
+  .hashtag-hint { color: var(--text-muted); font-family: var(--font-body); font-size: 12px; margin-top: 4px; }
+
+  /* Patron lié */
+  .patron-select-card {
+    background: #F5F4EA; border-radius: 20px; padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .patron-select-card select {
+    flex: 1; background: none; border: none; outline: none;
+    font-family: var(--font-body); font-size: 15px; color: var(--text-dark);
+  }
+
+  /* Error */
+  .form-error {
+    background: #FFF0EC; border: 1px solid #F4836A; border-radius: 16px;
+    padding: 12px 18px; color: #C62828;
+    font-family: var(--font-body); font-size: 14px;
+  }
+
+  /* Bouton submit */
+  .submit-btn {
+    width: 100%; padding: 18px;
+    background: var(--color-primary); color: white; border: none;
+    border-radius: 9999px; cursor: pointer;
+    font-family: var(--font-body); font-weight: 700; font-size: 17px;
+    box-shadow: 0 10px 30px -5px rgba(35,115,41,.30);
+    transition: opacity .15s, transform .1s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .submit-btn:hover { opacity: .92; }
+  .submit-btn:active { transform: scale(.98); }
+  .submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+  /* Coins bonus */
+  .coins-bonus {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: #FDFAE5; border-radius: 9999px; padding: 10px 20px;
+    color: var(--text-muted); font-family: var(--font-body); font-size: 14px;
+  }
+  .coins-bonus strong { color: var(--color-primary); }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<main class="creer-page">
+
+  <div class="page-hero">
+    <a href="{% url 'communaute' %}" class="back-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </a>
+    <h1 class="page-title">Partager ma création</h1>
+  </div>
+
+  {% if error %}
+    <div class="form-error">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" id="creerForm">
+    {% csrf_token %}
+    <input type="hidden" name="photo_data" id="photoData">
+
+    <!-- Photo -->
+    <div class="photo-upload-zone" id="photoZone" onclick="document.getElementById('photoFileInput').click()">
+      <div class="photo-upload-icon">📸</div>
+      <div class="photo-upload-text">Ajouter une photo de votre création</div>
+      <div class="photo-upload-sub">JPG, PNG – optionnel</div>
+    </div>
+    <input type="file" id="photoFileInput" accept="image/*">
+
+    <div class="form-section" style="margin-top: 24px;">
+      <!-- Titre -->
+      <div class="form-group">
+        <label class="form-label">Titre de votre création *</label>
+        <input type="text" name="titre" class="form-input"
+               placeholder="Ex : Tote bag en jean recyclé" required maxlength="200">
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        <textarea name="description" class="form-textarea" required
+                  placeholder="Décrivez votre projet : matières utilisées, technique, inspirations..."></textarea>
+      </div>
+
+      <!-- Type + Niveau -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select name="type_creation" class="form-select">
+            <option value="fait-main">Fait main</option>
+            <option value="upcycling">Upcycling</option>
+            <option value="teinture">Teinture nat.</option>
+            <option value="patron">Patron</option>
+            <option value="reparation">Réparation</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Niveau</label>
+          <select name="niveau" class="form-select">
+            <option value="debutant">Débutant</option>
+            <option value="intermediaire">Intermédiaire</option>
+            <option value="confirme">Confirmé</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Hashtags -->
+      <div class="form-group">
+        <label class="form-label">Hashtags</label>
+        <input type="text" name="hashtags" class="form-input"
+               placeholder="upcycling, zerodechet, teinture">
+        <div class="hashtag-hint">Séparez par des virgules. Les # sont ajoutés automatiquement.</div>
+      </div>
+
+      <!-- Patron lié (optionnel) -->
+      {% if patrons %}
+      <div class="form-group">
+        <label class="form-label">Patron utilisé (optionnel)</label>
+        <select name="patron_lie" class="form-select">
+          <option value="">— Aucun patron —</option>
+          {% for patron in patrons %}
+            <option value="{{ patron.pk }}">{{ patron.titre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <!-- Coins bonus -->
+      <div class="coins-bonus">
+        <span>🪙</span>
+        <span>Partager une création vous rapporte <strong>+5 pièces</strong></span>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="submit-btn" id="submitBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+        Publier ma création
+      </button>
+    </div>
+  </form>
+
+</main>
+{% endblock %}
+
+
+{% block bottom_nav %}
+{% with nav_active='communaute' %}
+{% include 'core/bottom_nav.html' %}
+{% endwith %}
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+(function() {
+  'use strict';
+
+  const photoZone  = document.getElementById('photoZone');
+  const photoInput = document.getElementById('photoFileInput');
+  const photoData  = document.getElementById('photoData');
+
+  photoInput.addEventListener('change', () => {
+    const file = photoInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      photoData.value = e.target.result;
+      // Affiche la preview
+      photoZone.classList.add('has-photo');
+      let img = photoZone.querySelector('img');
+      if (!img) { img = document.createElement('img'); photoZone.appendChild(img); }
+      img.src = e.target.result;
+      // Cache les textes
+      photoZone.querySelectorAll('.photo-upload-icon,.photo-upload-text,.photo-upload-sub').forEach(el => el.style.display = 'none');
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('creerForm').addEventListener('submit', () => {
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').textContent = 'Publication en cours…';
+  });
+})();
+</script>
+{% endblock %}

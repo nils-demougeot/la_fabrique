@@ -5,11 +5,14 @@ from django.core.files.base import ContentFile
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
-from django.db.models import Sum
+from django.db.models import Sum, Count, Q
+from django.utils import timezone
+from datetime import timedelta
 import math
 
 from django.http import JsonResponse
-from core.models import Vetement, Utilisateur, Patron, EtapePatron, ProgressionProjet, PatronLike
+from core.models import (Vetement, Utilisateur, Patron, EtapePatron, ProgressionProjet, PatronLike,
+                         PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag)
 
 def home(request):
     context = {
@@ -492,9 +495,296 @@ def toggle_like(request, pk):
     return JsonResponse({'liked': is_liked})
 
 
+COMMUNITY_LEVELS = [
+    (0,    100,  'Éco-Curieux',  '🌱'),
+    (100,  300,  'Éco-Apprenti', '🌿'),
+    (300,  600,  'Éco-Créateur', '🍃'),
+    (600,  1000, 'Éco-Mentor',   '🌲'),
+    (1000, None, 'Éco-Expert',   '🌳'),
+]
+
+def _get_user_level(user):
+    nb_posts    = user.posts_communaute.count()
+    nb_likes    = LikePost.objects.filter(post__utilisateur=user).count()
+    nb_followers = user.followers.count()
+    nb_comments = user.commentaires_posts.count()
+    points = nb_posts * 10 + nb_likes + nb_followers * 3 + nb_comments * 2
+    for min_pts, max_pts, nom, emoji in COMMUNITY_LEVELS:
+        if max_pts is None or points < max_pts:
+            if points >= min_pts:
+                pct = round((points - min_pts) / (max_pts - min_pts) * 100) if max_pts else 100
+                return {
+                    'nom': nom, 'emoji': emoji, 'points': points,
+                    'points_max': max_pts or points + 1,
+                    'pourcentage': pct,
+                    'restants': max(0, (max_pts or 0) - points),
+                }
+    last = COMMUNITY_LEVELS[-1]
+    return {'nom': last[2], 'emoji': last[3], 'points': points,
+            'points_max': points, 'pourcentage': 100, 'restants': 0}
+
+
 @login_required
 def communaute(request):
-    return render(request, 'core/communaute.html')
+    q             = request.GET.get('q', '').strip()
+    type_filtre   = request.GET.get('type', '')
+    niveau_filtre = request.GET.get('niveau', '')
+    tri           = request.GET.get('tri', 'nouveautes')
+    hashtag_slug  = request.GET.get('hashtag', '')
+
+    posts_qs = PostCommunaute.objects.select_related('utilisateur', 'patron_lie').prefetch_related('likes', 'commentaires', 'hashtags')
+
+    if q:
+        posts_qs = posts_qs.filter(Q(titre__icontains=q) | Q(description__icontains=q) | Q(utilisateur__username__icontains=q))
+    if type_filtre:
+        posts_qs = posts_qs.filter(type_creation=type_filtre)
+    if niveau_filtre:
+        posts_qs = posts_qs.filter(niveau=niveau_filtre)
+    if hashtag_slug:
+        posts_qs = posts_qs.filter(hashtags__nom__iexact=hashtag_slug)
+
+    if tri == 'populaires':
+        posts_qs = posts_qs.annotate(nl=Count('likes')).order_by('-nl', '-date_creation')
+    elif tri == 'tendances':
+        depuis = timezone.now() - timedelta(hours=48)
+        posts_qs = posts_qs.filter(date_creation__gte=depuis).annotate(nl=Count('likes')).order_by('-nl', '-date_creation')
+    else:
+        posts_qs = posts_qs.order_by('-date_creation')
+
+    liked_ids = set(LikePost.objects.filter(utilisateur=request.user).values_list('post_id', flat=True))
+    saved_ids = set(SauvegardePost.objects.filter(utilisateur=request.user).values_list('post_id', flat=True))
+
+    posts_data = []
+    for post in posts_qs[:30]:
+        posts_data.append({
+            'post': post,
+            'is_liked': post.id in liked_ids,
+            'is_saved': post.id in saved_ids,
+            'nb_likes': post.likes.count(),
+            'nb_commentaires': post.commentaires.count(),
+            'is_own': post.utilisateur_id == request.user.pk,
+        })
+
+    hashtags = Hashtag.objects.annotate(nb=Count('posts')).filter(nb__gt=0).order_by('-nb')[:12]
+
+    une_semaine = timezone.now() - timedelta(days=7)
+    creator_of_week = (
+        Utilisateur.objects
+        .exclude(pk=request.user.pk)
+        .annotate(likes_semaine=Count('posts_communaute__likes',
+                                      filter=Q(posts_communaute__date_creation__gte=une_semaine)))
+        .filter(likes_semaine__gt=0)
+        .order_by('-likes_semaine')
+        .first()
+    )
+    is_following_creator = (
+        Suivi.objects.filter(suiveur=request.user, suivi=creator_of_week).exists()
+        if creator_of_week else False
+    )
+
+    return render(request, 'core/communaute.html', {
+        'posts_data': posts_data,
+        'hashtags': hashtags,
+        'creator_of_week': creator_of_week,
+        'is_following_creator': is_following_creator,
+        'level_info': _get_user_level(request.user),
+        'q': q,
+        'type_filtre': type_filtre,
+        'niveau_filtre': niveau_filtre,
+        'tri': tri,
+        'hashtag_slug': hashtag_slug,
+        'post_types': PostCommunaute.TYPE_CHOICES,
+        'post_niveaux': PostCommunaute.NIVEAU_CHOICES,
+    })
+
+
+@login_required
+def creer_post(request):
+    if request.method == 'POST':
+        titre       = request.POST.get('titre', '').strip()
+        description = request.POST.get('description', '').strip()
+        type_c      = request.POST.get('type_creation', 'fait-main')
+        niveau      = request.POST.get('niveau', 'debutant')
+        patron_id   = request.POST.get('patron_lie', '')
+        tags_raw    = request.POST.get('hashtags', '')
+
+        if not titre or not description:
+            return render(request, 'core/creer_post.html', {
+                'patrons': Patron.objects.all(),
+                'error': 'Le titre et la description sont obligatoires.',
+            })
+
+        image_fichier = None
+        photo_data = request.POST.get('photo_data', '')
+        if photo_data and ';base64,' in photo_data:
+            fmt, imgstr = photo_data.split(';base64,', 1)
+            ext = fmt.split('/')[-1]
+            image_fichier = ContentFile(base64.b64decode(imgstr), name=f'post.{ext}')
+
+        patron_obj = None
+        if patron_id:
+            patron_obj = Patron.objects.filter(pk=patron_id).first()
+
+        post = PostCommunaute.objects.create(
+            utilisateur=request.user,
+            titre=titre,
+            description=description,
+            type_creation=type_c,
+            niveau=niveau,
+            patron_lie=patron_obj,
+            image=image_fichier,
+        )
+
+        for tag_nom in [t.strip().lstrip('#').lower() for t in tags_raw.split(',') if t.strip()]:
+            if tag_nom:
+                hashtag, _ = Hashtag.objects.get_or_create(nom=tag_nom)
+                post.hashtags.add(hashtag)
+
+        request.user.soldePieces += 5
+        request.user.save()
+
+        return redirect('detail_post', pk=post.pk)
+
+    return render(request, 'core/creer_post.html', {'patrons': Patron.objects.all()})
+
+
+@login_required
+def detail_post(request, pk):
+    post = get_object_or_404(PostCommunaute.objects.select_related('utilisateur', 'patron_lie'), pk=pk)
+
+    post.nb_vues += 1
+    post.save(update_fields=['nb_vues'])
+
+    commentaires = post.commentaires.select_related('utilisateur').all()
+    is_liked = LikePost.objects.filter(utilisateur=request.user, post=post).exists()
+    is_saved = SauvegardePost.objects.filter(utilisateur=request.user, post=post).exists()
+    is_following = Suivi.objects.filter(suiveur=request.user, suivi=post.utilisateur).exists()
+
+    return render(request, 'core/detail_post.html', {
+        'post': post,
+        'commentaires': commentaires,
+        'is_liked': is_liked,
+        'is_saved': is_saved,
+        'is_own': post.utilisateur_id == request.user.pk,
+        'is_following': is_following,
+        'nb_likes': post.likes.count(),
+    })
+
+
+@login_required
+def toggle_like_post(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    post = get_object_or_404(PostCommunaute, pk=pk)
+    like, created = LikePost.objects.get_or_create(utilisateur=request.user, post=post)
+    if not created:
+        like.delete()
+        is_liked = False
+    else:
+        is_liked = True
+    return JsonResponse({'liked': is_liked, 'nb_likes': post.likes.count()})
+
+
+@login_required
+def toggle_sauvegarde(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    post = get_object_or_404(PostCommunaute, pk=pk)
+    save_obj, created = SauvegardePost.objects.get_or_create(utilisateur=request.user, post=post)
+    if not created:
+        save_obj.delete()
+        is_saved = False
+    else:
+        is_saved = True
+    return JsonResponse({'saved': is_saved})
+
+
+@login_required
+def ajouter_commentaire(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    post = get_object_or_404(PostCommunaute, pk=pk)
+    try:
+        data = json.loads(request.body)
+        contenu = data.get('contenu', '').strip()
+    except (json.JSONDecodeError, AttributeError):
+        contenu = request.POST.get('contenu', '').strip()
+
+    if not contenu:
+        return JsonResponse({'error': 'Contenu vide'}, status=400)
+
+    commentaire = CommentairePost.objects.create(utilisateur=request.user, post=post, contenu=contenu)
+    return JsonResponse({
+        'id': commentaire.id,
+        'contenu': commentaire.contenu,
+        'auteur': request.user.username,
+        'avatar': request.user.avatar_url,
+        'date': 'à l\'instant',
+        'nb_commentaires': post.commentaires.count(),
+    })
+
+
+@login_required
+def supprimer_post(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    post = get_object_or_404(PostCommunaute, pk=pk, utilisateur=request.user)
+    post.delete()
+    return redirect('communaute')
+
+
+@login_required
+def profil_utilisateur(request, pk):
+    profil = get_object_or_404(Utilisateur, pk=pk)
+    posts  = PostCommunaute.objects.filter(utilisateur=profil).order_by('-date_creation')
+
+    liked_ids = set(LikePost.objects.filter(utilisateur=request.user).values_list('post_id', flat=True))
+    saved_ids = set(SauvegardePost.objects.filter(utilisateur=request.user).values_list('post_id', flat=True))
+
+    posts_data = [{'post': p, 'is_liked': p.id in liked_ids, 'is_saved': p.id in saved_ids,
+                   'nb_likes': p.likes.count(), 'nb_commentaires': p.commentaires.count()}
+                  for p in posts]
+
+    is_following = False
+    if request.user != profil:
+        is_following = Suivi.objects.filter(suiveur=request.user, suivi=profil).exists()
+
+    return render(request, 'core/profil_utilisateur.html', {
+        'profil': profil,
+        'posts_data': posts_data,
+        'nb_posts': posts.count(),
+        'nb_followers': profil.followers.count(),
+        'nb_following': profil.suivis.count(),
+        'is_following': is_following,
+        'is_own': profil == request.user,
+        'level_info': _get_user_level(profil),
+    })
+
+
+@login_required
+def toggle_suivi(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    cible = get_object_or_404(Utilisateur, pk=pk)
+    if cible == request.user:
+        return JsonResponse({'error': 'Vous ne pouvez pas vous suivre vous-même'}, status=400)
+    suivi_obj, created = Suivi.objects.get_or_create(suiveur=request.user, suivi=cible)
+    if not created:
+        suivi_obj.delete()
+        is_following = False
+    else:
+        is_following = True
+    return JsonResponse({'following': is_following, 'nb_followers': cible.followers.count()})
+
+
+@login_required
+def mes_posts(request):
+    posts = PostCommunaute.objects.filter(utilisateur=request.user).order_by('-date_creation')
+    posts_data = [{'post': p, 'nb_likes': p.likes.count(), 'nb_commentaires': p.commentaires.count()} for p in posts]
+    return render(request, 'core/mes_posts.html', {
+        'posts_data': posts_data,
+        'level_info': _get_user_level(request.user),
+    })
 
 
 @login_required
