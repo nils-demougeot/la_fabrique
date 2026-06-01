@@ -48,9 +48,8 @@
     display: flex;
     gap: 12px;
     overflow-x: auto;
-    /* padding vertical pour que l'ombre des cards ne soit pas coupée */
     padding: 10px 4px 28px;
-    margin: -10px 0 -28px;          /* compense dans le layout */
+    margin: -10px 0 -28px;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
@@ -58,11 +57,11 @@
 
   .en-cours-card {
     flex-shrink: 0;
-    width: 148px;
-    background: white;
-    border-radius: 24px;
+    width: 155px;
+    background: #237329;
+    border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
     text-decoration: none;
     display: flex;
     flex-direction: column;
@@ -72,24 +71,77 @@
 
   .en-cours-img {
     width: 100%;
-    height: 96px;
+    height: 100px;
     object-fit: cover;
     display: block;
-    background: #ECE9D1;
+    background: #2d5a32;
   }
 
   .en-cours-body {
-    padding: 10px 12px 12px;
+    padding: 12px 12px 14px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
+    flex: 1;
+  }
+
+  /* ── Cercles checkmarks superposés ── */
+  .en-cours-checks {
+    display: flex;
+    align-items: center;
+    min-height: 32px;
+  }
+
+  .check-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 0 0 2.5px #237329;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: -9px;
+    flex-shrink: 0;
+  }
+  .check-circle:first-child { margin-left: 0; }
+
+  .check-circle svg {
+    width: 14px;
+    height: 14px;
+    stroke: #237329;
+    stroke-width: 2.8;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .check-dots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-left: 8px;
+  }
+
+  .check-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+  }
+
+  /* ── Bas de la card ── */
+  .en-cours-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
   }
 
   .en-cours-name {
     font-family: var(--font-title);
     font-weight: 700;
     font-size: 13px;
-    color: var(--text-dark);
+    color: white;
     line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -97,26 +149,11 @@
     overflow: hidden;
   }
 
-  .en-cours-step {
+  .en-cours-remaining {
     font-family: var(--font-body);
     font-size: 11px;
-    color: var(--text-muted);
+    color: rgba(255,255,255,0.6);
     font-weight: 600;
-  }
-
-  .en-cours-progress-track {
-    width: 100%;
-    height: 4px;
-    background: #F0EFE5;
-    border-radius: 9999px;
-    overflow: hidden;
-  }
-
-  .en-cours-progress-fill {
-    height: 4px;
-    background: var(--color-primary);
-    border-radius: 9999px;
-    transition: width 0.3s ease;
   }
 
   .en-cours-continue {
@@ -126,13 +163,14 @@
     font-family: var(--font-title);
     font-weight: 700;
     font-size: 11px;
-    color: var(--color-primary);
-    padding: 4px 10px;
-    background: rgba(35,115,41,0.08);
+    color: white;
+    padding: 5px 10px;
+    background: rgba(255,255,255,0.12);
     border-radius: 9999px;
     width: fit-content;
+    margin-top: 2px;
   }
-  .en-cours-continue svg { width: 10px; height: 10px; }
+  .en-cours-continue svg { width: 10px; height: 10px; stroke: white; }
 
   /* =========================================
      Barre de recherche + filtres
@@ -581,11 +619,15 @@
         <div class="en-cours-img"></div>
         {% endif %}
         <div class="en-cours-body">
-          <span class="en-cours-name">{{ prog.titre }}</span>
-          <div class="en-cours-progress-track">
-            <div class="en-cours-progress-fill" style="width:{{ prog.progression_pct }}%;"></div>
+          <div class="en-cours-checks"
+               data-done="{{ prog.etape_actuelle }}"
+               data-total="{{ prog.total_etapes }}"></div>
+          <div class="en-cours-info">
+            <span class="en-cours-name">{{ prog.titre }}</span>
+            <span class="en-cours-remaining"
+                  data-done="{{ prog.etape_actuelle }}"
+                  data-total="{{ prog.total_etapes }}"></span>
           </div>
-          <span class="en-cours-step">Étape {{ prog.etape_actuelle }}/{{ prog.total_etapes }}</span>
           <span class="en-cours-continue">
             Continuer
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1028,6 +1070,42 @@
       }
     }
   }
+
+  /* ── Cercles de progression "en cours" ───────────────── */
+  (function buildProgressCircles() {
+    const CHECK_SVG = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
+    const MAX_CIRCLES = 4;
+
+    document.querySelectorAll('.en-cours-checks').forEach(el => {
+      const done  = parseInt(el.dataset.done,  10) || 0;
+      const total = parseInt(el.dataset.total, 10) || 0;
+      const show  = Math.min(done, MAX_CIRCLES);
+      let html = '';
+      for (let i = 0; i < show; i++) {
+        html += `<div class="check-circle">${CHECK_SVG}</div>`;
+      }
+      const remaining = total - done;
+      if (remaining > 0) {
+        html += `<div class="check-dots">
+          <div class="check-dot"></div>
+          <div class="check-dot"></div>
+          <div class="check-dot"></div>
+        </div>`;
+      }
+      el.innerHTML = html;
+    });
+
+    document.querySelectorAll('.en-cours-remaining').forEach(el => {
+      const done      = parseInt(el.dataset.done,  10) || 0;
+      const total     = parseInt(el.dataset.total, 10) || 0;
+      const remaining = total - done;
+      if (remaining <= 0) {
+        el.textContent = 'Terminé !';
+      } else {
+        el.textContent = remaining + ' étape' + (remaining > 1 ? 's' : '') + ' restante' + (remaining > 1 ? 's' : '');
+      }
+    });
+  })();
 
   /* ── Init ─────────────────────────────────────────────── */
   wraps.forEach(initSwipe);
