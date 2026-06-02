@@ -18,7 +18,7 @@ import math
 
 from django.http import HttpResponse, JsonResponse
 from core.models import (Vetement, Utilisateur, Patron, EtapePatron, ProgressionProjet, PatronLike,
-                         PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag)
+                         PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag, Badge)
 
 def home(request):
     context = {
@@ -61,6 +61,9 @@ def dashboard(request):
             'patron_id': p.pk,
         })
 
+    badges = list(Badge.objects.filter(utilisateur=user).order_by('date_obtention'))
+    has_eco_warrior = any(b.nom == 'Éco Warrior' for b in badges)
+
     context = {
         'surface_totale': surface_totale,
         'surface_objectif': OBJECTIF_M2,
@@ -71,9 +74,36 @@ def dashboard(request):
         'projets_termines': projets_termines,
         'nb_projets_termines': len(projets_termines),
         'nb_etapes_realisees': nb_etapes_realisees,
+        'badges': badges,
+        'has_eco_warrior': has_eco_warrior,
     }
     return render(request, 'core/dashboard.html', context)
 
+
+@login_required
+def acheter_badge(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Méthode non autorisée'}, status=405)
+
+    BADGE_NOM = 'Éco Warrior'
+    BADGE_COUT = 10
+    user = request.user
+
+    if Badge.objects.filter(utilisateur=user, nom=BADGE_NOM).exists():
+        return JsonResponse({'success': False, 'error': 'Badge déjà obtenu'})
+
+    if user.soldePieces < BADGE_COUT:
+        return JsonResponse({'success': False, 'error': 'Pas assez de pièces'})
+
+    user.soldePieces -= BADGE_COUT
+    user.save()
+    Badge.objects.create(
+        utilisateur=user,
+        nom=BADGE_NOM,
+        emoji='🌿',
+        description='Badge exclusif affiché sur votre profil',
+    )
+    return JsonResponse({'success': True, 'nouveau_solde': user.soldePieces})
 
 
 def calculate_polygon_area(points, width_cm, height_cm):

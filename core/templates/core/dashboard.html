@@ -1405,6 +1405,98 @@
     text-decoration: none;
   }
 
+  /* ── Mes Badges ── */
+  .badges-section {
+    padding: 0 20px 24px;
+  }
+
+  .badges-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .badge-card {
+    background: linear-gradient(135deg, #FFFDE7 0%, #FFF9C4 100%);
+    border: 1.5px solid #FFE082;
+    border-radius: 20px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .badge-card-emoji {
+    font-size: 32px;
+    flex-shrink: 0;
+  }
+
+  .badge-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .badge-card-name {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-dark);
+  }
+
+  .badge-card-desc {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .badge-card-date {
+    font-family: var(--font-body);
+    font-size: 10px;
+    color: #B8860B;
+    font-weight: 600;
+  }
+
+  .badges-empty {
+    background: #FDFAE5;
+    border-radius: 24px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    margin-top: 12px;
+  }
+
+  .badges-empty-emoji { font-size: 36px; }
+
+  .badges-empty-title {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-dark);
+  }
+
+  .badges-empty-sub {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    max-width: 200px;
+  }
+
+  .shop-btn.obtained {
+    background: #E8F5E9;
+    color: #2E7D32;
+    border: 1.5px solid #A5D6A7;
+    cursor: default;
+    opacity: 1;
+  }
+
 </style>
 {% endblock %}
 
@@ -1571,6 +1663,32 @@
     {% endif %}
   </div>
 
+  <!-- Mes Badges -->
+  <div class="badges-section">
+    <h2 class="section-title">Mes badges</h2>
+
+    {% if badges %}
+    <div class="badges-grid" id="badges-grid">
+      {% for badge in badges %}
+      <div class="badge-card">
+        <span class="badge-card-emoji">{{ badge.emoji }}</span>
+        <div class="badge-card-info">
+          <span class="badge-card-name">{{ badge.nom }}</span>
+          <span class="badge-card-desc">{{ badge.description }}</span>
+          <span class="badge-card-date">Obtenu le {{ badge.date_obtention|date:"d/m/Y" }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="badges-empty" id="badges-empty">
+      <span class="badges-empty-emoji">🏅</span>
+      <p class="badges-empty-title">Aucun badge pour l'instant</p>
+      <p class="badges-empty-sub">Achetez le badge Éco Warrior dans la boutique pour commencer votre collection !</p>
+    </div>
+    {% endif %}
+  </div>
+
 </main>
 
 <!-- ======================================================
@@ -1669,7 +1787,11 @@
               <span class="shop-price-coin">🪙</span>
               <span class="shop-price-amount">10</span>
             </div>
-            <button class="shop-btn" data-price="10" onclick="buyItem(this)">Obtenir</button>
+            {% if has_eco_warrior %}
+            <button class="shop-btn obtained" disabled>Obtenu ✓</button>
+            {% else %}
+            <button class="shop-btn" id="btn-eco-warrior" data-price="10" onclick="buyBadgeEcoWarrior(this)">Obtenir</button>
+            {% endif %}
           </div>
         </div>
 
@@ -1900,6 +2022,69 @@ function buyItem(btn) {
   const price = parseInt(btn.dataset.price) || 0;
   if (CREDITS < price) return;
   alert(`✅ Achat simulé – ${price} pièces dépensées.\n(La transaction sera implémentée prochainement.)`);
+}
+
+function buyBadgeEcoWarrior(btn) {
+  const price = parseInt(btn.dataset.price) || 0;
+  if (CREDITS < price) return;
+
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  fetch('{% url "acheter_badge" %}', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/json',
+    },
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      btn.classList.add('obtained');
+      btn.textContent = 'Obtenu ✓';
+
+      // Mettre à jour l'affichage du solde dans la modale
+      document.querySelectorAll('.balance-big').forEach(el => {
+        el.textContent = data.nouveau_solde;
+      });
+
+      // Ajouter le badge dans la section "Mes Badges" sans rechargement
+      const empty = document.getElementById('badges-empty');
+      if (empty) empty.remove();
+
+      let grid = document.getElementById('badges-grid');
+      if (!grid) {
+        const section = document.querySelector('.badges-section');
+        grid = document.createElement('div');
+        grid.className = 'badges-grid';
+        grid.id = 'badges-grid';
+        section.appendChild(grid);
+      }
+
+      const today = new Date().toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric'});
+      const card = document.createElement('div');
+      card.className = 'badge-card';
+      card.innerHTML = `
+        <span class="badge-card-emoji">🌿</span>
+        <div class="badge-card-info">
+          <span class="badge-card-name">Éco Warrior</span>
+          <span class="badge-card-desc">Badge exclusif affiché sur votre profil</span>
+          <span class="badge-card-date">Obtenu le ${today}</span>
+        </div>`;
+      grid.appendChild(card);
+
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Obtenir';
+      alert(data.error || 'Une erreur est survenue.');
+    }
+  })
+  .catch(() => {
+    btn.disabled = false;
+    btn.textContent = 'Obtenir';
+    alert('Erreur réseau. Veuillez réessayer.');
+  });
 }
 
 function buyPack(coins, price) {

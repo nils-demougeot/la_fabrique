@@ -231,3 +231,17 @@ class Suivi(models.Model):
 
     def __str__(self):
         return f"{self.suiveur.username} suit {self.suivi.username}"
+
+
+class Badge(models.Model):
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='badges')
+    nom = models.CharField(max_length=100)
+    emoji = models.CharField(max_length=10, default='🌿')
+    description = models.CharField(max_length=255, blank=True)
+    date_obtention = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('utilisateur', 'nom')
+
+    def __str__(self):
+        return f"{self.emoji} {self.nom} – {self.utilisateur.username}"
