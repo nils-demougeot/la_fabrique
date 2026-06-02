@@ -20,6 +20,47 @@ from django.http import HttpResponse, JsonResponse
 from core.models import (Vetement, Utilisateur, Patron, EtapePatron, ProgressionProjet, PatronLike,
                          PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag, Badge)
 
+BADGE_DEFINITIONS = [
+    {'nom': 'Premier Projet',      'emoji': '🏆', 'description': '1er projet terminé',        'condition': 'Terminer 1 projet'},
+    {'nom': '5 Projets',           'emoji': '⭐', 'description': 'Créateur confirmé',           'condition': 'Terminer 5 projets'},
+    {'nom': '10 Projets',          'emoji': '🥇', 'description': 'Grand créateur',             'condition': 'Terminer 10 projets'},
+    {'nom': 'Premier Commentaire', 'emoji': '💬', 'description': 'Actif dans la communauté',   'condition': 'Poster 1 commentaire'},
+    {'nom': '5 Commentaires',      'emoji': '🗣️', 'description': 'Très bavard !',             'condition': 'Poster 5 commentaires'},
+    {'nom': 'Premier Like',        'emoji': '❤️', 'description': 'Soutien de la communauté',  'condition': 'Donner 1 like'},
+    {'nom': '10 Likes',            'emoji': '🔥', 'description': 'Fan de la première heure',   'condition': 'Donner 10 likes'},
+    {'nom': 'Première Création',   'emoji': '✨', 'description': 'Première création partagée', 'condition': 'Partager 1 création'},
+    {'nom': 'Artiste',             'emoji': '🎨', 'description': 'Créateur prolifique',        'condition': 'Partager 5 créations'},
+    {'nom': 'Éco Warrior',         'emoji': '🌿', 'description': 'Badge exclusif',             'condition': 'Acheter dans la boutique'},
+]
+
+
+def check_and_award_badges(user):
+    nb_projets = ProgressionProjet.objects.filter(utilisateur=user, termine=True).count()
+    nb_commentaires = CommentairePost.objects.filter(utilisateur=user).count()
+    nb_likes = LikePost.objects.filter(utilisateur=user).count()
+    nb_posts = PostCommunaute.objects.filter(utilisateur=user).count()
+
+    to_award = [
+        ('Premier Projet',      '🏆', '1er projet terminé',        nb_projets >= 1),
+        ('5 Projets',           '⭐', 'Créateur confirmé',           nb_projets >= 5),
+        ('10 Projets',          '🥇', 'Grand créateur',             nb_projets >= 10),
+        ('Premier Commentaire', '💬', 'Actif dans la communauté',   nb_commentaires >= 1),
+        ('5 Commentaires',      '🗣️', 'Très bavard !',             nb_commentaires >= 5),
+        ('Premier Like',        '❤️', 'Soutien de la communauté',  nb_likes >= 1),
+        ('10 Likes',            '🔥', 'Fan de la première heure',   nb_likes >= 10),
+        ('Première Création',   '✨', 'Première création partagée', nb_posts >= 1),
+        ('Artiste',             '🎨', 'Créateur prolifique',        nb_posts >= 5),
+    ]
+
+    for nom, emoji, description, condition in to_award:
+        if condition:
+            Badge.objects.get_or_create(
+                utilisateur=user,
+                nom=nom,
+                defaults={'emoji': emoji, 'description': description},
+            )
+
+
 def home(request):
     context = {
         'user_coins': '1,250'
@@ -61,8 +102,20 @@ def dashboard(request):
             'patron_id': p.pk,
         })
 
-    badges = list(Badge.objects.filter(utilisateur=user).order_by('date_obtention'))
-    has_eco_warrior = any(b.nom == 'Éco Warrior' for b in badges)
+    badges_earned = {b.nom: b for b in Badge.objects.filter(utilisateur=user)}
+    has_eco_warrior = 'Éco Warrior' in badges_earned
+
+    badges_display = []
+    for bd in BADGE_DEFINITIONS:
+        earned = badges_earned.get(bd['nom'])
+        badges_display.append({
+            'nom': bd['nom'],
+            'emoji': bd['emoji'],
+            'description': bd['description'],
+            'condition': bd['condition'],
+            'earned': earned is not None,
+            'date_obtention': earned.date_obtention if earned else None,
+        })
 
     context = {
         'surface_totale': surface_totale,
@@ -74,7 +127,7 @@ def dashboard(request):
         'projets_termines': projets_termines,
         'nb_projets_termines': len(projets_termines),
         'nb_etapes_realisees': nb_etapes_realisees,
-        'badges': badges,
+        'badges_display': badges_display,
         'has_eco_warrior': has_eco_warrior,
     }
     return render(request, 'core/dashboard.html', context)
@@ -599,6 +652,7 @@ def terminer_projet(request, pk):
         prog.save()
         request.user.soldePieces += 20
         request.user.save()
+        check_and_award_badges(request.user)
     return redirect('passeport_circulaire', pk=patron.pk)
 
 
@@ -840,6 +894,7 @@ def creer_post(request):
 
         request.user.soldePieces += 5
         request.user.save()
+        check_and_award_badges(request.user)
 
         return redirect('detail_post', pk=post.pk)
 
@@ -880,6 +935,7 @@ def toggle_like_post(request, pk):
         is_liked = False
     else:
         is_liked = True
+        check_and_award_badges(request.user)
     return JsonResponse({'liked': is_liked, 'nb_likes': post.likes.count()})
 
 
@@ -912,6 +968,7 @@ def ajouter_commentaire(request, pk):
         return JsonResponse({'error': 'Contenu vide'}, status=400)
 
     commentaire = CommentairePost.objects.create(utilisateur=request.user, post=post, contenu=contenu)
+    check_and_award_badges(request.user)
     return JsonResponse({
         'id': commentaire.id,
         'contenu': commentaire.contenu,

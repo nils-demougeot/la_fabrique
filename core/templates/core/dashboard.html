@@ -1418,8 +1418,8 @@
   }
 
   .badge-card {
-    background: linear-gradient(135deg, #FFFDE7 0%, #FFF9C4 100%);
-    border: 1.5px solid #FFE082;
+    background: #f0f0f0;
+    border: 1.5px solid #d8d8d8;
     border-radius: 20px;
     padding: 16px 20px;
     display: flex;
@@ -1427,6 +1427,16 @@
     gap: 12px;
     flex: 1;
     min-width: 140px;
+    filter: grayscale(100%);
+    opacity: 0.55;
+    transition: filter 0.4s ease, opacity 0.4s ease, background 0.4s ease, border-color 0.4s ease;
+  }
+
+  .badge-card.earned {
+    background: linear-gradient(135deg, #FFFDE7 0%, #FFF9C4 100%);
+    border: 1.5px solid #FFE082;
+    filter: none;
+    opacity: 1;
   }
 
   .badge-card-emoji {
@@ -1460,33 +1470,11 @@
     font-weight: 600;
   }
 
-  .badges-empty {
-    background: #FDFAE5;
-    border-radius: 24px;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    text-align: center;
-    margin-top: 12px;
-  }
-
-  .badges-empty-emoji { font-size: 36px; }
-
-  .badges-empty-title {
-    font-family: var(--font-title);
-    font-weight: 700;
-    font-size: 15px;
-    color: var(--text-dark);
-  }
-
-  .badges-empty-sub {
+  .badge-card-locked {
     font-family: var(--font-body);
-    font-size: 12px;
-    color: var(--text-muted);
-    line-height: 1.5;
-    max-width: 200px;
+    font-size: 10px;
+    color: #9e9e9e;
+    font-style: italic;
   }
 
   .shop-btn.obtained {
@@ -1666,27 +1654,23 @@
   <!-- Mes Badges -->
   <div class="badges-section">
     <h2 class="section-title">Mes badges</h2>
-
-    {% if badges %}
     <div class="badges-grid" id="badges-grid">
-      {% for badge in badges %}
-      <div class="badge-card">
+      {% for badge in badges_display %}
+      <div class="badge-card {% if badge.earned %}earned{% endif %}" data-badge-nom="{{ badge.nom }}">
         <span class="badge-card-emoji">{{ badge.emoji }}</span>
         <div class="badge-card-info">
           <span class="badge-card-name">{{ badge.nom }}</span>
+          {% if badge.earned %}
           <span class="badge-card-desc">{{ badge.description }}</span>
           <span class="badge-card-date">Obtenu le {{ badge.date_obtention|date:"d/m/Y" }}</span>
+          {% else %}
+          <span class="badge-card-desc">{{ badge.condition }}</span>
+          <span class="badge-card-locked">🔒 Non débloqué</span>
+          {% endif %}
         </div>
       </div>
       {% endfor %}
     </div>
-    {% else %}
-    <div class="badges-empty" id="badges-empty">
-      <span class="badges-empty-emoji">🏅</span>
-      <p class="badges-empty-title">Aucun badge pour l'instant</p>
-      <p class="badges-empty-sub">Achetez le badge Éco Warrior dans la boutique pour commencer votre collection !</p>
-    </div>
-    {% endif %}
   </div>
 
 </main>
@@ -2049,30 +2033,17 @@ function buyBadgeEcoWarrior(btn) {
         el.textContent = data.nouveau_solde;
       });
 
-      // Ajouter le badge dans la section "Mes Badges" sans rechargement
-      const empty = document.getElementById('badges-empty');
-      if (empty) empty.remove();
-
-      let grid = document.getElementById('badges-grid');
-      if (!grid) {
-        const section = document.querySelector('.badges-section');
-        grid = document.createElement('div');
-        grid.className = 'badges-grid';
-        grid.id = 'badges-grid';
-        section.appendChild(grid);
-      }
-
+      // Activer le badge Éco Warrior dans la grille
       const today = new Date().toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric'});
-      const card = document.createElement('div');
-      card.className = 'badge-card';
-      card.innerHTML = `
-        <span class="badge-card-emoji">🌿</span>
-        <div class="badge-card-info">
+      const ecoCard = document.querySelector('.badge-card[data-badge-nom="Éco Warrior"]');
+      if (ecoCard) {
+        ecoCard.classList.add('earned');
+        const info = ecoCard.querySelector('.badge-card-info');
+        info.innerHTML = `
           <span class="badge-card-name">Éco Warrior</span>
-          <span class="badge-card-desc">Badge exclusif affiché sur votre profil</span>
-          <span class="badge-card-date">Obtenu le ${today}</span>
-        </div>`;
-      grid.appendChild(card);
+          <span class="badge-card-desc">Badge exclusif</span>
+          <span class="badge-card-date">Obtenu le ${today}</span>`;
+      }
 
     } else {
       btn.disabled = false;
