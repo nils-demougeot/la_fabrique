@@ -26,6 +26,7 @@ PATRONS_DATA = [
         'matiere_requise': 'coton,lin,jean,toile',
         'photo_url': 'https://images.unsplash.com/photo-1591348278863-a8fb3887e2aa?w=800&h=600&fit=crop&q=80',
         'photo_name': 'patron_tote_bag_xxl.jpg',
+        'cloudinary_url': 'https://res.cloudinary.com/dh1i1pzbv/image/upload/v1780491684/patrons/patron_tote_bag_xxl.jpg',
         'etapes': [
             {
                 'numero': 1,
@@ -153,6 +154,7 @@ PATRONS_DATA = [
         'matiere_requise': '',
         'photo_url': 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&h=600&fit=crop&q=80',
         'photo_name': 'patron_pochette_zippee.jpg',
+        'cloudinary_url': 'https://res.cloudinary.com/dh1i1pzbv/image/upload/v1780491742/patrons/patron_pochette_zippee.jpg',
         'etapes': [
             {
                 'numero': 1,
@@ -252,6 +254,7 @@ PATRONS_DATA = [
         'matiere_requise': 'coton,lin',
         'photo_url': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop&q=80',
         'photo_name': 'patron_coussin_patchwork.jpg',
+        'cloudinary_url': 'https://res.cloudinary.com/dh1i1pzbv/image/upload/v1780491743/patrons/patron_coussin_patchwork.jpg',
         'etapes': [
             {
                 'numero': 1,
@@ -394,6 +397,7 @@ PATRONS_DATA = [
         'matiere_requise': 'coton,lin,toile,jean',
         'photo_url': 'https://images.unsplash.com/photo-1556912167-f556f1f39fdf?w=800&h=600&fit=crop&q=80',
         'photo_name': 'patron_tablier_cuisine.jpg',
+        'cloudinary_url': 'https://res.cloudinary.com/dh1i1pzbv/image/upload/v1780491744/patrons/patron_tablier_cuisine.jpg',
         'etapes': [
             {
                 'numero': 1,
@@ -504,6 +508,7 @@ PATRONS_DATA = [
         'matiere_requise': 'jean,toile',
         'photo_url': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&h=600&fit=crop&q=80',
         'photo_name': 'patron_sac_a_dos.jpg',
+        'cloudinary_url': 'https://res.cloudinary.com/dh1i1pzbv/image/upload/v1780491744/patrons/patron_sac_a_dos.jpg',
         'etapes': [
             {
                 'numero': 1,
@@ -665,6 +670,7 @@ PATRONS_DATA = [
         'matiere_requise': 'viscose,voile,mousseline,lin',
         'photo_url': 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&h=600&fit=crop&q=80',
         'photo_name': 'patron_veste_kimono.jpg',
+        'cloudinary_url': 'https://res.cloudinary.com/dh1i1pzbv/image/upload/v1780491745/patrons/patron_veste_kimono.jpg',
         'etapes': [
             {
                 'numero': 1,
@@ -810,6 +816,7 @@ PATRONS_DATA = [
         'matiere_requise': '',
         'photo_url': 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop&q=80',
         'photo_name': 'patron_housse_coussin.jpg',
+        'cloudinary_url': 'https://res.cloudinary.com/dh1i1pzbv/image/upload/v1780491746/patrons/patron_housse_coussin.jpg',
         'etapes': [
             {
                 'numero': 1,
@@ -895,6 +902,7 @@ PATRONS_DATA = [
         'matiere_requise': 'jean,toile,coton',
         'photo_url': 'https://images.unsplash.com/photo-1547949003-9792a18a2601?w=800&h=600&fit=crop&q=80',
         'photo_name': 'patron_necessaire_voyage.jpg',
+        'cloudinary_url': 'https://res.cloudinary.com/dh1i1pzbv/image/upload/v1780491747/patrons/patron_necessaire_voyage.jpg',
         'etapes': [
             {
                 'numero': 1,
@@ -1020,6 +1028,7 @@ PATRONS_DATA = [
         'matiere_requise': '',
         'photo_url': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop&q=80',
         'photo_name': 'patron_bandeau_sachet.jpg',
+        'cloudinary_url': 'https://res.cloudinary.com/dh1i1pzbv/image/upload/v1780491748/patrons/patron_bandeau_sachet.jpg',
         'etapes': [
             {
                 'numero': 1,
@@ -1101,8 +1110,19 @@ def download_image(url):
 class Command(BaseCommand):
     help = 'Supprime tous les patrons existants et peuple la BDD avec les patrons de démonstration'
 
+    def _apply_cloudinary_urls(self):
+        """Force les URLs Cloudinary sur les patrons existants, par titre."""
+        updated = 0
+        for data in PATRONS_DATA:
+            cld_url = data.get('cloudinary_url')
+            if cld_url:
+                n = Patron.objects.filter(titre=data['titre']).update(photo=cld_url)
+                updated += n
+        self.stdout.write(self.style.SUCCESS(
+            f'  {updated} photo(s) patron mise(s) a jour avec URLs Cloudinary.'
+        ))
+
     def handle(self, *args, **options):
-        # Si les patrons existent déjà avec des photos Cloudinary, on ne réécrase pas
         existing = Patron.objects.all()
         if existing.exists():
             cloudinary_photos = [
@@ -1113,6 +1133,12 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(
                     f'  {existing.count()} patrons avec photos Cloudinary detectes — skip.'
                 ))
+                return
+            # Patrons présents mais photos incorrectes : correction sans suppression
+            expected_titles = {d['titre'] for d in PATRONS_DATA}
+            if expected_titles.issubset(set(existing.values_list('titre', flat=True))):
+                self.stdout.write('  Photos patrons incorrectes — correction en cours...')
+                self._apply_cloudinary_urls()
                 return
 
         self.stdout.write('Suppression des patrons existants...')
@@ -1202,6 +1228,7 @@ class Command(BaseCommand):
                 except Exception:
                     pass
 
+        self._apply_cloudinary_urls()
         self.stdout.write(self.style.SUCCESS(
             f'\n{len(PATRONS_DATA)} patrons crees avec succes !'
         ))
