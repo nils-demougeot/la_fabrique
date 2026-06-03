@@ -105,9 +105,29 @@ def dashboard(request):
     badges_earned = {b.nom: b for b in Badge.objects.filter(utilisateur=user)}
     has_eco_warrior = 'Éco Warrior' in badges_earned
 
+    nb_projets_badge      = ProgressionProjet.objects.filter(utilisateur=user, termine=True).count()
+    nb_commentaires_badge = CommentairePost.objects.filter(utilisateur=user).count()
+    nb_likes_badge        = LikePost.objects.filter(utilisateur=user).count()
+    nb_posts_badge        = PostCommunaute.objects.filter(utilisateur=user).count()
+
+    BADGE_PROGRESS = {
+        'Premier Projet':    (min(nb_projets_badge, 1),          1),
+        '5 Projets':         (min(nb_projets_badge, 5),          5),
+        '10 Projets':        (min(nb_projets_badge, 10),         10),
+        '1er com':            (min(nb_commentaires_badge, 1),     1),
+        '5 com':             (min(nb_commentaires_badge, 5),      5),
+        'Premier Like':      (min(nb_likes_badge, 1),             1),
+        '10 Likes':          (min(nb_likes_badge, 10),            10),
+        'Première Création': (min(nb_posts_badge, 1),             1),
+        'Artiste':           (min(nb_posts_badge, 5),             5),
+        'Éco Warrior':       (1 if has_eco_warrior else 0,        1),
+    }
+
     badges_display = []
     for bd in BADGE_DEFINITIONS:
         earned = badges_earned.get(bd['nom'])
+        current, max_val = BADGE_PROGRESS.get(bd['nom'], (0, 1))
+        pct = round((current / max_val) * 100) if max_val > 0 else 0
         badges_display.append({
             'nom': bd['nom'],
             'emoji': bd['emoji'],
@@ -115,6 +135,9 @@ def dashboard(request):
             'condition': bd['condition'],
             'earned': earned is not None,
             'date_obtention': earned.date_obtention if earned else None,
+            'progress_current': current,
+            'progress_max': max_val,
+            'progress_pct': pct,
         })
 
     context = {
