@@ -1,49 +1,44 @@
 """
-Resynchronise les photos de patrons locales vers le storage actif (Cloudinary en prod).
-Utile quand les fichiers de media/patrons/ ont été remplacés manuellement
-mais que Cloudinary (et son cache CDN) sert toujours les anciennes versions.
+Uploade les photos de patrons locales directement sur Cloudinary via le SDK,
+puis met a jour la BDD avec l'URL Cloudinary securisee.
 
 Usage :
-    python manage.py sync_patron_photos           # tous les patrons
-    python manage.py sync_patron_photos --force   # supprime+recharge même si l'image n'a pas changé
+    python manage.py sync_patron_photos
 """
 import os
+import cloudinary.uploader
 from django.conf import settings
-from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from core.models import Patron
 
 
 class Command(BaseCommand):
-    help = 'Re-uploade les photos de patrons locales vers Cloudinary (invalide le cache CDN)'
-
-    def add_arguments(self, parser):
-        parser.add_argument(
-            '--force',
-            action='store_true',
-            help='Force le re-upload même si une photo est déjà enregistrée en BDD',
-        )
+    help = 'Uploade les photos de patrons vers Cloudinary et met a jour la BDD'
 
     def handle(self, *args, **options):
-        force = options['force']
+        import cloudinary
+        cfg = cloudinary.config()
+        if not cfg.cloud_name:
+            self.stdout.write(self.style.ERROR(
+                'Cloudinary non configure. Ajoutez CLOUDINARY_URL dans votre .env'
+            ))
+            return
+
+        self.stdout.write(f'Cloudinary cloud : {cfg.cloud_name}')
         media_dir = os.path.join(settings.MEDIA_ROOT, 'patrons')
 
         if not os.path.isdir(media_dir):
-            self.stdout.write(self.style.ERROR(
-                f'Dossier introuvable : {media_dir}\n'
-                'Vérifiez que MEDIA_ROOT est correctement défini dans settings.py.'
-            ))
+            self.stdout.write(self.style.ERROR(f'Dossier introuvable : {media_dir}'))
             return
 
         patrons = Patron.objects.all()
         if not patrons.exists():
             self.stdout.write(self.style.WARNING(
-                'Aucun patron en base de données. '
-                'Lancez d\'abord : python manage.py populate_demo_patrons'
+                "Aucun patron. Lancez d'abord : python manage.py populate_demo_patrons"
             ))
             return
 
-        updated = skipped = missing = 0
+        updated = missing = errors = 0
 
         for patron in patrons:
             if not patron.photo:
@@ -55,43 +50,37 @@ class Command(BaseCommand):
             local_path = os.path.join(media_dir, fname)
 
             if not os.path.isfile(local_path):
-                self.stdout.write(self.style.WARNING(
-                    f'  [MANQUANT]  {fname} — {patron.titre}'
-                ))
+                self.stdout.write(self.style.WARNING(f'  [MANQUANT]   {fname}'))
                 missing += 1
                 continue
 
-            if not force:
-                # Vérification rapide : si l'URL cloudinary contient déjà le bon nom, on peut sauter
-                # mais on uploade quand même pour garantir la fraîcheur du CDN
-                pass
+            # public_id sans extension (convention Cloudinary)
+            name_no_ext = os.path.splitext(fname)[0]
+            public_id = f'patrons/{name_no_ext}'
 
-            self.stdout.write(f'  [UPLOAD]    {fname}  >>  "{patron.titre}"')
+            self.stdout.write(f'  [UPLOAD]  {fname}')
             try:
-                with open(local_path, 'rb') as fh:
-                    img_data = fh.read()
+                result = cloudinary.uploader.upload(
+                    local_path,
+                    public_id=public_id,
+                    overwrite=True,
+                    invalidate=True,
+                    resource_type='image',
+                )
+                cloudinary_url = result['secure_url']
 
-                # Supprimer l'ancienne entrée Cloudinary (invalide automatiquement le cache CDN)
-                try:
-                    patron.photo.delete(save=False)
-                except Exception as del_err:
-                    self.stdout.write(self.style.WARNING(f'    (suppression ancienne photo : {del_err})'))
+                # Stocke l'URL HTTPS Cloudinary directement dans le champ photo
+                patron.photo.name = cloudinary_url
+                patron.save(update_fields=['photo'])
 
-                # Re-sauvegarder — Django-Cloudinary re-publie avec invalidation
-                patron.photo.save(fname, ContentFile(img_data), save=True)
-                self.stdout.write(self.style.SUCCESS(f'    OK  >>  {patron.photo.url}'))
+                self.stdout.write(self.style.SUCCESS(f'    OK  {cloudinary_url}'))
                 updated += 1
 
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f'    ERREUR : {e}'))
+                errors += 1
 
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS(
-            f'Synchronisation terminée : {updated} mis à jour, '
-            f'{skipped} ignorés, {missing} fichiers locaux manquants.'
+            f'Termine : {updated} uploades, {missing} fichiers manquants, {errors} erreurs.'
         ))
-        if missing:
-            self.stdout.write(self.style.WARNING(
-                'Pour les patrons manquants, relancez populate_demo_patrons '
-                'puis replacez vos images dans media/patrons/ et relancez cette commande.'
-            ))

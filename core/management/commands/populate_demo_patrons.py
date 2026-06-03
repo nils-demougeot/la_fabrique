@@ -1102,6 +1102,19 @@ class Command(BaseCommand):
     help = 'Supprime tous les patrons existants et peuple la BDD avec les patrons de démonstration'
 
     def handle(self, *args, **options):
+        # Si les patrons existent déjà avec des photos Cloudinary, on ne réécrase pas
+        existing = Patron.objects.all()
+        if existing.exists():
+            cloudinary_photos = [
+                p for p in existing
+                if p.photo and 'res.cloudinary.com' in str(p.photo.name)
+            ]
+            if len(cloudinary_photos) == existing.count():
+                self.stdout.write(self.style.SUCCESS(
+                    f'  {existing.count()} patrons avec photos Cloudinary detectes — skip.'
+                ))
+                return
+
         self.stdout.write('Suppression des patrons existants...')
         for patron in Patron.objects.all():
             if patron.photo:
