@@ -4,8 +4,16 @@ set -e
 pip install -r requirements.txt
 python manage.py migrate --no-input
 
+# Supprime les patrons existants avant de recharger le seed pour éviter les
+# doublons de titre qui feraient échouer la vérification Cloudinary ensuite.
+python manage.py shell -c "
+from core.models import Patron
+count = Patron.objects.count()
+Patron.objects.all().delete()
+print(f'{count} patron(s) supprime(s) avant rechargement seed')
+" || true
+
 # Charge les données : patrons (avec photos Cloudinary) + communauté fictive
-# Si des données existent déjà, loaddata échoue silencieusement (|| true)
 python manage.py loaddata seed_data || true
 
 # Remet les séquences PostgreSQL à jour après loaddata
