@@ -149,11 +149,11 @@ STORAGES = {
         ),
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "core.storage.PatchedCompressedManifestStaticFilesStorage",
     },
 }
 # django-cloudinary-storage vérifie settings.STATICFILES_STORAGE directement
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATICFILES_STORAGE = "core.storage.PatchedCompressedManifestStaticFilesStorage"
 
 AUTH_USER_MODEL = 'core.Utilisateur'
 
