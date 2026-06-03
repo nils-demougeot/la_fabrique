@@ -66,7 +66,7 @@ class Command(BaseCommand):
                 # mais on uploade quand même pour garantir la fraîcheur du CDN
                 pass
 
-            self.stdout.write(f'  [UPLOAD]    {fname}  →  "{patron.titre}"')
+            self.stdout.write(f'  [UPLOAD]    {fname}  >>  "{patron.titre}"')
             try:
                 with open(local_path, 'rb') as fh:
                     img_data = fh.read()
@@ -79,7 +79,7 @@ class Command(BaseCommand):
 
                 # Re-sauvegarder — Django-Cloudinary re-publie avec invalidation
                 patron.photo.save(fname, ContentFile(img_data), save=True)
-                self.stdout.write(self.style.SUCCESS(f'    OK  →  {patron.photo.url}'))
+                self.stdout.write(self.style.SUCCESS(f'    OK  >>  {patron.photo.url}'))
                 updated += 1
 
             except Exception as e:
