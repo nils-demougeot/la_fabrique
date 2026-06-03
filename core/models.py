@@ -52,6 +52,20 @@ class Patron(models.Model):
         help_text="Matières acceptées, séparées par des virgules (ex: coton,lin,viscose). Laisser vide = toute matière acceptée."
     )
 
+    @property
+    def photo_url(self):
+        if not self.photo:
+            return None
+        name = self.photo.name or ''
+        # URL Cloudinary stockée directement → la retourner telle quelle
+        if name.startswith('http'):
+            return name
+        # Chemin local → construire l'URL normalement
+        try:
+            return self.photo.url
+        except (ValueError, AttributeError):
+            return None
+
     def __str__(self):
         return self.titre
 

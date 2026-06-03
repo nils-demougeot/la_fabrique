@@ -95,7 +95,7 @@ def dashboard(request):
         nb_etapes_realisees += total_etapes
         projets_termines.append({
             'titre': p.titre,
-            'image': p.photo.url if p.photo else None,
+            'image': p.photo_url,
             'difficulte_label': DIFFICULTE_LABELS.get(p.difficulte, str(p.difficulte)),
             'duree': p.duree or '?',
             'date_fin': prog.date_derniere_activite,
@@ -464,7 +464,7 @@ def patrons(request):
         patrons_list.append({
             'id': p.pk,
             'titre': p.titre,
-            'image': p.photo.url if p.photo else None,
+            'image': p.photo_url,
             'compatibilite': _compatibilite(surface_user, p.surfaceMin),
             'tissu': p.typeObjet,
             'difficulte_label': DIFFICULTE_LABELS.get(p.difficulte, str(p.difficulte)),
@@ -482,7 +482,7 @@ def patrons(request):
         projets_en_cours.append({
             'patron_id': p.pk,
             'titre': p.titre,
-            'image': p.photo.url if p.photo else None,
+            'image': p.photo_url,
             'etape_actuelle': prog.etape_actuelle,
             'total_etapes': total_etapes,
             'progression_pct': pct,

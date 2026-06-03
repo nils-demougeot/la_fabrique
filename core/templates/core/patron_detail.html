@@ -789,8 +789,8 @@
        ═══════════════════════════ -->
   <div class="photo-card-wrapper" style="margin-bottom: 16px;">
     <div class="photo-card">
-      {% if patron.photo %}
-      <img src="{{ patron.photo.url }}" alt="{{ patron.titre }}">
+      {% if patron.photo_url %}
+      <img src="{{ patron.photo_url }}" alt="{{ patron.titre }}">
       {% else %}
       <div class="photo-placeholder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
