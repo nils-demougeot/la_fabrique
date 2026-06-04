@@ -320,26 +320,26 @@ MATERIAL_LABELS = {
     'denim': 'Denim', 'cuir': 'Cuir', 'satin': 'Satin', 'modal': 'Modal',
 }
 
-# kg CO₂eq évités par kg de textile non jeté
-# Représente les émissions de fin de vie évitées : transport vers tri/export + incinération/enfouissement
-# N'inclut PAS les émissions évitées de production d'un vêtement neuf
+# kg CO₂eq évités par kg de textile upcyclé
+# = émissions de production évitées : quand on réutilise un vêtement, on évite l'achat d'un tissu neuf.
+# Sources : Higg Materials Sustainability Index (MSI), ADEME Base Carbone, Quantis "Measuring Fashion" 2018.
 CO2_PAR_MATIERE = {
-    'coton':        1.3,   # Fibre cellulosique, incinération ~1.8 kg CO₂/kg, enfouissement ~0.3 kg
-    'lin':          1.2,
-    'viscose':      1.2,
-    'bambou':       1.1,
-    'modal':        1.2,
-    'laine':        1.4,   # Décomposition anaérobie avec dégagement de méthane
-    'cachemire':    1.4,
-    'soie':         1.5,
-    'velours':      1.3,
-    'satin':        1.3,
-    'denim':        1.3,   # Essentiellement du coton traité
-    'polyester':    1.8,   # Synthétique, incinération ~2.5 kg CO₂/kg (haute teneur en carbone)
-    'nylon':        1.9,
-    'acrylique':    1.7,
-    'elasthanne':   1.7,
-    'cuir':         2.0,   # Produits chimiques de tannage + transport
+    'coton':        5.5,   # Higg MSI ~7, ADEME ~4 → moyenne (culture intensive, teinture, filature)
+    'lin':          3.5,   # Peu de pesticides, rouissage naturel — impact plus faible
+    'viscose':      5.0,   # Procédé chimique de dissolution de cellulose
+    'bambou':       4.0,   # Moins transformé que la viscose classique
+    'modal':        5.0,   # Similaire viscose, procédé légèrement amélioré
+    'laine':       25.0,   # Méthane entérique des moutons + terres agricoles (Higg MSI)
+    'cachemire':   80.0,   # Rendement très faible (150g/chèvre/an) + dégradation des sols d'Asie centrale
+    'soie':        12.0,   # Élevage intensif des vers à soie, chauffage des cocons
+    'velours':      5.5,   # Base coton tissé en double nappe
+    'satin':        5.5,   # Base coton ou soie → valeur intermédiaire
+    'denim':        5.5,   # Coton + teinture indigo + traitements (délavage...)
+    'polyester':    9.0,   # Higg MSI polyester vierge (dérivé pétrochimique)
+    'nylon':       14.0,   # Higg MSI nylon 6 (protoxyde d'azote émis lors de la synthèse)
+    'acrylique':    8.0,   # Dérivé pétrochimique, procédé énergivore
+    'elasthanne':  12.0,   # Polyuréthane synthétique, production très intensive
+    'cuir':        18.0,   # Élevage bovin (méthane) + tannage chimique au chrome
 }
 
 # Litres d'eau par kg de textile (empreinte eau production évitée)
@@ -372,29 +372,31 @@ GRAMMAGE_PAR_TYPE = {
     'manteau':  420,
 }
 
+CO2_DEFAUT = 5.5  # coton, fibre la plus répandue
+
 def calculer_co2_vetement(vetement):
-    """Calcule le CO₂ évité (kg) pour un vêtement upcyclé, basé sur sa matière et son type."""
+    """Calcule le CO₂ évité (kg) pour un vêtement upcyclé — émissions de production évitées."""
     grammage = GRAMMAGE_PAR_TYPE.get(vetement.typeVetement, 200)
     masse_kg = vetement.surfaceExploitable * grammage / 1000
 
     if not vetement.matiere:
-        return masse_kg * 1.3
+        return masse_kg * CO2_DEFAUT
 
     co2 = 0.0
     for part in vetement.matiere.split(','):
         if ':' in part:
             nom, pct = part.strip().split(':', 1)
-            facteur = CO2_PAR_MATIERE.get(nom.strip().lower(), 1.3)
+            facteur = CO2_PAR_MATIERE.get(nom.strip().lower(), CO2_DEFAUT)
             co2 += masse_kg * (float(pct) / 100) * facteur
 
-    return co2 if co2 > 0 else masse_kg * 1.3
+    return co2 if co2 > 0 else masse_kg * CO2_DEFAUT
 
 def calculer_stats_passeport(patron, garments):
     """Retourne (eau_litres, co2_kg) pour un projet terminé, basé sur surfaceMin du patron."""
     surface = patron.surfaceMin
     if not garments:
         masse_kg = surface * GRAMMAGE_PAR_TYPE.get(patron.typeObjet.lower(), 200) / 1000
-        return round(masse_kg * 15000), round(masse_kg * 1.3, 2)
+        return round(masse_kg * 15000), round(masse_kg * CO2_DEFAUT, 2)
     grammages = [GRAMMAGE_PAR_TYPE.get(g.typeVetement, 200) for g in garments]
     masse_kg = surface * (sum(grammages) / len(grammages)) / 1000
     all_mats = {}
@@ -403,7 +405,7 @@ def calculer_stats_passeport(patron, garments):
         if dom:
             all_mats[dom] = all_mats.get(dom, 0) + 1
     mat = max(all_mats, key=all_mats.get) if all_mats else 'coton'
-    return round(masse_kg * EAU_PAR_MATIERE.get(mat, 15000)), round(masse_kg * CO2_PAR_MATIERE.get(mat, 1.3), 2)
+    return round(masse_kg * EAU_PAR_MATIERE.get(mat, 15000)), round(masse_kg * CO2_PAR_MATIERE.get(mat, CO2_DEFAUT), 2)
 
 
 MATERIAL_COLORS = {
