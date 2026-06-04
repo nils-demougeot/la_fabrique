@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D2F4D1"/>
+      <stop offset="100%" style="stop-color:#A8D5A2"/>
+    </linearGradient>
+    <linearGradient id="fabricGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F0F9EF"/>
+      <stop offset="100%" style="stop-color:#C8E6C4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="800" fill="url(#bg)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="680" cy="120" r="140" fill="#B8E8B4" opacity="0.4"/>
+  <circle cx="100" cy="700" r="100" fill="#9FD49B" opacity="0.3"/>
+  <circle cx="740" cy="700" r="80" fill="#C5EBBA" opacity="0.25"/>
+
+  <!-- Main fabric patch - center -->
+  <rect x="220" y="180" width="360" height="440" rx="24" fill="url(#fabricGrad)" stroke="#7BBF6A" stroke-width="3"/>
+
+  <!-- Fabric texture lines (woven look) -->
+  <g stroke="#9FD49B" stroke-width="1.5" opacity="0.6">
+    <line x1="240" y1="180" x2="240" y2="620"/>
+    <line x1="280" y1="180" x2="280" y2="620"/>
+    <line x1="320" y1="180" x2="320" y2="620"/>
+    <line x1="360" y1="180" x2="360" y2="620"/>
+    <line x1="400" y1="180" x2="400" y2="620"/>
+    <line x1="440" y1="180" x2="440" y2="620"/>
+    <line x1="480" y1="180" x2="480" y2="620"/>
+    <line x1="520" y1="180" x2="520" y2="620"/>
+    <line x1="560" y1="180" x2="560" y2="620"/>
+    <line x1="220" y1="220" x2="580" y2="220"/>
+    <line x1="220" y1="260" x2="580" y2="260"/>
+    <line x1="220" y1="300" x2="580" y2="300"/>
+    <line x1="220" y1="340" x2="580" y2="340"/>
+    <line x1="220" y1="380" x2="580" y2="380"/>
+    <line x1="220" y1="420" x2="580" y2="420"/>
+    <line x1="220" y1="460" x2="580" y2="460"/>
+    <line x1="220" y1="500" x2="580" y2="500"/>
+    <line x1="220" y1="540" x2="580" y2="540"/>
+    <line x1="220" y1="580" x2="580" y2="580"/>
+  </g>
+
+  <!-- Patchwork squares on the fabric -->
+  <rect x="250" y="210" width="130" height="130" rx="8" fill="#E8F5E1" stroke="#7BBF6A" stroke-width="2" stroke-dasharray="6,3"/>
+  <rect x="420" y="210" width="130" height="130" rx="8" fill="#D4EDD0" stroke="#7BBF6A" stroke-width="2" stroke-dasharray="6,3"/>
+  <rect x="250" y="380" width="130" height="130" rx="8" fill="#C8E6C4" stroke="#7BBF6A" stroke-width="2" stroke-dasharray="6,3"/>
+  <rect x="420" y="380" width="130" height="130" rx="8" fill="#DAEFD6" stroke="#7BBF6A" stroke-width="2" stroke-dasharray="6,3"/>
+
+  <!-- Small decorative stitches -->
+  <g stroke="#4A8A3A" stroke-width="2.5" stroke-linecap="round">
+    <line x1="290" y1="370" x2="310" y2="370"/>
+    <line x1="300" y1="360" x2="300" y2="380"/>
+    <line x1="460" y1="370" x2="480" y2="370"/>
+    <line x1="470" y1="360" x2="470" y2="380"/>
+    <line x1="290" y1="520" x2="310" y2="520"/>
+    <line x1="300" y1="510" x2="300" y2="530"/>
+    <line x1="460" y1="520" x2="480" y2="520"/>
+    <line x1="470" y1="510" x2="470" y2="530"/>
+  </g>
+
+  <!-- Needle with thread -->
+  <g transform="translate(560, 160) rotate(40)">
+    <!-- Needle body -->
+    <rect x="-4" y="-80" width="8" height="150" rx="4" fill="#B8C8A0"/>
+    <!-- Needle eye -->
+    <ellipse cx="0" cy="-60" rx="3" ry="6" fill="#8DA875" stroke="#6A8A50" stroke-width="1"/>
+    <!-- Needle tip -->
+    <polygon points="0,-80 -4,70 0,90 4,70" fill="#A0B888"/>
+    <!-- Thread -->
+    <path d="M 0,-55 Q 30,-20 20,40 Q 10,80 30,120" stroke="#4A7A3A" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Thread spool -->
+  <g transform="translate(160, 200)">
+    <ellipse cx="0" cy="-30" rx="28" ry="10" fill="#6A8A50"/>
+    <rect x="-22" y="-30" width="44" height="60" fill="#7BBF6A"/>
+    <ellipse cx="0" cy="30" rx="28" ry="10" fill="#6A8A50"/>
+    <!-- Thread on spool -->
+    <ellipse cx="0" cy="-30" rx="20" ry="7" fill="#D2F4D1"/>
+    <ellipse cx="0" cy="30" rx="20" ry="7" fill="#D2F4D1"/>
+    <rect x="-14" y="-23" width="28" height="53" fill="#C8ECC0"/>
+    <!-- Spool lines -->
+    <line x1="-20" y1="-10" x2="-20" y2="10" stroke="#8FCC78" stroke-width="1.5"/>
+    <line x1="20" y1="-10" x2="20" y2="10" stroke="#8FCC78" stroke-width="1.5"/>
+  </g>
+
+  <!-- Scissors -->
+  <g transform="translate(640, 600) rotate(-30)" opacity="0.85">
+    <!-- Blade 1 -->
+    <path d="M 0,0 L -10,-60 L 0,-65 L 8,-60 Z" fill="#8DA875"/>
+    <!-- Blade 2 -->
+    <path d="M 0,0 L 10,-60 L 20,-58 L 12,-50 Z" fill="#7BBF6A"/>
+    <!-- Handle 1 -->
+    <ellipse cx="-14" cy="20" rx="14" ry="22" fill="none" stroke="#6A8A50" stroke-width="5"/>
+    <!-- Handle 2 -->
+    <ellipse cx="14" cy="20" rx="14" ry="22" fill="none" stroke="#7BBF6A" stroke-width="5"/>
+    <!-- Center pivot -->
+    <circle cx="0" cy="0" r="5" fill="#4A7A3A"/>
+  </g>
+
+  <!-- Label text area -->
+  <rect x="220" y="680" width="360" height="60" rx="12" fill="#4A8A3A" opacity="0.85"/>
+  <text x="400" y="718" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-weight="bold" fill="white" letter-spacing="2">FAIT MAIN</text>
+</svg>

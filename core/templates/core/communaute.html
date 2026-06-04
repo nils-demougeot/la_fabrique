@@ -220,11 +220,6 @@
   /* Photo projet */
   .project-photo-wrap { position: relative; width: 100%; aspect-ratio: 1/1; overflow: hidden; cursor: pointer; }
   .project-photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .project-photo-placeholder {
-    width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 48px;
-  }
   .project-badge-photo {
     position: absolute; bottom: 16px; left: 16px;
     background: rgba(255,251,255,.90); backdrop-filter: blur(6px);
@@ -232,10 +227,24 @@
   }
   .project-badge-photo span { color: var(--color-primary); font-family: var(--font-body); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; line-height: 16px; }
 
+  /* Badge type inline (posts sans image) */
+  .project-type-badge {
+    display: inline-flex; align-items: center;
+    background: #F1EFD7; border-radius: 9999px; padding: 4px 14px;
+    color: var(--color-primary); font-family: var(--font-body);
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .5px; align-self: flex-start;
+  }
+
   /* Contenu texte */
   .project-content { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
   .project-title { color: #39382B; font-family: var(--font-body); font-size: 17px; font-weight: 600; line-height: 26px; margin: 0 0 4px; }
   .project-desc { color: var(--text-muted); font-family: var(--font-body); font-size: 14px; font-weight: 400; line-height: 22px; margin: 0; }
+  /* Post texte : description plus longue et fond légèrement teinté */
+  .project-card.text-only .project-content { padding: 24px 28px; }
+  .project-card.text-only .project-title { font-size: 18px; }
+  .project-card.text-only .project-desc { font-size: 15px; line-height: 24px; }
+  .project-card.text-only .project-card-header { border-bottom: 1px solid rgba(188,186,168,.08); }
 
   /* Footer interactions */
   .project-footer { border-top: 1px solid rgba(188,186,168,.10); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; }
@@ -271,13 +280,6 @@
   .fab-btn:active { transform: scale(.95); }
   .fab-btn svg { width: 26px; height: 26px; color: white; }
   @media (max-width: 430px) { .fab-btn { right: 16px; } }
-
-  /* Gradients placeholder par type */
-  .grad-fait-main   { background: linear-gradient(135deg,#D2F4D1,#A8D5A2); }
-  .grad-upcycling   { background: linear-gradient(135deg,#ECE9D1,#C9B882); }
-  .grad-teinture    { background: linear-gradient(135deg,#FCC895,#F4836A); }
-  .grad-patron      { background: linear-gradient(135deg,#D5D2F4,#9A80C8); }
-  .grad-reparation  { background: linear-gradient(135deg,#D1EEF4,#7FC9CF); }
 
   /* Empty state */
   .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
@@ -382,13 +384,7 @@
   {% if creator_of_week %}
   <div class="creator-card">
     <div class="creator-banner">
-      {% with post=creator_of_week.posts_communaute.first %}
-        {% if post and post.image %}
-          <img class="creator-banner-img" src="{{ post.image.url }}" alt="Bannière">
-        {% else %}
-          <div style="width:100%;height:100%;background:linear-gradient(135deg,#D2F4D1 0%,#ECE9D1 60%,#FCC895 100%);"></div>
-        {% endif %}
-      {% endwith %}
+      <img class="creator-banner-img" src="{% static 'core/images/communaute/banner-couture-1.jpg' %}" alt="Bannière créateur de la semaine">
       <div class="creator-banner-badge"><span>Créateur de la semaine</span></div>
     </div>
     <div class="creator-body">
@@ -475,7 +471,7 @@
     {% if posts_data %}
       {% for item in posts_data %}
       {% with post=item.post %}
-      <div class="project-card"
+      <div class="project-card {% if not post.image %}text-only{% endif %}"
            data-title="{{ post.titre|lower }}"
            data-type="{{ post.type_creation }}"
            data-niveau="{{ post.niveau }}"
@@ -510,26 +506,20 @@
           </div>
         </div>
 
+        {% if post.image %}
         <a href="{% url 'detail_post' post.pk %}" class="project-photo-wrap">
-          {% if post.image %}
-            <img src="{{ post.image.url }}" alt="{{ post.titre }}">
-          {% else %}
-            <div class="project-photo-placeholder grad-{{ post.type_creation|default:'fait-main' }}">
-              {% if post.type_creation == 'fait-main' %}🧵
-              {% elif post.type_creation == 'upcycling' %}♻️
-              {% elif post.type_creation == 'teinture' %}🎨
-              {% elif post.type_creation == 'patron' %}📐
-              {% elif post.type_creation == 'reparation' %}🪡
-              {% else %}🌿{% endif %}
-            </div>
-          {% endif %}
+          <img src="{{ post.display_image_url }}" alt="{{ post.titre }}">
           <div class="project-badge-photo"><span>{{ post.get_type_creation_display }}</span></div>
         </a>
+        {% endif %}
 
         <div class="project-content">
           <div>
-            <p class="project-title">{{ post.titre }}</p>
-            <p class="project-desc">{{ post.description|truncatechars:120 }}</p>
+            {% if not post.image %}
+              <span class="project-type-badge">{{ post.get_type_creation_display }}</span>
+            {% endif %}
+            <p class="project-title" style="{% if not post.image %}margin-top:10px;{% endif %}">{{ post.titre }}</p>
+            <p class="project-desc">{% if post.image %}{{ post.description|truncatechars:120 }}{% else %}{{ post.description|truncatechars:220 }}{% endif %}</p>
           </div>
           <div class="project-footer">
             <div class="project-interactions">

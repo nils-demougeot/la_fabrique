@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ECE9D1"/>
+      <stop offset="100%" style="stop-color:#C9B882"/>
+    </linearGradient>
+    <linearGradient id="shirtGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F5F0DA"/>
+      <stop offset="100%" style="stop-color:#DDD098"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="800" fill="url(#bg)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="700" cy="140" r="130" fill="#DDD098" opacity="0.35"/>
+  <circle cx="80" cy="680" r="110" fill="#C9B882" opacity="0.3"/>
+  <circle cx="720" cy="700" r="90" fill="#E8E0B0" opacity="0.3"/>
+
+  <!-- T-shirt silhouette (upcycled garment) -->
+  <g transform="translate(400,390)">
+    <!-- Shirt body -->
+    <path d="M -130,-180 L -200,-100 L -140,-70 L -140,180 L 140,180 L 140,-70 L 200,-100 L 130,-180 L 70,-160 Q 0,-140 -70,-160 Z"
+          fill="url(#shirtGrad)" stroke="#A89050" stroke-width="3"/>
+    <!-- Collar detail -->
+    <path d="M -70,-160 Q 0,-140 70,-160 Q 40,-90 0,-80 Q -40,-90 -70,-160 Z"
+          fill="#D4C878" stroke="#A89050" stroke-width="2"/>
+    <!-- Worn/patch texture lines -->
+    <line x1="-100" y1="-40" x2="-60" y2="-20" stroke="#B89850" stroke-width="1.5" opacity="0.5"/>
+    <line x1="-90" y1="-20" x2="-50" y2="0" stroke="#B89850" stroke-width="1.5" opacity="0.5"/>
+    <line x1="60" y1="20" x2="100" y2="40" stroke="#B89850" stroke-width="1.5" opacity="0.5"/>
+    <line x1="50" y1="40" x2="90" y2="60" stroke="#B89850" stroke-width="1.5" opacity="0.5"/>
+    <!-- Patch on shirt -->
+    <rect x="-30" y="40" width="60" height="60" rx="6" fill="#C9B882" stroke="#8A7040" stroke-width="2" stroke-dasharray="5,3"/>
+    <text x="0" y="78" text-anchor="middle" font-size="28" fill="#6A5030">✿</text>
+  </g>
+
+  <!-- Recycling arrows around the shirt -->
+  <g transform="translate(400,390)" opacity="0.8">
+    <!-- Arrow 1 (top right) -->
+    <path d="M 220,-120 A 160,160 0 0,1 220,120" fill="none" stroke="#8A7040" stroke-width="8" stroke-linecap="round"/>
+    <polygon points="220,130 200,100 240,100" fill="#8A7040"/>
+    <!-- Arrow 2 (bottom) -->
+    <path d="M 220,120 A 160,160 0 0,1 -220,120" fill="none" stroke="#8A7040" stroke-width="8" stroke-linecap="round"/>
+    <polygon points="-230,112 -210,140 -200,108" fill="#8A7040"/>
+    <!-- Arrow 3 (top left) -->
+    <path d="M -220,120 A 160,160 0 0,1 220,-120" fill="none" stroke="#8A7040" stroke-width="8" stroke-linecap="round"/>
+    <polygon points="210,-130 230,-100 200,-100" fill="#8A7040"/>
+  </g>
+
+  <!-- Scissors top left -->
+  <g transform="translate(140, 180) rotate(25)" opacity="0.75">
+    <path d="M 0,0 L -8,-50 L 0,-54 L 6,-50 Z" fill="#A89050"/>
+    <path d="M 0,0 L 8,-50 L 16,-48 L 10,-42 Z" fill="#BBA060"/>
+    <ellipse cx="-12" cy="18" rx="12" ry="18" fill="none" stroke="#8A7040" stroke-width="4"/>
+    <ellipse cx="12" cy="18" rx="12" ry="18" fill="none" stroke="#A89050" stroke-width="4"/>
+    <circle cx="0" cy="0" r="4" fill="#6A5030"/>
+  </g>
+
+  <!-- Needle & thread -->
+  <g transform="translate(660, 260) rotate(-30)">
+    <rect x="-3" y="-70" width="6" height="130" rx="3" fill="#C0AC70"/>
+    <ellipse cx="0" cy="-52" rx="2.5" ry="5" fill="#A89050"/>
+    <polygon points="0,-70 -3,60 0,78 3,60" fill="#B0A060"/>
+    <path d="M 0,-48 Q 20,-10 15,40 Q 8,70 22,100" stroke="#6A5030" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Small old/worn garment icon bottom right -->
+  <g transform="translate(660, 620)" opacity="0.65">
+    <path d="M -40,-50 L -60,-20 L -45,-12 L -45,50 L 45,50 L 45,-12 L 60,-20 L 40,-50 L 20,-42 Q 0,-34 -20,-42 Z"
+          fill="#C9B882" stroke="#8A7040" stroke-width="2"/>
+    <!-- Worn holes -->
+    <circle cx="-10" cy="10" r="6" fill="#B8A870" opacity="0.6"/>
+    <circle cx="15" cy="30" r="4" fill="#B8A870" opacity="0.6"/>
+  </g>
+
+  <!-- Label -->
+  <rect x="220" y="680" width="360" height="60" rx="12" fill="#8A7040" opacity="0.88"/>
+  <text x="400" y="718" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-weight="bold" fill="white" letter-spacing="2">UPCYCLING</text>
+</svg>

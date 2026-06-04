@@ -276,6 +276,15 @@ class Command(BaseCommand):
         from django.utils import timezone
         from datetime import timedelta
 
+        # Seulement 5 posts ont une vraie photo ; les autres sont texte uniquement
+        POST_IMAGES = {
+            'Tote bag en denim recyclé':    'posts/real-upcycling.jpg',
+            "Teinture à l'écorce d'oignon": 'posts/real-teinture.jpg',
+            'Réparation sashiko visible':   'posts/real-reparation.jpg',
+            'Patron chemise oversize':      'posts/real-patron.jpg',
+            'Veste en lin naturel':         'posts/real-fait-main.jpg',
+        }
+
         for i, p_data in enumerate(POSTS_DATA):
             user = users.get(p_data['user_key'])
             if not user:
@@ -285,6 +294,8 @@ class Command(BaseCommand):
             hours_ago = random.randint(0, 23)
             created_at = timezone.now() - timedelta(days=days_ago, hours=hours_ago)
 
+            image_path = POST_IMAGES.get(p_data['titre'], '')
+
             post, created = PostCommunaute.objects.get_or_create(
                 utilisateur=user,
                 titre=p_data['titre'],
@@ -293,6 +304,7 @@ class Command(BaseCommand):
                     'type_creation': p_data['type_creation'],
                     'niveau': p_data['niveau'],
                     'nb_vues': random.randint(10, 500),
+                    'image': image_path,
                 }
             )
             if created:
@@ -301,7 +313,7 @@ class Command(BaseCommand):
                 for tag_nom in p_data.get('hashtags', []):
                     if tag_nom in hashtags:
                         post.hashtags.add(hashtags[tag_nom])
-                self.stdout.write(f'  + "{post.titre[:40]}"')
+                self.stdout.write(f'  + "{post.titre[:40]}" {"[photo]" if image_path else "[texte]"}')
             posts.append(post)
 
         self.stdout.write(self.style.SUCCESS(f'  {len(posts)} posts prêts'))
