@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D5D2F4"/>
+      <stop offset="100%" style="stop-color:#9A80C8"/>
+    </linearGradient>
+    <linearGradient id="paperGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFEF5"/>
+      <stop offset="100%" style="stop-color:#F0EDFF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="800" fill="url(#bg)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="700" cy="130" r="130" fill="#B0A8E8" opacity="0.35"/>
+  <circle cx="90" cy="680" r="100" fill="#8070C0" opacity="0.25"/>
+
+  <!-- Pattern paper (main element) -->
+  <rect x="160" y="150" width="480" height="500" rx="8" fill="url(#paperGrad)" stroke="#C0B8E8" stroke-width="2"/>
+
+  <!-- Grid lines on paper -->
+  <g stroke="#C8C0E8" stroke-width="0.8" opacity="0.7">
+    <line x1="200" y1="150" x2="200" y2="650"/>
+    <line x1="240" y1="150" x2="240" y2="650"/>
+    <line x1="280" y1="150" x2="280" y2="650"/>
+    <line x1="320" y1="150" x2="320" y2="650"/>
+    <line x1="360" y1="150" x2="360" y2="650"/>
+    <line x1="400" y1="150" x2="400" y2="650"/>
+    <line x1="440" y1="150" x2="440" y2="650"/>
+    <line x1="480" y1="150" x2="480" y2="650"/>
+    <line x1="520" y1="150" x2="520" y2="650"/>
+    <line x1="560" y1="150" x2="560" y2="650"/>
+    <line x1="600" y1="150" x2="600" y2="650"/>
+    <line x1="160" y1="190" x2="640" y2="190"/>
+    <line x1="160" y1="230" x2="640" y2="230"/>
+    <line x1="160" y1="270" x2="640" y2="270"/>
+    <line x1="160" y1="310" x2="640" y2="310"/>
+    <line x1="160" y1="350" x2="640" y2="350"/>
+    <line x1="160" y1="390" x2="640" y2="390"/>
+    <line x1="160" y1="430" x2="640" y2="430"/>
+    <line x1="160" y1="470" x2="640" y2="470"/>
+    <line x1="160" y1="510" x2="640" y2="510"/>
+    <line x1="160" y1="550" x2="640" y2="550"/>
+    <line x1="160" y1="590" x2="640" y2="590"/>
+    <line x1="160" y1="630" x2="640" y2="630"/>
+  </g>
+
+  <!-- Dress/garment pattern shape on paper -->
+  <path d="M 290,200 Q 310,195 330,200 Q 320,240 400,250 Q 480,240 470,200 Q 490,195 510,200
+           L 550,280 L 500,300 L 500,580 L 300,580 L 300,300 L 250,280 Z"
+        fill="none" stroke="#7060B8" stroke-width="2.5" stroke-dasharray="8,4"/>
+
+  <!-- Notch marks (pattern markings) -->
+  <line x1="400" y1="248" x2="400" y2="265" stroke="#7060B8" stroke-width="2"/>
+  <line x1="370" y1="252" x2="368" y2="268" stroke="#7060B8" stroke-width="2"/>
+  <line x1="430" y1="252" x2="432" y2="268" stroke="#7060B8" stroke-width="2"/>
+
+  <!-- Grain line (arrow on pattern) -->
+  <line x1="400" y1="320" x2="400" y2="520" stroke="#7060B8" stroke-width="2"/>
+  <polygon points="400,310 394,330 406,330" fill="#7060B8"/>
+  <polygon points="400,530 394,510 406,510" fill="#7060B8"/>
+
+  <!-- Size markings -->
+  <text x="180" y="370" font-family="monospace" font-size="14" fill="#8070C0" opacity="0.8">38</text>
+  <text x="180" y="395" font-family="monospace" font-size="14" fill="#8070C0" opacity="0.8">40</text>
+  <text x="180" y="420" font-family="monospace" font-size="14" fill="#8070C0" opacity="0.8">42</text>
+
+  <!-- Ruler (left side) -->
+  <g transform="translate(110, 150)">
+    <rect x="0" y="0" width="30" height="500" rx="3" fill="#E8D880" stroke="#C0A840" stroke-width="2"/>
+    <!-- Tick marks -->
+    <g stroke="#8A7030" stroke-width="1.5">
+      <line x1="0" y1="50" x2="20" y2="50"/>
+      <line x1="0" y1="100" x2="20" y2="100"/>
+      <line x1="0" y1="150" x2="20" y2="150"/>
+      <line x1="0" y1="200" x2="20" y2="200"/>
+      <line x1="0" y1="250" x2="20" y2="250"/>
+      <line x1="0" y1="300" x2="20" y2="300"/>
+      <line x1="0" y1="350" x2="20" y2="350"/>
+      <line x1="0" y1="400" x2="20" y2="400"/>
+      <line x1="0" y1="450" x2="20" y2="450"/>
+      <line x1="0" y1="25" x2="12" y2="25"/>
+      <line x1="0" y1="75" x2="12" y2="75"/>
+      <line x1="0" y1="125" x2="12" y2="125"/>
+      <line x1="0" y1="175" x2="12" y2="175"/>
+      <line x1="0" y1="225" x2="12" y2="225"/>
+    </g>
+    <!-- Numbers -->
+    <text x="8" y="48" font-family="monospace" font-size="11" fill="#8A7030" text-anchor="middle">1</text>
+    <text x="8" y="98" font-family="monospace" font-size="11" fill="#8A7030" text-anchor="middle">2</text>
+    <text x="8" y="148" font-family="monospace" font-size="11" fill="#8A7030" text-anchor="middle">3</text>
+    <text x="8" y="198" font-family="monospace" font-size="11" fill="#8A7030" text-anchor="middle">4</text>
+    <text x="8" y="248" font-family="monospace" font-size="11" fill="#8A7030" text-anchor="middle">5</text>
+  </g>
+
+  <!-- Measuring tape (curved, bottom right) -->
+  <g transform="translate(580, 560)" opacity="0.85">
+    <path d="M 0,0 Q 60,-40 80,-80 Q 90,-130 60,-160" fill="none" stroke="#F0A060" stroke-width="12" stroke-linecap="round"/>
+    <!-- Tape markings -->
+    <g stroke="white" stroke-width="1.5" opacity="0.7">
+      <line x1="8" y1="-10" x2="14" y2="-8"/>
+      <line x1="18" y1="-24" x2="24" y2="-20"/>
+      <line x1="28" y1="-38" x2="34" y2="-32"/>
+      <line x1="38" y1="-52" x2="44" y2="-46"/>
+      <line x1="46" y1="-66" x2="52" y2="-60"/>
+    </g>
+    <!-- Tape end -->
+    <circle cx="0" cy="0" r="8" fill="#E08040"/>
+    <circle cx="60" cy="-160" r="8" fill="#E08040"/>
+  </g>
+
+  <!-- Pencil -->
+  <g transform="translate(650, 200) rotate(30)">
+    <rect x="-5" y="-80" width="10" height="140" rx="2" fill="#F5E060"/>
+    <polygon points="0,-80 -5,-80 0,-110 5,-80" fill="#E0A040"/>
+    <rect x="-5" y="60" width="10" height="20" rx="1" fill="#F0A0A0"/>
+    <rect x="-5" y="80" width="10" height="14" fill="#C08060"/>
+    <polygon points="0,94 -5,94 0,108 5,94" fill="#D0C0A0"/>
+    <circle cx="0" cy="97" r="2" fill="#808080"/>
+  </g>
+
+  <!-- Label -->
+  <rect x="220" y="690" width="360" height="60" rx="12" fill="#6050A0" opacity="0.88"/>
+  <text x="400" y="728" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-weight="bold" fill="white" letter-spacing="2">PATRON</text>
+</svg>

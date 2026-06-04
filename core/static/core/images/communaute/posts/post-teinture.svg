@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FCC895"/>
+      <stop offset="100%" style="stop-color:#F4836A"/>
+    </linearGradient>
+    <linearGradient id="bucketGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#F5A060"/>
+      <stop offset="100%" style="stop-color:#D26040"/>
+    </linearGradient>
+    <linearGradient id="dyeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#E06030"/>
+      <stop offset="100%" style="stop-color:#C04820"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="800" fill="url(#bg)"/>
+
+  <!-- Decorative blobs -->
+  <circle cx="680" cy="130" r="140" fill="#F5A060" opacity="0.35"/>
+  <circle cx="80" cy="680" r="100" fill="#E06030" opacity="0.2"/>
+  <circle cx="740" cy="700" r="90" fill="#FDD4A0" opacity="0.3"/>
+
+  <!-- Color swatches row (fabric samples) -->
+  <rect x="100" y="120" width="80" height="100" rx="10" fill="#E84A20" opacity="0.85"/>
+  <rect x="200" y="120" width="80" height="100" rx="10" fill="#F06030" opacity="0.85"/>
+  <rect x="300" y="120" width="80" height="100" rx="10" fill="#F09050" opacity="0.85"/>
+  <rect x="400" y="120" width="80" height="100" rx="10" fill="#F5B060" opacity="0.85"/>
+  <rect x="500" y="120" width="80" height="100" rx="10" fill="#F8C878" opacity="0.85"/>
+  <rect x="600" y="120" width="80" height="100" rx="10" fill="#FDD890" opacity="0.85"/>
+  <!-- Swatch pin dots -->
+  <circle cx="140" cy="130" r="5" fill="white" opacity="0.6"/>
+  <circle cx="240" cy="130" r="5" fill="white" opacity="0.6"/>
+  <circle cx="340" cy="130" r="5" fill="white" opacity="0.6"/>
+  <circle cx="440" cy="130" r="5" fill="white" opacity="0.6"/>
+  <circle cx="540" cy="130" r="5" fill="white" opacity="0.6"/>
+  <circle cx="640" cy="130" r="5" fill="white" opacity="0.6"/>
+
+  <!-- Dye bucket -->
+  <g transform="translate(280, 460)">
+    <!-- Bucket body -->
+    <path d="M -80,0 L -60,160 L 60,160 L 80,0 Z" fill="url(#bucketGrad)" stroke="#C05030" stroke-width="3"/>
+    <!-- Dye liquid surface -->
+    <ellipse cx="0" cy="0" rx="80" ry="20" fill="url(#dyeGrad)"/>
+    <!-- Rim of bucket -->
+    <ellipse cx="0" cy="0" rx="80" ry="20" fill="none" stroke="#A03820" stroke-width="3"/>
+    <!-- Bucket handle -->
+    <path d="M -60,-10 Q 0,-60 60,-10" fill="none" stroke="#C05030" stroke-width="6" stroke-linecap="round"/>
+    <!-- Dye drip -->
+    <ellipse cx="0" cy="160" rx="60" ry="10" fill="#C04820" opacity="0.5"/>
+    <path d="M -20,160 Q -22,190 -18,200 Q -16,210 -20,215" fill="none" stroke="#C04820" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+    <path d="M 20,160 Q 22,185 18,195 Q 16,200 20,205" fill="none" stroke="#C04820" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  </g>
+
+  <!-- Fabric being dipped into dye -->
+  <g transform="translate(520, 380)">
+    <!-- Fabric piece hanging down -->
+    <path d="M -50,-120 Q -55,-60 -60,0 Q -50,40 0,50 Q 50,40 60,0 Q 55,-60 50,-120 Z"
+          fill="#F8D080" stroke="#D09040" stroke-width="2"/>
+    <!-- Dye absorption effect -->
+    <path d="M -55,20 Q 0,60 55,20 Q 50,-20 0,-30 Q -50,-20 -55,20 Z"
+          fill="#E06030" opacity="0.5"/>
+    <!-- Clothespin top -->
+    <rect x="-8" y="-130" width="16" height="20" rx="4" fill="#C08040"/>
+    <circle cx="0" cy="-125" r="8" fill="none" stroke="#C08040" stroke-width="3"/>
+  </g>
+
+  <!-- Plant/herb for natural dye (bottom left) -->
+  <g transform="translate(140, 580)" opacity="0.8">
+    <!-- Stem -->
+    <line x1="0" y1="80" x2="0" y2="-20" stroke="#5A8030" stroke-width="4"/>
+    <!-- Leaves -->
+    <ellipse cx="-30" cy="20" rx="32" ry="18" fill="#7ABF50" transform="rotate(-30,-30,20)"/>
+    <ellipse cx="30" cy="0" rx="32" ry="18" fill="#6AAF40" transform="rotate(25,30,0)"/>
+    <ellipse cx="-20" cy="-20" rx="26" ry="14" fill="#8ACF60" transform="rotate(-50,-20,-20)"/>
+    <!-- Berries/onion skins -->
+    <circle cx="-10" cy="-40" r="12" fill="#E06030" opacity="0.8"/>
+    <circle cx="12" cy="-45" r="10" fill="#F09050" opacity="0.8"/>
+    <circle cx="0" cy="-55" r="8" fill="#D85020" opacity="0.7"/>
+  </g>
+
+  <!-- Drip drops -->
+  <circle cx="430" cy="640" r="12" fill="#C04820" opacity="0.5"/>
+  <circle cx="380" cy="670" r="8" fill="#D06030" opacity="0.4"/>
+  <circle cx="460" cy="680" r="6" fill="#C04820" opacity="0.35"/>
+
+  <!-- Label -->
+  <rect x="220" y="700" width="360" height="60" rx="12" fill="#C04820" opacity="0.88"/>
+  <text x="400" y="738" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-weight="bold" fill="white" letter-spacing="2">TEINTURE</text>
+</svg>

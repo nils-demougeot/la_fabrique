@@ -80,6 +80,13 @@
     color: var(--color-primary); font-family: var(--font-body);
     font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
   }
+  /* Badge type pour posts sans image */
+  .post-type-badge-inline {
+    display: inline-flex; align-items: center;
+    background: #F1EFD7; border-radius: 9999px; padding: 4px 14px;
+    color: var(--color-primary); font-family: var(--font-body);
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+  }
 
   /* Interactions */
   .post-interactions-row {
@@ -258,22 +265,13 @@
     {% endif %}
   </div>
 
-  <!-- Image -->
+  <!-- Image (uniquement si le post en a une) -->
+  {% if post.image %}
   <div class="post-image-wrap">
-    {% if post.image %}
-      <img src="{{ post.image.url }}" alt="{{ post.titre }}">
-    {% else %}
-      <div class="post-image-placeholder grad-{{ post.type_creation|default:'fait-main' }}">
-        {% if post.type_creation == 'fait-main' %}🧵
-        {% elif post.type_creation == 'upcycling' %}♻️
-        {% elif post.type_creation == 'teinture' %}🎨
-        {% elif post.type_creation == 'patron' %}📐
-        {% elif post.type_creation == 'reparation' %}🪡
-        {% else %}🌿{% endif %}
-      </div>
-    {% endif %}
+    <img src="{{ post.display_image_url }}" alt="{{ post.titre }}">
     <div class="post-type-badge"><span>{{ post.get_type_creation_display }}</span></div>
   </div>
+  {% endif %}
 
   <!-- Interactions -->
   <div class="post-interactions-row">
@@ -310,7 +308,10 @@
 
   <!-- Texte -->
   <div class="post-text">
-    <div class="post-text-title">{{ post.titre }}</div>
+    {% if not post.image %}
+      <span class="post-type-badge-inline">{{ post.get_type_creation_display }}</span>
+    {% endif %}
+    <div class="post-text-title" style="{% if not post.image %}margin-top:10px;{% endif %}">{{ post.titre }}</div>
     <div class="post-text-desc">{{ post.description }}</div>
     {% if post.hashtags.all %}
       <div class="post-hashtags">

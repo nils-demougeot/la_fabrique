@@ -190,6 +190,22 @@ class PostCommunaute(models.Model):
         return f"{self.titre} par {self.utilisateur.username}"
 
     @property
+    def display_image_url(self):
+        """URL de l'image, en résolvant les images statiques de démo sans passer par Cloudinary."""
+        if not self.image:
+            return None
+        name = self.image.name or ''
+        # Images de démo stockées en static (évite Cloudinary pour les fichiers locaux)
+        if name.startswith('posts/real-'):
+            from django.templatetags.static import static
+            filename = name.split('/')[-1]
+            return static(f'core/images/communaute/posts/{filename}')
+        try:
+            return self.image.url
+        except Exception:
+            return None
+
+    @property
     def nb_likes(self):
         return self.likes.count()
 
