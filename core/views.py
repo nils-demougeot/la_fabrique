@@ -1222,6 +1222,8 @@ def inscription_etape3(request):
         login(request, nouvel_utilisateur)
         return redirect('home')
 
+    return render(request, 'core/inscription_etape3.html')
+
 
 @login_required
 def detail_vetement(request, pk):
