@@ -455,6 +455,10 @@
       </div>
       <h1 class="step-titre">{{ etape.titre }}</h1>
       <p class="step-description">{{ etape.description }}</p>
+      {% if etape.image_url %}
+      <img src="{{ etape.image_url }}" alt="Photo de l'étape"
+           style="width:100%; border-radius:16px; margin-top:14px; display:block;">
+      {% endif %}
     </div>
 
     <!-- ── Matériaux ── -->
