@@ -1,0 +1,543 @@
+{% extends 'core/header.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  :root {
+    --bg-card: #FBFAF0;
+    --bg-input2: #EFEEE3;
+    --primary-green: #237329;
+    --dark-green: #4E6C50;
+    --text-dark: #383832;
+    --text-gray: #65655E;
+    --accent: #A24A33;
+  }
+
+  .cp-main { padding: 28px 20px 64px; display: flex; flex-direction: column; gap: 24px; }
+
+  .cp-head h1 {
+    font-family: var(--font-title);
+    font-size: 30px;
+    font-weight: 800;
+    font-style: italic;
+    text-transform: uppercase;
+    color: var(--primary-green);
+    line-height: 1.15;
+    text-align: center;
+  }
+  .cp-head p { text-align: center; color: var(--text-gray); font-size: 15px; margin-top: 6px; }
+
+  .cp-error {
+    background: rgba(162,74,51,0.08);
+    border: 1.5px solid rgba(162,74,51,0.3);
+    color: var(--accent);
+    border-radius: 16px;
+    padding: 14px 18px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .cp-section-label {
+    font-family: var(--font-title);
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--dark-green);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 2px -4px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border-radius: 26px;
+    padding: 22px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field > label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-gray);
+  }
+  .field .hint { font-size: 11px; font-weight: 500; color: #9E9E88; text-transform: none; letter-spacing: 0; }
+
+  .inp, .ta, .sel {
+    background: white;
+    border: 1.5px solid rgba(187,185,177,0.4);
+    border-radius: 14px;
+    padding: 13px 16px;
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-dark);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .inp:focus, .ta:focus, .sel:focus { border-color: var(--primary-green); }
+  .ta { resize: vertical; min-height: 84px; line-height: 1.45; }
+  .sel { appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2365655E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; background-size: 16px; padding-right: 42px; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* Segmented (difficulté) */
+  .seg { display: flex; gap: 8px; }
+  .seg-btn {
+    flex: 1;
+    background: white;
+    border: 1.5px solid rgba(187,185,177,0.4);
+    border-radius: 12px;
+    padding: 11px 6px;
+    font-family: var(--font-title);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-gray);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .seg-btn.active { background: var(--primary-green); color: white; border-color: var(--primary-green); box-shadow: 0 4px 12px rgba(35,115,41,0.2); }
+
+  /* Toggle premium */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: white; border: 1.5px solid rgba(187,185,177,0.4);
+    border-radius: 14px; padding: 13px 16px;
+  }
+  .toggle-row span { font-weight: 600; font-size: 15px; color: var(--text-dark); }
+  .sw { position: relative; width: 46px; height: 26px; flex-shrink: 0; cursor: pointer; }
+  .sw input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .sw-tr { position: absolute; inset: 0; background: rgba(187,185,177,0.5); border-radius: 99px; transition: background 0.2s; }
+  .sw-tr::before { content:''; position:absolute; height:20px; width:20px; left:3px; top:3px; background:white; border-radius:50%; transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+  .sw input:checked + .sw-tr { background: var(--primary-green); }
+  .sw input:checked + .sw-tr::before { transform: translateX(20px); }
+
+  /* Upload (cover, pdf, image) */
+  .upload-btn {
+    display: flex; align-items: center; gap: 12px;
+    background: white;
+    border: 2px dashed rgba(35,115,41,0.4);
+    border-radius: 16px;
+    padding: 16px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    width: 100%;
+    text-align: left;
+  }
+  .upload-btn:hover { background: rgba(35,115,41,0.04); border-color: var(--primary-green); }
+  .upload-btn .u-emoji { font-size: 24px; }
+  .upload-btn .u-text { font-weight: 700; color: var(--primary-green); font-size: 14px; }
+  .upload-btn .u-sub { display:block; font-weight: 500; color: var(--text-gray); font-size: 12px; margin-top: 2px; }
+
+  .cover-preview { width: 100%; border-radius: 16px; overflow: hidden; display: none; }
+  .cover-preview img { width: 100%; height: 170px; object-fit: cover; display: block; }
+
+  .file-chip {
+    display: none; align-items: center; gap: 10px;
+    background: rgba(35,115,41,0.07); border-radius: 12px; padding: 10px 14px;
+    font-size: 13px; font-weight: 600; color: var(--dark-green);
+  }
+  .file-chip .fc-x { margin-left: auto; cursor: pointer; color: var(--text-gray); font-size: 18px; line-height: 1; }
+
+  /* Blocs dynamiques (étapes / pièces) */
+  .block {
+    background: white;
+    border: 1.5px solid rgba(187,185,177,0.4);
+    border-radius: 20px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .block-head { display: flex; align-items: center; justify-content: space-between; }
+  .block-title {
+    font-family: var(--font-title); font-size: 14px; font-weight: 800; color: var(--text-dark);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .block-badge {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--primary-green); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; font-family: var(--font-title);
+  }
+  .block .piece-badge { background: var(--accent); }
+  .block-del {
+    background: rgba(162,74,51,0.08); border: none; color: var(--accent);
+    width: 32px; height: 32px; border-radius: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: background 0.15s;
+  }
+  .block-del:hover { background: rgba(162,74,51,0.16); }
+
+  .step-img-prev, .svg-prev { display: none; border-radius: 12px; overflow: hidden; background: var(--bg-input2); }
+  .step-img-prev img { width: 100%; max-height: 150px; object-fit: cover; display: block; }
+  .svg-prev { padding: 12px; display: none; align-items: center; justify-content: center; }
+  .svg-prev img { max-width: 100%; max-height: 120px; display: block; }
+
+  .btn-add {
+    width: 100%;
+    background: transparent;
+    border: 2px dashed rgba(35,115,41,0.4);
+    border-radius: 16px;
+    color: var(--primary-green);
+    font-family: var(--font-body);
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; padding: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn-add:hover { background: rgba(35,115,41,0.05); border-color: var(--primary-green); }
+
+  .empty-hint { text-align: center; color: #9E9E88; font-size: 13px; font-style: italic; padding: 4px 0; }
+
+  .btn-publish {
+    background: var(--primary-green); color: white; border: none;
+    border-radius: 18px; padding: 18px; width: 100%;
+    font-family: var(--font-title); font-size: 16px; font-weight: 800;
+    cursor: pointer; box-shadow: 0 8px 20px rgba(35,115,41,0.3);
+    transition: transform 0.1s;
+  }
+  .btn-publish:active { transform: translateY(2px); }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="cp-main">
+  <div class="cp-head">
+    <h1>Créer un patron</h1>
+    <p>Compose ton tutoriel : description, étapes, planches PDF et pièces à découper.</p>
+  </div>
+
+  {% if error %}<div class="cp-error">{{ error }}</div>{% endif %}
+
+  <form method="POST" enctype="multipart/form-data" class="cp-main" style="padding:0;gap:24px;" id="patron-form">
+    {% csrf_token %}
+
+    <!-- ═══ Infos générales ═══ -->
+    <div class="cp-section-label">📋 Informations générales</div>
+    <section class="card">
+      <div class="field">
+        <label>Titre du patron</label>
+        <input type="text" name="titre" class="inp" placeholder="Ex : Tote bag réversible" maxlength="100" required>
+      </div>
+
+      <div class="field">
+        <label>Type d'objet</label>
+        <select name="type_objet" class="sel">
+          {% for t in type_choices %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Description du projet</label>
+        <textarea name="description" class="ta" placeholder="Présente le projet, son rendu, à qui il s'adresse…"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Difficulté</label>
+        <div class="seg" id="diff-seg">
+          <button type="button" class="seg-btn active" data-val="1">Débutant</button>
+          <button type="button" class="seg-btn" data-val="2">Intermédiaire</button>
+          <button type="button" class="seg-btn" data-val="3">Avancé</button>
+        </div>
+        <input type="hidden" name="difficulte" id="difficulte-input" value="1">
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Durée</label>
+          <input type="text" name="duree" class="inp" placeholder="Ex : 2h">
+        </div>
+        <div class="field">
+          <label>Premium</label>
+          <div class="toggle-row">
+            <span>Payant</span>
+            <label class="sw">
+              <input type="checkbox" id="premium-cb">
+              <span class="sw-tr"></span>
+            </label>
+          </div>
+          <input type="hidden" name="est_premium" id="premium-input" value="0">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Surface min <span class="hint">m²</span></label>
+          <input type="number" name="surface_min" class="inp" step="0.01" min="0" placeholder="0.30">
+        </div>
+        <div class="field">
+          <label>Surface max <span class="hint">m²</span></label>
+          <input type="number" name="surface_max" class="inp" step="0.01" min="0" placeholder="0.80">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Matériel nécessaire <span class="hint">séparé par des virgules</span></label>
+        <input type="text" name="materiel" class="inp" placeholder="Ciseaux, fil, machine à coudre…">
+      </div>
+
+      <div class="field">
+        <label>Matières requises <span class="hint">ex : coton,lin — vide = toutes</span></label>
+        <input type="text" name="matiere_requise" class="inp" placeholder="coton, lin, viscose">
+      </div>
+    </section>
+
+    <!-- ═══ Image de garde ═══ -->
+    <div class="cp-section-label">🖼️ Image de garde</div>
+    <section class="card">
+      <button type="button" class="upload-btn" id="cover-btn">
+        <span class="u-emoji">🖼️</span>
+        <span><span class="u-text">Choisir une image</span><span class="u-sub">Photo de présentation du patron</span></span>
+      </button>
+      <input type="file" name="cover_image" id="cover-input" accept="image/*" style="display:none;">
+      <div class="cover-preview" id="cover-preview"><img id="cover-img" src="" alt=""></div>
+    </section>
+
+    <!-- ═══ PDF des planches ═══ -->
+    <div class="cp-section-label">📄 Planches à découper (PDF)</div>
+    <section class="card">
+      <button type="button" class="upload-btn" id="pdf-btn">
+        <span class="u-emoji">📄</span>
+        <span><span class="u-text">Ajouter un PDF</span><span class="u-sub">Le patron à imprimer et découper</span></span>
+      </button>
+      <input type="file" name="pdf_patron" id="pdf-input" accept="application/pdf,.pdf" style="display:none;">
+      <div class="file-chip" id="pdf-chip">
+        <span>📎</span><span id="pdf-name"></span><span class="fc-x" id="pdf-x">×</span>
+      </div>
+    </section>
+
+    <!-- ═══ Étapes ═══ -->
+    <div class="cp-section-label">🪡 Étapes du tutoriel</div>
+    <section class="card">
+      <div id="steps-container" style="display:flex;flex-direction:column;gap:14px;"></div>
+      <div class="empty-hint" id="steps-empty">Aucune étape pour l'instant.</div>
+      <button type="button" class="btn-add" id="add-step">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Ajouter une étape
+      </button>
+      <input type="hidden" name="nb_etapes" id="nb-etapes" value="0">
+    </section>
+
+    <!-- ═══ Pièces à découper ═══ -->
+    <div class="cp-section-label">✂️ Pièces à découper (formes SVG)</div>
+    <section class="card">
+      <p style="font-size:13px;color:var(--text-gray);line-height:1.4;margin-top:-4px;">
+        Une forme SVG par morceau, avec ses dimensions réelles. Servira plus tard à placer les pièces sur le tissu.
+      </p>
+      <div id="pieces-container" style="display:flex;flex-direction:column;gap:14px;"></div>
+      <div class="empty-hint" id="pieces-empty">Aucune pièce pour l'instant.</div>
+      <button type="button" class="btn-add" id="add-piece">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Ajouter une pièce
+      </button>
+      <input type="hidden" name="nb_pieces" id="nb-pieces" value="0">
+    </section>
+
+    <button type="submit" class="btn-publish">✓ Publier le patron</button>
+  </form>
+</main>
+
+<!-- Template d'une étape -->
+<template id="step-template">
+  <div class="block step-block">
+    <div class="block-head">
+      <div class="block-title"><span class="block-badge step-num">1</span> Étape</div>
+      <button type="button" class="block-del" data-del="step" title="Supprimer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>
+    <div class="field">
+      <label>Titre de l'étape</label>
+      <input type="text" class="inp" data-field="titre" placeholder="Ex : Couper le tissu">
+    </div>
+    <div class="field">
+      <label>Explications</label>
+      <textarea class="ta" data-field="description" placeholder="Décris cette étape…"></textarea>
+    </div>
+    <div class="field">
+      <label>Lien vidéo YouTube <span class="hint">optionnel</span></label>
+      <input type="url" class="inp" data-field="video" placeholder="https://youtu.be/…">
+    </div>
+    <div class="field">
+      <label>Conseil <span class="hint">optionnel</span></label>
+      <input type="text" class="inp" data-field="conseil" placeholder="Une astuce utile…">
+    </div>
+    <div class="field">
+      <label>Photo de l'étape <span class="hint">optionnel</span></label>
+      <button type="button" class="upload-btn" data-trigger="img">
+        <span class="u-emoji">📷</span><span><span class="u-text">Ajouter une photo</span></span>
+      </button>
+      <input type="file" class="file-img" data-field="image" accept="image/*" style="display:none;">
+      <div class="step-img-prev"><img src="" alt=""></div>
+    </div>
+  </div>
+</template>
+
+<!-- Template d'une pièce -->
+<template id="piece-template">
+  <div class="block piece-block">
+    <div class="block-head">
+      <div class="block-title"><span class="block-badge piece-badge piece-num">1</span> Pièce</div>
+      <button type="button" class="block-del" data-del="piece" title="Supprimer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>
+    <div class="field">
+      <label>Nom de la pièce</label>
+      <input type="text" class="inp" data-field="nom" placeholder="Ex : Devant, Manche, Poche…">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Quantité</label>
+        <input type="number" class="inp" data-field="quantite" min="1" value="1">
+      </div>
+      <div class="field">
+        <label>Largeur <span class="hint">cm</span></label>
+        <input type="number" class="inp" data-field="largeur" step="0.1" min="0" placeholder="ex : 30">
+      </div>
+    </div>
+    <div class="field">
+      <label>Hauteur <span class="hint">cm</span></label>
+      <input type="number" class="inp" data-field="hauteur" step="0.1" min="0" placeholder="ex : 42">
+    </div>
+    <div class="field">
+      <label>Forme SVG</label>
+      <button type="button" class="upload-btn" data-trigger="svg">
+        <span class="u-emoji">✂️</span><span><span class="u-text">Importer un .svg</span><span class="u-sub">La silhouette de la pièce</span></span>
+      </button>
+      <input type="file" class="file-svg" data-field="svg" accept=".svg,image/svg+xml" style="display:none;">
+      <div class="svg-prev"><img src="" alt=""></div>
+    </div>
+  </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    // ── Difficulté ──
+    const diffSeg = document.getElementById('diff-seg');
+    const diffInput = document.getElementById('difficulte-input');
+    diffSeg.querySelectorAll('.seg-btn').forEach(b => b.addEventListener('click', () => {
+      diffSeg.querySelectorAll('.seg-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      diffInput.value = b.dataset.val;
+    }));
+
+    // ── Premium ──
+    const premiumCb = document.getElementById('premium-cb');
+    const premiumInput = document.getElementById('premium-input');
+    premiumCb.addEventListener('change', () => { premiumInput.value = premiumCb.checked ? '1' : '0'; });
+
+    // ── Image de garde ──
+    const coverBtn = document.getElementById('cover-btn');
+    const coverInput = document.getElementById('cover-input');
+    const coverPrev = document.getElementById('cover-preview');
+    const coverImg = document.getElementById('cover-img');
+    coverBtn.addEventListener('click', () => coverInput.click());
+    coverInput.addEventListener('change', () => {
+      const f = coverInput.files[0];
+      if (!f) return;
+      coverImg.src = URL.createObjectURL(f);
+      coverPrev.style.display = 'block';
+      coverBtn.querySelector('.u-text').textContent = 'Changer l’image';
+    });
+
+    // ── PDF ──
+    const pdfBtn = document.getElementById('pdf-btn');
+    const pdfInput = document.getElementById('pdf-input');
+    const pdfChip = document.getElementById('pdf-chip');
+    const pdfName = document.getElementById('pdf-name');
+    pdfBtn.addEventListener('click', () => pdfInput.click());
+    pdfInput.addEventListener('change', () => {
+      const f = pdfInput.files[0];
+      if (!f) return;
+      pdfName.textContent = f.name;
+      pdfChip.style.display = 'flex';
+    });
+    document.getElementById('pdf-x').addEventListener('click', () => {
+      pdfInput.value = ''; pdfChip.style.display = 'none';
+    });
+
+    // ── Générique : étapes & pièces dynamiques ──
+    function makeManager(opts) {
+      const container = document.getElementById(opts.container);
+      const empty = document.getElementById(opts.empty);
+      const nbInput = document.getElementById(opts.nbInput);
+      const template = document.getElementById(opts.template);
+      const numClass = opts.numClass;
+      const prefix = opts.prefix;
+
+      function reindex() {
+        const blocks = container.querySelectorAll('.block');
+        blocks.forEach((b, idx) => {
+          b.querySelector('.' + numClass).textContent = idx + 1;
+          b.querySelectorAll('[data-field]').forEach(el => { el.name = prefix + '_' + idx + '_' + el.dataset.field; });
+        });
+        nbInput.value = blocks.length;
+        empty.style.display = blocks.length ? 'none' : 'block';
+      }
+
+      function add() {
+        const node = template.content.firstElementChild.cloneNode(true);
+        container.appendChild(node);
+        reindex();
+      }
+
+      document.getElementById(opts.addBtn).addEventListener('click', add);
+
+      // Délégation : suppression + déclencheurs upload + aperçus
+      container.addEventListener('click', (e) => {
+        const del = e.target.closest('.block-del');
+        if (del) { del.closest('.block').remove(); reindex(); return; }
+        const trig = e.target.closest('[data-trigger]');
+        if (trig) { trig.parentElement.querySelector('input[type=file]').click(); }
+      });
+      container.addEventListener('change', (e) => {
+        const inp = e.target;
+        if (inp.type !== 'file' || !inp.files[0]) return;
+        const f = inp.files[0];
+        const field = inp.closest('.field');
+        if (inp.classList.contains('file-img')) {
+          const prev = field.querySelector('.step-img-prev');
+          prev.querySelector('img').src = URL.createObjectURL(f);
+          prev.style.display = 'block';
+          field.querySelector('.u-text').textContent = 'Changer la photo';
+        } else if (inp.classList.contains('file-svg')) {
+          if (!f.name.toLowerCase().endsWith('.svg')) { alert('Merci d’importer un fichier .svg'); inp.value = ''; return; }
+          const prev = field.querySelector('.svg-prev');
+          prev.querySelector('img').src = URL.createObjectURL(f);
+          prev.style.display = 'flex';
+          field.querySelector('.u-text').textContent = 'Changer le SVG';
+        }
+      });
+
+      return { add };
+    }
+
+    makeManager({
+      container: 'steps-container', empty: 'steps-empty', nbInput: 'nb-etapes',
+      template: 'step-template', addBtn: 'add-step', numClass: 'step-num', prefix: 'etape',
+    });
+    makeManager({
+      container: 'pieces-container', empty: 'pieces-empty', nbInput: 'nb-pieces',
+      template: 'piece-template', addBtn: 'add-piece', numClass: 'piece-num', prefix: 'piece',
+    });
+  })();
+</script>
+{% endblock %}
+
+{% block bottom_nav %}
+  {% with nav_active='patrons' %}
+    {% include 'core/bottom_nav.html' %}
+  {% endwith %}
+{% endblock %}

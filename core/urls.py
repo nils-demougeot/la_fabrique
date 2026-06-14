@@ -6,6 +6,7 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('patrons/', views.patrons, name='patrons'),
+    path('patrons/creer/', views.creer_patron, name='creer_patron'),
     path('patrons/<int:pk>/', views.patron_detail, name='patron_detail'),
     path('patrons/<int:patron_pk>/etape/<int:etape_num>/', views.etape_projet, name='etape_projet'),
     path('patrons/<int:pk>/like/', views.toggle_like, name='toggle_like'),

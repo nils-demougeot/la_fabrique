@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import (Utilisateur, Vetement, Patron, EtapePatron, Tutoriel, Projet, Recommandation,
+from .models import (Utilisateur, Vetement, Patron, EtapePatron, PiecePatron, Tutoriel, Projet, Recommandation,
                      AchatPatron, ProgressionProjet, PatronLike,
                      PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag)
 
@@ -9,7 +9,14 @@ class EtapePatronInline(admin.StackedInline):
     model = EtapePatron
     extra = 0
     ordering = ['numero']
-    fields = ['numero', 'titre', 'description', 'conseil', 'materiaux_etape', 'video_url']
+    fields = ['numero', 'titre', 'description', 'image', 'conseil', 'materiaux_etape', 'video_url']
+
+
+class PiecePatronInline(admin.TabularInline):
+    model = PiecePatron
+    extra = 0
+    ordering = ['ordre']
+    fields = ['ordre', 'nom', 'quantite', 'largeur_cm', 'hauteur_cm', 'svg']
 
 
 class TutorielInline(admin.TabularInline):
@@ -23,10 +30,10 @@ class PatronAdmin(admin.ModelAdmin):
     list_display  = ['titre', 'typeObjet', 'difficulte', 'duree', 'surfaceMin', 'surfaceMax', 'estPremium']
     list_filter   = ['estPremium', 'difficulte', 'typeObjet']
     search_fields = ['titre', 'description']
-    inlines       = [EtapePatronInline, TutorielInline]
+    inlines       = [EtapePatronInline, PiecePatronInline, TutorielInline]
     fieldsets = [
         (None, {
-            'fields': ['titre', 'photo', 'description', 'typeObjet'],
+            'fields': ['titre', 'photo', 'description', 'typeObjet', 'pdf_patron', 'createur'],
         }),
         ('Matières & Outils', {
             'fields': ['matiere_requise', 'materiel'],
@@ -55,6 +62,7 @@ admin.site.register(Recommandation)
 admin.site.register(AchatPatron)
 admin.site.register(ProgressionProjet)
 admin.site.register(PatronLike)
+admin.site.register(PiecePatron)
 
 
 class CommentairePostInline(admin.TabularInline):

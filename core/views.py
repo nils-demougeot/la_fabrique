@@ -17,7 +17,7 @@ from datetime import timedelta
 import math
 
 from django.http import HttpResponse, JsonResponse
-from core.models import (Vetement, Utilisateur, Patron, EtapePatron, ProgressionProjet, PatronLike,
+from core.models import (Vetement, Utilisateur, Patron, EtapePatron, PiecePatron, ProgressionProjet, PatronLike,
                          PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag, Badge)
 
 BADGE_DEFINITIONS = [
@@ -203,110 +203,141 @@ def calculate_polygon_area(points, width_cm, height_cm):
         
     return abs(area) / 2.0
 
+def _polygon_area_px2(px_points):
+    """Aire d'un polygone (formule du lacet) à partir de points en pixels."""
+    area = 0.0
+    n = len(px_points)
+    for i in range(n):
+        j = (i + 1) % n
+        area += px_points[i][0] * px_points[j][1]
+        area -= px_points[j][0] * px_points[i][1]
+    return abs(area) / 2.0
+
+
+def _analyser_face(request, prefix):
+    """
+    Analyse une face (avant / arrière) à partir des données du formulaire.
+    Retourne un dict {area_m2, tache_m2, trou_m2, photo_data} ou None si incomplète.
+
+    - polygon_<prefix>      : liste de points normalisés (0-1) du détourage
+    - calib_coords_<prefix> : 2 points normalisés du segment d'étalonnage
+    - calib_distance_<prefix>: distance réelle (cm) de ce segment
+    - img_w_<prefix>, img_h_<prefix> : dimensions de l'image source (px)
+    - defects_<prefix>      : liste de cercles {x, y, r, type} (r normalisé / largeur)
+    """
+    polygon = json.loads(request.POST.get(f'polygon_{prefix}', '[]') or '[]')
+    calib = json.loads(request.POST.get(f'calib_coords_{prefix}', '[]') or '[]')
+    calib_distance_cm = float(request.POST.get(f'calib_distance_{prefix}', 0) or 0)
+    img_w = float(request.POST.get(f'img_w_{prefix}', 0) or 0)
+    img_h = float(request.POST.get(f'img_h_{prefix}', 0) or 0)
+    defects = json.loads(request.POST.get(f'defects_{prefix}', '[]') or '[]')
+
+    if len(polygon) < 3 or len(calib) != 2 or calib_distance_cm <= 0 or img_w <= 0:
+        return None
+
+    c1_x, c1_y = calib[0]['x'] * img_w, calib[0]['y'] * img_h
+    c2_x, c2_y = calib[1]['x'] * img_w, calib[1]['y'] * img_h
+    distance_px = math.sqrt((c2_x - c1_x) ** 2 + (c2_y - c1_y) ** 2)
+    if distance_px == 0:
+        return None
+
+    cm_per_px = calib_distance_cm / distance_px
+
+    px_points = [(p['x'] * img_w, p['y'] * img_h) for p in polygon]
+    area_cm2 = _polygon_area_px2(px_points) * (cm_per_px ** 2)
+    area_m2 = area_cm2 / 10000.0
+
+    tache_m2 = 0.0
+    trou_m2 = 0.0
+    for d in defects:
+        # rayon stocké normalisé par rapport à la largeur de l'image
+        r_cm = float(d.get('r', 0)) * img_w * cm_per_px
+        circle_m2 = math.pi * r_cm * r_cm / 10000.0
+        if d.get('type') == 'tache':
+            tache_m2 += circle_m2
+        else:
+            trou_m2 += circle_m2
+
+    return {
+        'area_m2': area_m2,
+        'tache_m2': tache_m2,
+        'trou_m2': trou_m2,
+        'photo_data': request.POST.get(f'photo_data_{prefix}', ''),
+    }
+
+
 @login_required
 def ajout_textile(request):
     context = {'result_ready': False}
 
     if request.method == 'POST':
         try:
-            damage_sizes = request.POST.getlist('damage_size[]')
-            
-            coords_str = request.POST.get('polygon_coords', '[]')
-            polygon_points = json.loads(coords_str)
-            
-            calib_str = request.POST.get('calibration_coords', '[]')
-            calib_points = json.loads(calib_str)
-            
-            calib_distance_cm = float(request.POST.get('calibration_distance', 0))
-            img_w = float(request.POST.get('image_width', 1))
-            img_h = float(request.POST.get('image_height', 1))
+            face_av = _analyser_face(request, 'avant')
+            face_ar = _analyser_face(request, 'arriere')
 
+            if face_av is None:
+                context['error'] = "Complète au moins la face avant : détourage + étalonnage."
+                return render(request, 'core/ajout_textile.html', context)
 
-            total_defect_area_m2 = 0.0
-
-            for size_str in damage_sizes:
-                size_cm = float(size_str)
-                total_defect_area_m2 += (size_cm * size_cm) / 10000.0
-
-            if len(polygon_points) >= 3 and len(calib_points) == 2 and calib_distance_cm > 0:
-                
-                c1_x, c1_y = calib_points[0]['x'] * img_w, calib_points[0]['y'] * img_h
-                c2_x, c2_y = calib_points[1]['x'] * img_w, calib_points[1]['y'] * img_h
-                
-                distance_px = math.sqrt((c2_x - c1_x)**2 + (c2_y - c1_y)**2)
-                
-                if distance_px == 0:
-                    raise ValueError("Points d'étalonnage confondus.")
-                
-                cm_per_px = calib_distance_cm / distance_px
-                
-                px_points = [(p['x'] * img_w, p['y'] * img_h) for p in polygon_points]
-                
-                area_px2 = 0.0
-                n = len(px_points)
-                for i in range(n):
-                    j = (i + 1) % n
-                    area_px2 += px_points[i][0] * px_points[j][1]
-                    area_px2 -= px_points[j][0] * px_points[i][1]
-                area_px2 = abs(area_px2) / 2.0
-                
-                polygon_area_cm2 = area_px2 * (cm_per_px ** 2)
-                polygon_area_m2 = polygon_area_cm2*2 / 10000.0
-                
-                usable_area_m2 = max(0, polygon_area_m2 - total_defect_area_m2)
-                
-                percentage = int((usable_area_m2 / polygon_area_m2) * 100) if polygon_area_m2 > 0 else 0
-                
-                
-                # SAUVEGARDE DANS LA BASE DE DONNÉES
-                
-                type_vetement = request.POST.get('clothing_type', 'inconnu')
-                largeur_cm = float(request.POST.get('width', 0))
-                hauteur_cm = float(request.POST.get('height', 0))
-                nom_vetement = request.POST.get('nom_vetement', '').strip() or f"{type_vetement.capitalize()} de {request.user.username}"
-                qualite = int(request.POST.get('qualite', 3))
-                couleur = request.POST.get('couleur', '')
-                matiere_raw = request.POST.get('material', 'coton:100').strip() or 'coton:100'
-
-                photo_fichier = None
-                photo_data = request.POST.get('photo_data', '')
-                if photo_data and ';base64,' in photo_data:
-                    fmt, imgstr = photo_data.split(';base64,')
-                    ext = fmt.split('/')[-1]
-                    photo_fichier = ContentFile(base64.b64decode(imgstr), name=f'vetement.{ext}')
-
-                nouveau_vetement = Vetement.objects.create(
-                    utilisateur=request.user,
-                    nomVetement=nom_vetement,
-                    photoURL=photo_fichier,
-                    typeVetement=type_vetement,
-                    largeur=largeur_cm,
-                    hauteur=hauteur_cm,
-                    surfaceTotale=polygon_area_m2,
-                    surfaceTaches=total_defect_area_m2,
-                    surfaceTrous=0.0,
-                    surfaceExploitable=usable_area_m2,
-                    etat="À transformer",
-                    qualite=qualite,
-                    couleur=couleur,
-                    matiere=matiere_raw,
-                )
-
-                coins_earned = 3
-                request.user.soldePieces += coins_earned
-                request.user.save()
-
-                context.update({
-                    'result_ready': True,
-                    'usable_area': round(usable_area_m2, 2),
-                    'percentage': percentage,
-                    'coins_earned': 3,
-                })
+            if face_ar is not None:
+                # Les deux faces sont renseignées : on les additionne.
+                surface_totale_m2 = face_av['area_m2'] + face_ar['area_m2']
+                tache_m2 = face_av['tache_m2'] + face_ar['tache_m2']
+                trou_m2 = face_av['trou_m2'] + face_ar['trou_m2']
             else:
-                context['error'] = "Veuillez compléter le tracé et l'étalonnage de la photo."
+                # Face arrière ignorée : on suppose l'arrière identique à l'avant.
+                surface_totale_m2 = face_av['area_m2'] * 2
+                tache_m2 = face_av['tache_m2'] * 2
+                trou_m2 = face_av['trou_m2'] * 2
+
+            total_defect_area_m2 = tache_m2 + trou_m2
+            usable_area_m2 = max(0, surface_totale_m2 - total_defect_area_m2)
+            percentage = int((usable_area_m2 / surface_totale_m2) * 100) if surface_totale_m2 > 0 else 0
+
+            # SAUVEGARDE DANS LA BASE DE DONNÉES
+            type_vetement = request.POST.get('clothing_type', 'inconnu')
+            nom_vetement = request.POST.get('nom_vetement', '').strip() or f"{type_vetement.capitalize()} de {request.user.username}"
+            qualite = int(request.POST.get('qualite', 3))
+            couleur = request.POST.get('couleur', '')
+            matiere_raw = request.POST.get('material', 'coton:100').strip() or 'coton:100'
+
+            photo_fichier = None
+            photo_data = face_av['photo_data']
+            if photo_data and ';base64,' in photo_data:
+                fmt, imgstr = photo_data.split(';base64,')
+                ext = fmt.split('/')[-1]
+                photo_fichier = ContentFile(base64.b64decode(imgstr), name=f'vetement.{ext}')
+
+            Vetement.objects.create(
+                utilisateur=request.user,
+                nomVetement=nom_vetement,
+                photoURL=photo_fichier,
+                typeVetement=type_vetement,
+                largeur=0,
+                hauteur=0,
+                surfaceTotale=surface_totale_m2,
+                surfaceTaches=tache_m2,
+                surfaceTrous=trou_m2,
+                surfaceExploitable=usable_area_m2,
+                etat="À transformer",
+                qualite=qualite,
+                couleur=couleur,
+                matiere=matiere_raw,
+            )
+
+            coins_earned = 3
+            request.user.soldePieces += coins_earned
+            request.user.save()
+
+            context.update({
+                'result_ready': True,
+                'usable_area': round(usable_area_m2, 2),
+                'percentage': percentage,
+                'coins_earned': coins_earned,
+            })
 
         except (ValueError, json.JSONDecodeError, ZeroDivisionError):
-            context['error'] = "Erreur dans le calcul de la surface. Recommencez le tracé."
+            context['error'] = "Erreur dans le calcul de la surface. Recommence le détourage."
 
     return render(request, 'core/ajout_textile.html', context)
 
@@ -496,6 +527,108 @@ def patrons(request):
         'projets_en_cours': projets_en_cours,
         'liked_ids_json': list(liked_ids),
     })
+
+
+@login_required
+def creer_patron(request):
+    """Espace de création de patron réservé au staff (hors admin Django)."""
+    if not request.user.is_staff:
+        return redirect('patrons')
+
+    TYPE_CHOICES = ['Haut', 'Bas', 'Robe', 'Accessoire', 'Sac', 'Déco', 'Enfant', 'Autre']
+
+    if request.method == 'POST':
+        titre = request.POST.get('titre', '').strip()
+        description = request.POST.get('description', '').strip()
+        type_objet = request.POST.get('type_objet', '').strip() or 'Autre'
+
+        def _f(name, default=0.0):
+            try:
+                return float(request.POST.get(name, '') or default)
+            except (ValueError, TypeError):
+                return default
+
+        def _i(name, default=1):
+            try:
+                return int(request.POST.get(name, '') or default)
+            except (ValueError, TypeError):
+                return default
+
+        surface_min = _f('surface_min', 0.0)
+        surface_max = _f('surface_max', 0.0)
+        difficulte = max(1, min(3, _i('difficulte', 1)))
+        duree = request.POST.get('duree', '').strip()
+        materiel = request.POST.get('materiel', '').strip()
+        matiere_requise = request.POST.get('matiere_requise', '').strip()
+        est_premium = request.POST.get('est_premium') == '1'
+
+        if not titre:
+            return render(request, 'core/creer_patron.html', {
+                'type_choices': TYPE_CHOICES,
+                'error': "Le titre du patron est obligatoire.",
+            })
+
+        patron = Patron.objects.create(
+            titre=titre,
+            description=description,
+            typeObjet=type_objet,
+            surfaceMin=surface_min,
+            surfaceMax=surface_max if surface_max > 0 else surface_min,
+            estPremium=est_premium,
+            difficulte=difficulte,
+            photo=request.FILES.get('cover_image'),
+            pdf_patron=request.FILES.get('pdf_patron'),
+            duree=duree or None,
+            materiel=materiel or None,
+            matiere_requise=matiere_requise or None,
+            createur=request.user,
+        )
+
+        # ── Étapes ──
+        nb_etapes = _i('nb_etapes', 0)
+        numero = 1
+        for i in range(nb_etapes):
+            e_titre = request.POST.get(f'etape_{i}_titre', '').strip()
+            e_desc = request.POST.get(f'etape_{i}_description', '').strip()
+            if not e_titre and not e_desc:
+                continue
+            EtapePatron.objects.create(
+                patron=patron,
+                numero=numero,
+                titre=e_titre or f"Étape {numero}",
+                description=e_desc,
+                video_url=request.POST.get(f'etape_{i}_video', '').strip() or None,
+                conseil=request.POST.get(f'etape_{i}_conseil', '').strip() or None,
+                materiaux_etape=request.POST.get(f'etape_{i}_materiaux', '').strip() or None,
+                image=request.FILES.get(f'etape_{i}_image'),
+            )
+            numero += 1
+
+        # ── Pièces à découper (SVG) ──
+        nb_pieces = _i('nb_pieces', 0)
+        ordre = 0
+        for j in range(nb_pieces):
+            p_nom = request.POST.get(f'piece_{j}_nom', '').strip()
+            svg_file = request.FILES.get(f'piece_{j}_svg')
+            if not p_nom and not svg_file:
+                continue
+            # On n'accepte que des fichiers .svg
+            if svg_file and not svg_file.name.lower().endswith('.svg'):
+                svg_file = None
+            PiecePatron.objects.create(
+                patron=patron,
+                nom=p_nom or f"Pièce {ordre + 1}",
+                quantite=max(1, _i(f'piece_{j}_quantite', 1)),
+                largeur_cm=_f(f'piece_{j}_largeur', 0.0) or None,
+                hauteur_cm=_f(f'piece_{j}_hauteur', 0.0) or None,
+                svg=svg_file,
+                ordre=ordre,
+            )
+            ordre += 1
+
+        return redirect('patron_detail', pk=patron.pk)
+
+    return render(request, 'core/creer_patron.html', {'type_choices': TYPE_CHOICES})
 
 
 @login_required

@@ -1,5 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.conf import settings
+from django.core.files.storage import default_storage
+
+
+def raw_media_storage():
+    """Stockage pour les fichiers bruts (PDF, SVG) : Cloudinary 'raw' si configuré,
+    sinon le stockage par défaut (système de fichiers en local)."""
+    if getattr(settings, 'CLOUDINARY_URL', None):
+        from cloudinary_storage.storage import RawMediaCloudinaryStorage
+        return RawMediaCloudinaryStorage()
+    return default_storage
 
 class Utilisateur(AbstractUser):
     consentementRGPD = models.BooleanField(default=False)
@@ -51,6 +62,15 @@ class Patron(models.Model):
         blank=True, null=True,
         help_text="Matières acceptées, séparées par des virgules (ex: coton,lin,viscose). Laisser vide = toute matière acceptée."
     )
+    createur = models.ForeignKey(
+        'Utilisateur', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='patrons_crees'
+    )
+    pdf_patron = models.FileField(
+        upload_to='patrons/pdf/', null=True, blank=True,
+        storage=raw_media_storage,
+        help_text="PDF des planches de patron à imprimer / découper."
+    )
 
     @property
     def photo_url(self):
@@ -63,6 +83,18 @@ class Patron(models.Model):
         # Chemin local → construire l'URL normalement
         try:
             return self.photo.url
+        except (ValueError, AttributeError):
+            return None
+
+    @property
+    def pdf_url(self):
+        if not self.pdf_patron:
+            return None
+        name = self.pdf_patron.name or ''
+        if name.startswith('http'):
+            return name
+        try:
+            return self.pdf_patron.url
         except (ValueError, AttributeError):
             return None
 
@@ -113,12 +145,71 @@ class EtapePatron(models.Model):
     video_url = models.CharField(max_length=500, blank=True, null=True)
     conseil = models.TextField(blank=True, null=True)
     materiaux_etape = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to='patrons/etapes/', null=True, blank=True)
 
     class Meta:
         ordering = ['numero']
 
     def __str__(self):
         return f"Étape {self.numero} - {self.titre} ({self.patron.titre})"
+
+    @property
+    def image_url(self):
+        if not self.image:
+            return None
+        name = self.image.name or ''
+        if name.startswith('http'):
+            return name
+        try:
+            return self.image.url
+        except (ValueError, AttributeError):
+            return None
+
+    @property
+    def youtube_embed_url(self):
+        """Transforme un lien YouTube en URL d'intégration (embed), ou None."""
+        url = (self.video_url or '').strip()
+        if not url:
+            return None
+        import re
+        m = re.search(r'(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([\w-]{11})', url)
+        if m:
+            return f'https://www.youtube.com/embed/{m.group(1)}'
+        return None
+
+
+class PiecePatron(models.Model):
+    """Une pièce à découper du patron (forme SVG + dimensions réelles).
+    Les dimensions servent au placement futur des pièces sur le tissu."""
+    patron = models.ForeignKey(Patron, on_delete=models.CASCADE, related_name='pieces')
+    nom = models.CharField(max_length=100)
+    quantite = models.PositiveIntegerField(default=1)
+    largeur_cm = models.FloatField(null=True, blank=True)
+    hauteur_cm = models.FloatField(null=True, blank=True)
+    svg = models.FileField(
+        upload_to='patrons/pieces/', null=True, blank=True,
+        storage=raw_media_storage,
+        help_text="Fichier SVG de la forme à découper."
+    )
+    ordre = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['ordre', 'id']
+
+    def __str__(self):
+        return f"{self.nom} ×{self.quantite} ({self.patron.titre})"
+
+    @property
+    def svg_url(self):
+        if not self.svg:
+            return None
+        name = self.svg.name or ''
+        if name.startswith('http'):
+            return name
+        try:
+            return self.svg.url
+        except (ValueError, AttributeError):
+            return None
 
 
 class ProgressionProjet(models.Model):

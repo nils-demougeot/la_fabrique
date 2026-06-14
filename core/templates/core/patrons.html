@@ -603,6 +603,13 @@
     <div style="text-align:center; color:#65655E; font-size:16px; font-family:'Manrope',sans-serif; font-weight:500; line-height:24px;">Choisis ton prochain chef-d'œuvre.</div>
   </div>
 
+  {% if user.is_staff %}
+  <a href="{% url 'creer_patron' %}" style="display:flex; align-items:center; justify-content:center; gap:8px; margin:0 8px; padding:14px; border-radius:16px; background:#237329; color:#fff; text-decoration:none; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:15px; box-shadow:0 6px 16px rgba(35,115,41,0.25);">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Créer un patron
+  </a>
+  {% endif %}
+
   <!-- ==========================================
        Projets en cours
        ========================================== -->
