@@ -1,0 +1,458 @@
+{% extends 'core/header.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  :root {
+    --primary-green: #237329;
+    --dark-green: #4E6C50;
+    --text-dark: #383832;
+    --text-gray: #65655E;
+    --accent: #A24A33;
+    --bad: #C0392B;
+  }
+
+  .fz-wrap { display: flex; flex-direction: column; height: 100%; min-height: calc(100dvh - 64px); }
+
+  /* En-tête */
+  .fz-top {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px 10px;
+  }
+  .fz-back {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: #EFEEE3; border: none; cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; color: var(--text-dark);
+    text-decoration: none;
+  }
+  .fz-titles { flex: 1; min-width: 0; }
+  .fz-titles h1 { font-family: var(--font-title); font-size: 17px; font-weight: 800; color: var(--text-dark); line-height: 1.1; }
+  .fz-titles p { font-size: 12px; color: var(--text-gray); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fz-verdict {
+    flex-shrink: 0; font-family: var(--font-title); font-weight: 800; font-size: 12px;
+    padding: 8px 12px; border-radius: 99px; background: #EFEEE3; color: var(--text-gray);
+    display: flex; align-items: center; gap: 5px; transition: all 0.2s;
+  }
+  .fz-verdict.ok  { background: #D2F4D1; color: var(--primary-green); }
+  .fz-verdict.bad { background: #FBE3DC; color: var(--bad); }
+
+  /* Sélecteur de vêtement */
+  .fz-garments { display: flex; gap: 10px; overflow-x: auto; padding: 6px 16px 12px; scrollbar-width: none; }
+  .fz-garments::-webkit-scrollbar { display: none; }
+  .fz-garment {
+    flex-shrink: 0; width: 76px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 5px; align-items: center;
+  }
+  .fz-garment-thumb {
+    width: 76px; height: 76px; border-radius: 16px; overflow: hidden;
+    background: #EFEEE3; border: 2.5px solid transparent; transition: border-color 0.15s;
+  }
+  .fz-garment-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .fz-garment.active .fz-garment-thumb { border-color: var(--primary-green); }
+  .fz-garment-name { font-size: 11px; font-weight: 600; color: var(--text-gray); text-align: center; line-height: 1.1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 76px; }
+  .fz-garment.active .fz-garment-name { color: var(--primary-green); font-weight: 700; }
+
+  /* Plateau (photo + pièces) */
+  .fz-stage {
+    flex: 1; min-height: 46vh; position: relative;
+    background: #14160F; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    touch-action: none;
+  }
+  #board { position: relative; }
+  #board-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
+  #overlay { position: absolute; top: 0; left: 0; pointer-events: none; }
+
+  .piece {
+    position: absolute; box-sizing: border-box;
+    border: 2px solid var(--primary-green);
+    border-radius: 6px;
+    background: rgba(35,115,41,0.16);
+    transform-origin: center center;
+    cursor: grab; touch-action: none;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.1s, background 0.1s;
+  }
+  .piece.invalid { border-color: var(--bad); background: rgba(192,57,43,0.18); }
+  .piece.selected { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3B5FC0; z-index: 60; }
+  .piece img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+  .piece .pname {
+    position: absolute; pointer-events: none; font-family: var(--font-title); font-weight: 800;
+    font-size: 10px; color: rgba(0,0,0,0.55); text-transform: uppercase; letter-spacing: 0.3px;
+    text-align: center; padding: 0 2px; line-height: 1;
+  }
+
+  /* Panneau bas */
+  .fz-panel {
+    background: #FFFBFF; border-radius: 22px 22px 0 0; padding: 14px 18px calc(16px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; gap: 12px; box-shadow: 0 -6px 20px rgba(0,0,0,0.06);
+  }
+  .fz-status { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .fz-status-text { font-size: 13px; font-weight: 600; color: var(--text-gray); line-height: 1.35; }
+  .fz-count {
+    flex-shrink: 0; font-family: var(--font-title); font-weight: 800; font-size: 13px;
+    color: var(--primary-green); background: #EFEEE3; padding: 6px 12px; border-radius: 99px; white-space: nowrap;
+  }
+
+  .fz-rotate { display: none; align-items: center; gap: 10px; }
+  .fz-rotate.show { display: flex; }
+  .fz-rotate .rlabel { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-gray); }
+  .rbtn {
+    width: 40px; height: 40px; border-radius: 12px; border: 1.5px solid rgba(187,185,177,0.5);
+    background: #fff; cursor: pointer; flex-shrink: 0; font-size: 18px; color: var(--text-dark);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rbtn:active { background: #EFEEE3; }
+  #rot-range { flex: 1; accent-color: var(--primary-green); }
+
+  .fz-actions { display: flex; gap: 10px; }
+  .fz-ghost {
+    flex: 1; background: #EFEEE3; border: none; border-radius: 99px; padding: 14px;
+    font-family: var(--font-body); font-weight: 700; font-size: 14px; color: var(--text-gray); cursor: pointer;
+  }
+  .fz-start {
+    flex: 2; background: var(--primary-green); border: none; border-radius: 99px; padding: 14px;
+    color: #fff; font-family: var(--font-title); font-weight: 800; font-size: 15px; cursor: pointer;
+    box-shadow: 0 6px 16px rgba(35,115,41,0.28); text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: transform 0.08s;
+  }
+  .fz-start:active { transform: translateY(1px); }
+  .fz-start.feasible { background: linear-gradient(135deg, #2E7D32, #43A047); }
+
+  /* États vides */
+  .fz-empty {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; padding: 40px 28px; text-align: center;
+  }
+  .fz-empty .emoji { font-size: 46px; }
+  .fz-empty h2 { font-family: var(--font-title); font-size: 18px; font-weight: 800; color: var(--text-dark); }
+  .fz-empty p { font-size: 14px; color: var(--text-gray); line-height: 1.5; }
+  .fz-empty a { color: var(--primary-green); font-weight: 700; text-decoration: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fz-wrap">
+
+  <div class="fz-top">
+    <a href="{% url 'patron_detail' pk=patron.pk %}" class="fz-back" aria-label="Retour">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+    <div class="fz-titles">
+      <h1>Vérifier la faisabilité</h1>
+      <p>{{ patron.titre }}</p>
+    </div>
+    <div class="fz-verdict" id="verdict">—</div>
+  </div>
+
+  {% if not has_pieces %}
+    <div class="fz-empty">
+      <div class="emoji">✂️</div>
+      <h2>Aucune pièce à placer</h2>
+      <p>Ce patron n'a pas encore de pièces à découper renseignées. Ajoute-les depuis l'espace de création du patron.</p>
+    </div>
+  {% elif not has_garments %}
+    <div class="fz-empty">
+      <div class="emoji">🧵</div>
+      <h2>Aucun tissu mesuré</h2>
+      <p>Pour tester le placement, ajoute d'abord un vêtement via le scan (avec détourage + étalonnage).
+        <br><a href="{% url 'ajout_textile' %}">Scanner un vêtement →</a></p>
+    </div>
+  {% else %}
+    <!-- Sélecteur de vêtement -->
+    <div class="fz-garments" id="garments"></div>
+
+    <!-- Plateau -->
+    <div class="fz-stage" id="stage">
+      <div id="board">
+        <img id="board-img" src="" alt="">
+        <svg id="overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </div>
+
+    <!-- Panneau -->
+    <div class="fz-panel">
+      <div class="fz-status">
+        <div class="fz-status-text" id="status-text">Glisse chaque pièce dans la zone claire, hors des défauts.</div>
+        <div class="fz-count" id="count">0 / 0</div>
+      </div>
+
+      <div class="fz-rotate" id="rotate-row">
+        <span class="rlabel">Rotation</span>
+        <button type="button" class="rbtn" id="rot-minus" aria-label="Tourner à gauche">⟲</button>
+        <input type="range" id="rot-range" min="0" max="359" value="0">
+        <button type="button" class="rbtn" id="rot-plus" aria-label="Tourner à droite">⟳</button>
+      </div>
+
+      <div class="fz-actions">
+        <button type="button" class="fz-ghost" id="btn-reset">Réinitialiser</button>
+        <form method="POST" action="{% url 'patron_detail' pk=patron.pk %}" id="start-form" style="flex:2; display:flex;">
+          {% csrf_token %}
+          <input type="hidden" name="vetement_ids" id="start-ids" value="[]">
+          <button type="submit" class="fz-start" id="btn-start">🧵 Démarrer le projet</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+{% if has_pieces and has_garments %}
+{{ fz_data|json_script:"fz-data" }}
+<script>
+(function () {
+  const DATA = JSON.parse(document.getElementById('fz-data').textContent);
+  const stage = document.getElementById('stage');
+  const board = document.getElementById('board');
+  const boardImg = document.getElementById('board-img');
+  const overlay = document.getElementById('overlay');
+  const garmentsEl = document.getElementById('garments');
+  const verdictEl = document.getElementById('verdict');
+  const countEl = document.getElementById('count');
+  const statusText = document.getElementById('status-text');
+  const rotateRow = document.getElementById('rotate-row');
+  const rotRange = document.getElementById('rot-range');
+  const startIds = document.getElementById('start-ids');
+  const btnStart = document.getElementById('btn-start');
+
+  let current = null;        // vêtement courant
+  let dispW = 0, dispH = 0;  // taille d'affichage de la photo (px)
+  let pxPerCm = 1;           // pixels d'affichage par cm
+  let polyDisp = [];         // polygone en px d'affichage
+  let defsDisp = [];         // défauts {cx,cy,r} en px
+  let instances = [];        // pièces placées
+  let selected = -1;
+
+  // ── Sélecteur de vêtements ──
+  DATA.garments.forEach((g, i) => {
+    const el = document.createElement('div');
+    el.className = 'fz-garment' + (i === 0 ? ' active' : '');
+    el.innerHTML = `<div class="fz-garment-thumb"><img src="${g.photo}" alt=""></div>
+                    <div class="fz-garment-name">${g.nom}</div>`;
+    el.addEventListener('click', () => {
+      garmentsEl.querySelectorAll('.fz-garment').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      selectGarment(g);
+    });
+    garmentsEl.appendChild(el);
+  });
+
+  function selectGarment(g) {
+    current = g;
+    startIds.value = JSON.stringify([g.id]);
+    const im = new Image();
+    im.onload = () => {
+      const nW = im.naturalWidth, nH = im.naturalHeight;
+      const sw = stage.clientWidth, sh = stage.clientHeight;
+      const scale = Math.min(sw / nW, sh / nH);
+      dispW = Math.round(nW * scale);
+      dispH = Math.round(nH * scale);
+      pxPerCm = scale / g.echelle_cm_px;     // px d'affichage par cm réel
+      board.style.width = dispW + 'px';
+      board.style.height = dispH + 'px';
+      boardImg.src = g.photo;
+      buildOverlay();
+      buildPieces();
+      render();
+    };
+    im.src = g.photo;
+  }
+
+  // ── Overlay : zone utile + défauts ──
+  function buildOverlay() {
+    polyDisp = (current.detourage || []).map(p => [p.x * dispW, p.y * dispH]);
+    defsDisp = (current.defauts || []).map(d => ({ cx: d.x * dispW, cy: d.y * dispH, r: (d.r || 0) * dispW }));
+    overlay.setAttribute('width', dispW);
+    overlay.setAttribute('height', dispH);
+    overlay.setAttribute('viewBox', `0 0 ${dispW} ${dispH}`);
+    const polyPath = polyDisp.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ') + ' Z';
+    const outerPath = `M0 0 H${dispW} V${dispH} H0 Z`;
+    let svg = '';
+    // Assombrir l'extérieur (règle evenodd : trou = polygone)
+    svg += `<path d="${outerPath} ${polyPath}" fill="rgba(10,12,8,0.55)" fill-rule="evenodd"/>`;
+    // Contour zone utile
+    svg += `<path d="${polyPath}" fill="none" stroke="#6FCF73" stroke-width="2.5" stroke-linejoin="round"/>`;
+    // Défauts
+    defsDisp.forEach(d => {
+      svg += `<circle cx="${d.cx.toFixed(1)}" cy="${d.cy.toFixed(1)}" r="${d.r.toFixed(1)}" fill="rgba(192,57,43,0.32)" stroke="#C0392B" stroke-width="2"/>`;
+    });
+    overlay.innerHTML = svg;
+  }
+
+  // ── Pièces ──
+  function buildPieces() {
+    board.querySelectorAll('.piece').forEach(e => e.remove());
+    instances = [];
+    selected = -1;
+    rotateRow.classList.remove('show');
+
+    // bbox du polygone pour la disposition initiale
+    const xs = polyDisp.map(p => p[0]), ys = polyDisp.map(p => p[1]);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const pad = 6;
+    let curX = minX + pad, curY = minY + pad, rowH = 0;
+
+    DATA.pieces.forEach((pc, pi) => {
+      const w = Math.max(12, (pc.largeur_cm || 8) * pxPerCm);
+      const h = Math.max(12, (pc.hauteur_cm || 8) * pxPerCm);
+      for (let q = 0; q < (pc.quantite || 1); q++) {
+        if (curX + w > maxX - pad && curX > minX + pad) { curX = minX + pad; curY += rowH + pad; rowH = 0; }
+        const cx = curX + w / 2, cy = curY + h / 2;
+        curX += w + pad; rowH = Math.max(rowH, h);
+
+        const inst = { pi, w, h, cx, cy, rot: 0, valid: false, el: null };
+        const el = document.createElement('div');
+        el.className = 'piece';
+        el.style.width = w + 'px';
+        el.style.height = h + 'px';
+        if (pc.svg_url) {
+          el.innerHTML = `<img src="${pc.svg_url}" alt="">`;
+        } else {
+          el.innerHTML = `<span class="pname">${pc.nom || ''}</span>`;
+        }
+        el.dataset.idx = instances.length;
+        board.appendChild(el);
+        inst.el = el;
+        instances.push(inst);
+        attachDrag(inst);
+      }
+    });
+  }
+
+  function placeEl(inst) {
+    const el = inst.el;
+    el.style.left = (inst.cx - inst.w / 2) + 'px';
+    el.style.top = (inst.cy - inst.h / 2) + 'px';
+    el.style.transform = `rotate(${inst.rot}deg)`;
+  }
+
+  // ── Géométrie ──
+  function corners(inst) {
+    const a = inst.rot * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+    const hw = inst.w / 2, hh = inst.h / 2;
+    return [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]]
+      .map(([x, y]) => [inst.cx + x * c - y * s, inst.cy + x * s + y * c]);
+  }
+  function pointInPoly(pt, poly) {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+      if (((yi > pt[1]) !== (yj > pt[1])) && (pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi + 1e-9) + xi)) inside = !inside;
+    }
+    return inside;
+  }
+  function obbOverlap(p1, p2) {
+    for (const poly of [p1, p2]) {
+      for (let i = 0; i < poly.length; i++) {
+        const a = poly[i], b = poly[(i + 1) % poly.length];
+        const ax = -(b[1] - a[1]), ay = (b[0] - a[0]);
+        let min1 = Infinity, max1 = -Infinity, min2 = Infinity, max2 = -Infinity;
+        for (const q of p1) { const pr = q[0] * ax + q[1] * ay; min1 = Math.min(min1, pr); max1 = Math.max(max1, pr); }
+        for (const q of p2) { const pr = q[0] * ax + q[1] * ay; min2 = Math.min(min2, pr); max2 = Math.max(max2, pr); }
+        if (max1 < min2 || max2 < min1) return false;
+      }
+    }
+    return true;
+  }
+  function isValid(inst, idx) {
+    const cs = corners(inst);
+    const samples = cs.slice();
+    samples.push([inst.cx, inst.cy]);
+    for (let i = 0; i < 4; i++) { const a = cs[i], b = cs[(i + 1) % 4]; samples.push([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]); }
+    for (const sp of samples) {
+      if (!pointInPoly(sp, polyDisp)) return false;
+      for (const d of defsDisp) { if (Math.hypot(sp[0] - d.cx, sp[1] - d.cy) <= d.r) return false; }
+    }
+    for (let k = 0; k < instances.length; k++) {
+      if (k === idx) continue;
+      if (obbOverlap(cs, corners(instances[k]))) return false;
+    }
+    return true;
+  }
+
+  // ── Rendu + verdict ──
+  function render() {
+    let okCount = 0;
+    instances.forEach((inst, i) => {
+      placeEl(inst);
+      const ok = isValid(inst, i);
+      inst.valid = ok;
+      inst.el.classList.toggle('invalid', !ok);
+      if (ok) okCount++;
+    });
+    const total = instances.length;
+    countEl.textContent = okCount + ' / ' + total;
+    const feasible = total > 0 && okCount === total;
+    verdictEl.textContent = feasible ? '✓ Réalisable' : (okCount > 0 ? '⚠ À ajuster' : '✗');
+    verdictEl.className = 'fz-verdict ' + (feasible ? 'ok' : (okCount > 0 ? 'bad' : ''));
+    btnStart.classList.toggle('feasible', feasible);
+    btnStart.textContent = feasible ? '✓ Ça rentre — démarrer le projet' : '🧵 Démarrer le projet';
+    statusText.textContent = feasible
+      ? 'Toutes les pièces rentrent dans la zone utile !'
+      : 'Glisse chaque pièce dans la zone claire, hors des défauts (rouge).';
+  }
+
+  // ── Sélection + drag ──
+  function select(idx) {
+    selected = idx;
+    instances.forEach((inst, i) => inst.el.classList.toggle('selected', i === idx));
+    if (idx >= 0) { rotateRow.classList.add('show'); rotRange.value = Math.round(instances[idx].rot); }
+    else rotateRow.classList.remove('show');
+  }
+
+  function attachDrag(inst) {
+    const el = inst.el;
+    let startX, startY, origCx, origCy;
+    el.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      const idx = +el.dataset.idx;
+      select(idx);
+      el.setPointerCapture(e.pointerId);
+      el.style.zIndex = 70;
+      const r = board.getBoundingClientRect();
+      startX = e.clientX; startY = e.clientY;
+      origCx = inst.cx; origCy = inst.cy;
+      el._move = (ev) => {
+        const dx = (ev.clientX - startX) * (dispW / r.width);
+        const dy = (ev.clientY - startY) * (dispH / r.height);
+        inst.cx = Math.max(0, Math.min(dispW, origCx + dx));
+        inst.cy = Math.max(0, Math.min(dispH, origCy + dy));
+        render();
+      };
+      el._up = () => {
+        el.removeEventListener('pointermove', el._move);
+        el.removeEventListener('pointerup', el._up);
+        el.style.zIndex = inst.valid ? '' : 5;
+      };
+      el.addEventListener('pointermove', el._move);
+      el.addEventListener('pointerup', el._up);
+    });
+  }
+
+  // Tap fond = désélection
+  stage.addEventListener('pointerdown', (e) => { if (e.target === stage || e.target === boardImg || e.target === overlay) select(-1); });
+
+  // Rotation
+  function rotateSelected(deg) {
+    if (selected < 0) return;
+    instances[selected].rot = ((deg % 360) + 360) % 360;
+    rotRange.value = Math.round(instances[selected].rot);
+    render();
+  }
+  rotRange.addEventListener('input', () => rotateSelected(parseInt(rotRange.value)));
+  document.getElementById('rot-minus').addEventListener('click', () => { if (selected >= 0) rotateSelected(instances[selected].rot - 15); });
+  document.getElementById('rot-plus').addEventListener('click', () => { if (selected >= 0) rotateSelected(instances[selected].rot + 15); });
+
+  document.getElementById('btn-reset').addEventListener('click', () => { buildPieces(); render(); });
+
+  window.addEventListener('resize', () => { if (current) selectGarment(current); });
+
+  // Démarrage
+  if (DATA.garments.length) selectGarment(DATA.garments[0]);
+})();
+</script>
+{% endif %}
+{% endblock %}
