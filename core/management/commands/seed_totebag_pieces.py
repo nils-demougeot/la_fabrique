@@ -35,11 +35,24 @@ PIECES = [
 class Command(BaseCommand):
     help = "Crée des pièces factices pour le patron Tote bag XXL."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--force", action="store_true",
+            help="Recrée les pièces même si le patron en possède déjà.",
+        )
+
     def handle(self, *args, **options):
         patron = (Patron.objects.filter(titre__icontains="tote bag xxl").first()
                   or Patron.objects.filter(titre__icontains="tote").first())
         if not patron:
             self.stderr.write(self.style.ERROR("Patron « Tote bag XXL » introuvable."))
+            return
+
+        # Idempotent : on ne refait rien si des pièces existent déjà (sauf --force).
+        if patron.pieces.exists() and not options.get("force"):
+            self.stdout.write(self.style.SUCCESS(
+                f"« {patron.titre} » a déjà {patron.pieces.count()} pièce(s) — skip (utilise --force pour recréer)."
+            ))
             return
 
         # On repart d'une base propre (idempotent)
