@@ -44,8 +44,25 @@ class Vetement(models.Model):
     couleur = models.CharField(max_length=30, blank=True, null=True)
     matiere = models.CharField(max_length=200, blank=True, null=True)  # ex: "coton:70,polyester:30"
 
+    # Données d'échelle/forme de la face avant (photoURL), pour le placement des pièces.
+    echelle_cm_px = models.FloatField(null=True, blank=True)            # cm par pixel de la photo
+    detourage = models.TextField(null=True, blank=True)                # polygone normalisé [{x,y},…]
+    defauts = models.TextField(null=True, blank=True)                  # cercles [{x,y,r,type},…] normalisés
+
     def __str__(self):
         return f"{self.nomVetement} - {self.utilisateur.username}"
+
+    @property
+    def photo_url(self):
+        if not self.photoURL:
+            return None
+        name = self.photoURL.name or ''
+        if name.startswith('http'):
+            return name
+        try:
+            return self.photoURL.url
+        except (ValueError, AttributeError):
+            return None
 
 class Patron(models.Model):
     titre = models.CharField(max_length=100)

@@ -263,6 +263,9 @@ def _analyser_face(request, prefix):
         'tache_m2': tache_m2,
         'trou_m2': trou_m2,
         'photo_data': request.POST.get(f'photo_data_{prefix}', ''),
+        'cm_per_px': cm_per_px,
+        'polygon': polygon,
+        'defects': defects,
     }
 
 
@@ -323,6 +326,9 @@ def ajout_textile(request):
                 qualite=qualite,
                 couleur=couleur,
                 matiere=matiere_raw,
+                echelle_cm_px=face_av['cm_per_px'],
+                detourage=json.dumps(face_av['polygon']),
+                defauts=json.dumps(face_av['defects']),
             )
 
             coins_earned = 3
@@ -733,6 +739,57 @@ def patron_detail(request, pk):
         'has_compatible': any(v['compatible'] for v in vetements_compatibles),
     }
     return render(request, 'core/patron_detail.html', context)
+
+
+@login_required
+def faisabilite_patron(request, pk):
+    """Outil de vérification de faisabilité : placer les pièces (SVG, à l'échelle réelle)
+    sur la photo détourée d'un vêtement de l'utilisateur."""
+    patron = get_object_or_404(Patron, pk=pk)
+
+    pieces = []
+    for pc in patron.pieces.all():
+        pieces.append({
+            'nom': pc.nom,
+            'quantite': pc.quantite or 1,
+            'largeur_cm': pc.largeur_cm,
+            'hauteur_cm': pc.hauteur_cm,
+            'svg_url': pc.svg_url,
+        })
+
+    garments = []
+    qs = (Vetement.objects
+          .filter(utilisateur=request.user, echelle_cm_px__isnull=False)
+          .order_by('-surfaceExploitable'))
+    for v in qs:
+        if not v.photo_url or not v.echelle_cm_px:
+            continue
+        try:
+            detour = json.loads(v.detourage) if v.detourage else []
+        except (ValueError, TypeError):
+            detour = []
+        try:
+            defs = json.loads(v.defauts) if v.defauts else []
+        except (ValueError, TypeError):
+            defs = []
+        if len(detour) < 3:
+            continue
+        garments.append({
+            'id': v.id,
+            'nom': v.nomVetement,
+            'photo': v.photo_url,
+            'echelle_cm_px': v.echelle_cm_px,
+            'detourage': detour,
+            'defauts': defs,
+            'surface': round(v.surfaceExploitable, 2),
+        })
+
+    return render(request, 'core/faisabilite_patron.html', {
+        'patron': patron,
+        'fz_data': {'pieces': pieces, 'garments': garments},
+        'has_pieces': len(pieces) > 0,
+        'has_garments': len(garments) > 0,
+    })
 
 
 @login_required
