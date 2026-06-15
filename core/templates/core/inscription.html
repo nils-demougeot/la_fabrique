@@ -270,6 +270,11 @@ body {
 
     <form class="login-card" method="POST" action="{% url 'inscription' %}">
       {% csrf_token %}
+      {% if error %}
+      <div style="background:#FDE8E2;color:#A24A33;padding:12px 16px;border-radius:12px;font-size:14px;font-weight:600;">
+        {{ error }}
+      </div>
+      {% endif %}
       <div class="form-group">
         <label for="email" class="form-label">Adresse e-mail</label>
         <input type="email" name="email" id="email" class="form-input" placeholder="tissserand@atelier.com" required>
