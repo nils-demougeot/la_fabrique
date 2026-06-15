@@ -1,12 +1,16 @@
 import base64
+import binascii
 import json
 import re
 import urllib.parse
 from io import BytesIO
 
 import qrcode as qrcode_lib
+from PIL import Image as PILImage
 
 from django.core.files.base import ContentFile
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
@@ -19,6 +23,46 @@ import math
 from django.http import HttpResponse, JsonResponse
 from core.models import (Vetement, Utilisateur, Patron, EtapePatron, PiecePatron, ProgressionProjet, PatronLike,
                          PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag, Badge)
+
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
+MAX_IMAGE_BYTES = 8 * 1024 * 1024  # 8 Mo
+
+
+def decode_base64_image(photo_data, name_prefix):
+    """Décode une image data-URI base64 en validant le format et la taille.
+
+    Renvoie un ContentFile prêt à être stocké, ou None si la donnée est absente
+    ou invalide. Vérifie l'extension (liste blanche) et que le contenu est bien
+    une image décodable par Pillow — empêche le stockage de fichiers arbitraires
+    (ex : SVG/HTML piégé) via le champ photo.
+    """
+    if not photo_data or ';base64,' not in photo_data:
+        return None
+
+    fmt, imgstr = photo_data.split(';base64,', 1)
+    ext = fmt.split('/')[-1].lower().strip()
+    if ext == 'jpe':
+        ext = 'jpg'
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        raise ValueError('Format d\'image non autorisé.')
+
+    try:
+        raw = base64.b64decode(imgstr, validate=True)
+    except (ValueError, binascii.Error):
+        raise ValueError('Image base64 invalide.')
+
+    if not raw or len(raw) > MAX_IMAGE_BYTES:
+        raise ValueError('Image vide ou trop volumineuse.')
+
+    # Vérifie que le contenu est réellement une image décodable.
+    try:
+        with PILImage.open(BytesIO(raw)) as im:
+            im.verify()
+    except Exception:
+        raise ValueError('Le fichier fourni n\'est pas une image valide.')
+
+    return ContentFile(raw, name=f'{name_prefix}.{ext}')
+
 
 BADGE_DEFINITIONS = [
     {'nom': 'Premier Projet',      'emoji': '🏆', 'description': '1er projet terminé',        'condition': 'Terminer 1 projet'},
@@ -304,12 +348,7 @@ def ajout_textile(request):
             couleur = request.POST.get('couleur', '')
             matiere_raw = request.POST.get('material', 'coton:100').strip() or 'coton:100'
 
-            photo_fichier = None
-            photo_data = face_av['photo_data']
-            if photo_data and ';base64,' in photo_data:
-                fmt, imgstr = photo_data.split(';base64,')
-                ext = fmt.split('/')[-1]
-                photo_fichier = ContentFile(base64.b64decode(imgstr), name=f'vetement.{ext}')
+            photo_fichier = decode_base64_image(face_av['photo_data'], 'vetement')
 
             Vetement.objects.create(
                 utilisateur=request.user,
@@ -1081,12 +1120,13 @@ def creer_post(request):
                 'error': 'Le titre et la description sont obligatoires.',
             })
 
-        image_fichier = None
-        photo_data = request.POST.get('photo_data', '')
-        if photo_data and ';base64,' in photo_data:
-            fmt, imgstr = photo_data.split(';base64,', 1)
-            ext = fmt.split('/')[-1]
-            image_fichier = ContentFile(base64.b64decode(imgstr), name=f'post.{ext}')
+        try:
+            image_fichier = decode_base64_image(request.POST.get('photo_data', ''), 'post')
+        except ValueError:
+            return render(request, 'core/creer_post.html', {
+                'patrons': Patron.objects.all(),
+                'error': "L'image fournie est invalide. Choisis une photo (PNG/JPG/WEBP).",
+            })
 
         patron_obj = None
         if patron_id:
@@ -1354,9 +1394,26 @@ def mon_profil(request):
 
 def inscription(request):
     if request.method == 'POST':
+        email = (request.POST.get('email') or '').strip()
+        password = request.POST.get('password') or ''
+
+        if not email or not password:
+            return render(request, 'core/inscription.html',
+                          {'error': "L'e-mail et le mot de passe sont obligatoires."})
+
+        if Utilisateur.objects.filter(email__iexact=email).exists():
+            return render(request, 'core/inscription.html',
+                          {'error': "Cette adresse e-mail est déjà utilisée."})
+
+        # Validation du mot de passe selon les règles Django (longueur, robustesse…).
+        try:
+            validate_password(password)
+        except DjangoValidationError as e:
+            return render(request, 'core/inscription.html', {'error': ' '.join(e.messages)})
+
         # On sauvegarde l'email et le mdp dans la session
-        request.session['reg_email'] = request.POST.get('email')
-        request.session['reg_password'] = request.POST.get('password')
+        request.session['reg_email'] = email
+        request.session['reg_password'] = password
         return redirect('inscription_etape1')
 
     return render(request, 'core/inscription.html')
@@ -1392,6 +1449,18 @@ def inscription_etape3(request):
         niveau = request.session.get('reg_niveau')
         avatar = request.session.get('reg_avatar', 'image 11.png')
 
+        # Si l'utilisateur arrive ici sans avoir passé les étapes (session expirée
+        # ou accès direct à l'URL), on le renvoie au début du parcours.
+        if not email or not password or not username:
+            return redirect('inscription')
+
+        # On revalide l'unicité juste avant la création pour éviter un 500
+        # (IntegrityError) en cas de doublon créé entre-temps.
+        if (Utilisateur.objects.filter(username=username).exists()
+                or Utilisateur.objects.filter(email__iexact=email).exists()):
+            return render(request, 'core/inscription.html',
+                          {'error': "Ce compte existe déjà. Essayez de vous connecter."})
+
         # 3. On créé le compte dans la session
         nouvel_utilisateur = Utilisateur.objects.create_user(
             username=username,
@@ -1422,15 +1491,22 @@ def detail_vetement(request, pk):
     if request.method == 'POST':
         vetement.nomVetement = request.POST.get('nom_vetement', vetement.nomVetement).strip() or vetement.nomVetement
         vetement.typeVetement = request.POST.get('clothing_type', vetement.typeVetement)
-        vetement.qualite = int(request.POST.get('qualite', vetement.qualite))
+        try:
+            vetement.qualite = int(request.POST.get('qualite', vetement.qualite))
+        except (ValueError, TypeError):
+            pass
         vetement.couleur = request.POST.get('couleur', vetement.couleur)
         vetement.matiere = request.POST.get('material', vetement.matiere)
 
-        photo_data = request.POST.get('photo_data', '')
-        if photo_data and ';base64,' in photo_data:
-            fmt, imgstr = photo_data.split(';base64,')
-            ext = fmt.split('/')[-1]
-            vetement.photoURL = ContentFile(base64.b64decode(imgstr), name=f'vetement.{ext}')
+        try:
+            nouvelle_photo = decode_base64_image(request.POST.get('photo_data', ''), 'vetement')
+        except ValueError:
+            return render(request, 'core/detail_vetement.html', {
+                'vetement': vetement,
+                'error': "L'image fournie est invalide.",
+            })
+        if nouvelle_photo:
+            vetement.photoURL = nouvelle_photo
 
         vetement.save()
         return redirect('mes_tissus')
