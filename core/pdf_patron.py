@@ -621,6 +621,161 @@ def _draw_cover(c, patron, items, rows, cols, master_w, master_h, total_pages):
 # ════════════════════════════════════════════════════════════════════════════
 #  Point d'entrée
 # ════════════════════════════════════════════════════════════════════════════
+_DIFFICULTE_LABELS = {1: 'Débutant', 2: 'Intermédiaire', 3: 'Avancé'}
+
+
+def _wrap(c, text, font, size, max_w):
+    """Découpe ``text`` en lignes qui tiennent dans ``max_w`` (points)."""
+    lines = []
+    for paragraph in str(text or '').split('\n'):
+        words = paragraph.split()
+        if not words:
+            lines.append('')
+            continue
+        cur = words[0]
+        for w in words[1:]:
+            if c.stringWidth(cur + ' ' + w, font, size) <= max_w:
+                cur += ' ' + w
+            else:
+                lines.append(cur)
+                cur = w
+        lines.append(cur)
+    return lines
+
+
+def build_instructions_pdf(patron, etapes, materiel_list=None):
+    """PDF imprimable et mis en forme des **étapes de réalisation** du projet.
+
+    Reprend le déroulé que l'utilisateur suit dans l'application (titre, durée,
+    matériel, puis chaque étape avec ses explications, conseils et vidéo) sous
+    une forme propre, paginée automatiquement, prête à imprimer."""
+    buf = BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    c.setTitle(f"Instructions — {patron.titre}")
+
+    left = 18 * mm
+    right = (PAGE_W - 18) * mm
+    content_w = right - left
+    top = (PAGE_H - 16) * mm
+    bottom = 20 * mm
+    y = [top]   # mutable via closure
+
+    def new_page():
+        c.showPage()
+        y[0] = top
+
+    def ensure(space):
+        if y[0] - space < bottom:
+            new_page()
+
+    def text_block(text, font, size, color, gap=3, indent=0.0, leading=None):
+        leading = leading or (size + 3)
+        for line in _wrap(c, text, font, size, content_w - indent):
+            ensure(leading)
+            c.setFillColor(color); c.setFont(font, size)
+            c.drawString(left + indent, y[0], line)
+            y[0] -= leading
+        y[0] -= gap
+
+    # ── En-tête : logo + titre ──
+    logo_h = _draw_logo(c, left, top, 40 * mm)
+    y[0] = top - (logo_h + 18 if logo_h else 4)
+
+    c.setFillColor(C_INK); c.setFont('Helvetica-Bold', 22)
+    c.drawString(left, y[0], "Instructions de réalisation"); y[0] -= 26
+    c.setFillColor(C_TEXT); c.setFont('Helvetica-Bold', 15)
+    for line in _wrap(c, patron.titre or '', 'Helvetica-Bold', 15, content_w):
+        c.drawString(left, y[0], line); y[0] -= 19
+    y[0] -= 4
+
+    # Méta (type · difficulté · durée)
+    meta = []
+    if patron.typeObjet:
+        meta.append(patron.typeObjet)
+    meta.append(_DIFFICULTE_LABELS.get(patron.difficulte, str(patron.difficulte)))
+    if patron.duree:
+        meta.append(f"⏱ {patron.duree}")
+    if meta:
+        c.setFillColor(C_MUTED); c.setFont('Helvetica', 10)
+        c.drawString(left, y[0], "   ·   ".join(meta)); y[0] -= 18
+
+    # Filet séparateur
+    c.setStrokeColor(C_LINE); c.setLineWidth(0.8)
+    c.line(left, y[0], right, y[0]); y[0] -= 16
+
+    # ── Description ──
+    if patron.description:
+        text_block("Présentation", 'Helvetica-Bold', 12, C_INK, gap=4)
+        text_block(patron.description, 'Helvetica', 10, C_TEXT, gap=10, leading=14)
+
+    # ── Matériel nécessaire ──
+    materiel_list = materiel_list or []
+    if materiel_list:
+        text_block("Matériel nécessaire", 'Helvetica-Bold', 12, C_INK, gap=4)
+        for item in materiel_list:
+            for k, line in enumerate(_wrap(c, item, 'Helvetica', 10, content_w - 16)):
+                ensure(14)
+                c.setFillColor(C_INK); c.setFont('Helvetica', 10)
+                if k == 0:
+                    c.drawString(left + 4, y[0], "•")
+                c.setFillColor(C_TEXT)
+                c.drawString(left + 16, y[0], line); y[0] -= 14
+        y[0] -= 8
+
+    # ── Étapes ──
+    text_block(f"Étapes ({len(etapes)})", 'Helvetica-Bold', 12, C_INK, gap=8)
+
+    for idx, etape in enumerate(etapes, start=1):
+        # On garde le titre de l'étape avec au moins une ligne de contenu
+        ensure(46)
+        # Pastille numérotée
+        c.setFillColor(C_INK)
+        c.circle(left + 7, y[0] + 3, 9, stroke=0, fill=1)
+        c.setFillColor(Color(1, 1, 1)); c.setFont('Helvetica-Bold', 10)
+        c.drawCentredString(left + 7, y[0], str(idx))
+        # Titre de l'étape
+        c.setFillColor(C_INK); c.setFont('Helvetica-Bold', 12)
+        titre = etape.titre or f"Étape {idx}"
+        title_lines = _wrap(c, titre, 'Helvetica-Bold', 12, content_w - 26)
+        for j, line in enumerate(title_lines):
+            if j > 0:
+                ensure(16)
+            c.setFillColor(C_INK); c.setFont('Helvetica-Bold', 12)
+            c.drawString(left + 24, y[0], line); y[0] -= 16
+        y[0] -= 4
+
+        if etape.description:
+            text_block(etape.description, 'Helvetica', 10, C_TEXT, gap=6, indent=24, leading=14)
+
+        if getattr(etape, 'conseil', None):
+            for k, line in enumerate(_wrap(c, etape.conseil, 'Helvetica-Oblique', 9.5, content_w - 40)):
+                ensure(13)
+                c.setFillColor(C_MUTED); c.setFont('Helvetica-Oblique', 9.5)
+                prefix = "💡 Conseil : " if k == 0 else ""
+                c.drawString(left + 24, y[0], prefix + line); y[0] -= 13
+            y[0] -= 4
+
+        if getattr(etape, 'video_url', None):
+            ensure(13)
+            c.setFillColor(C_MUTED); c.setFont('Helvetica', 9)
+            c.drawString(left + 24, y[0], f"▶ Vidéo : {etape.video_url}"); y[0] -= 13
+
+        y[0] -= 10
+        # Filet léger entre étapes
+        if idx < len(etapes):
+            ensure(12)
+            c.setStrokeColor(C_LINE); c.setLineWidth(0.4)
+            c.line(left + 24, y[0] + 4, right, y[0] + 4); y[0] -= 8
+
+    if not etapes:
+        text_block("Aucune étape n'est encore enregistrée pour ce patron.",
+                   'Helvetica-Oblique', 10, C_MUTED)
+
+    c.showPage()
+    c.save()
+    return buf.getvalue()
+
+
 def build_patron_pdf(patron, pieces):
     """Construit et renvoie les octets du PDF du patron."""
     items = _build_items(pieces)
