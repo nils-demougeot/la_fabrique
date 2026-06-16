@@ -9,6 +9,7 @@ urlpatterns = [
     path('patrons/creer/', views.creer_patron, name='creer_patron'),
     path('patrons/<int:pk>/', views.patron_detail, name='patron_detail'),
     path('patrons/<int:pk>/faisabilite/', views.faisabilite_patron, name='faisabilite_patron'),
+    path('patrons/<int:pk>/patron.pdf', views.patron_pdf, name='patron_pdf'),
     path('patrons/<int:patron_pk>/etape/<int:etape_num>/', views.etape_projet, name='etape_projet'),
     path('patrons/<int:pk>/like/', views.toggle_like, name='toggle_like'),
     path('patrons/<int:pk>/terminer/', views.terminer_projet, name='terminer_projet'),

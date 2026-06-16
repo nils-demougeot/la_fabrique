@@ -832,6 +832,28 @@ def faisabilite_patron(request, pk):
 
 
 @login_required
+def patron_pdf(request, pk):
+    """Génère à la volée le PDF des pièces du patron, à taille réelle, réparties
+    sur des feuilles A4 à imprimer puis assembler."""
+    patron = get_object_or_404(Patron, pk=pk)
+    pieces = list(patron.pieces.all())
+    if not pieces:
+        return HttpResponse(
+            "Ce patron n'a pas encore de pièces enregistrées.",
+            status=404, content_type='text/plain; charset=utf-8',
+        )
+
+    from core.pdf_patron import build_patron_pdf
+    pdf_bytes = build_patron_pdf(patron, pieces)
+
+    slug = re.sub(r'[^a-z0-9]+', '-', (patron.titre or 'patron').lower()).strip('-') or 'patron'
+    disposition = 'attachment' if request.GET.get('download') == '1' else 'inline'
+    resp = HttpResponse(pdf_bytes, content_type='application/pdf')
+    resp['Content-Disposition'] = f'{disposition}; filename="patron-{slug}.pdf"'
+    return resp
+
+
+@login_required
 def etape_projet(request, patron_pk, etape_num):
     patron = get_object_or_404(Patron, pk=patron_pk)
     etapes = list(patron.etapes.order_by('numero'))
