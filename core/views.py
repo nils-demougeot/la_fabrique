@@ -622,7 +622,6 @@ def creer_patron(request):
             estPremium=est_premium,
             difficulte=difficulte,
             photo=request.FILES.get('cover_image'),
-            pdf_patron=request.FILES.get('pdf_patron'),
             duree=duree or None,
             materiel=materiel or None,
             matiere_requise=matiere_requise or None,
@@ -850,6 +849,105 @@ def patron_pdf(request, pk):
     disposition = 'attachment' if request.GET.get('download') == '1' else 'inline'
     resp = HttpResponse(pdf_bytes, content_type='application/pdf')
     resp['Content-Disposition'] = f'{disposition}; filename="patron-{slug}.pdf"'
+    return resp
+
+
+def _patron_slug(patron):
+    slug = re.sub(r'[^a-z0-9]+', '-', (patron.titre or 'patron').lower()).strip('-')
+    return slug or 'patron'
+
+
+@login_required
+def patron_instructions_pdf(request, pk):
+    """PDF imprimable et mis en forme du déroulé du projet (toutes les étapes)."""
+    patron = get_object_or_404(Patron, pk=pk)
+    etapes = list(patron.etapes.order_by('numero'))
+
+    # Outils nécessaires : matériel du patron + matériaux des étapes (dédupliqués)
+    materiel_list, seen = [], set()
+    sources = [patron.materiel] + [e.materiaux_etape for e in etapes]
+    for src in sources:
+        if not src:
+            continue
+        for m in src.split(','):
+            m = m.strip()
+            if m and m.lower() not in seen:
+                seen.add(m.lower())
+                materiel_list.append(m)
+
+    from core.pdf_patron import build_instructions_pdf
+    pdf_bytes = build_instructions_pdf(patron, etapes, materiel_list)
+
+    disposition = 'attachment' if request.GET.get('download') == '1' else 'inline'
+    resp = HttpResponse(pdf_bytes, content_type='application/pdf')
+    resp['Content-Disposition'] = f'{disposition}; filename="instructions-{_patron_slug(patron)}.pdf"'
+    return resp
+
+
+@login_required
+def patron_export(request, pk):
+    """Exporte un patron au format JSON (sauvegarde / réimport dans le formulaire).
+
+    Le SVG des pièces (texte) est embarqué dans le fichier pour que les formes
+    soient restaurées à l'import ; les images (photo, photos d'étapes) ne sont
+    référencées que par leur URL."""
+    patron = get_object_or_404(Patron, pk=pk)
+
+    def _read_svg(piece):
+        if not getattr(piece, 'svg', None):
+            return None
+        try:
+            piece.svg.open('rb')
+            try:
+                return piece.svg.read().decode('utf-8', 'ignore')
+            finally:
+                piece.svg.close()
+        except Exception:
+            return None
+
+    data = {
+        'format': 'la-fabrique/patron',
+        'version': 1,
+        'patron': {
+            'titre': patron.titre,
+            'description': patron.description or '',
+            'type_objet': patron.typeObjet or '',
+            'difficulte': patron.difficulte,
+            'duree': patron.duree or '',
+            'est_premium': bool(patron.estPremium),
+            'surface_min': patron.surfaceMin,
+            'surface_max': patron.surfaceMax,
+            'materiel': patron.materiel or '',
+            'matiere_requise': patron.matiere_requise or '',
+            'photo_url': patron.photo_url,
+        },
+        'etapes': [
+            {
+                'numero': e.numero,
+                'titre': e.titre,
+                'description': e.description or '',
+                'video_url': e.video_url or '',
+                'conseil': e.conseil or '',
+                'materiaux_etape': e.materiaux_etape or '',
+                'image_url': e.image_url,
+            }
+            for e in patron.etapes.order_by('numero')
+        ],
+        'pieces': [
+            {
+                'nom': p.nom,
+                'quantite': p.quantite,
+                'largeur_cm': p.largeur_cm,
+                'hauteur_cm': p.hauteur_cm,
+                'svg': _read_svg(p),
+            }
+            for p in patron.pieces.all()
+        ],
+    }
+
+    payload = json.dumps(data, ensure_ascii=False, indent=2)
+    resp = HttpResponse(payload, content_type='application/json; charset=utf-8')
+    resp['Content-Disposition'] = f'attachment; filename="patron-{_patron_slug(patron)}.json"'
     return resp
 
 
