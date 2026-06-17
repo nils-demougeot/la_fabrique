@@ -25,10 +25,17 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-k)%!(08v06a_7i83a5%p1)771z)+vo3#o9q&oj233yopydt2z&'
+# En production, définir la variable d'environnement SECRET_KEY (clé aléatoire).
+# La valeur ci-dessous n'est qu'un repli pour le développement local.
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-k)%!(08v06a_7i83a5%p1)771z)+vo3#o9q&oj233yopydt2z&'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG vaut False par défaut (sécurité en prod). Pour le développement local,
+# ajouter DEBUG=True dans le fichier .env.
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = [
     'la-fabrique.onrender.com', 

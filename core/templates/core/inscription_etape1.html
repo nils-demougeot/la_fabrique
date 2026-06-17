@@ -393,7 +393,13 @@ body {
         <form id="form-etape-1" method="POST">
           {% csrf_token %}
 
-          <input type="text" name="username" class="input-pill" placeholder="nom d'utilisateur" required>
+          {% if error %}
+          <div style="background:#FCE8E6;color:#A24A33;padding:14px 18px;border-radius:14px;font-size:14px;font-weight:600;line-height:1.4;margin-bottom:16px;">
+            {{ error }}
+          </div>
+          {% endif %}
+
+          <input type="text" name="username" class="input-pill" placeholder="nom d'utilisateur" value="{{ username|default:'' }}" required>
 
           <div class="divider" style="margin-top: 28px;">Votre avatar</div>
 
