@@ -36,6 +36,10 @@ urlpatterns = [
     path('acheter-badge/', views.acheter_badge, name='acheter_badge'),
     path('mon-profil/', views.mon_profil, name='mon_profil'),
 
+    # Vérification d'e-mail
+    path('verifier-email/<str:token>/', views.verifier_email, name='verifier_email'),
+    path('renvoyer-verification/', views.renvoyer_verification, name='renvoyer_verification'),
+
     # RGPD
     path('politique-confidentialite/', views.politique_confidentialite, name='politique_confidentialite'),
     path('mon-profil/exporter-donnees/', views.exporter_donnees, name='exporter_donnees'),
