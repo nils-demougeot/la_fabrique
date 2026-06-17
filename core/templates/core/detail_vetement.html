@@ -287,7 +287,7 @@
         {% for i in "54321" %}
         <input type="radio" name="qualite" id="star{{ i }}" value="{{ i }}"
                {% if vetement.qualite == i|add:0 %}checked{% endif %}>
-        <label for="star{{ i }}">★</label>
+        <label for="star{{ i }}"><i class="ic fi-br-star"></i></label>
         {% endfor %}
       </div>
     </section>
@@ -431,7 +431,7 @@
       <button type="button" class="other-type-btn" data-type="debardeur"><span class="other-type-emoji">🩱</span>Débardeur</button>
       <button type="button" class="other-type-btn" data-type="combinaison"><span class="other-type-emoji">👘</span>Combinaison</button>
       <button type="button" class="other-type-btn" data-type="pyjama"><span class="other-type-emoji">😴</span>Pyjama</button>
-      <button type="button" class="other-type-btn" data-type="accessoire"><span class="other-type-emoji">🎀</span>Accessoire</button>
+      <button type="button" class="other-type-btn" data-type="accessoire"><span class="other-type-emoji"><i class="ic fi-br-ribbon"></i></span>Accessoire</button>
       <button type="button" class="other-type-btn" data-type="autre"><span class="other-type-emoji">•••</span>Autre</button>
     </div>
     <button type="button" class="btn-other-cancel" id="btn-other-cancel">Annuler</button>

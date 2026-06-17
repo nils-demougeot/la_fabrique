@@ -260,7 +260,7 @@
       <button class="btn-follow-sm {% if is_following %}following{% endif %}"
               id="followBtn"
               data-url="{% url 'toggle_suivi' post.utilisateur.pk %}">
-        {% if is_following %}Suivi ✓{% else %}Suivre{% endif %}
+        {% if is_following %}Suivi <i class="ic fi-br-check"></i>{% else %}Suivre{% endif %}
       </button>
     {% endif %}
   </div>
@@ -332,7 +332,7 @@
   <!-- Patron lié -->
   {% if post.patron_lie %}
   <a href="{% url 'patron_detail' post.patron_lie.pk %}" class="patron-lie-card" style="margin-top:16px;">
-    <div class="patron-lie-icon">📐</div>
+    <div class="patron-lie-icon"><i class="ic fi-br-ruler-triangle"></i></div>
     <div>
       <div class="patron-lie-label">Patron utilisé</div>
       <div class="patron-lie-titre">{{ post.patron_lie.titre }}</div>
@@ -449,7 +449,7 @@
       .then(data => {
         followBtn.classList.toggle('not-following', !data.following);
         followBtn.classList.toggle('following', data.following);
-        followBtn.textContent = data.following ? 'Suivi ✓' : 'Suivre';
+        followBtn.innerHTML = data.following ? 'Suivi <i class="ic fi-br-check"></i>' : 'Suivre';
       });
     });
   }

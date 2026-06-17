@@ -771,7 +771,7 @@
       Retour aux patrons
     </a>
     {% if patron.estPremium %}
-    <span class="access-badge">✦ Premium</span>
+    <span class="access-badge"><i class="ic fi-br-sparkles"></i> Premium</span>
     {% else %}
     <span class="access-badge free">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
@@ -954,7 +954,7 @@
               <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
               <path d="M12 8v4l3 3"/>
             </svg>
-            <span class="tissus-title">🧵 Tissus requis</span>
+            <span class="tissus-title"><i class="ic fi-br-reel"></i> Tissus requis</span>
           </div>
           <div class="materiel-chips">
             {% for m in matieres_requises_display %}
@@ -977,7 +977,7 @@
         <!-- Outils nécessaires -->
         {% if materiel_list %}
         <div class="materiel-card">
-          <div class="materiel-title">🔧 Outils nécessaires — tap pour cocher ce que tu as</div>
+          <div class="materiel-title"><i class="ic fi-br-wrench-simple"></i> Outils nécessaires — tap pour cocher ce que tu as</div>
           <div class="materiel-chips" id="materielChips">
             {% for item in materiel_list %}
             <button class="materiel-chip" data-material="{{ item }}">
@@ -991,10 +991,10 @@
         <!-- Instructions imprimables + export du patron -->
         {% if etapes %}
         <div class="materiel-card" style="margin-top:14px;">
-          <div class="materiel-title">📖 Instructions à imprimer</div>
+          <div class="materiel-title"><i class="ic fi-br-book-open-cover"></i> Instructions à imprimer</div>
           <a href="{% url 'patron_instructions_pdf' pk=patron.id %}" target="_blank" rel="noopener"
              style="display:flex; align-items:center; gap:12px; background:#fff; border:1.5px solid rgba(35,115,41,0.25); border-radius:14px; padding:13px 16px; text-decoration:none;">
-            <span style="font-size:24px;">🖨️</span>
+            <span style="font-size:24px;"><i class="ic fi-br-print"></i></span>
             <span style="flex:1; font-family:var(--font-body); font-weight:700; font-size:14px; color:var(--text-dark);">Toutes les étapes (PDF)
               <span style="display:block; font-weight:500; font-size:12px; color:var(--text-muted);">Le déroulé complet, mis en forme et prêt à imprimer</span>
             </span>
@@ -1006,7 +1006,7 @@
         {% if patron.createur_id == request.user.id or request.user.is_staff %}
         <a href="{% url 'patron_export' pk=patron.id %}"
            style="display:flex; align-items:center; gap:12px; margin-top:14px; background:#fff; border:1.5px solid rgba(187,185,177,0.4); border-radius:14px; padding:13px 16px; text-decoration:none;">
-          <span style="font-size:22px;">💾</span>
+          <span style="font-size:22px;"><i class="ic fi-br-disk"></i></span>
           <span style="flex:1; font-family:var(--font-body); font-weight:700; font-size:14px; color:var(--text-dark);">Exporter le patron (.json)
             <span style="display:block; font-weight:500; font-size:12px; color:var(--text-muted);">Sauvegarde réimportable dans le formulaire de création</span>
           </span>
@@ -1017,12 +1017,12 @@
         <!-- Planches PDF + pièces à découper -->
         {% if patron.pdf_url or patron.pieces.all %}
         <div class="materiel-card" style="margin-top:14px;">
-          <div class="materiel-title">✂️ Patron à découper</div>
+          <div class="materiel-title"><i class="ic fi-br-scissors"></i> Patron à découper</div>
 
           {% if patron.pieces.all %}
           <a href="{% url 'patron_pdf' pk=patron.id %}" target="_blank" rel="noopener"
              style="display:flex; align-items:center; gap:12px; background:linear-gradient(135deg,#2E7D32 0%,#43A047 100%); border-radius:14px; padding:14px 16px; text-decoration:none; margin-bottom:12px; box-shadow:0 4px 12px rgba(35,115,41,0.25);">
-            <span style="font-size:24px;">🖨️</span>
+            <span style="font-size:24px;"><i class="ic fi-br-print"></i></span>
             <span style="flex:1; font-family:var(--font-body); font-weight:800; font-size:14px; color:#fff;">Générer le PDF à imprimer
               <span style="display:block; font-weight:500; font-size:12px; color:rgba(255,255,255,0.88);">Pièces à taille réelle, à découper et assembler</span>
             </span>
@@ -1033,7 +1033,7 @@
           {% if patron.pdf_url %}
           <a href="{{ patron.pdf_url }}" target="_blank" rel="noopener"
              style="display:flex; align-items:center; gap:12px; background:#fff; border:1.5px solid rgba(35,115,41,0.25); border-radius:14px; padding:13px 16px; text-decoration:none; margin-bottom:12px;">
-            <span style="font-size:24px;">📄</span>
+            <span style="font-size:24px;"><i class="ic fi-br-document"></i></span>
             <span style="flex:1; font-family:var(--font-body); font-weight:700; font-size:14px; color:var(--text-dark);">Planches du patron (PDF)
               <span style="display:block; font-weight:500; font-size:12px; color:var(--text-muted);">À imprimer et découper</span>
             </span>
@@ -1049,7 +1049,7 @@
                 {% if piece.svg_url %}
                 <img src="{{ piece.svg_url }}" alt="{{ piece.nom }}" style="max-width:100%; max-height:64px;">
                 {% else %}
-                <span style="font-size:24px;">✂️</span>
+                <span style="font-size:24px;"><i class="ic fi-br-scissors"></i></span>
                 {% endif %}
               </div>
               <div style="font-family:var(--font-body); font-weight:700; font-size:12px; color:var(--text-dark); line-height:1.2;">{{ piece.nom }}</div>
@@ -1107,7 +1107,7 @@
         {% if item.vetement.photoURL %}
         <img src="{{ item.vetement.photoURL.url }}" alt="{{ item.vetement.nomVetement }}">
         {% else %}
-        <span>🧶</span>
+        <span><i class="ic fi-br-reel"></i></span>
         {% endif %}
       </div>
 
@@ -1140,7 +1140,7 @@
           <span class="garment-badge badge-warn">Surface insuff.</span>
           {% endif %}
           {% if not item.matiere_ok %}
-          <span class="garment-badge badge-bad">Matière ✗</span>
+          <span class="garment-badge badge-bad">Matière <i class="ic fi-br-cross-small"></i></span>
           {% endif %}
         {% endif %}
       </div>
@@ -1227,7 +1227,7 @@
   </a>
   {% if verif_requise or not email_verifie %}
   <div style="display:flex;gap:10px;align-items:flex-start;background:#FFF4E5;color:#8A5A00;padding:12px 16px;border-radius:14px;margin-bottom:10px;font-size:13px;font-weight:600;line-height:1.4;">
-    <span>✉️</span>
+    <span><i class="ic fi-br-envelope"></i></span>
     <span>Vérifiez votre adresse e-mail pour pouvoir démarrer ce projet. Le lien vous a été envoyé à l'inscription (bandeau « Renvoyer » en haut).</span>
   </div>
   {% endif %}
@@ -1238,12 +1238,12 @@
     {% csrf_token %}
     <input type="hidden" name="vetement_ids" id="selected-vetement-ids" value="[]">
     <button type="submit" class="btn-start" id="btn-demarrer">
-      🧵 Démarrer le projet
+      <i class="ic fi-br-reel"></i> Démarrer le projet
     </button>
   </form>
   {% else %}
   <button class="btn-start" disabled style="opacity: 0.5; cursor: not-allowed;">
-    🔒 Vérifiez votre e-mail pour démarrer
+    <i class="ic fi-br-lock"></i> Vérifiez votre e-mail pour démarrer
   </button>
   {% endif %}
   {% else %}
@@ -1313,9 +1313,9 @@
     const btn = document.getElementById('btn-demarrer');
     if (!btn) return;
     if (selectedIds.size > 0) {
-      btn.textContent = `🧵 Démarrer avec ${selectedIds.size} tissu${selectedIds.size > 1 ? 's' : ''}`;
+      btn.innerHTML = `<i class="ic fi-br-reel"></i> Démarrer avec ${selectedIds.size} tissu${selectedIds.size > 1 ? 's' : ''}`;
     } else {
-      btn.textContent = '🧵 Démarrer le projet';
+      btn.innerHTML = '<i class="ic fi-br-reel"></i> Démarrer le projet';
     }
   }
 

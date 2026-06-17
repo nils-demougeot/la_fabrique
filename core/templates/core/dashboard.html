@@ -1883,7 +1883,7 @@
         {% if projet.image %}
         <img class="creation-card-img" src="{{ projet.image }}" alt="{{ projet.titre }}">
         {% else %}
-        <div class="creation-card-img-placeholder">✂️</div>
+        <div class="creation-card-img-placeholder"><i class="ic fi-br-scissors"></i></div>
         {% endif %}
 
         <!-- Infos -->
@@ -1903,7 +1903,7 @@
 
     <!-- État vide -->
     <div class="creations-empty">
-      <span class="creations-empty-emoji">🧵</span>
+      <span class="creations-empty-emoji"><i class="ic fi-br-reel"></i></span>
       <p class="creations-empty-title">Ton atelier t'attend !</p>
       <p class="creations-empty-sub">Termine ton premier patron pour voir tes créations apparaître ici.</p>
       <a href="{% url 'patrons' %}" class="creations-empty-cta">
@@ -2019,12 +2019,12 @@
       <div class="shop-scroll">
 
         <div class="shop-item">
-          <div class="shop-item-icon" style="background:#DCF5E0;">🪡</div>
+          <div class="shop-item-icon" style="background:#DCF5E0;color:#237329;"><i class="ic fi-br-reel"></i></div>
           <span class="shop-item-name">Patron Tote Bag Éco</span>
           <span class="shop-item-desc">Un sac stylé cousu de chutes de tissu récupérées</span>
           <div class="shop-item-footer">
             <div class="shop-item-price">
-              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-coin"><img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"></span>
               <span class="shop-price-amount">15</span>
             </div>
             <button class="shop-btn" data-price="15" onclick="buyItem(this)">Obtenir</button>
@@ -2032,12 +2032,12 @@
         </div>
 
         <div class="shop-item">
-          <div class="shop-item-icon" style="background:#FFF0E8;">👗</div>
+          <div class="shop-item-icon" style="background:#FFF0E8;color:#C2603F;"><i class="ic fi-br-ruler-triangle"></i></div>
           <span class="shop-item-name">Patron Robe Fluide</span>
           <span class="shop-item-desc">Coupe intemporelle, zéro déchet de coupe</span>
           <div class="shop-item-footer">
             <div class="shop-item-price">
-              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-coin"><img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"></span>
               <span class="shop-price-amount">35</span>
             </div>
             <button class="shop-btn" data-price="35" onclick="buyItem(this)">Obtenir</button>
@@ -2045,12 +2045,12 @@
         </div>
 
         <div class="shop-item">
-          <div class="shop-item-icon" style="background:#E8F4FD;">🎨</div>
+          <div class="shop-item-icon" style="background:#E8F4FD;color:#2E6FB0;"><i class="ic fi-br-palette"></i></div>
           <span class="shop-item-name">Guide Teinture Naturelle</span>
           <span class="shop-item-desc">Indigo, garance et kaki 100% naturels</span>
           <div class="shop-item-footer">
             <div class="shop-item-price">
-              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-coin"><img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"></span>
               <span class="shop-price-amount">25</span>
             </div>
             <button class="shop-btn" data-price="25" onclick="buyItem(this)">Obtenir</button>
@@ -2058,12 +2058,12 @@
         </div>
 
         <div class="shop-item">
-          <div class="shop-item-icon" style="background:#F4E8FF;">✂️</div>
+          <div class="shop-item-icon" style="background:#F4E8FF;color:#7A4FB0;"><i class="ic fi-br-scissors"></i></div>
           <span class="shop-item-name">Patron Veste Upcyclée</span>
           <span class="shop-item-desc">Transformez un vieux jean en veste tendance</span>
           <div class="shop-item-footer">
             <div class="shop-item-price">
-              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-coin"><img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"></span>
               <span class="shop-price-amount">45</span>
             </div>
             <button class="shop-btn" data-price="45" onclick="buyItem(this)">Obtenir</button>
@@ -2071,16 +2071,16 @@
         </div>
 
         <div class="shop-item">
-          <div class="shop-item-icon" style="background:#FFF3CD;">🌿</div>
+          <div class="shop-item-icon" style="background:#FFF3CD;color:#5B8C2A;"><i class="ic fi-br-leaf"></i></div>
           <span class="shop-item-name">Badge Éco Warrior</span>
           <span class="shop-item-desc">Badge exclusif affiché sur votre profil</span>
           <div class="shop-item-footer">
             <div class="shop-item-price">
-              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-coin"><img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"></span>
               <span class="shop-price-amount">10</span>
             </div>
             {% if has_eco_warrior %}
-            <button class="shop-btn obtained" disabled>Obtenu ✓</button>
+            <button class="shop-btn obtained" disabled>Obtenu <i class="ic fi-br-check"></i></button>
             {% else %}
             <button class="shop-btn" id="btn-eco-warrior" data-price="10" onclick="buyBadgeEcoWarrior(this)">Obtenir</button>
             {% endif %}
@@ -2088,12 +2088,12 @@
         </div>
 
         <div class="shop-item">
-          <div class="shop-item-icon" style="background:#FFEBEE;">📦</div>
+          <div class="shop-item-icon" style="background:#FFEBEE;color:#C2405A;"><i class="ic fi-br-box"></i></div>
           <span class="shop-item-name">Pack Zéro Déchet</span>
           <span class="shop-item-desc">4 patrons + guide couture responsable complet</span>
           <div class="shop-item-footer">
             <div class="shop-item-price">
-              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-coin"><img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"></span>
               <span class="shop-price-amount">55</span>
             </div>
             <button class="shop-btn" data-price="55" onclick="buyItem(this)">Obtenir</button>
@@ -2101,12 +2101,12 @@
         </div>
 
         <div class="shop-item">
-          <div class="shop-item-icon" style="background:#FFF9C4;">⭐</div>
+          <div class="shop-item-icon" style="background:#FFF9C4;color:#C99A12;"><i class="ic fi-br-star"></i></div>
           <span class="shop-item-name">Accès Premium</span>
           <span class="shop-item-desc">Tous les patrons en illimité pendant 1 mois</span>
           <div class="shop-item-footer">
             <div class="shop-item-price">
-              <span class="shop-price-coin">🪙</span>
+              <span class="shop-price-coin"><img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"></span>
               <span class="shop-price-amount">80</span>
             </div>
             <button class="shop-btn" data-price="80" onclick="buyItem(this)">Obtenir</button>
@@ -2124,35 +2124,35 @@
       <div class="packs-grid">
 
         <div class="pack-card pack-starter">
-          <span class="pack-icon">🌱</span>
+          <span class="pack-icon"><i class="ic fi-br-seedling"></i></span>
           <span class="pack-name">Graine</span>
-          <div class="pack-coins">50 <span class="pack-coins-unit">🪙</span></div>
+          <div class="pack-coins">50 <span class="pack-coins-unit"><img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"></span></div>
           <span class="pack-price">0,99 €</span>
           <button class="pack-btn" onclick="buyPack(50, '0,99')">Acheter</button>
         </div>
 
         <div class="pack-card pack-popular">
           <div class="pack-badge">Populaire</div>
-          <span class="pack-icon">🧵</span>
+          <span class="pack-icon"><i class="ic fi-br-reel"></i></span>
           <span class="pack-name">Bobine</span>
-          <div class="pack-coins">150 <span class="pack-coins-unit">🪙</span></div>
+          <div class="pack-coins">150 <span class="pack-coins-unit"><img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"></span></div>
           <span class="pack-price">2,49 €</span>
           <button class="pack-btn" onclick="buyPack(150, '2,49')">Acheter</button>
         </div>
 
         <div class="pack-card pack-atelier">
-          <span class="pack-icon">✂️</span>
+          <span class="pack-icon"><i class="ic fi-br-scissors"></i></span>
           <span class="pack-name">Atelier</span>
-          <div class="pack-coins">400 <span class="pack-coins-unit">🪙</span></div>
+          <div class="pack-coins">400 <span class="pack-coins-unit"><img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"></span></div>
           <span class="pack-price">5,99 €</span>
           <button class="pack-btn" onclick="buyPack(400, '5,99')">Acheter</button>
         </div>
 
         <div class="pack-card pack-maitre">
           <div class="pack-badge">Meilleure valeur</div>
-          <span class="pack-icon">🏆</span>
+          <span class="pack-icon"><i class="ic fi-br-trophy"></i></span>
           <span class="pack-name">Maître</span>
-          <div class="pack-coins">1000 <span class="pack-coins-unit">🪙</span></div>
+          <div class="pack-coins">1000 <span class="pack-coins-unit"><img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"></span></div>
           <span class="pack-price">12,99 €</span>
           <button class="pack-btn" onclick="buyPack(1000, '12,99')">Acheter</button>
         </div>
@@ -2181,11 +2181,11 @@
     <!-- Hero vert -->
     <div class="eco-hero">
       <div class="eco-leaves">
-        <span class="leaf lf1">🍃</span>
-        <span class="leaf lf2">🌿</span>
-        <span class="leaf lf3">🍃</span>
-        <span class="leaf lf4">🌿</span>
-        <span class="leaf lf5">🍃</span>
+        <span class="leaf lf1"><i class="ic fi-br-leaf"></i></span>
+        <span class="leaf lf2"><i class="ic fi-br-leaf"></i></span>
+        <span class="leaf lf3"><i class="ic fi-br-leaf"></i></span>
+        <span class="leaf lf4"><i class="ic fi-br-leaf"></i></span>
+        <span class="leaf lf5"><i class="ic fi-br-leaf"></i></span>
       </div>
       <img class="leaf-img" src="{% static 'core/images/icons/leaf.png' %}" alt="" draggable="false">
       <div class="eco-balance-display">
@@ -2193,7 +2193,7 @@
         <span class="eco-big">{{ co2_economise }}</span>
         <span class="eco-unit">kg CO₂</span>
       </div>
-      <p class="eco-hero-sub">économisés grâce à toi 🎉</p>
+      <p class="eco-hero-sub">économisés grâce à toi <i class="ic fi-br-party-horn"></i></p>
     </div>
 
     <!-- Comparaisons concrètes -->
@@ -2206,7 +2206,7 @@
 
     <!-- Compteur communautaire -->
     <div class="eco-community">
-      <div class="community-title">🌍 La Fabrique ensemble</div>
+      <div class="community-title"><i class="ic fi-br-globe"></i> La Fabrique ensemble</div>
       <div class="community-stats">
         <div class="community-stat">
           <span class="community-stat-value" id="comm-co2">0</span>
@@ -2235,31 +2235,31 @@
     <!-- Fun facts -->
     <div class="eco-facts">
       <div class="section-header-row" style="margin-top:24px;">
-        <h3 class="modal-section-title">Le saviez-vous ? 💡</h3>
+        <h3 class="modal-section-title">Le saviez-vous ? <i class="ic fi-br-bulb" style="color:#E0A21A;"></i></h3>
       </div>
       <div class="facts-scroll">
         <div class="fact-card" style="background:#EDFFF4;">
-          <span class="fact-emoji">🔥</span>
+          <span class="fact-emoji" style="color:#E8743B;"><i class="ic fi-br-flame"></i></span>
           <span class="fact-title">La mode, c'est sérieux</span>
           <p class="fact-body">L'industrie textile génère 10% des émissions mondiales de CO₂ — plus que tous les vols internationaux réunis !</p>
         </div>
         <div class="fact-card" style="background:#EFF6FF;">
-          <span class="fact-emoji">💧</span>
+          <span class="fact-emoji" style="color:#2E6FB0;"><i class="ic fi-br-raindrops"></i></span>
           <span class="fact-title">Un jean très gourmand</span>
           <p class="fact-body">Fabriquer un seul jean consomme 7 500 litres d'eau. Soit l'eau que tu bois pendant 10 ans.</p>
         </div>
         <div class="fact-card" style="background:#FFF4ED;">
-          <span class="fact-emoji">🗑️</span>
+          <span class="fact-emoji" style="color:#C2603F;"><i class="ic fi-br-trash"></i></span>
           <span class="fact-title">Honte par seconde</span>
           <p class="fact-body">Chaque seconde dans le monde, l'équivalent d'un camion de vêtements est mis en décharge ou brûlé.</p>
         </div>
         <div class="fact-card" style="background:#F5F3FF;">
-          <span class="fact-emoji">♻️</span>
+          <span class="fact-emoji" style="color:#7A4FB0;"><i class="ic fi-br-recycle"></i></span>
           <span class="fact-title">La seconde main, ça déchire</span>
           <p class="fact-body">Acheter un vêtement de seconde main réduit son empreinte carbone de 82%. Pas mal, non ?</p>
         </div>
         <div class="fact-card" style="background:#FAFFF0;">
-          <span class="fact-emoji">🌿</span>
+          <span class="fact-emoji" style="color:#5B8C2A;"><i class="ic fi-br-leaf"></i></span>
           <span class="fact-title">Le slow fashion, ça marche</span>
           <p class="fact-body">Doubler la durée de vie d'un vêtement réduit de 44% son impact environnemental total.</p>
         </div>
@@ -2300,7 +2300,7 @@ function openCreditsModal() {
     const price = parseInt(btn.dataset.price) || 0;
     if (price > CREDITS) {
       btn.classList.add('locked');
-      btn.textContent = `Manque ${price - CREDITS} 🪙`;
+      btn.innerHTML = `Manque ${price - CREDITS} <img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces">`;
     } else {
       btn.classList.remove('locked');
       btn.textContent = 'Obtenir';
@@ -2338,7 +2338,7 @@ function buyBadgeEcoWarrior(btn) {
   .then(data => {
     if (data.success) {
       btn.classList.add('obtained');
-      btn.textContent = 'Obtenu ✓';
+      btn.innerHTML = 'Obtenu <i class="ic fi-br-check"></i>';
 
       // Mettre à jour l'affichage du solde dans la modale
       document.querySelectorAll('.balance-big').forEach(el => {
@@ -2397,15 +2397,15 @@ function buildComparisons(co2) {
     kmVoiture >= 465 ? "C'est l'équivalent d'un aller-retour à Lyon !" :
     kmVoiture >= 200 ? "C'est l'équivalent d'un aller-retour à Tours !" :
     kmVoiture >= 100 ? "C'est l'équivalent d'un aller-retour à Orléans !" :
-                       'Non mais sérieux, bravo 🙌';
+                       'Non mais sérieux, bravo <i class="ic fi-br-hands-clapping"></i>';
 
   return [
-    { emoji:'🚗', bg:'#FFF3E0', value:`${kmVoiture} km`,          desc:'en voiture',             fun: villeVoiture },
-    { emoji:'🍔', bg:'#FCE4EC', value:`${steaks}`,                desc: steaks>1?'steaks de bœuf':'steak de bœuf', fun:'La planète te dit merci 🐄' },
-    { emoji:'📺', bg:'#F3E5F5', value:`${netflix}h`,              desc:'de Netflix',             fun:`soit ${Math.round(netflix/24)} jours de binge-watching !` },
-    { emoji:'🌲', bg:'#E8F5E9', value:`${arbre} jours`,           desc:"d'absorption d'un arbre",fun: arbre>=365?`${(arbre/365).toFixed(1)} ans pour un seul arbre 🥹`:'pour un seul arbre' },
+    { emoji:'<i class="ic fi-br-car"></i>', bg:'#FFF3E0', value:`${kmVoiture} km`,          desc:'en voiture',             fun: villeVoiture },
+    { emoji:'<i class="ic fi-br-hamburger"></i>', bg:'#FCE4EC', value:`${steaks}`,                desc: steaks>1?'steaks de bœuf':'steak de bœuf', fun:'La planète te dit merci <i class="ic fi-br-cow"></i>' },
+    { emoji:'<i class="ic fi-br-screen"></i>', bg:'#F3E5F5', value:`${netflix}h`,              desc:'de Netflix',             fun:`soit ${Math.round(netflix/24)} jours de binge-watching !` },
+    { emoji:'<i class="ic fi-br-tree"></i>', bg:'#E8F5E9', value:`${arbre} jours`,           desc:"d'absorption d'un arbre",fun: arbre>=365?`${(arbre/365).toFixed(1)} ans pour un seul arbre <i class="ic fi-br-face-relieved"></i>`:'pour un seul arbre' },
     { emoji:'👕', bg:'#E3F2FD', value:`${(co2/5).toFixed(1)}`,   desc:'t-shirts fast fashion',  fun:'que tu as évité de faire fabriquer' },
-    { emoji:'✈️', bg:'#FFF8E1', value:`${Math.round(co2/0.255)} km`, desc:'évités en avion',    fun:'Moins de kérosène, plus de karma ✨' },
+    { emoji:'<i class="ic fi-br-plane"></i>', bg:'#FFF8E1', value:`${Math.round(co2/0.255)} km`, desc:'évités en avion',    fun:'Moins de kérosène, plus de karma <i class="ic fi-br-sparkles"></i>' },
   ];
 }
 

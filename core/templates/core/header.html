@@ -4,8 +4,83 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>La Fabrique</title>
-  
+
+  <link rel="icon" type="image/png" href="{% static 'core/images/favicon/favicon-logo.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'core/images/favicon/favicon-logo.png' %}">
+
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+
+  {# ── Flaticon UIcons – Bold Rounded (icônes du site, hors navbar) ── #}
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-bold-rounded/css/uicons-bold-rounded.css">
+
+  <style>
+    /* ── Icônes UIcons (.ic = <i class="ic fi-br-…">) ──
+       Héritent de la taille (1em) et de la couleur (currentColor) du contexte.
+       inline-flex + centrage pour un rendu net dans les conteneurs flex et le texte. */
+    .ic {
+      font-style: normal;
+      line-height: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: -0.125em;
+      margin: 0 0.22em; /* air icône↔texte ; marge symétrique = reste centrée quand seule */
+    }
+    .ic::before { line-height: 1; display: block; }
+
+    /* Pièce de monnaie : même visuel que la popup « mes pièces » (coin.png) */
+    .coin-ic {
+      height: 1.05em;
+      width: auto;
+      vertical-align: -0.18em;
+      display: inline-block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    .shop-price-coin .coin-ic { height: 1.25em; vertical-align: -0.28em; }
+    .pack-coins-unit .coin-ic,
+    .info-row-label .coin-ic { height: 1.1em; }
+
+    /* ── Tailles d'icônes par contexte (les glyphes remplissent plus l'em-box
+          que les emojis : on réduit là où la police du conteneur était grande) ── */
+    .list-empty-emoji .ic        { font-size: 38px; }
+    .confetti-emoji .ic          { font-size: 36px; }
+    .fz-empty .emoji .ic         { font-size: 34px; }
+    .hero-leaf .ic,
+    .editor-source-emoji .ic     { font-size: 32px; }
+    .creations-empty-emoji .ic,
+    .beta-icon .ic,
+    .photo-upload-icon .ic       { font-size: 30px; }
+    .verif-result-icon .ic       { font-size: 26px; }
+    .card-passport-icon .ic,
+    .cta-emoji .ic,
+    .danger-icon .ic,
+    .cmp-emoji .ic,
+    .auth-icon .ic               { font-size: 24px; }
+    .pack-icon .ic,
+    .impact-icon .ic,
+    .patron-lie-icon .ic         { font-size: 22px; }
+    .fact-emoji .ic,
+    .shop-item-icon .ic,
+    .src-icon .ic,
+    .face-thumb-emoji .ic        { font-size: 21px; }
+    .u-emoji .ic                 { font-size: 20px; }
+    .level-emoji .ic,
+    .stat-mini-icon .ic          { font-size: 18px; }
+    .other-type-emoji .ic        { font-size: 17px; }
+
+    /* ── Couleurs d'icônes par contexte ── */
+    .card-passport-icon .ic,
+    .hero-leaf .ic,
+    .impact-icon .ic,
+    .stat-mini-icon .ic,
+    .cta-emoji .ic,
+    .confetti-emoji .ic          { color: var(--color-primary); }
+    .danger-icon .ic,
+    .verif-result-icon.ko .ic    { color: var(--color-accent); }
+    .verif-result-icon.ok .ic    { color: var(--color-primary); }
+    .auth-icon .ic               { color: var(--color-primary); }
+  </style>
 
   <style>
     /* =========================================
@@ -209,7 +284,7 @@
       
       <div class="user-stats">
         {% if user.is_authenticated %}
-          <a href="{% url 'dashboard' %}?credits=1" class="coins">{{ user.soldePieces }} 🪙</a>
+          <a href="{% url 'dashboard' %}?credits=1" class="coins">{{ user.soldePieces }} <img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"></a>
           <div class="avatar-menu">
             {% get_static_prefix as STATIC_PREFIX %}
             <img class="avatar"
@@ -252,11 +327,11 @@
     {% if user.is_authenticated and not user.email_verifie %}
       {% if request.GET.email_renvoye == '1' %}
       <div class="verif-banner sent">
-        <span>✅ E-mail de vérification renvoyé. Pensez à regarder vos spams.</span>
+        <span><i class="ic fi-br-check-circle"></i> E-mail de vérification renvoyé. Pensez à regarder vos spams.</span>
       </div>
       {% else %}
       <div class="verif-banner">
-        <span>✉️ Vérifiez votre adresse e-mail pour débloquer le démarrage de projets.</span>
+        <span><i class="ic fi-br-envelope"></i> Vérifiez votre adresse e-mail pour débloquer le démarrage de projets.</span>
         <form method="post" action="{% url 'renvoyer_verification' %}">
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">

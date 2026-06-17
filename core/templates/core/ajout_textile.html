@@ -1293,7 +1293,7 @@
           <div class="star-rating">
             {% for i in "54321" %}
             <input type="radio" name="qualite" id="star{{ i }}" value="{{ i }}" {% if i == "3" %}checked{% endif %}>
-            <label for="star{{ i }}">★</label>
+            <label for="star{{ i }}"><i class="ic fi-br-star"></i></label>
             {% endfor %}
           </div>
 
@@ -1324,7 +1324,7 @@
             <!-- Face ARRIÈRE -->
             <button type="button" class="face-card" data-face="arriere">
               <div class="face-thumb" id="face-thumb-arriere">
-                <span class="face-thumb-emoji">🔄</span>
+                <span class="face-thumb-emoji"><i class="ic fi-br-refresh"></i></span>
               </div>
               <div class="face-info">
                 <span class="face-name">Face arrière</span>
@@ -1454,7 +1454,7 @@
           </div>
 
           <button type="submit" class="btn-analyze" id="btn-submit">
-            <span class="btn-analyze-icon">🔬</span>
+            <span class="btn-analyze-icon"><i class="ic fi-br-microscope"></i></span>
             Analyser le tissu
           </button>
         </div>
@@ -1507,15 +1507,15 @@
           <!-- Sélecteur de source (avant prise de photo) -->
           <div id="editor-source">
             <div class="editor-source-inner">
-              <span class="editor-source-emoji">📸</span>
+              <span class="editor-source-emoji"><i class="ic fi-br-camera"></i></span>
               <p class="editor-source-title">Ajoute la photo de cette face</p>
               <div class="editor-source-btns">
                 <button type="button" class="photo-source-btn" id="ed-pick-file">
-                  <span class="src-icon">🖼️</span>
+                  <span class="src-icon"><i class="ic fi-br-picture"></i></span>
                   Mes fichiers
                 </button>
                 <button type="button" class="photo-source-btn" id="ed-open-camera">
-                  <span class="src-icon">📷</span>
+                  <span class="src-icon"><i class="ic fi-br-camera"></i></span>
                   Caméra
                 </button>
               </div>
@@ -1531,7 +1531,7 @@
           <!-- Détourage auto (étape 1) -->
           <div class="editor-auto-row" id="editor-auto-row" style="display:none;">
             <button type="button" class="editor-auto-btn" id="editor-auto">
-              <span>✨</span> Détourage auto
+              <span><i class="ic fi-br-sparkles"></i></span> Détourage auto
             </button>
           </div>
 
@@ -1628,7 +1628,7 @@
               <span class="other-type-emoji">😴</span>Pyjama
             </button>
             <button type="button" class="other-type-btn" data-type="accessoire">
-              <span class="other-type-emoji">🎀</span>Accessoire
+              <span class="other-type-emoji"><i class="ic fi-br-ribbon"></i></span>Accessoire
             </button>
             <button type="button" class="other-type-btn" data-type="autre">
               <span class="other-type-emoji">•••</span>Autre
@@ -1659,7 +1659,7 @@
           </div>
 
           <div class="bonus-badge">
-            <span>🎉</span>
+            <span><i class="ic fi-br-party-horn"></i></span>
             <span>+{{ coins_earned }} pièce{% if coins_earned > 1 %}s{% endif %}</span>
           </div>
 
@@ -2247,11 +2247,11 @@
           card.classList.add('done');
           thumb.innerHTML = '<img src="' + st.photo + '" alt="">';
           const fa = faceArea(st);
-          status.textContent = fa ? '✓ Détouré · ' + fa.usable.toFixed(2) + ' m² utiles' : '✓ Détouré';
+          status.innerHTML = fa ? '<i class="ic fi-br-check"></i> Détouré · ' + fa.usable.toFixed(2) + ' m² utiles' : '<i class="ic fi-br-check"></i> Détouré';
           badge.innerHTML = CHECK_SVG;
         } else {
           card.classList.remove('done');
-          thumb.innerHTML = '<span class="face-thumb-emoji">' + (face === 'avant' ? '👕' : '🔄') + '</span>';
+          thumb.innerHTML = '<span class="face-thumb-emoji">' + (face === 'avant' ? '👕' : '<i class="ic fi-br-refresh"></i>') + '</span>';
           status.textContent = 'À détourer · ' + (face === 'avant' ? 'requis' : 'optionnel');
           badge.innerHTML = PLUS_SVG;
         }
@@ -2290,7 +2290,7 @@
       // ── Toast d'information ──
       let toastTimer = null;
       function showToast(msg) {
-        edToast.textContent = msg;
+        edToast.innerHTML = msg;
         edToast.classList.add('show');
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => edToast.classList.remove('show'), 2800);
@@ -2500,7 +2500,7 @@
           selDefect = -1;
           draw();
           updateButtons();
-          showToast('✨ Contour détecté — ajuste les points si besoin');
+          showToast('<i class="ic fi-br-sparkles"></i> Contour détecté — ajuste les points si besoin');
         } else if (manual) {
           showToast('Fond trop complexe — place les points à la main');
         }

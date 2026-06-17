@@ -24,12 +24,12 @@
 {% block content %}
 <div class="verif-result">
   {% if success %}
-    <div class="verif-result-icon ok">✅</div>
+    <div class="verif-result-icon ok"><i class="ic fi-br-check-circle"></i></div>
     <h1>Adresse e-mail vérifiée !</h1>
     <p>Merci. Votre compte est désormais entièrement débloqué : vous pouvez démarrer vos projets de patron.</p>
     <a href="{% url 'patrons' %}" class="verif-btn">Découvrir les patrons</a>
   {% else %}
-    <div class="verif-result-icon ko">⚠️</div>
+    <div class="verif-result-icon ko"><i class="ic fi-br-triangle-warning"></i></div>
     <h1>Lien invalide ou expiré</h1>
     <p>
       Ce lien de vérification n'est plus valable (il expire après 7 jours) ou a déjà été utilisé.
