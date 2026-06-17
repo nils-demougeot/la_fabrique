@@ -1,0 +1,97 @@
+{% extends 'core/header.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  .danger-page { padding: 24px 24px 100px; color: var(--text-dark); }
+  .danger-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--color-primary); font-size: 14px; font-weight: 600;
+    text-decoration: none; margin-bottom: 20px;
+  }
+  .danger-back:hover { opacity: 0.75; }
+  .danger-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: #FFE4DC; display: flex; align-items: center; justify-content: center;
+    font-size: 30px; margin: 8px 0 16px;
+  }
+  .danger-title {
+    font-family: var(--font-title); font-size: 24px; font-weight: 800; margin-bottom: 10px;
+  }
+  .danger-page p { font-size: 14px; line-height: 1.6; color: var(--text-muted); }
+  .danger-list {
+    background: #FFF0EC; border-radius: 16px; padding: 16px 18px; margin: 18px 0;
+  }
+  .danger-list ul { margin: 0 0 0 18px; display: flex; flex-direction: column; gap: 6px; }
+  .danger-list li { font-size: 14px; color: #A24A33; line-height: 1.5; }
+  .error-banner {
+    background: #FCE8E6; color: #A24A33; padding: 14px 18px;
+    border-radius: 14px; font-size: 14px; font-weight: 600; margin-bottom: 18px;
+  }
+  .form-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .input-pill {
+    width: 100%; height: 52px; background: var(--bg-input); border: none;
+    border-radius: 9999px; padding: 0 20px; font-size: 15px; font-family: var(--font-body);
+    font-weight: 600; color: var(--text-dark); outline: none; margin-top: 8px;
+  }
+  .input-pill:focus { box-shadow: 0 0 0 2px var(--color-accent); }
+  .danger-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+  .btn-danger {
+    width: 100%; border: none; border-radius: 9999px; padding: 16px;
+    background: var(--color-accent); color: white; font-family: var(--font-title);
+    font-weight: 700; font-size: 16px; cursor: pointer;
+  }
+  .btn-danger:hover { opacity: 0.92; }
+  .btn-cancel {
+    width: 100%; text-align: center; padding: 14px; border-radius: 9999px;
+    background: #F5F4EA; color: var(--text-dark); font-weight: 700; font-size: 15px;
+    text-decoration: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="danger-page">
+  <a href="{% url 'mon_profil' %}" class="danger-back">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Retour au profil
+  </a>
+
+  <div class="danger-icon">⚠️</div>
+  <h1 class="danger-title">Supprimer mon compte</h1>
+  <p>
+    Cette action est <strong>définitive et irréversible</strong>. Conformément à votre droit à
+    l'effacement (RGPD), toutes vos données seront immédiatement supprimées.
+  </p>
+
+  <div class="danger-list">
+    <ul>
+      <li>Votre profil et vos informations personnelles</li>
+      <li>Vos tissus analysés et vos projets</li>
+      <li>Vos publications, commentaires et likes</li>
+      <li>Vos pièces, badges et votre progression</li>
+    </ul>
+  </div>
+
+  <p>
+    💡 Avant de partir, vous pouvez
+    <a href="{% url 'exporter_donnees' %}" style="color: var(--color-primary); font-weight: 700;">télécharger une copie de vos données</a>.
+  </p>
+
+  {% if error %}
+  <div class="error-banner" style="margin-top: 18px;">{{ error }}</div>
+  {% endif %}
+
+  <form method="POST" style="margin-top: 20px;">
+    {% csrf_token %}
+    <label class="form-label" for="id_password">Confirmez avec votre mot de passe</label>
+    <input id="id_password" type="password" name="password" class="input-pill"
+           placeholder="Votre mot de passe" required autocomplete="current-password">
+
+    <div class="danger-actions">
+      <button type="submit" class="btn-danger">Supprimer définitivement mon compte</button>
+      <a href="{% url 'mon_profil' %}" class="btn-cancel">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

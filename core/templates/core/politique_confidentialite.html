@@ -1,0 +1,142 @@
+{% extends 'core/header.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  .legal-page {
+    padding: 24px 24px 100px;
+    color: var(--text-dark);
+  }
+  .legal-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--color-primary); font-size: 14px; font-weight: 600;
+    text-decoration: none; margin-bottom: 20px;
+  }
+  .legal-back:hover { opacity: 0.75; }
+  .legal-title {
+    font-family: var(--font-title); font-size: 26px; font-weight: 800;
+    line-height: 1.2; margin-bottom: 6px;
+  }
+  .legal-updated { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .legal-page h2 {
+    font-family: var(--font-title); font-size: 17px; font-weight: 800;
+    color: var(--color-primary); margin: 26px 0 8px;
+  }
+  .legal-page p, .legal-page li {
+    font-size: 14px; line-height: 1.6; color: var(--text-muted);
+  }
+  .legal-page ul { margin: 8px 0 8px 18px; display: flex; flex-direction: column; gap: 6px; }
+  .legal-page strong { color: var(--text-dark); }
+  .legal-page a { color: var(--color-primary); font-weight: 600; }
+  .legal-card {
+    background: #F5F4EA; border-radius: 16px; padding: 16px 18px; margin-top: 10px;
+  }
+  .legal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  .legal-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 13px 18px; border-radius: 9999px; font-weight: 700; font-size: 14px;
+    text-decoration: none; border: 2px solid var(--color-primary);
+    color: var(--color-primary); background: transparent;
+  }
+  .legal-btn:hover { background: #EAF7EA; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="legal-page">
+  <a href="javascript:history.back()" class="legal-back">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Retour
+  </a>
+
+  <h1 class="legal-title">Politique de confidentialité</h1>
+  <p class="legal-updated">Dernière mise à jour : 17 juin 2026</p>
+
+  <p>
+    La Fabrique attache une grande importance à la protection de vos données personnelles.
+    Cette politique explique quelles données nous collectons, pourquoi, combien de temps nous
+    les conservons, et comment exercer vos droits, conformément au Règlement Général sur la
+    Protection des Données (RGPD).
+  </p>
+
+  <h2>1. Responsable du traitement</h2>
+  <p>
+    Le responsable du traitement des données est l'équipe éditrice de l'application
+    <strong>La Fabrique</strong>. Pour toute question relative à vos données personnelles,
+    vous pouvez nous contacter à l'adresse :
+    <a href="mailto:nils.demougeot@edu.devinci.fr">nils.demougeot@edu.devinci.fr</a>.
+  </p>
+
+  <h2>2. Données que nous collectons</h2>
+  <ul>
+    <li><strong>Données de compte</strong> : adresse e-mail, nom d'utilisateur, mot de passe (stocké chiffré), prénom et nom (facultatifs).</li>
+    <li><strong>Profil</strong> : avatar, biographie, niveau de couture, envies de création.</li>
+    <li><strong>Contenus que vous créez</strong> : photos de vos tissus, analyses de surface, projets, publications, commentaires, mentions « j'aime », abonnements.</li>
+    <li><strong>Données d'usage</strong> : pièces virtuelles gagnées, badges, progression dans les patrons, dates de connexion.</li>
+  </ul>
+
+  <h2>3. Finalités et base légale</h2>
+  <ul>
+    <li>Création et gestion de votre compte — <strong>exécution du contrat</strong> (utilisation du service).</li>
+    <li>Analyse de vos tissus et recommandation de patrons — <strong>exécution du contrat</strong>.</li>
+    <li>Fonctionnalités communautaires (publications, likes, suivi) — <strong>votre consentement</strong>.</li>
+    <li>Amélioration et sécurité du service — <strong>intérêt légitime</strong>.</li>
+  </ul>
+  <p>
+    Votre consentement est recueilli explicitement lors de l'inscription et la date en est conservée
+    comme preuve.
+  </p>
+
+  <h2>4. Durée de conservation</h2>
+  <p>
+    Vos données sont conservées tant que votre compte est actif. Si vous supprimez votre compte,
+    l'ensemble de vos données personnelles est <strong>effacé immédiatement et définitivement</strong>.
+    Les publications communautaires que vous avez créées sont également supprimées.
+  </p>
+
+  <h2>5. Destinataires et sous-traitants</h2>
+  <p>
+    Vos données ne sont jamais vendues. Elles sont hébergées et traitées par des prestataires
+    techniques agissant pour notre compte :
+  </p>
+  <ul>
+    <li><strong>Render</strong> — hébergement de l'application et de la base de données.</li>
+    <li><strong>Cloudinary</strong> — stockage des images (photos de tissus, publications).</li>
+  </ul>
+
+  <h2>6. Cookies</h2>
+  <p>
+    La Fabrique n'utilise que des cookies <strong>strictement nécessaires</strong> à son
+    fonctionnement (cookie de session pour vous garder connecté et cookie de sécurité CSRF).
+    Aucun cookie publicitaire ou de suivi tiers n'est déposé. Ces cookies ne nécessitent pas
+    de consentement préalable.
+  </p>
+
+  <h2>7. Vos droits</h2>
+  <p>Conformément au RGPD, vous disposez des droits suivants :</p>
+  <ul>
+    <li><strong>Droit d'accès et de portabilité</strong> : télécharger une copie de vos données.</li>
+    <li><strong>Droit de rectification</strong> : modifier vos informations depuis votre profil.</li>
+    <li><strong>Droit à l'effacement</strong> : supprimer définitivement votre compte.</li>
+    <li><strong>Droit d'opposition et de limitation</strong> : nous écrire pour toute demande.</li>
+  </ul>
+
+  {% if user.is_authenticated %}
+  <div class="legal-card">
+    <p style="color: var(--text-dark); font-weight: 700; margin-bottom: 4px;">Exercer vos droits directement</p>
+    <p>Vous pouvez accéder à vos données ou supprimer votre compte en un clic :</p>
+    <div class="legal-actions">
+      <a href="{% url 'exporter_donnees' %}" class="legal-btn">⬇️ Télécharger mes données</a>
+      <a href="{% url 'supprimer_compte' %}" class="legal-btn" style="border-color: var(--color-accent); color: var(--color-accent);">🗑️ Supprimer mon compte</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <p style="margin-top: 20px;">
+    Vous pouvez également exercer ces droits, ou introduire une réclamation auprès de la
+    <strong>CNIL</strong> (<a href="https://www.cnil.fr" target="_blank" rel="noopener">www.cnil.fr</a>),
+    en nous contactant à
+    <a href="mailto:nils.demougeot@edu.devinci.fr">nils.demougeot@edu.devinci.fr</a>.
+  </p>
+</div>
+{% endblock %}

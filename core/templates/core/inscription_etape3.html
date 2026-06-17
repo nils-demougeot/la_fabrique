@@ -133,6 +133,24 @@ body {
 }
 
 .btn-skip { background: transparent; border: none; padding: 16px 8px; color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer; }
+
+/* Bandeau d'erreur */
+.error-banner {
+  background: #FCE8E6; color: #A24A33; padding: 14px 18px;
+  border-radius: 14px; font-size: 14px; font-weight: 600; line-height: 1.4;
+}
+
+/* Consentement RGPD */
+.consent-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: #F5F4EA; border-radius: 16px; padding: 16px 18px;
+}
+.consent-row input[type="checkbox"] {
+  width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px;
+  accent-color: var(--color-primary); cursor: pointer;
+}
+.consent-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.consent-text a { color: var(--color-primary); font-weight: 700; text-decoration: underline; }
 .btn-next {
   position: relative;
   border: none; border-radius: 9999px; padding: 15px 26px;
@@ -179,11 +197,15 @@ body {
           <p class="step-subtitle">Un bob de l'espace ? Un tote-bag increvable ? Choisis ta cible et prépare ton aiguille !</p>
         </div>
 
+        {% if error %}
+        <div class="error-banner">{{ error }}</div>
+        {% endif %}
+
         <form id="form-etape-3" class="step-form" method="POST">
           {% csrf_token %}
           <fieldset class="tags-selection">
             <legend class="sr-only">Choisissez les objets que vous souhaitez créer</legend>
-            
+
             <div class="tags-container">
               <label class="tag-chip">
                 <input type="checkbox" name="target" value="sacs" class="sr-only" checked>
@@ -216,6 +238,15 @@ body {
               </label>
             </div>
           </fieldset>
+
+          <label class="consent-row" style="margin-top: 24px;">
+            <input type="checkbox" name="consentement_rgpd" required>
+            <span class="consent-text">
+              J'accepte que mes données soient traitées conformément à la
+              <a href="{% url 'politique_confidentialite' %}" target="_blank" rel="noopener">politique de confidentialité</a>
+              de La Fabrique.
+            </span>
+          </label>
         </form>
         <div style="height: 32px;"></div>
       </section>

@@ -14,7 +14,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from datetime import timedelta
@@ -1604,14 +1604,21 @@ def inscription_etape3(request):
         cibles_list = request.POST.getlist('target')
         cibles_str = ", ".join(cibles_list)
 
-        # 3. Revalidation anti-collision juste avant la création : un autre compte
+        # 3. Consentement RGPD obligatoire : sans acceptation explicite, pas de compte.
+        consentement = request.POST.get('consentement_rgpd') == 'on'
+        if not consentement:
+            return render(request, 'core/inscription_etape3.html', {
+                'error': "Vous devez accepter la politique de confidentialité pour créer votre compte.",
+            })
+
+        # 4. Revalidation anti-collision juste avant la création : un autre compte
         # a pu prendre ce pseudo / cet e-mail entre l'étape 1 et maintenant → évite un 500.
         if (Utilisateur.objects.filter(username__iexact=username).exists()
                 or Utilisateur.objects.filter(email__iexact=email).exists()):
             return render(request, 'core/inscription.html',
                           {'error': "Ce compte existe déjà. Essayez de vous connecter."})
 
-        # 4. On crée le compte
+        # 5. On crée le compte (avec preuve horodatée du consentement RGPD)
         nouvel_utilisateur = Utilisateur.objects.create_user(
             username=username,
             email=email,
@@ -1619,19 +1626,131 @@ def inscription_etape3(request):
             niveau_couture=niveau,
             envies_creation=cibles_str,
             avatar=avatar,
+            consentementRGPD=True,
+            dateConsentementRGPD=timezone.now(),
         )
 
-        # 5. On nettoie la session
+        # 6. On nettoie la session
         keys_to_delete = ['reg_email', 'reg_password', 'reg_username', 'reg_niveau', 'reg_avatar']
         for key in keys_to_delete:
             if key in request.session:
                 del request.session[key]
 
-        # 6. On connecte l'utilisateur automatiquement et on l'envoie sur l'accueil
+        # 7. On connecte l'utilisateur automatiquement et on l'envoie sur l'accueil
         login(request, nouvel_utilisateur)
         return redirect('home')
 
     return render(request, 'core/inscription_etape3.html')
+
+
+# ── RGPD : page légale, export et suppression des données ───────────────────
+
+def politique_confidentialite(request):
+    """Politique de confidentialité (page publique, accessible sans connexion)."""
+    return render(request, 'core/politique_confidentialite.html')
+
+
+@login_required
+def exporter_donnees(request):
+    """Droit d'accès et à la portabilité (RGPD art. 15 & 20) :
+    renvoie l'ensemble des données personnelles de l'utilisateur au format JSON."""
+    user = request.user
+
+    def _dt(value):
+        return value.isoformat() if value else None
+
+    data = {
+        'compte': {
+            'pseudo': user.username,
+            'email': user.email,
+            'prenom': user.first_name,
+            'nom': user.last_name,
+            'bio': user.bio,
+            'avatar': user.avatar,
+            'niveau_couture': user.niveau_couture,
+            'envies_creation': user.envies_creation,
+            'solde_pieces': user.soldePieces,
+            'date_inscription': _dt(user.date_joined),
+            'derniere_connexion': _dt(user.last_login),
+            'consentement_rgpd': user.consentementRGPD,
+            'date_consentement_rgpd': _dt(user.dateConsentementRGPD),
+        },
+        'tissus': [
+            {
+                'nom': v.nomVetement,
+                'type': v.typeVetement,
+                'surface_totale_m2': v.surfaceTotale,
+                'surface_exploitable_m2': v.surfaceExploitable,
+                'etat': v.etat,
+                'qualite': v.qualite,
+                'couleur': v.couleur,
+                'matiere': v.matiere,
+            }
+            for v in Vetement.objects.filter(utilisateur=user)
+        ],
+        'projets': [
+            {
+                'patron': prog.patron.titre,
+                'etape_actuelle': prog.etape_actuelle,
+                'termine': prog.termine,
+                'date_debut': _dt(prog.date_debut),
+                'date_derniere_activite': _dt(prog.date_derniere_activite),
+            }
+            for prog in ProgressionProjet.objects.filter(utilisateur=user).select_related('patron')
+        ],
+        'patrons_crees': [
+            {'titre': p.titre, 'type': p.typeObjet, 'difficulte': p.difficulte}
+            for p in Patron.objects.filter(createur=user)
+        ],
+        'posts_communaute': [
+            {
+                'titre': post.titre,
+                'description': post.description,
+                'type_creation': post.type_creation,
+                'niveau': post.niveau,
+                'date_creation': _dt(post.date_creation),
+                'nb_vues': post.nb_vues,
+            }
+            for post in PostCommunaute.objects.filter(utilisateur=user)
+        ],
+        'commentaires': [
+            {'post': c.post.titre, 'contenu': c.contenu, 'date': _dt(c.date_creation)}
+            for c in CommentairePost.objects.filter(utilisateur=user).select_related('post')
+        ],
+        'likes_donnes': [
+            {'post': lp.post.titre, 'date': _dt(lp.date_like)}
+            for lp in LikePost.objects.filter(utilisateur=user).select_related('post')
+        ],
+        'abonnements': [s.suivi.username for s in Suivi.objects.filter(suiveur=user).select_related('suivi')],
+        'badges': [
+            {'nom': b.nom, 'date_obtention': _dt(b.date_obtention)}
+            for b in Badge.objects.filter(utilisateur=user)
+        ],
+    }
+
+    payload = json.dumps(data, ensure_ascii=False, indent=2)
+    response = HttpResponse(payload, content_type='application/json; charset=utf-8')
+    filename = f'mes-donnees-lafabrique-{user.username}.json'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required
+def supprimer_compte(request):
+    """Droit à l'effacement (RGPD art. 17) : supprime définitivement le compte
+    et toutes les données liées (cascade), après confirmation du mot de passe."""
+    if request.method == 'POST':
+        password = request.POST.get('password', '')
+        if not request.user.check_password(password):
+            return render(request, 'core/supprimer_compte.html', {
+                'error': "Mot de passe incorrect. Suppression annulée.",
+            })
+        user = request.user
+        logout(request)
+        user.delete()
+        return redirect('home')
+
+    return render(request, 'core/supprimer_compte.html')
 
 
 @login_required
