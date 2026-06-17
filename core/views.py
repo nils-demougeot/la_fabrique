@@ -1228,7 +1228,7 @@ def communaute_active_requise(view_func):
                 {'error': 'La communauté est désactivée pendant la phase de bêta test.'},
                 status=403,
             )
-        return render(request, 'core/communaute_desactivee.html', status=403)
+        return render(request, 'core/communaute_desactivee.html')
 
     return _wrapped
 
