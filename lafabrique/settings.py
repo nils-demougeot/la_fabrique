@@ -94,6 +94,7 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'django.contrib.staticfiles',
     'cloudinary',
+    'anymail',
     'core',
 ]
 MIDDLEWARE = [
@@ -237,6 +238,14 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'La Fabrique <noreply@lafabrique.app>')
 # Empêche une connexion SMTP de bloquer indéfiniment la requête (et de tuer le worker).
 EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '10'))
+
+# Si une clé API Brevo est fournie, on envoie via l'API HTTP (port 443) au lieu du
+# SMTP. INDISPENSABLE sur Render, qui bloque les ports SMTP sortants (25/465/587)
+# → le SMTP y échoue toujours en "TimeoutError". L'API HTTP, elle, passe.
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
+if BREVO_API_KEY:
+    EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
+    ANYMAIL = {'BREVO_API_KEY': BREVO_API_KEY}
 
 # ── Journalisation (visible dans la console / les logs Render) ──────────────
 LOGGING = {
