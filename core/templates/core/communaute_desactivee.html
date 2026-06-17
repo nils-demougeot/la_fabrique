@@ -36,10 +36,14 @@
   <h1>La communauté arrive bientôt</h1>
   <p>
     L'espace communauté est temporairement désactivé pendant la phase de bêta test.
-    Il sera ouvert très prochainement — en attendant, continuez à analyser vos tissus
+    Il sera ouvert très prochainement. En attendant, continuez à analyser vos tissus
     et à lancer vos projets !
   </p>
   <a href="{% url 'dashboard' %}" class="beta-btn">Retour au tableau de bord</a>
 </div>
 {% endblock %}
-{% block bottom_nav %}{% endblock %}
+{% block bottom_nav %}
+{% with nav_active='communaute' %}
+{% include 'core/bottom_nav.html' %}
+{% endwith %}
+{% endblock %}

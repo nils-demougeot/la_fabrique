@@ -204,7 +204,7 @@
     <span class="nav-label">Communauté</span>
   </a>
   {% else %}
-  <div class="nav-item" style="opacity:0.4;cursor:not-allowed;" title="Désactivée pendant la bêta" aria-disabled="true">
+  <a href="{% url 'communaute' %}" class="nav-item" style="opacity:0.4;" aria-disabled="true">
     <div class="nav-icon-bg">
       <div class="nav-badge-wrap">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -213,7 +213,7 @@
       </div>
     </div>
     <span class="nav-label">Communauté</span>
-  </div>
+  </a>
   {% endif %}
 
 </nav>

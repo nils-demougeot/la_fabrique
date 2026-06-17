@@ -150,6 +150,25 @@
       display: block;
     }
 
+    .logo-wrap {
+      display: inline-flex;
+      align-items: flex-start;
+      gap: 5px;
+    }
+    .beta-badge {
+      font-family: var(--font-title);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #8A5A00;
+      background: #FFF4E5;
+      padding: 2px 6px;
+      border-radius: 9999px;
+      white-space: nowrap;
+      margin-top: 1px;
+    }
+
     .user-stats { display: flex; align-items: center; gap: 10px; }
     .coins {
       background-color: #F5F4EA;
@@ -280,7 +299,12 @@
   <div class="app-container">
     
     <header class="header-global">
-      <a href="{% url 'dashboard' %}" class="logo"><img class="logo-img" src="{% static 'core/images/logo-la-fabrique.svg' %}" alt="logo"></a>
+      <a href="{% url 'dashboard' %}" class="logo">
+        <div class="logo-wrap">
+          <img class="logo-img" src="{% static 'core/images/logo-la-fabrique.svg' %}" alt="logo">
+          <span class="beta-badge">BÊTA</span>
+        </div>
+      </a>
       
       <div class="user-stats">
         {% if user.is_authenticated %}
