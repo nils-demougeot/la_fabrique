@@ -119,6 +119,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.feature_flags',
             ],
         },
     },
@@ -213,6 +214,11 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'home' 
 
 LOGIN_URL = 'connexion'
+
+# ── Fonctionnalités (feature flags) ─────────────────────────────────────────
+# Communauté désactivée pendant la phase de bêta test. Pour la réactiver :
+# définir COMMUNAUTE_ACTIVE=True dans l'environnement (aucune autre modif requise).
+COMMUNAUTE_ACTIVE = _env_bool('COMMUNAUTE_ACTIVE', False)
 
 # ── E-mail (réinitialisation de mot de passe) ───────────────────────────────
 # En dev : les e-mails s'affichent dans la console (aucune config requise).
