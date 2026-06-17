@@ -1135,6 +1135,31 @@ def toggle_like(request, pk):
     return JsonResponse({'liked': is_liked})
 
 
+def communaute_active_requise(view_func):
+    """Bloque l'accès à une vue tant que la communauté est désactivée (bêta test).
+    Le code des vues reste intact ; il suffit de remettre COMMUNAUTE_ACTIVE=True
+    pour tout réactiver. Répond en JSON pour les appels AJAX, en page sinon."""
+    from functools import wraps
+    from django.conf import settings as dj_settings
+
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        if getattr(dj_settings, 'COMMUNAUTE_ACTIVE', True):
+            return view_func(request, *args, **kwargs)
+        is_ajax = (
+            request.headers.get('x-requested-with') == 'XMLHttpRequest'
+            or 'application/json' in request.headers.get('accept', '')
+        )
+        if is_ajax:
+            return JsonResponse(
+                {'error': 'La communauté est désactivée pendant la phase de bêta test.'},
+                status=403,
+            )
+        return render(request, 'core/communaute_desactivee.html', status=403)
+
+    return _wrapped
+
+
 COMMUNITY_LEVELS = [
     (0,    100,  'Éco-Curieux',  '🌱'),
     (100,  300,  'Éco-Apprenti', '🌿'),

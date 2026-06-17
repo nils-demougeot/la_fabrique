@@ -190,7 +190,8 @@
     <span class="nav-label">Patrons</span>
   </a>
 
-  <!-- 5. Communauté -->
+  <!-- 5. Communauté (désactivée pendant la bêta) -->
+  {% if COMMUNAUTE_ACTIVE %}
   <a href="{% url 'communaute' %}" class="nav-item {% if nav_active == 'communaute' %}active{% endif %}">
     <div class="nav-icon-bg">
       <div class="nav-badge-wrap">
@@ -202,5 +203,17 @@
     </div>
     <span class="nav-label">Communauté</span>
   </a>
+  {% else %}
+  <div class="nav-item" style="opacity:0.4;cursor:not-allowed;" title="Désactivée pendant la bêta" aria-disabled="true">
+    <div class="nav-icon-bg">
+      <div class="nav-badge-wrap">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="m7.5 13a4.5 4.5 0 1 1 4.5-4.5 4.505 4.505 0 0 1 -4.5 4.5zm0-7a2.5 2.5 0 1 0 2.5 2.5 2.5 2.5 0 0 0 -2.5-2.5zm7.5 17v-.5a7.5 7.5 0 0 0 -15 0v.5a1 1 0 0 0 2 0v-.5a5.5 5.5 0 0 1 11 0v.5a1 1 0 0 0 2 0zm9-5a7 7 0 0 0 -11.667-5.217 1 1 0 1 0 1.334 1.49 5 5 0 0 1 8.333 3.727 1 1 0 0 0 2 0zm-6.5-9a4.5 4.5 0 1 1 4.5-4.5 4.505 4.505 0 0 1 -4.5 4.5zm0-7a2.5 2.5 0 1 0 2.5 2.5 2.5 2.5 0 0 0 -2.5-2.5z"/>
+        </svg>
+      </div>
+    </div>
+    <span class="nav-label">Communauté</span>
+  </div>
+  {% endif %}
 
 </nav>

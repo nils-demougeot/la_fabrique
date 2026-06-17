@@ -1,0 +1,45 @@
+{% extends 'core/header.html' %}
+
+{% block extra_css %}
+<style>
+  .beta-wrap {
+    padding: 56px 28px; display: flex; flex-direction: column;
+    align-items: center; text-align: center; gap: 16px;
+  }
+  .beta-icon {
+    width: 84px; height: 84px; border-radius: 50%;
+    background: #FFF4E5; display: flex; align-items: center; justify-content: center;
+    font-size: 40px;
+  }
+  .beta-wrap h1 { font-family: var(--font-title); font-size: 23px; font-weight: 800; color: var(--text-dark); }
+  .beta-wrap p { font-size: 15px; line-height: 1.6; color: var(--text-muted); max-width: 320px; }
+  .beta-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #FFF4E5; color: #8A5A00; border-radius: 9999px;
+    padding: 6px 14px; font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .beta-btn {
+    margin-top: 8px; border: none; border-radius: 9999px; padding: 15px 28px;
+    background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%); color: white;
+    font-family: var(--font-title); font-weight: 700; font-size: 15px;
+    text-decoration: none; display: inline-block;
+  }
+  .beta-btn:hover { opacity: 0.94; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="beta-wrap">
+  <div class="beta-icon">🚧</div>
+  <span class="beta-tag">Bêta test</span>
+  <h1>La communauté arrive bientôt</h1>
+  <p>
+    L'espace communauté est temporairement désactivé pendant la phase de bêta test.
+    Il sera ouvert très prochainement — en attendant, continuez à analyser vos tissus
+    et à lancer vos projets !
+  </p>
+  <a href="{% url 'dashboard' %}" class="beta-btn">Retour au tableau de bord</a>
+</div>
+{% endblock %}
+{% block bottom_nav %}{% endblock %}

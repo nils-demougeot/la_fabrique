@@ -2,6 +2,9 @@ from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
 from . import views
 
+# Alias court pour le blocage de la communauté pendant la bêta.
+_bloc_communaute = views.communaute_active_requise
+
 urlpatterns = [
     path('', views.home, name='home'),
     path('dashboard/', views.dashboard, name='dashboard'),
@@ -19,16 +22,18 @@ urlpatterns = [
     path('passeport/<int:patron_pk>/<int:user_pk>/', views.passeport_public, name='passeport_public'),
     path('qrcode/', views.qrcode_view, name='qrcode_view'),
     path('ajout_textile/', views.ajout_textile, name='ajout_textile'),
-    path('communaute/', views.communaute, name='communaute'),
-    path('communaute/creer/', views.creer_post, name='creer_post'),
-    path('communaute/mes-posts/', views.mes_posts, name='mes_posts'),
-    path('communaute/post/<int:pk>/', views.detail_post, name='detail_post'),
-    path('communaute/post/<int:pk>/like/', views.toggle_like_post, name='toggle_like_post'),
-    path('communaute/post/<int:pk>/sauvegarder/', views.toggle_sauvegarde, name='toggle_sauvegarde'),
-    path('communaute/post/<int:pk>/commenter/', views.ajouter_commentaire, name='ajouter_commentaire'),
-    path('communaute/post/<int:pk>/supprimer/', views.supprimer_post, name='supprimer_post'),
-    path('communaute/profil/<int:pk>/', views.profil_utilisateur, name='profil_utilisateur'),
-    path('communaute/profil/<int:pk>/suivre/', views.toggle_suivi, name='toggle_suivi'),
+    # Communauté — désactivée pendant la bêta via le décorateur communaute_active_requise.
+    # Réactivation : COMMUNAUTE_ACTIVE=True (les vues restent inchangées).
+    path('communaute/', _bloc_communaute(views.communaute), name='communaute'),
+    path('communaute/creer/', _bloc_communaute(views.creer_post), name='creer_post'),
+    path('communaute/mes-posts/', _bloc_communaute(views.mes_posts), name='mes_posts'),
+    path('communaute/post/<int:pk>/', _bloc_communaute(views.detail_post), name='detail_post'),
+    path('communaute/post/<int:pk>/like/', _bloc_communaute(views.toggle_like_post), name='toggle_like_post'),
+    path('communaute/post/<int:pk>/sauvegarder/', _bloc_communaute(views.toggle_sauvegarde), name='toggle_sauvegarde'),
+    path('communaute/post/<int:pk>/commenter/', _bloc_communaute(views.ajouter_commentaire), name='ajouter_commentaire'),
+    path('communaute/post/<int:pk>/supprimer/', _bloc_communaute(views.supprimer_post), name='supprimer_post'),
+    path('communaute/profil/<int:pk>/', _bloc_communaute(views.profil_utilisateur), name='profil_utilisateur'),
+    path('communaute/profil/<int:pk>/suivre/', _bloc_communaute(views.toggle_suivi), name='toggle_suivi'),
     path('mes-tissus/', views.mes_tissus, name='mes_tissus'),
     path('mes-tissus/<int:pk>/', views.detail_vetement, name='detail_vetement'),
     path('mes-tissus/supprimer/', views.supprimer_vetements, name='supprimer_vetements'),
