@@ -1,9 +1,13 @@
 import base64
 import binascii
 import json
+import logging
 import re
+import threading
 import urllib.parse
 from io import BytesIO
+
+from django.conf import settings as dj_settings
 
 import qrcode as qrcode_lib
 from PIL import Image as PILImage
@@ -26,6 +30,8 @@ import math
 from django.http import HttpResponse, JsonResponse
 from core.models import (Vetement, Utilisateur, Patron, EtapePatron, PiecePatron, ProgressionProjet, PatronLike,
                          PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag, Badge)
+
+logger = logging.getLogger('core')
 
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
 MAX_IMAGE_BYTES = 8 * 1024 * 1024  # 8 Mo
@@ -1805,27 +1811,54 @@ EMAIL_VERIF_SALT = 'email-verification'
 EMAIL_VERIF_MAX_AGE = 60 * 60 * 24 * 7  # 7 jours
 
 
+def _smtp_configure():
+    """Vrai si l'envoi d'e-mails peut réellement aboutir (backend non-SMTP, ou SMTP avec hôte)."""
+    backend = getattr(dj_settings, 'EMAIL_BACKEND', '')
+    if 'smtp' not in backend:
+        return True  # console / locmem / autre : pas de réseau, toujours OK
+    return bool(getattr(dj_settings, 'EMAIL_HOST', ''))
+
+
 def _envoyer_email_verification(request, user):
-    """Envoie à l'utilisateur un e-mail contenant un lien de vérification signé."""
+    """Envoie un e-mail de vérification avec un lien signé.
+
+    L'envoi se fait dans un thread d'arrière-plan : la requête ne doit JAMAIS
+    bloquer ni planter à cause de l'e-mail (un SMTP lent/indisponible tuerait
+    sinon le worker → 500). Toute erreur est journalisée dans la console serveur.
+    """
     if not user.email:
         return
+
+    if not _smtp_configure():
+        logger.warning(
+            "SMTP non configuré (EMAIL_HOST vide) : e-mail de vérification NON envoyé à %s. "
+            "Définir les variables EMAIL_HOST/EMAIL_HOST_USER/EMAIL_HOST_PASSWORD en production.",
+            user.email,
+        )
+        return
+
     token = signing.dumps({'uid': user.pk}, salt=EMAIL_VERIF_SALT)
     lien = request.build_absolute_uri(reverse('verifier_email', args=[token]))
-    send_mail(
-        subject="Confirmez votre adresse e-mail — La Fabrique",
-        message=(
-            f"Bonjour {user.username},\n\n"
-            "Bienvenue dans l'atelier ! Confirmez votre adresse e-mail en cliquant "
-            "sur le lien ci-dessous :\n\n"
-            f"{lien}\n\n"
-            "Ce lien est valable 7 jours. Si vous n'êtes pas à l'origine de cette "
-            "inscription, ignorez cet e-mail.\n\n"
-            "L'équipe La Fabrique"
-        ),
-        from_email=None,  # utilise DEFAULT_FROM_EMAIL
-        recipient_list=[user.email],
-        fail_silently=True,  # une panne SMTP ne doit pas casser l'inscription
+    sujet = "Confirmez votre adresse e-mail — La Fabrique"
+    message = (
+        f"Bonjour {user.username},\n\n"
+        "Bienvenue dans l'atelier ! Confirmez votre adresse e-mail en cliquant "
+        "sur le lien ci-dessous :\n\n"
+        f"{lien}\n\n"
+        "Ce lien est valable 7 jours. Si vous n'êtes pas à l'origine de cette "
+        "inscription, ignorez cet e-mail.\n\n"
+        "L'équipe La Fabrique"
     )
+    destinataire = user.email
+
+    def _tache_envoi():
+        try:
+            send_mail(sujet, message, None, [destinataire], fail_silently=False)
+            logger.info("E-mail de vérification envoyé à %s", destinataire)
+        except Exception:
+            logger.exception("Échec de l'envoi de l'e-mail de vérification à %s", destinataire)
+
+    threading.Thread(target=_tache_envoi, daemon=True).start()
 
 
 def verifier_email(request, token):
