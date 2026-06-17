@@ -718,40 +718,196 @@
   .garment-checkbox svg { display: none; }
   .garment-item.selected .garment-checkbox svg { display: block; }
 
-  /* Matériel clicable */
+  /* Matériel clicable — look « bouton à cocher » bien visible */
   .materiel-chip {
-    background: #EFEEE3;
+    background: #FFFFFF;
     border-radius: 9999px;
-    padding: 7px 14px;
+    padding: 7px 14px 7px 8px;
     color: #383832;
     font-family: 'Manrope', sans-serif;
     font-size: 13px;
-    font-weight: 500;
-    display: flex;
+    font-weight: 700;
+    display: inline-flex;
     align-items: center;
-    gap: 7px;
-    outline: 1px rgba(187, 185, 177, 0.20) solid;
-    outline-offset: -1px;
-    border: none;
+    gap: 8px;
+    border: 1.5px solid #D6D4C4;
+    outline: none;
+    box-shadow: 0 2px 0 rgba(101, 101, 94, 0.18);
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: transform 0.1s, box-shadow 0.1s, background 0.15s, color 0.15s, border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
   }
+  .materiel-chip:hover { border-color: #B9B7A5; }
+  .materiel-chip:active { transform: translateY(2px); box-shadow: 0 0 0 rgba(101, 101, 94, 0.18); }
   .materiel-chip .chip-dot {
-    width: 6px;
-    height: 6px;
-    background: #65655E;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border: 1.5px solid #BCBAA8;
     border-radius: 50%;
     flex-shrink: 0;
-    transition: background 0.15s;
+    position: relative;
+    transition: background 0.15s, border-color 0.15s;
   }
   .materiel-chip.owned {
-    background: #D2F4D1;
+    background: #E5F7E4;
     color: #1B5E20;
-    outline-color: rgba(35, 115, 41, 0.20);
+    border-color: rgba(35, 115, 41, 0.35);
+    box-shadow: 0 2px 0 rgba(35, 115, 41, 0.18);
   }
   .materiel-chip.owned .chip-dot {
     background: #237329;
+    border-color: #237329;
   }
+  .materiel-chip.owned .chip-dot::after {
+    content: '';
+    position: absolute;
+    left: 4.5px; top: 1.5px;
+    width: 4px; height: 8px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  /* ── Boutons de téléchargement (gamifiés, ton miel/ambre) ── */
+  .dl-btn {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    background: linear-gradient(135deg, #FFF7EB 0%, #FFFFFF 100%);
+    border: 1.5px solid rgba(184, 99, 0, 0.22);
+    border-radius: 18px;
+    padding: 12px 13px;
+    text-decoration: none;
+    box-shadow: 0 3px 0 rgba(184, 99, 0, 0.16);
+    transition: transform 0.1s, box-shadow 0.1s, border-color 0.1s;
+  }
+  .dl-btn + .dl-btn { margin-top: 12px; }
+  .dl-btn:hover { border-color: rgba(184, 99, 0, 0.4); }
+  .dl-btn:active { transform: translateY(3px); box-shadow: 0 0 0 rgba(184, 99, 0, 0.16); }
+  .dl-btn-ico {
+    width: 42px; height: 42px;
+    border-radius: 13px;
+    background: #FCC895;
+    color: #7C4A00;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px;
+    flex-shrink: 0;
+  }
+  .dl-btn-body { flex: 1; min-width: 0; }
+  .dl-btn-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    color: #5A3A0E;
+    line-height: 1.25;
+  }
+  .dl-btn-sub {
+    display: block;
+    font-weight: 500;
+    font-size: 11.5px;
+    color: #9A7A4A;
+    margin-top: 1px;
+    line-height: 1.3;
+  }
+  .dl-btn-arrow {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: rgba(184, 99, 0, 0.12);
+    color: #B86300;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.12s;
+  }
+  .dl-btn:hover .dl-btn-arrow { transform: translateX(3px); }
+
+  /* Variante « action principale » de téléchargement (ambre plein) */
+  .dl-btn.primary {
+    background: linear-gradient(135deg, #F4A23A 0%, #E07B1A 100%);
+    border-color: transparent;
+    box-shadow: 0 4px 0 #B86300, 0 8px 18px rgba(184, 99, 0, 0.28);
+  }
+  .dl-btn.primary:active { transform: translateY(4px); box-shadow: 0 0 0 #B86300; }
+  .dl-btn.primary .dl-btn-ico { background: rgba(255,255,255,0.25); color: #fff; }
+  .dl-btn.primary .dl-btn-title { color: #fff; }
+  .dl-btn.primary .dl-btn-sub { color: rgba(255,255,255,0.88); }
+  .dl-btn.primary .dl-btn-arrow { background: rgba(255,255,255,0.28); color: #fff; }
+
+  /* Variante « comme Démarrer le projet » (vert plein, effet 3D) */
+  .dl-btn.go {
+    background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
+    border-color: transparent;
+    box-shadow: 0 6px 0 #1B5E20, 0 10px 24px rgba(35,115,41,0.35);
+  }
+  .dl-btn.go:hover { border-color: transparent; }
+  .dl-btn.go:active { transform: translateY(5px); box-shadow: 0 1px 0 #1B5E20, 0 4px 12px rgba(35,115,41,0.25); }
+  .dl-btn.go .dl-btn-ico { background: rgba(255,255,255,0.22); color: #fff; }
+  .dl-btn.go .dl-btn-title { color: #fff; }
+  .dl-btn.go .dl-btn-sub { color: rgba(255,255,255,0.88); }
+  .dl-btn.go .dl-btn-arrow { background: rgba(255,255,255,0.25); color: #fff; }
+
+  /* Variante neutre (export .json, discret, tout en bas) */
+  .dl-btn.muted {
+    background: #fff;
+    border-color: rgba(187, 185, 177, 0.5);
+    box-shadow: 0 3px 0 rgba(101, 101, 94, 0.12);
+  }
+  .dl-btn.muted:active { box-shadow: 0 0 0 rgba(101, 101, 94, 0.12); }
+  .dl-btn.muted .dl-btn-ico { background: #EFEEE3; color: #65655E; }
+  .dl-btn.muted .dl-btn-title { color: #383832; }
+  .dl-btn.muted .dl-btn-arrow { background: #EFEEE3; color: #65655E; }
+
+  /* ── CTA « Vérifier la faisabilité » gamifié ── */
+  .feasibility-cta {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    width: 100%;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, #4E6C50 0%, #74A878 100%);
+    border: none;
+    border-radius: 18px;
+    padding: 14px 15px;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #3A5240, 0 10px 22px rgba(78, 108, 80, 0.3);
+    transition: transform 0.1s, box-shadow 0.1s;
+    overflow: hidden;
+    position: relative;
+  }
+  .feasibility-cta:active { transform: translateY(4px); box-shadow: 0 1px 0 #3A5240; }
+  .feasibility-cta-ico {
+    width: 46px; height: 46px;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.22);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .feasibility-cta-body { flex: 1; min-width: 0; text-align: left; }
+  .feasibility-cta-title {
+    color: #fff;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    line-height: 1.2;
+  }
+  .feasibility-cta-sub {
+    display: block;
+    color: rgba(255,255,255,0.88);
+    font-family: 'Manrope', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+  .feasibility-cta-arrow {
+    color: #fff;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: transform 0.12s;
+  }
+  .feasibility-cta:hover .feasibility-cta-arrow { transform: translateX(3px); }
 
 </style>
 {% endblock %}
@@ -977,7 +1133,7 @@
         <!-- Outils nécessaires -->
         {% if materiel_list %}
         <div class="materiel-card">
-          <div class="materiel-title"><i class="ic fi-br-wrench-simple"></i> Outils nécessaires — tap pour cocher ce que tu as</div>
+          <div class="materiel-title"><i class="ic fi-br-wrench-simple"></i> Outils nécessaires</div>
           <div class="materiel-chips" id="materielChips">
             {% for item in materiel_list %}
             <button class="materiel-chip" data-material="{{ item }}">
@@ -988,30 +1144,20 @@
         </div>
         {% endif %}
 
-        <!-- Instructions imprimables + export du patron -->
+        <!-- Instructions imprimables -->
         {% if etapes %}
         <div class="materiel-card" style="margin-top:14px;">
           <div class="materiel-title"><i class="ic fi-br-book-open-cover"></i> Instructions à imprimer</div>
-          <a href="{% url 'patron_instructions_pdf' pk=patron.id %}" target="_blank" rel="noopener"
-             style="display:flex; align-items:center; gap:12px; background:#fff; border:1.5px solid rgba(35,115,41,0.25); border-radius:14px; padding:13px 16px; text-decoration:none;">
-            <span style="font-size:24px;"><i class="ic fi-br-print"></i></span>
-            <span style="flex:1; font-family:var(--font-body); font-weight:700; font-size:14px; color:var(--text-dark);">Toutes les étapes (PDF)
-              <span style="display:block; font-weight:500; font-size:12px; color:var(--text-muted);">Le déroulé complet, mis en forme et prêt à imprimer</span>
+          <a href="{% url 'patron_instructions_pdf' pk=patron.id %}" target="_blank" rel="noopener" class="dl-btn">
+            <span class="dl-btn-ico"><i class="ic fi-br-print"></i></span>
+            <span class="dl-btn-body">
+              <span class="dl-btn-title">Toutes les étapes (PDF)</span>
             </span>
-            <span style="color:var(--color-primary); font-weight:800; font-size:13px;">Ouvrir →</span>
+            <span class="dl-btn-arrow">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </span>
           </a>
         </div>
-        {% endif %}
-
-        {% if patron.createur_id == request.user.id or request.user.is_staff %}
-        <a href="{% url 'patron_export' pk=patron.id %}"
-           style="display:flex; align-items:center; gap:12px; margin-top:14px; background:#fff; border:1.5px solid rgba(187,185,177,0.4); border-radius:14px; padding:13px 16px; text-decoration:none;">
-          <span style="font-size:22px;"><i class="ic fi-br-disk"></i></span>
-          <span style="flex:1; font-family:var(--font-body); font-weight:700; font-size:14px; color:var(--text-dark);">Exporter le patron (.json)
-            <span style="display:block; font-weight:500; font-size:12px; color:var(--text-muted);">Sauvegarde réimportable dans le formulaire de création</span>
-          </span>
-          <span style="color:var(--text-muted); font-weight:800; font-size:13px;">Télécharger →</span>
-        </a>
         {% endif %}
 
         <!-- Planches PDF + pièces à découper -->
@@ -1020,24 +1166,28 @@
           <div class="materiel-title"><i class="ic fi-br-scissors"></i> Patron à découper</div>
 
           {% if patron.pieces.all %}
-          <a href="{% url 'patron_pdf' pk=patron.id %}" target="_blank" rel="noopener"
-             style="display:flex; align-items:center; gap:12px; background:linear-gradient(135deg,#2E7D32 0%,#43A047 100%); border-radius:14px; padding:14px 16px; text-decoration:none; margin-bottom:12px; box-shadow:0 4px 12px rgba(35,115,41,0.25);">
-            <span style="font-size:24px;"><i class="ic fi-br-print"></i></span>
-            <span style="flex:1; font-family:var(--font-body); font-weight:800; font-size:14px; color:#fff;">Générer le PDF à imprimer
-              <span style="display:block; font-weight:500; font-size:12px; color:rgba(255,255,255,0.88);">Pièces à taille réelle, à découper et assembler</span>
+          <a href="{% url 'patron_pdf' pk=patron.id %}" target="_blank" rel="noopener" class="dl-btn go">
+            <span class="dl-btn-ico"><i class="ic fi-br-print"></i></span>
+            <span class="dl-btn-body">
+              <span class="dl-btn-title">Générer le PDF à imprimer</span>
+              <span class="dl-btn-sub">Pièces à taille réelle, à découper et assembler</span>
             </span>
-            <span style="color:#fff; font-weight:800; font-size:13px;">Ouvrir →</span>
+            <span class="dl-btn-arrow">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </span>
           </a>
           {% endif %}
 
           {% if patron.pdf_url %}
-          <a href="{{ patron.pdf_url }}" target="_blank" rel="noopener"
-             style="display:flex; align-items:center; gap:12px; background:#fff; border:1.5px solid rgba(35,115,41,0.25); border-radius:14px; padding:13px 16px; text-decoration:none; margin-bottom:12px;">
-            <span style="font-size:24px;"><i class="ic fi-br-document"></i></span>
-            <span style="flex:1; font-family:var(--font-body); font-weight:700; font-size:14px; color:var(--text-dark);">Planches du patron (PDF)
-              <span style="display:block; font-weight:500; font-size:12px; color:var(--text-muted);">À imprimer et découper</span>
+          <a href="{{ patron.pdf_url }}" target="_blank" rel="noopener" class="dl-btn">
+            <span class="dl-btn-ico"><i class="ic fi-br-document"></i></span>
+            <span class="dl-btn-body">
+              <span class="dl-btn-title">Planches du patron (PDF)</span>
+              <span class="dl-btn-sub">À imprimer et découper</span>
             </span>
-            <span style="color:var(--color-primary); font-weight:800; font-size:13px;">Ouvrir →</span>
+            <span class="dl-btn-arrow">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </span>
           </a>
           {% endif %}
 
@@ -1157,6 +1307,20 @@
     </div>
     {% endfor %}
 
+    <!-- CTA gamifié : vérifier la faisabilité avec les tissus choisis -->
+    <a href="{% url 'faisabilite_patron' pk=patron.id %}" class="feasibility-cta" id="feasibility-link">
+      <span class="feasibility-cta-ico">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <span class="feasibility-cta-body">
+        <span class="feasibility-cta-title">Vérifier la faisabilité</span>
+        <span class="feasibility-cta-sub" id="feasibility-sub">Place les pièces sur tes tissus pour voir si ça rentre</span>
+      </span>
+      <span class="feasibility-cta-arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </span>
+    </a>
+
   </div>
   {% endif %}
 
@@ -1214,24 +1378,28 @@
 
   </div>
 
+  <!-- ═══════════════════════════
+       Export du patron (.json) — tout en bas
+       ═══════════════════════════ -->
+  {% if patron.createur_id == request.user.id or request.user.is_staff %}
+  <a href="{% url 'patron_export' pk=patron.id %}" class="dl-btn muted" style="margin-top:32px;">
+    <span class="dl-btn-ico"><i class="ic fi-br-disk"></i></span>
+    <span class="dl-btn-body">
+      <span class="dl-btn-title">Exporter le patron (.json)</span>
+      <span class="dl-btn-sub">Sauvegarde réimportable dans le formulaire de création</span>
+    </span>
+    <span class="dl-btn-arrow">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </span>
+  </a>
+  {% endif %}
+
 </div><!-- /.detail-wrapper -->
 
 <!-- ═══════════════════════════
      CTA fixe en bas
      ═══════════════════════════ -->
 <div class="bottom-cta">
-  <a href="{% url 'faisabilite_patron' pk=patron.id %}"
-     style="display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:14px; margin-bottom:10px; border-radius:99px; background:#D2F4D1; color:#237329; text-decoration:none; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:15px;">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    Vérifier la faisabilité
-  </a>
-  {% if verif_requise or not email_verifie %}
-  <div style="display:flex;gap:10px;align-items:flex-start;background:#FFF4E5;color:#8A5A00;padding:12px 16px;border-radius:14px;margin-bottom:10px;font-size:13px;font-weight:600;line-height:1.4;">
-    <span><i class="ic fi-br-envelope"></i></span>
-    <span>Vérifiez votre adresse e-mail pour pouvoir démarrer ce projet. Le lien vous a été envoyé à l'inscription (bandeau « Renvoyer » en haut).</span>
-  </div>
-  {% endif %}
-
   {% if premiere_etape %}
   {% if email_verifie %}
   <form method="POST" id="start-form">
@@ -1285,6 +1453,9 @@
   // ── Sélection des vêtements ──
   const selectedIds = new Set();
   const hiddenInput = document.getElementById('selected-vetement-ids');
+  const feasLink = document.getElementById('feasibility-link');
+  const feasSub = document.getElementById('feasibility-sub');
+  const feasBaseHref = feasLink ? feasLink.getAttribute('href').split('?')[0] : '';
 
   // Pré-sélectionner les vêtements déjà associés au projet (depuis le serveur)
   document.querySelectorAll('.garment-item.selected').forEach(el => {
@@ -1307,6 +1478,20 @@
 
   function syncHiddenInput() {
     if (hiddenInput) hiddenInput.value = JSON.stringify([...selectedIds]);
+    updateFeasibilityLink();
+  }
+
+  // ── Lien « vérifier la faisabilité » : ne propose que les tissus choisis ──
+  function updateFeasibilityLink() {
+    if (!feasLink) return;
+    const ids = [...selectedIds];
+    if (ids.length) {
+      feasLink.href = feasBaseHref + '?vetements=' + ids.join(',');
+      if (feasSub) feasSub.textContent = 'Sur ' + ids.length + ' tissu' + (ids.length > 1 ? 's' : '') + ' sélectionné' + (ids.length > 1 ? 's' : '');
+    } else {
+      feasLink.href = feasBaseHref;
+      if (feasSub) feasSub.textContent = 'Place les pièces sur tes tissus pour voir si ça rentre';
+    }
   }
 
   function updateStartBtn() {

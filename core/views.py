@@ -809,10 +809,22 @@ def faisabilite_patron(request, pk):
             'svg_url': pc.svg_url,
         })
 
+    # Ne proposer que les tissus choisis sur la fiche (param ?vetements=1,2,3).
+    # Sans paramètre : on retombe sur tous les vêtements mesurés.
+    sel_ids = set()
+    sel_raw = request.GET.get('vetements', '').strip()
+    if sel_raw:
+        for part in sel_raw.split(','):
+            part = part.strip()
+            if part.isdigit():
+                sel_ids.add(int(part))
+
     garments = []
     qs = (Vetement.objects
           .filter(utilisateur=request.user, echelle_cm_px__isnull=False)
           .order_by('-surfaceExploitable'))
+    if sel_ids:
+        qs = qs.filter(id__in=sel_ids)
     for v in qs:
         if not v.photo_url or not v.echelle_cm_px:
             continue
