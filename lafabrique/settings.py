@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -21,27 +22,65 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+def _env_bool(name, default=False):
+    return os.environ.get(name, str(default)).strip().lower() in ('1', 'true', 'yes', 'on')
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# En production, définir la variable d'environnement SECRET_KEY (clé aléatoire).
-# La valeur ci-dessous n'est qu'un repli pour le développement local.
-SECRET_KEY = os.environ.get(
-    'SECRET_KEY',
-    'django-insecure-k)%!(08v06a_7i83a5%p1)771z)+vo3#o9q&oj233yopydt2z&'
-)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG vaut False par défaut (sécurité en prod). Pour le développement local,
-# ajouter DEBUG=True dans le fichier .env.
-DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
+# Par défaut DEBUG est désactivé : il faut explicitement DJANGO_DEBUG=True en local.
+DEBUG = _env_bool('DJANGO_DEBUG', False)
 
-ALLOWED_HOSTS = [
-    'la-fabrique.onrender.com', 
-    '127.0.0.1', 
-    'localhost'
+# SECURITY WARNING: keep the secret key used in production secret!
+# La clé est lue depuis l'environnement. En dev (DEBUG=True) on tolère un repli ;
+# en production l'absence de DJANGO_SECRET_KEY fait échouer le démarrage volontairement.
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-dev-only-do-not-use-in-production'
+    else:
+        raise ImproperlyConfigured(
+            "La variable d'environnement DJANGO_SECRET_KEY est obligatoire en production. "
+            "Générez-en une avec : python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+        )
+
+# Hôtes autorisés : 127.0.0.1/localhost en dev + domaines passés via env.
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+_extra_hosts = os.environ.get('DJANGO_ALLOWED_HOSTS', 'la-fabrique.onrender.com')
+ALLOWED_HOSTS += [h.strip() for h in _extra_hosts.split(',') if h.strip()]
+
+# Render expose automatiquement le hostname public.
+_render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if _render_host:
+    ALLOWED_HOSTS.append(_render_host)
+
+# Origines de confiance pour la protection CSRF (Django 4+ l'exige derrière HTTPS).
+CSRF_TRUSTED_ORIGINS = [
+    f'https://{h}' for h in ALLOWED_HOSTS if h not in ('127.0.0.1', 'localhost')
 ]
+
+# ── Durcissement production (actif uniquement hors DEBUG) ───────────────────
+if not DEBUG:
+    # Render (et la plupart des PaaS) terminent le TLS au niveau du proxy.
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+
+    # HSTS : forcer HTTPS côté navigateur pendant 1 an.
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = 'same-origin'
+    X_FRAME_OPTIONS = 'DENY'
+
+# Limite la taille des requêtes (les photos sont envoyées en base64 dans le POST).
+# ~10 Mo : assez pour une photo, tout en bornant la surface de déni de service.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 
 # Application definition
@@ -179,3 +218,34 @@ LOGIN_URL = 'connexion'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Logging : avec DEBUG=False, on veut quand même voir les erreurs dans les logs
+# (console → capturée par Render / gunicorn).
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {name} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}

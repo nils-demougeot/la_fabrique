@@ -213,10 +213,29 @@
 <main class="cp-main">
   <div class="cp-head">
     <h1>Créer un patron</h1>
-    <p>Compose ton tutoriel : description, étapes, planches PDF et pièces à découper.</p>
+    <p>Compose ton tutoriel : description, étapes et pièces à découper.</p>
   </div>
 
   {% if error %}<div class="cp-error">{{ error }}</div>{% endif %}
+
+  <!-- ═══ Import d'un patron (JSON) ═══ -->
+  <div class="cp-section-label">📥 Importer un patron</div>
+  <section class="card">
+    <p style="font-size:13px;color:var(--text-gray);line-height:1.4;margin-top:-4px;">
+      Reprends un patron exporté (fichier <strong>.json</strong>) pour pré-remplir le formulaire au lieu de tout ressaisir.
+    </p>
+    <button type="button" class="upload-btn" id="import-btn">
+      <span class="u-emoji">📥</span>
+      <span><span class="u-text">Choisir un fichier .json</span><span class="u-sub">Sauvegarde exportée depuis un patron</span></span>
+    </button>
+    <input type="file" id="import-input" accept="application/json,.json" style="display:none;">
+    <div class="file-chip" id="import-chip">
+      <span>✅</span><span id="import-name"></span><span class="fc-x" id="import-x">×</span>
+    </div>
+    <p class="empty-hint" id="import-note" style="display:none;">
+      Les photos (image de garde, photos d'étapes) ne sont pas réimportées : ajoute-les à nouveau si besoin.
+    </p>
+  </section>
 
   <form method="POST" enctype="multipart/form-data" class="cp-main" style="padding:0;gap:24px;" id="patron-form">
     {% csrf_token %}
@@ -302,19 +321,6 @@
       <div class="cover-preview" id="cover-preview"><img id="cover-img" src="" alt=""></div>
     </section>
 
-    <!-- ═══ PDF des planches ═══ -->
-    <div class="cp-section-label">📄 Planches à découper (PDF)</div>
-    <section class="card">
-      <button type="button" class="upload-btn" id="pdf-btn">
-        <span class="u-emoji">📄</span>
-        <span><span class="u-text">Ajouter un PDF</span><span class="u-sub">Le patron à imprimer et découper</span></span>
-      </button>
-      <input type="file" name="pdf_patron" id="pdf-input" accept="application/pdf,.pdf" style="display:none;">
-      <div class="file-chip" id="pdf-chip">
-        <span>📎</span><span id="pdf-name"></span><span class="fc-x" id="pdf-x">×</span>
-      </div>
-    </section>
-
     <!-- ═══ Étapes ═══ -->
     <div class="cp-section-label">🪡 Étapes du tutoriel</div>
     <section class="card">
@@ -395,19 +401,19 @@
       <label>Nom de la pièce</label>
       <input type="text" class="inp" data-field="nom" placeholder="Ex : Devant, Manche, Poche…">
     </div>
+    <div class="field">
+      <label>Quantité <span class="hint">× exemplaires identiques</span></label>
+      <input type="number" class="inp" data-field="quantite" min="1" value="1">
+    </div>
     <div class="row2">
-      <div class="field">
-        <label>Quantité</label>
-        <input type="number" class="inp" data-field="quantite" min="1" value="1">
-      </div>
       <div class="field">
         <label>Largeur <span class="hint">cm</span></label>
         <input type="number" class="inp" data-field="largeur" step="0.1" min="0" placeholder="ex : 30">
       </div>
-    </div>
-    <div class="field">
-      <label>Hauteur <span class="hint">cm</span></label>
-      <input type="number" class="inp" data-field="hauteur" step="0.1" min="0" placeholder="ex : 42">
+      <div class="field">
+        <label>Hauteur <span class="hint">cm</span></label>
+        <input type="number" class="inp" data-field="hauteur" step="0.1" min="0" placeholder="ex : 42">
+      </div>
     </div>
     <div class="field">
       <label>Forme SVG</label>
@@ -450,22 +456,6 @@
       coverImg.src = URL.createObjectURL(f);
       coverPrev.style.display = 'block';
       coverBtn.querySelector('.u-text').textContent = 'Changer l’image';
-    });
-
-    // ── PDF ──
-    const pdfBtn = document.getElementById('pdf-btn');
-    const pdfInput = document.getElementById('pdf-input');
-    const pdfChip = document.getElementById('pdf-chip');
-    const pdfName = document.getElementById('pdf-name');
-    pdfBtn.addEventListener('click', () => pdfInput.click());
-    pdfInput.addEventListener('change', () => {
-      const f = pdfInput.files[0];
-      if (!f) return;
-      pdfName.textContent = f.name;
-      pdfChip.style.display = 'flex';
-    });
-    document.getElementById('pdf-x').addEventListener('click', () => {
-      pdfInput.value = ''; pdfChip.style.display = 'none';
     });
 
     // ── Générique : étapes & pièces dynamiques ──
@@ -521,16 +511,120 @@
         }
       });
 
-      return { add };
+      // Ajoute un bloc puis le renvoie (pour le pré-remplir à l'import)
+      function addAndGet() { add(); return container.lastElementChild; }
+
+      return { add, addAndGet, container, reindex };
     }
 
-    makeManager({
+    const stepsMgr = makeManager({
       container: 'steps-container', empty: 'steps-empty', nbInput: 'nb-etapes',
       template: 'step-template', addBtn: 'add-step', numClass: 'step-num', prefix: 'etape',
     });
-    makeManager({
+    const piecesMgr = makeManager({
       container: 'pieces-container', empty: 'pieces-empty', nbInput: 'nb-pieces',
       template: 'piece-template', addBtn: 'add-piece', numClass: 'piece-num', prefix: 'piece',
+    });
+
+    // ── Import d'un patron (JSON) ──
+    const importBtn = document.getElementById('import-btn');
+    const importInput = document.getElementById('import-input');
+    const importChip = document.getElementById('import-chip');
+    const importName = document.getElementById('import-name');
+    const importNote = document.getElementById('import-note');
+
+    function setField(name, value) {
+      const el = document.querySelector('[name="' + name + '"]');
+      if (el != null && value != null) el.value = value;
+    }
+    function setBlockField(block, field, value) {
+      const el = block.querySelector('[data-field="' + field + '"]');
+      if (el != null && value != null && value !== '') el.value = value;
+    }
+    // Reconstruit un fichier SVG et l'injecte dans l'input file (réutilisé au submit)
+    function setSvgFile(block, svgText, nom) {
+      const inp = block.querySelector('.file-svg');
+      if (!inp || !svgText) return;
+      try {
+        const safe = (nom || 'piece').toString().replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'piece';
+        const file = new File([svgText], safe + '.svg', { type: 'image/svg+xml' });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        inp.files = dt.files;
+        const field = inp.closest('.field');
+        const prev = field.querySelector('.svg-prev');
+        prev.querySelector('img').src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svgText);
+        prev.style.display = 'flex';
+        field.querySelector('.u-text').textContent = 'Changer le SVG';
+      } catch (e) { /* DataTransfer non supporté : on ignore le SVG */ }
+    }
+
+    function applyImport(data) {
+      const p = (data && data.patron) || {};
+      setField('titre', p.titre);
+      setField('type_objet', p.type_objet);
+      setField('description', p.description);
+      setField('duree', p.duree);
+      setField('materiel', p.materiel);
+      setField('matiere_requise', p.matiere_requise);
+      if (p.surface_min != null) setField('surface_min', p.surface_min);
+      if (p.surface_max != null) setField('surface_max', p.surface_max);
+
+      // Difficulté
+      if (p.difficulte) {
+        const btn = diffSeg.querySelector('.seg-btn[data-val="' + p.difficulte + '"]');
+        if (btn) btn.click();
+      }
+      // Premium
+      premiumCb.checked = !!p.est_premium;
+      premiumInput.value = premiumCb.checked ? '1' : '0';
+
+      // Étapes : repartir d'une liste vierge
+      stepsMgr.container.innerHTML = ''; stepsMgr.reindex();
+      (data.etapes || []).forEach(e => {
+        const block = stepsMgr.addAndGet();
+        setBlockField(block, 'titre', e.titre);
+        setBlockField(block, 'description', e.description);
+        setBlockField(block, 'video', e.video_url);
+        setBlockField(block, 'conseil', e.conseil);
+        setBlockField(block, 'materiaux', e.materiaux_etape);
+      });
+
+      // Pièces
+      piecesMgr.container.innerHTML = ''; piecesMgr.reindex();
+      (data.pieces || []).forEach(pc => {
+        const block = piecesMgr.addAndGet();
+        setBlockField(block, 'nom', pc.nom);
+        setBlockField(block, 'quantite', pc.quantite);
+        setBlockField(block, 'largeur', pc.largeur_cm);
+        setBlockField(block, 'hauteur', pc.hauteur_cm);
+        if (pc.svg) setSvgFile(block, pc.svg, pc.nom);
+      });
+    }
+
+    importBtn.addEventListener('click', () => importInput.click());
+    importInput.addEventListener('change', () => {
+      const f = importInput.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        let data;
+        try { data = JSON.parse(reader.result); }
+        catch (e) { alert('Fichier illisible : ce n’est pas un JSON valide.'); return; }
+        if (!data || (!data.patron && !data.etapes && !data.pieces)) {
+          alert('Ce fichier ne ressemble pas à un export de patron.'); return;
+        }
+        applyImport(data);
+        importName.textContent = f.name;
+        importChip.style.display = 'flex';
+        importNote.style.display = 'block';
+      };
+      reader.readAsText(f);
+    });
+    document.getElementById('import-x').addEventListener('click', () => {
+      importInput.value = '';
+      importChip.style.display = 'none';
+      importNote.style.display = 'none';
     });
   })();
 </script>

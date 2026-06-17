@@ -1,12 +1,16 @@
 import base64
+import binascii
 import json
 import re
 import urllib.parse
 from io import BytesIO
 
 import qrcode as qrcode_lib
+from PIL import Image as PILImage
 
 from django.core.files.base import ContentFile
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
@@ -19,6 +23,46 @@ import math
 from django.http import HttpResponse, JsonResponse
 from core.models import (Vetement, Utilisateur, Patron, EtapePatron, PiecePatron, ProgressionProjet, PatronLike,
                          PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag, Badge)
+
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
+MAX_IMAGE_BYTES = 8 * 1024 * 1024  # 8 Mo
+
+
+def decode_base64_image(photo_data, name_prefix):
+    """Décode une image data-URI base64 en validant le format et la taille.
+
+    Renvoie un ContentFile prêt à être stocké, ou None si la donnée est absente
+    ou invalide. Vérifie l'extension (liste blanche) et que le contenu est bien
+    une image décodable par Pillow — empêche le stockage de fichiers arbitraires
+    (ex : SVG/HTML piégé) via le champ photo.
+    """
+    if not photo_data or ';base64,' not in photo_data:
+        return None
+
+    fmt, imgstr = photo_data.split(';base64,', 1)
+    ext = fmt.split('/')[-1].lower().strip()
+    if ext == 'jpe':
+        ext = 'jpg'
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        raise ValueError('Format d\'image non autorisé.')
+
+    try:
+        raw = base64.b64decode(imgstr, validate=True)
+    except (ValueError, binascii.Error):
+        raise ValueError('Image base64 invalide.')
+
+    if not raw or len(raw) > MAX_IMAGE_BYTES:
+        raise ValueError('Image vide ou trop volumineuse.')
+
+    # Vérifie que le contenu est réellement une image décodable.
+    try:
+        with PILImage.open(BytesIO(raw)) as im:
+            im.verify()
+    except Exception:
+        raise ValueError('Le fichier fourni n\'est pas une image valide.')
+
+    return ContentFile(raw, name=f'{name_prefix}.{ext}')
+
 
 BADGE_DEFINITIONS = [
     {'nom': 'Premier Projet',      'emoji': '🏆', 'description': '1er projet terminé',        'condition': 'Terminer 1 projet'},
@@ -304,12 +348,7 @@ def ajout_textile(request):
             couleur = request.POST.get('couleur', '')
             matiere_raw = request.POST.get('material', 'coton:100').strip() or 'coton:100'
 
-            photo_fichier = None
-            photo_data = face_av['photo_data']
-            if photo_data and ';base64,' in photo_data:
-                fmt, imgstr = photo_data.split(';base64,')
-                ext = fmt.split('/')[-1]
-                photo_fichier = ContentFile(base64.b64decode(imgstr), name=f'vetement.{ext}')
+            photo_fichier = decode_base64_image(face_av['photo_data'], 'vetement')
 
             Vetement.objects.create(
                 utilisateur=request.user,
@@ -583,7 +622,6 @@ def creer_patron(request):
             estPremium=est_premium,
             difficulte=difficulte,
             photo=request.FILES.get('cover_image'),
-            pdf_patron=request.FILES.get('pdf_patron'),
             duree=duree or None,
             materiel=materiel or None,
             matiere_requise=matiere_requise or None,
@@ -790,6 +828,127 @@ def faisabilite_patron(request, pk):
         'has_pieces': len(pieces) > 0,
         'has_garments': len(garments) > 0,
     })
+
+
+@login_required
+def patron_pdf(request, pk):
+    """Génère à la volée le PDF des pièces du patron, à taille réelle, réparties
+    sur des feuilles A4 à imprimer puis assembler."""
+    patron = get_object_or_404(Patron, pk=pk)
+    pieces = list(patron.pieces.all())
+    if not pieces:
+        return HttpResponse(
+            "Ce patron n'a pas encore de pièces enregistrées.",
+            status=404, content_type='text/plain; charset=utf-8',
+        )
+
+    from core.pdf_patron import build_patron_pdf
+    pdf_bytes = build_patron_pdf(patron, pieces)
+
+    slug = re.sub(r'[^a-z0-9]+', '-', (patron.titre or 'patron').lower()).strip('-') or 'patron'
+    disposition = 'attachment' if request.GET.get('download') == '1' else 'inline'
+    resp = HttpResponse(pdf_bytes, content_type='application/pdf')
+    resp['Content-Disposition'] = f'{disposition}; filename="patron-{slug}.pdf"'
+    return resp
+
+
+def _patron_slug(patron):
+    slug = re.sub(r'[^a-z0-9]+', '-', (patron.titre or 'patron').lower()).strip('-')
+    return slug or 'patron'
+
+
+@login_required
+def patron_instructions_pdf(request, pk):
+    """PDF imprimable et mis en forme du déroulé du projet (toutes les étapes)."""
+    patron = get_object_or_404(Patron, pk=pk)
+    etapes = list(patron.etapes.order_by('numero'))
+
+    # Outils nécessaires : matériel du patron + matériaux des étapes (dédupliqués)
+    materiel_list, seen = [], set()
+    sources = [patron.materiel] + [e.materiaux_etape for e in etapes]
+    for src in sources:
+        if not src:
+            continue
+        for m in src.split(','):
+            m = m.strip()
+            if m and m.lower() not in seen:
+                seen.add(m.lower())
+                materiel_list.append(m)
+
+    from core.pdf_patron import build_instructions_pdf
+    pdf_bytes = build_instructions_pdf(patron, etapes, materiel_list)
+
+    disposition = 'attachment' if request.GET.get('download') == '1' else 'inline'
+    resp = HttpResponse(pdf_bytes, content_type='application/pdf')
+    resp['Content-Disposition'] = f'{disposition}; filename="instructions-{_patron_slug(patron)}.pdf"'
+    return resp
+
+
+@login_required
+def patron_export(request, pk):
+    """Exporte un patron au format JSON (sauvegarde / réimport dans le formulaire).
+
+    Le SVG des pièces (texte) est embarqué dans le fichier pour que les formes
+    soient restaurées à l'import ; les images (photo, photos d'étapes) ne sont
+    référencées que par leur URL."""
+    patron = get_object_or_404(Patron, pk=pk)
+
+    def _read_svg(piece):
+        if not getattr(piece, 'svg', None):
+            return None
+        try:
+            piece.svg.open('rb')
+            try:
+                return piece.svg.read().decode('utf-8', 'ignore')
+            finally:
+                piece.svg.close()
+        except Exception:
+            return None
+
+    data = {
+        'format': 'la-fabrique/patron',
+        'version': 1,
+        'patron': {
+            'titre': patron.titre,
+            'description': patron.description or '',
+            'type_objet': patron.typeObjet or '',
+            'difficulte': patron.difficulte,
+            'duree': patron.duree or '',
+            'est_premium': bool(patron.estPremium),
+            'surface_min': patron.surfaceMin,
+            'surface_max': patron.surfaceMax,
+            'materiel': patron.materiel or '',
+            'matiere_requise': patron.matiere_requise or '',
+            'photo_url': patron.photo_url,
+        },
+        'etapes': [
+            {
+                'numero': e.numero,
+                'titre': e.titre,
+                'description': e.description or '',
+                'video_url': e.video_url or '',
+                'conseil': e.conseil or '',
+                'materiaux_etape': e.materiaux_etape or '',
+                'image_url': e.image_url,
+            }
+            for e in patron.etapes.order_by('numero')
+        ],
+        'pieces': [
+            {
+                'nom': p.nom,
+                'quantite': p.quantite,
+                'largeur_cm': p.largeur_cm,
+                'hauteur_cm': p.hauteur_cm,
+                'svg': _read_svg(p),
+            }
+            for p in patron.pieces.all()
+        ],
+    }
+
+    payload = json.dumps(data, ensure_ascii=False, indent=2)
+    resp = HttpResponse(payload, content_type='application/json; charset=utf-8')
+    resp['Content-Disposition'] = f'attachment; filename="patron-{_patron_slug(patron)}.json"'
+    return resp
 
 
 @login_required
@@ -1081,12 +1240,13 @@ def creer_post(request):
                 'error': 'Le titre et la description sont obligatoires.',
             })
 
-        image_fichier = None
-        photo_data = request.POST.get('photo_data', '')
-        if photo_data and ';base64,' in photo_data:
-            fmt, imgstr = photo_data.split(';base64,', 1)
-            ext = fmt.split('/')[-1]
-            image_fichier = ContentFile(base64.b64decode(imgstr), name=f'post.{ext}')
+        try:
+            image_fichier = decode_base64_image(request.POST.get('photo_data', ''), 'post')
+        except ValueError:
+            return render(request, 'core/creer_post.html', {
+                'patrons': Patron.objects.all(),
+                'error': "L'image fournie est invalide. Choisis une photo (PNG/JPG/WEBP).",
+            })
 
         patron_obj = None
         if patron_id:
@@ -1369,6 +1529,15 @@ def inscription(request):
                 'email': email,
             })
 
+        # Validation du mot de passe selon les règles Django (longueur, robustesse…).
+        try:
+            validate_password(password)
+        except DjangoValidationError as e:
+            return render(request, 'core/inscription.html', {
+                'error': ' '.join(e.messages),
+                'email': email,
+            })
+
         # On sauvegarde l'email et le mdp dans la session
         request.session['reg_email'] = email
         request.session['reg_password'] = password
@@ -1435,13 +1604,12 @@ def inscription_etape3(request):
         cibles_list = request.POST.getlist('target')
         cibles_str = ", ".join(cibles_list)
 
-        # 3. Revalidation anti-collision : un autre compte a pu prendre ce
-        # pseudo / cet e-mail entre l'étape 1 et maintenant.
-        if Utilisateur.objects.filter(username__iexact=username).exists():
-            request.session['reg_username'] = None
-            return redirect('inscription_etape1')
-        if Utilisateur.objects.filter(email__iexact=email).exists():
-            return redirect('inscription')
+        # 3. Revalidation anti-collision juste avant la création : un autre compte
+        # a pu prendre ce pseudo / cet e-mail entre l'étape 1 et maintenant → évite un 500.
+        if (Utilisateur.objects.filter(username__iexact=username).exists()
+                or Utilisateur.objects.filter(email__iexact=email).exists()):
+            return render(request, 'core/inscription.html',
+                          {'error': "Ce compte existe déjà. Essayez de vous connecter."})
 
         # 4. On crée le compte
         nouvel_utilisateur = Utilisateur.objects.create_user(
@@ -1473,15 +1641,22 @@ def detail_vetement(request, pk):
     if request.method == 'POST':
         vetement.nomVetement = request.POST.get('nom_vetement', vetement.nomVetement).strip() or vetement.nomVetement
         vetement.typeVetement = request.POST.get('clothing_type', vetement.typeVetement)
-        vetement.qualite = int(request.POST.get('qualite', vetement.qualite))
+        try:
+            vetement.qualite = int(request.POST.get('qualite', vetement.qualite))
+        except (ValueError, TypeError):
+            pass
         vetement.couleur = request.POST.get('couleur', vetement.couleur)
         vetement.matiere = request.POST.get('material', vetement.matiere)
 
-        photo_data = request.POST.get('photo_data', '')
-        if photo_data and ';base64,' in photo_data:
-            fmt, imgstr = photo_data.split(';base64,')
-            ext = fmt.split('/')[-1]
-            vetement.photoURL = ContentFile(base64.b64decode(imgstr), name=f'vetement.{ext}')
+        try:
+            nouvelle_photo = decode_base64_image(request.POST.get('photo_data', ''), 'vetement')
+        except ValueError:
+            return render(request, 'core/detail_vetement.html', {
+                'vetement': vetement,
+                'error': "L'image fournie est invalide.",
+            })
+        if nouvelle_photo:
+            vetement.photoURL = nouvelle_photo
 
         vetement.save()
         return redirect('mes_tissus')
