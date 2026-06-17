@@ -36,6 +36,11 @@ urlpatterns = [
     path('acheter-badge/', views.acheter_badge, name='acheter_badge'),
     path('mon-profil/', views.mon_profil, name='mon_profil'),
 
+    # RGPD
+    path('politique-confidentialite/', views.politique_confidentialite, name='politique_confidentialite'),
+    path('mon-profil/exporter-donnees/', views.exporter_donnees, name='exporter_donnees'),
+    path('mon-profil/supprimer-compte/', views.supprimer_compte, name='supprimer_compte'),
+
     path('connexion/', auth_views.LoginView.as_view(template_name='core/connexion.html'), name='connexion'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 

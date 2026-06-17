@@ -14,6 +14,8 @@ def raw_media_storage():
 
 class Utilisateur(AbstractUser):
     consentementRGPD = models.BooleanField(default=False)
+    # Date à laquelle l'utilisateur a accepté la politique de confidentialité (preuve RGPD).
+    dateConsentementRGPD = models.DateTimeField(null=True, blank=True)
     soldePieces = models.IntegerField(default=0)
 
     niveau_couture = models.CharField(max_length=30, blank=True, null=True)
