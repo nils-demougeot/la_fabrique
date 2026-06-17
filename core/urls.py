@@ -44,6 +44,7 @@ urlpatterns = [
     # Vérification d'e-mail
     path('verifier-email/<str:token>/', views.verifier_email, name='verifier_email'),
     path('renvoyer-verification/', views.renvoyer_verification, name='renvoyer_verification'),
+    path('diagnostic-email/', views.diagnostic_email, name='diagnostic_email'),  # superadmin uniquement
 
     # RGPD
     path('politique-confidentialite/', views.politique_confidentialite, name='politique_confidentialite'),

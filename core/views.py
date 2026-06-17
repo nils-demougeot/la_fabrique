@@ -1891,6 +1891,76 @@ def renvoyer_verification(request):
 
 
 @login_required
+def diagnostic_email(request):
+    """Page de diagnostic e-mail réservée au superadmin (utile quand le shell
+    Render n'est pas disponible). Usage : /diagnostic-email/?to=mon@email.com
+
+    Affiche la config chargée + teste connexion et envoi, en texte brut.
+    """
+    if not request.user.is_superuser:
+        from django.http import Http404
+        raise Http404()
+
+    from django.core.mail import get_connection, EmailMessage
+
+    def _mask(v):
+        if not v:
+            return '(vide)'
+        return v[:2] + '…' + v[-2:] if len(v) > 4 else '••••'
+
+    dest = request.GET.get('to', '').strip()
+    lignes = []
+    lignes.append("=== Configuration e-mail chargée ===")
+    lignes.append(f"DEBUG               = {dj_settings.DEBUG}")
+    lignes.append(f"EMAIL_BACKEND       = {dj_settings.EMAIL_BACKEND}")
+    lignes.append(f"EMAIL_HOST          = {dj_settings.EMAIL_HOST or '(vide)'}")
+    lignes.append(f"EMAIL_PORT          = {dj_settings.EMAIL_PORT}")
+    lignes.append(f"EMAIL_USE_TLS       = {dj_settings.EMAIL_USE_TLS}")
+    lignes.append(f"EMAIL_USE_SSL       = {getattr(dj_settings, 'EMAIL_USE_SSL', False)}")
+    lignes.append(f"EMAIL_HOST_USER     = {dj_settings.EMAIL_HOST_USER or '(vide)'}")
+    lignes.append(f"EMAIL_HOST_PASSWORD = {_mask(dj_settings.EMAIL_HOST_PASSWORD)}")
+    lignes.append(f"EMAIL_TIMEOUT       = {getattr(dj_settings, 'EMAIL_TIMEOUT', None)}")
+    lignes.append(f"DEFAULT_FROM_EMAIL  = {dj_settings.DEFAULT_FROM_EMAIL}")
+
+    if 'console' in dj_settings.EMAIL_BACKEND:
+        lignes.append("\n⚠ Backend = console : aucun e-mail réel n'est envoyé (DEBUG=True).")
+    elif not dj_settings.EMAIL_HOST:
+        lignes.append("\n✗ Backend SMTP mais EMAIL_HOST vide → variables non chargées "
+                      "(vérifier les noms sur Render puis REDÉPLOYER).")
+
+    if not dest:
+        lignes.append("\nAjoute ?to=ton@email.com à l'URL pour tester un envoi réel.")
+        return HttpResponse('\n'.join(lignes), content_type='text/plain; charset=utf-8')
+
+    lignes.append("\n=== Test de connexion SMTP ===")
+    try:
+        conn = get_connection(fail_silently=False)
+        conn.open()
+        conn.close()
+        lignes.append("✓ Connexion au serveur SMTP réussie.")
+    except Exception as e:
+        lignes.append(f"✗ Échec de connexion : {type(e).__name__}: {e}")
+        lignes.append("Causes : mauvais host/port, identifiants incorrects, port bloqué (essayer 2525), TLS/SSL.")
+        return HttpResponse('\n'.join(lignes), content_type='text/plain; charset=utf-8')
+
+    lignes.append(f"\n=== Envoi de test à {dest} ===")
+    try:
+        n = EmailMessage(subject="Test d'envoi — La Fabrique",
+                         body="Si vous lisez ceci, l'envoi fonctionne. 🎉",
+                         to=[dest]).send(fail_silently=False)
+        if n:
+            lignes.append(f"✓ E-mail accepté par le serveur ({n}). Vérifie réception ET spams.")
+        else:
+            lignes.append("✗ 0 message envoyé (refus silencieux).")
+    except Exception as e:
+        lignes.append(f"✗ Échec de l'envoi : {type(e).__name__}: {e}")
+        lignes.append(f"Probable : l'expéditeur ({dj_settings.DEFAULT_FROM_EMAIL}) n'est pas "
+                      "une adresse VÉRIFIÉE chez ton fournisseur (Brevo/Mailjet).")
+
+    return HttpResponse('\n'.join(lignes), content_type='text/plain; charset=utf-8')
+
+
+@login_required
 def detail_vetement(request, pk):
     vetement = get_object_or_404(Vetement, pk=pk, utilisateur=request.user)
 
