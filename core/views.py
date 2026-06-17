@@ -9,6 +9,9 @@ import qrcode as qrcode_lib
 from PIL import Image as PILImage
 
 from django.core.files.base import ContentFile
+from django.core import signing
+from django.core.mail import send_mail
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import render, redirect, get_object_or_404
@@ -680,6 +683,10 @@ def patron_detail(request, pk):
 
     # ── POST : enregistrer la sélection de vêtements et démarrer le projet ──
     if request.method == 'POST':
+        # Vérification souple : démarrer un projet exige un e-mail vérifié.
+        if not request.user.email_verifie:
+            return redirect(reverse('patron_detail', kwargs={'pk': patron.pk}) + '?verif_requise=1')
+
         ids_json = request.POST.get('vetement_ids', '[]')
         try:
             vetement_ids = json.loads(ids_json)
@@ -774,6 +781,8 @@ def patron_detail(request, pk):
         'matieres_requises_display': matieres_requises_display,
         'vetements_compatibles': vetements_compatibles,
         'has_compatible': any(v['compatible'] for v in vetements_compatibles),
+        'email_verifie': request.user.email_verifie,
+        'verif_requise': request.GET.get('verif_requise') == '1',
     }
     return render(request, 'core/patron_detail.html', context)
 
@@ -980,6 +989,12 @@ def etape_projet(request, patron_pk, etape_num):
         match = re.search(r'(?:v=|youtu\.be/)([A-Za-z0-9_-]{11})', etape_actuelle.video_url)
         if match:
             video_embed_id = match.group(1)
+
+    # Vérification souple : on ne peut pas démarrer un nouveau projet sans e-mail
+    # vérifié. Un projet déjà commencé reste accessible.
+    projet_existant = ProgressionProjet.objects.filter(utilisateur=request.user, patron=patron).exists()
+    if not projet_existant and not request.user.email_verifie:
+        return redirect(reverse('patron_detail', kwargs={'pk': patron_pk}) + '?verif_requise=1')
 
     # Sauvegarde / mise à jour de la progression
     prog, created = ProgressionProjet.objects.get_or_create(
@@ -1639,7 +1654,10 @@ def inscription_etape3(request):
             if key in request.session:
                 del request.session[key]
 
-        # 7. On connecte l'utilisateur automatiquement et on l'envoie sur l'accueil
+        # 7. On envoie l'e-mail de vérification (vérification souple)
+        _envoyer_email_verification(request, nouvel_utilisateur)
+
+        # 8. On connecte l'utilisateur automatiquement et on l'envoie sur l'accueil
         login(request, nouvel_utilisateur)
         return redirect('home')
 
@@ -1754,6 +1772,64 @@ def supprimer_compte(request):
         return redirect('home')
 
     return render(request, 'core/supprimer_compte.html')
+
+
+# ── Vérification d'e-mail (souple) ──────────────────────────────────────────
+
+EMAIL_VERIF_SALT = 'email-verification'
+EMAIL_VERIF_MAX_AGE = 60 * 60 * 24 * 7  # 7 jours
+
+
+def _envoyer_email_verification(request, user):
+    """Envoie à l'utilisateur un e-mail contenant un lien de vérification signé."""
+    if not user.email:
+        return
+    token = signing.dumps({'uid': user.pk}, salt=EMAIL_VERIF_SALT)
+    lien = request.build_absolute_uri(reverse('verifier_email', args=[token]))
+    send_mail(
+        subject="Confirmez votre adresse e-mail — La Fabrique",
+        message=(
+            f"Bonjour {user.username},\n\n"
+            "Bienvenue dans l'atelier ! Confirmez votre adresse e-mail en cliquant "
+            "sur le lien ci-dessous :\n\n"
+            f"{lien}\n\n"
+            "Ce lien est valable 7 jours. Si vous n'êtes pas à l'origine de cette "
+            "inscription, ignorez cet e-mail.\n\n"
+            "L'équipe La Fabrique"
+        ),
+        from_email=None,  # utilise DEFAULT_FROM_EMAIL
+        recipient_list=[user.email],
+        fail_silently=True,  # une panne SMTP ne doit pas casser l'inscription
+    )
+
+
+def verifier_email(request, token):
+    """Page publique atteinte via le lien e-mail : valide le token et marque l'adresse vérifiée."""
+    try:
+        data = signing.loads(token, salt=EMAIL_VERIF_SALT, max_age=EMAIL_VERIF_MAX_AGE)
+        user = Utilisateur.objects.get(pk=data['uid'])
+    except (signing.BadSignature, signing.SignatureExpired, Utilisateur.DoesNotExist, KeyError, TypeError):
+        return render(request, 'core/email_verifie.html', {'success': False})
+
+    if not user.email_verifie:
+        user.email_verifie = True
+        user.save(update_fields=['email_verifie'])
+    return render(request, 'core/email_verifie.html', {'success': True})
+
+
+@login_required
+def renvoyer_verification(request):
+    """Renvoie l'e-mail de vérification (depuis le bandeau). POST uniquement."""
+    if request.method != 'POST':
+        return redirect('dashboard')
+    if not request.user.email_verifie:
+        _envoyer_email_verification(request, request.user)
+    # On revient sur la page d'origine en signalant l'envoi (next validé = pas d'open redirect).
+    next_url = request.POST.get('next', '')
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = reverse('dashboard')
+    sep = '&' if '?' in next_url else '?'
+    return redirect(f'{next_url}{sep}email_renvoye=1')
 
 
 @login_required

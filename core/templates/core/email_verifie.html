@@ -1,0 +1,41 @@
+{% extends 'core/header.html' %}
+
+{% block extra_css %}
+<style>
+  .verif-result { padding: 48px 24px; display: flex; flex-direction: column; gap: 16px; align-items: flex-start; }
+  .verif-result-icon {
+    width: 72px; height: 72px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 34px;
+  }
+  .verif-result-icon.ok { background: #D2F4D1; }
+  .verif-result-icon.ko { background: #FFE4DC; }
+  .verif-result h1 { font-family: var(--font-title); font-size: 24px; font-weight: 800; color: var(--text-dark); }
+  .verif-result p { font-size: 14px; line-height: 1.6; color: var(--text-muted); }
+  .verif-btn {
+    border: none; border-radius: 9999px; padding: 15px 28px; margin-top: 6px;
+    background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%); color: white;
+    font-family: var(--font-title); font-weight: 700; font-size: 15px;
+    text-decoration: none; display: inline-block;
+  }
+  .verif-btn:hover { opacity: 0.94; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="verif-result">
+  {% if success %}
+    <div class="verif-result-icon ok">✅</div>
+    <h1>Adresse e-mail vérifiée !</h1>
+    <p>Merci. Votre compte est désormais entièrement débloqué : vous pouvez démarrer vos projets de patron.</p>
+    <a href="{% url 'patrons' %}" class="verif-btn">Découvrir les patrons</a>
+  {% else %}
+    <div class="verif-result-icon ko">⚠️</div>
+    <h1>Lien invalide ou expiré</h1>
+    <p>
+      Ce lien de vérification n'est plus valable (il expire après 7 jours) ou a déjà été utilisé.
+      Connectez-vous puis utilisez le bouton « Renvoyer » du bandeau pour recevoir un nouveau lien.
+    </p>
+    <a href="{% url 'dashboard' %}" class="verif-btn">Aller à mon tableau de bord</a>
+  {% endif %}
+</div>
+{% endblock %}

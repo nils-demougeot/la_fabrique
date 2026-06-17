@@ -180,6 +180,23 @@
       z-index: 1;
     }
 
+    /* Bandeau de vérification d'e-mail */
+    .verif-banner {
+      display: flex; align-items: center; gap: 10px;
+      background: #FFF4E5; color: #8A5A00;
+      padding: 10px 16px; font-size: 13px; font-weight: 600; line-height: 1.35;
+      border-bottom: 1px solid #F3E2C0;
+    }
+    .verif-banner.sent { background: #EAF7EA; color: #237329; border-bottom-color: #CDEBCD; }
+    .verif-banner span { flex: 1; }
+    .verif-banner form { margin: 0; flex-shrink: 0; }
+    .verif-banner button {
+      background: #8A5A00; color: white; border: none; border-radius: 9999px;
+      padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+      font-family: var(--font-body); white-space: nowrap;
+    }
+    .verif-banner button:hover { opacity: 0.9; }
+
   </style>
   {% block extra_css %}{% endblock %}
 </head>
@@ -231,6 +248,23 @@
         {% endif %}
       </div>
     </header>
+
+    {% if user.is_authenticated and not user.email_verifie %}
+      {% if request.GET.email_renvoye == '1' %}
+      <div class="verif-banner sent">
+        <span>✅ E-mail de vérification renvoyé. Pensez à regarder vos spams.</span>
+      </div>
+      {% else %}
+      <div class="verif-banner">
+        <span>✉️ Vérifiez votre adresse e-mail pour débloquer le démarrage de projets.</span>
+        <form method="post" action="{% url 'renvoyer_verification' %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit">Renvoyer</button>
+        </form>
+      </div>
+      {% endif %}
+    {% endif %}
 
     <div class="scrollable-content">
         {% block content %}
