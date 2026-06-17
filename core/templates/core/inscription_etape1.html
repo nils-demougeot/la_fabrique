@@ -409,7 +409,7 @@ body {
           <div class="avatar-preview" style="margin-top: 12px;">
             <img id="avatarPreviewImg"
                  class="avatar-preview-img"
-                 src="{{ STATIC_PREFIX }}core/images/avatars/image 11.png"
+                 src="{% static 'core/images/avatars/image 11.png' %}"
                  alt="Avatar sélectionné">
             <div class="avatar-preview-text">
               <span class="avatar-preview-name">Votre avatar</span>
@@ -425,10 +425,11 @@ body {
               <label class="avatar-option">
                 <input type="radio" name="avatar"
                        value="{{ avatar_file }}"
+                       data-url="{% static 'core/images/avatars/'|add:avatar_file %}"
                        {% if forloop.first %}checked{% endif %}
                        onchange="updatePreview(this)">
                 <div class="avatar-img-wrap">
-                  <img src="{{ STATIC_PREFIX }}core/images/avatars/{{ avatar_file }}"
+                  <img src="{% static 'core/images/avatars/'|add:avatar_file %}"
                        alt="Avatar {{ forloop.counter }}"
                        loading="lazy">
                 </div>
@@ -457,8 +458,8 @@ body {
   const STATIC_PREFIX = "{{ STATIC_PREFIX }}";
 
   function updatePreview(radio) {
-    document.getElementById('avatarPreviewImg').src =
-      STATIC_PREFIX + 'core/images/avatars/' + radio.value;
+    // data-url contient l'URL résolue côté serveur (nom haché en production).
+    document.getElementById('avatarPreviewImg').src = radio.dataset.url;
   }
 </script>
 

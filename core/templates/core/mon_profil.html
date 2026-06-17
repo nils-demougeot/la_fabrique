@@ -453,7 +453,7 @@
     </a>
     <img class="profil-avatar-big"
          id="bannerAvatar"
-         src="{{ STATIC_PREFIX }}{{ user.avatar_url }}"
+         src="{% static user.avatar_url %}"
          alt="Avatar">
     <span class="profil-username">{{ user.username }}</span>
     {% if level_info %}
@@ -470,7 +470,7 @@
       <span class="form-label">Photo de profil</span>
       <div class="avatar-select-preview">
         <img class="avatar-select-preview-img" id="avatarPreviewSmall"
-             src="{{ STATIC_PREFIX }}{{ user.avatar_url }}" alt="">
+             src="{% static user.avatar_url %}" alt="">
         <span class="avatar-select-hint">Choisissez parmi les avatars ci-dessous</span>
       </div>
       <fieldset style="border:none; margin-top: 12px;">
@@ -480,10 +480,11 @@
           <label class="avatar-option">
             <input type="radio" name="avatar"
                    value="{{ av }}"
+                   data-url="{% static 'core/images/avatars/'|add:av %}"
                    {% if user.avatar == av %}checked{% endif %}
                    onchange="updateAvatarPreview(this)">
             <div class="avatar-img-wrap">
-              <img src="{{ STATIC_PREFIX }}core/images/avatars/{{ av }}" alt="Avatar" loading="lazy">
+              <img src="{% static 'core/images/avatars/'|add:av %}" alt="Avatar" loading="lazy">
             </div>
             <span class="avatar-check-badge"></span>
           </label>
@@ -644,7 +645,8 @@
   const STATIC_PREFIX = "{{ STATIC_PREFIX }}";
 
   function updateAvatarPreview(radio) {
-    const src = STATIC_PREFIX + 'core/images/avatars/' + radio.value;
+    // data-url contient l'URL résolue côté serveur (nom haché en production).
+    const src = radio.dataset.url;
     document.getElementById('avatarPreviewSmall').src = src;
     document.getElementById('bannerAvatar').src = src;
   }

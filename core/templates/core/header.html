@@ -288,7 +288,7 @@
           <div class="avatar-menu">
             {% get_static_prefix as STATIC_PREFIX %}
             <img class="avatar"
-                 src="{{ STATIC_PREFIX }}{{ user.avatar_url }}"
+                 src="{% static user.avatar_url %}"
                  alt="Avatar"
                  id="avatarBtn">
             <div class="dropdown-menu" id="dropdownMenu">

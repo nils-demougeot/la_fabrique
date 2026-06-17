@@ -369,7 +369,7 @@
     <div class="hero-creator-chip">
       {% get_static_prefix as STATIC_PREFIX %}
       <img class="hero-avatar"
-           src="{{ STATIC_PREFIX }}{{ utilisateur.avatar_url }}"
+           src="{% static utilisateur.avatar_url %}"
            alt="Avatar de {{ utilisateur.username }}">
       <span class="hero-creator-name">@{{ utilisateur.username }}</span>
     </div>
@@ -469,7 +469,7 @@
       <div class="creator-row">
         {% get_static_prefix as STATIC_PREFIX %}
         <img class="creator-avatar"
-             src="{{ STATIC_PREFIX }}{{ utilisateur.avatar_url }}"
+             src="{% static utilisateur.avatar_url %}"
              alt="Avatar de {{ utilisateur.username }}">
         <div class="creator-info">
           <div class="creator-username">@{{ utilisateur.username }}</div>
