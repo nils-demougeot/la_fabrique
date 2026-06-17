@@ -106,10 +106,9 @@ def check_and_award_badges(user):
 
 
 def home(request):
-    context = {
-        'user_coins': '1,250'
-    }
-    return render(request, 'core/index.html', context)
+    # Le solde de pièces réel est affiché via le header (user.soldePieces) pour les
+    # utilisateurs connectés ; pas de valeur factice ici.
+    return render(request, 'core/index.html')
 
 
 @login_required
@@ -1435,10 +1434,14 @@ def mes_tissus(request):
     circumference = 251
     stroke_offset = round(circumference * (1 - min(1.0, total_surface / objectif)))
 
-    all_patrons = Patron.objects.all()
+    # Nombre de patrons compatibles par tissu (surfaceExploitable >= surfaceMin).
+    # On trie les surfaces minimales une seule fois, puis bisect compte en O(log n)
+    # par tissu au lieu d'une boucle imbriquée patrons × tissus.
+    import bisect
+    surfaces_min = sorted(Patron.objects.values_list('surfaceMin', flat=True))
     vetements_data = []
     for v in vetements:
-        nb_compatibles = sum(1 for p in all_patrons if v.surfaceExploitable >= p.surfaceMin)
+        nb_compatibles = bisect.bisect_right(surfaces_min, v.surfaceExploitable)
         vetements_data.append({'vetement': v, 'nb_compatibles': nb_compatibles})
 
     context = {
