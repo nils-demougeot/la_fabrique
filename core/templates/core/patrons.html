@@ -726,8 +726,8 @@
 
       <div class="patron-card">
         <!-- Stamps -->
-        <div class="stamp stamp-like">J'adore ✓</div>
-        <div class="stamp stamp-nope">Passer ✗</div>
+        <div class="stamp stamp-like">J'adore <i class="ic fi-br-check"></i></div>
+        <div class="stamp stamp-nope">Passer <i class="ic fi-br-cross-small"></i></div>
 
         <div class="patron-card-inner">
 
@@ -743,7 +743,7 @@
               {{ patron.compatibilite }}% Compatible
             </div>
             {% if patron.est_premium %}
-            <div class="badge-overlay badge-premium">✦ Premium</div>
+            <div class="badge-overlay badge-premium"><i class="ic fi-br-sparkles"></i> Premium</div>
             {% else %}
             <div class="badge-overlay badge-fabric">{{ patron.tissu }}</div>
             {% endif %}
@@ -802,7 +802,7 @@
 
   <!-- État vide (filtres ou tout vu) -->
   <div class="list-empty" id="listEmpty">
-    <div class="list-empty-emoji" id="listEmptyEmoji">🔍</div>
+    <div class="list-empty-emoji" id="listEmptyEmoji"><i class="ic fi-br-search"></i></div>
     <p class="list-empty-title" id="listEmptyTitle">Aucun résultat</p>
     <p class="list-empty-sub" id="listEmptySub">Essaie d'autres mots-clés ou ajuste les filtres.</p>
   </div>
@@ -841,15 +841,16 @@
     const rect = card.getBoundingClientRect();
     const cx   = rect.left + rect.width  / 2;
     const cy   = rect.top  + rect.height * 0.35;
-    const pool = ['💚','✨','🌿','💛','💚','🎉','✨','💚','🌟','💚'];
-    pool.forEach((emoji, i) => {
+    const pool = ['heart','sparkles','leaf','heart','heart','party-horn','sparkles','heart','star','heart'];
+    pool.forEach((name, i) => {
       const el  = document.createElement('span');
-      el.textContent = emoji;
+      el.innerHTML = '<i class="ic fi-br-' + name + '"></i>';
       const deg = Math.random() * 240 - 120;
       const rad = deg * Math.PI / 180;
       const d   = 80 + Math.random() * 110;
       el.style.cssText = [
         'position:fixed',
+        'color:#237329',
         `left:${cx}px`, `top:${cy}px`,
         `font-size:${14 + Math.random() * 18}px`,
         'pointer-events:none', 'z-index:9999',
@@ -1067,11 +1068,11 @@
 
     if (!hasVisible) {
       if (allDone) {
-        document.getElementById('listEmptyEmoji').textContent = '🎉';
+        document.getElementById('listEmptyEmoji').innerHTML = '<i class="ic fi-br-party-horn"></i>';
         document.getElementById('listEmptyTitle').textContent = 'Tu as tout vu !';
         document.getElementById('listEmptySub').textContent   = 'Reviens bientôt pour de nouveaux patrons.';
       } else {
-        document.getElementById('listEmptyEmoji').textContent = '🔍';
+        document.getElementById('listEmptyEmoji').innerHTML = '<i class="ic fi-br-search"></i>';
         document.getElementById('listEmptyTitle').textContent = 'Aucun résultat';
         document.getElementById('listEmptySub').textContent   = 'Essaie d\'autres mots-clés ou ajuste les filtres.';
       }

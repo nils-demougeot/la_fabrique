@@ -150,13 +150,13 @@
 
   {% if not has_pieces %}
     <div class="fz-empty">
-      <div class="emoji">✂️</div>
+      <div class="emoji"><i class="ic fi-br-scissors"></i></div>
       <h2>Aucune pièce à placer</h2>
       <p>Ce patron n'a pas encore de pièces à découper renseignées. Ajoute-les depuis l'espace de création du patron.</p>
     </div>
   {% elif not has_garments %}
     <div class="fz-empty">
-      <div class="emoji">🧵</div>
+      <div class="emoji"><i class="ic fi-br-reel"></i></div>
       <h2>Aucun tissu mesuré</h2>
       <p>Pour tester le placement, ajoute d'abord un vêtement via le scan (avec détourage + étalonnage).
         <br><a href="{% url 'ajout_textile' %}">Scanner un vêtement →</a></p>
@@ -192,7 +192,7 @@
         <form method="POST" action="{% url 'patron_detail' pk=patron.pk %}" id="start-form" style="flex:2; display:flex;">
           {% csrf_token %}
           <input type="hidden" name="vetement_ids" id="start-ids" value="[]">
-          <button type="submit" class="fz-start" id="btn-start">🧵 Démarrer le projet</button>
+          <button type="submit" class="fz-start" id="btn-start"><i class="ic fi-br-reel"></i> Démarrer le projet</button>
         </form>
       </div>
     </div>
@@ -386,10 +386,10 @@
     const total = instances.length;
     countEl.textContent = okCount + ' / ' + total;
     const feasible = total > 0 && okCount === total;
-    verdictEl.textContent = feasible ? '✓ Réalisable' : (okCount > 0 ? '⚠ À ajuster' : '✗');
+    verdictEl.innerHTML = feasible ? '<i class="ic fi-br-check"></i> Réalisable' : (okCount > 0 ? '<i class="ic fi-br-triangle-warning"></i> À ajuster' : '<i class="ic fi-br-cross-small"></i>');
     verdictEl.className = 'fz-verdict ' + (feasible ? 'ok' : (okCount > 0 ? 'bad' : ''));
     btnStart.classList.toggle('feasible', feasible);
-    btnStart.textContent = feasible ? '✓ Ça rentre — démarrer le projet' : '🧵 Démarrer le projet';
+    btnStart.innerHTML = feasible ? '<i class="ic fi-br-check"></i> Ça rentre — démarrer le projet' : '<i class="ic fi-br-reel"></i> Démarrer le projet';
     statusText.textContent = feasible
       ? 'Toutes les pièces rentrent dans la zone utile !'
       : 'Glisse chaque pièce dans la zone claire, hors des défauts (rouge).';

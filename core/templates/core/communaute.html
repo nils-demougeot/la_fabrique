@@ -187,7 +187,7 @@
   .sort-option { padding: 10px 14px; border-radius: 12px; font-family: var(--font-body); font-size: 14px; font-weight: 500; color: var(--text-dark); cursor: pointer; transition: background .1s; display: flex; align-items: center; gap: 8px; text-decoration: none; }
   .sort-option:hover { background: #F5F4EA; }
   .sort-option.selected { color: var(--color-primary); font-weight: 700; }
-  .sort-option.selected::before { content: '✓'; font-size: 12px; }
+  .sort-option.selected::before { content: "\f2df"; font-family: "uicons-bold-rounded"; font-style: normal; font-weight: normal; font-size: 12px; color: var(--color-primary); }
   .sort-option:not(.selected)::before { content: ''; display: inline-block; width: 12px; }
 
   /* Carte projet */
@@ -408,7 +408,7 @@
               data-url="{% url 'toggle_suivi' creator_of_week.pk %}">
         {% if is_following_creator %}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Suivi ✓
+          Suivi <i class="ic fi-br-check"></i>
         {% else %}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
@@ -559,7 +559,7 @@
       {% endfor %}
     {% else %}
       <div class="empty-state">
-        <div style="font-size:48px;">🌿</div>
+        <div style="font-size:48px;"><i class="ic fi-br-leaf"></i></div>
         <p>Aucun post pour le moment.<br>Sois le premier à partager ta création !</p>
       </div>
     {% endif %}
@@ -664,7 +664,7 @@
       .then(data => {
         if (data.following) {
           followBtn.classList.add('following');
-          followBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Suivi ✓`;
+          followBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Suivi`;
         } else {
           followBtn.classList.remove('following');
           const name = followBtn.dataset.userId;

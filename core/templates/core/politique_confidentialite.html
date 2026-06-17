@@ -126,8 +126,8 @@
     <p style="color: var(--text-dark); font-weight: 700; margin-bottom: 4px;">Exercer vos droits directement</p>
     <p>Vous pouvez accéder à vos données ou supprimer votre compte en un clic :</p>
     <div class="legal-actions">
-      <a href="{% url 'exporter_donnees' %}" class="legal-btn">⬇️ Télécharger mes données</a>
-      <a href="{% url 'supprimer_compte' %}" class="legal-btn" style="border-color: var(--color-accent); color: var(--color-accent);">🗑️ Supprimer mon compte</a>
+      <a href="{% url 'exporter_donnees' %}" class="legal-btn"><i class="ic fi-br-arrow-down"></i> Télécharger mes données</a>
+      <a href="{% url 'supprimer_compte' %}" class="legal-btn" style="border-color: var(--color-accent); color: var(--color-accent);"><i class="ic fi-br-trash"></i> Supprimer mon compte</a>
     </div>
   </div>
   {% endif %}

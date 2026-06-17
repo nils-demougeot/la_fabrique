@@ -219,18 +219,18 @@
   {% if error %}<div class="cp-error">{{ error }}</div>{% endif %}
 
   <!-- ═══ Import d'un patron (JSON) ═══ -->
-  <div class="cp-section-label">📥 Importer un patron</div>
+  <div class="cp-section-label"><i class="ic fi-br-inbox-in"></i> Importer un patron</div>
   <section class="card">
     <p style="font-size:13px;color:var(--text-gray);line-height:1.4;margin-top:-4px;">
       Reprends un patron exporté (fichier <strong>.json</strong>) pour pré-remplir le formulaire au lieu de tout ressaisir.
     </p>
     <button type="button" class="upload-btn" id="import-btn">
-      <span class="u-emoji">📥</span>
+      <span class="u-emoji"><i class="ic fi-br-inbox-in"></i></span>
       <span><span class="u-text">Choisir un fichier .json</span><span class="u-sub">Sauvegarde exportée depuis un patron</span></span>
     </button>
     <input type="file" id="import-input" accept="application/json,.json" style="display:none;">
     <div class="file-chip" id="import-chip">
-      <span>✅</span><span id="import-name"></span><span class="fc-x" id="import-x">×</span>
+      <span><i class="ic fi-br-check-circle"></i></span><span id="import-name"></span><span class="fc-x" id="import-x">×</span>
     </div>
     <p class="empty-hint" id="import-note" style="display:none;">
       Les photos (image de garde, photos d'étapes) ne sont pas réimportées : ajoute-les à nouveau si besoin.
@@ -241,7 +241,7 @@
     {% csrf_token %}
 
     <!-- ═══ Infos générales ═══ -->
-    <div class="cp-section-label">📋 Informations générales</div>
+    <div class="cp-section-label"><i class="ic fi-br-clipboard"></i> Informations générales</div>
     <section class="card">
       <div class="field">
         <label>Titre du patron</label>
@@ -311,10 +311,10 @@
     </section>
 
     <!-- ═══ Image de garde ═══ -->
-    <div class="cp-section-label">🖼️ Image de garde</div>
+    <div class="cp-section-label"><i class="ic fi-br-picture"></i> Image de garde</div>
     <section class="card">
       <button type="button" class="upload-btn" id="cover-btn">
-        <span class="u-emoji">🖼️</span>
+        <span class="u-emoji"><i class="ic fi-br-picture"></i></span>
         <span><span class="u-text">Choisir une image</span><span class="u-sub">Photo de présentation du patron</span></span>
       </button>
       <input type="file" name="cover_image" id="cover-input" accept="image/*" style="display:none;">
@@ -322,7 +322,7 @@
     </section>
 
     <!-- ═══ Étapes ═══ -->
-    <div class="cp-section-label">🪡 Étapes du tutoriel</div>
+    <div class="cp-section-label"><i class="ic fi-br-reel"></i> Étapes du tutoriel</div>
     <section class="card">
       <div id="steps-container" style="display:flex;flex-direction:column;gap:14px;"></div>
       <div class="empty-hint" id="steps-empty">Aucune étape pour l'instant.</div>
@@ -334,7 +334,7 @@
     </section>
 
     <!-- ═══ Pièces à découper ═══ -->
-    <div class="cp-section-label">✂️ Pièces à découper (formes SVG)</div>
+    <div class="cp-section-label"><i class="ic fi-br-scissors"></i> Pièces à découper (formes SVG)</div>
     <section class="card">
       <p style="font-size:13px;color:var(--text-gray);line-height:1.4;margin-top:-4px;">
         Une forme SVG par morceau, avec ses dimensions réelles. Servira plus tard à placer les pièces sur le tissu.
@@ -348,7 +348,7 @@
       <input type="hidden" name="nb_pieces" id="nb-pieces" value="0">
     </section>
 
-    <button type="submit" class="btn-publish">✓ Publier le patron</button>
+    <button type="submit" class="btn-publish"><i class="ic fi-br-check"></i> Publier le patron</button>
   </form>
 </main>
 
@@ -380,7 +380,7 @@
     <div class="field">
       <label>Photo de l'étape <span class="hint">optionnel</span></label>
       <button type="button" class="upload-btn" data-trigger="img">
-        <span class="u-emoji">📷</span><span><span class="u-text">Ajouter une photo</span></span>
+        <span class="u-emoji"><i class="ic fi-br-camera"></i></span><span><span class="u-text">Ajouter une photo</span></span>
       </button>
       <input type="file" class="file-img" data-field="image" accept="image/*" style="display:none;">
       <div class="step-img-prev"><img src="" alt=""></div>
@@ -418,7 +418,7 @@
     <div class="field">
       <label>Forme SVG</label>
       <button type="button" class="upload-btn" data-trigger="svg">
-        <span class="u-emoji">✂️</span><span><span class="u-text">Importer un .svg</span><span class="u-sub">La silhouette de la pièce</span></span>
+        <span class="u-emoji"><i class="ic fi-br-scissors"></i></span><span><span class="u-text">Importer un .svg</span><span class="u-sub">La silhouette de la pièce</span></span>
       </button>
       <input type="file" class="file-svg" data-field="svg" accept=".svg,image/svg+xml" style="display:none;">
       <div class="svg-prev"><img src="" alt=""></div>

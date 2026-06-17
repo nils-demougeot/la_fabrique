@@ -363,7 +363,7 @@
 
   <!-- ── Hero ── -->
   <div class="public-hero">
-    <div class="hero-leaf">🌿</div>
+    <div class="hero-leaf"><i class="ic fi-br-leaf"></i></div>
     <div class="hero-badge">Passeport Circulaire · La Fabrique</div>
     <h1 class="hero-creation-name">"{{ nom_creation }}"</h1>
     <div class="hero-creator-chip">
@@ -386,7 +386,7 @@
     <!-- ── L'histoire ── -->
     <div class="section-card">
       <div class="section-title-row">
-        <span class="section-icon">📖</span>
+        <span class="section-icon"><i class="ic fi-br-book-open-cover"></i></span>
         <span class="section-title">L'histoire de cette pièce</span>
       </div>
       <div class="transformation-flow">
@@ -395,7 +395,7 @@
         {% if noms_tissus %}
           {% for nom in noms_tissus %}
           <div class="transform-item">
-            <div class="transform-item-icon before">👗</div>
+            <div class="transform-item-icon before" style="color:#C2603F;"><i class="ic fi-br-reel"></i></div>
             <div>
               <span class="transform-item-text">{{ nom }}</span>
               <span class="transform-item-sublabel">Vêtement source</span>
@@ -404,7 +404,7 @@
           {% endfor %}
         {% else %}
           <div class="transform-item">
-            <div class="transform-item-icon before">👗</div>
+            <div class="transform-item-icon before" style="color:#C2603F;"><i class="ic fi-br-reel"></i></div>
             <div>
               <span class="transform-item-text">{{ noms_tissus_str }}</span>
               <span class="transform-item-sublabel">Tissu source</span>
@@ -423,7 +423,7 @@
 
         <!-- Résultat -->
         <div class="transform-item">
-          <div class="transform-item-icon after">✨</div>
+          <div class="transform-item-icon after" style="color:#237329;"><i class="ic fi-br-sparkles"></i></div>
           <div>
             <span class="transform-item-text">{{ nom_creation }}</span>
             <span class="transform-item-sublabel">Création finale · {{ date_creation|date:"d/m/Y" }}</span>
@@ -436,19 +436,19 @@
     <!-- ── Impact environnemental ── -->
     <div class="section-card">
       <div class="section-title-row">
-        <span class="section-icon">🌍</span>
+        <span class="section-icon"><i class="ic fi-br-globe"></i></span>
         <span class="section-title">Impact environnemental</span>
       </div>
 
       <div class="impact-grid">
         <div class="impact-card water">
-          <div class="impact-icon">💧</div>
+          <div class="impact-icon"><i class="ic fi-br-raindrops"></i></div>
           <div class="impact-value">{{ eau_litres }}</div>
           <div class="impact-unit">litres</div>
           <div class="impact-desc">d'eau sauvée</div>
         </div>
         <div class="impact-card co2">
-          <div class="impact-icon">🌱</div>
+          <div class="impact-icon"><i class="ic fi-br-seedling"></i></div>
           <div class="impact-value">{{ co2_economise }}</div>
           <div class="impact-unit">kg CO₂</div>
           <div class="impact-desc">évité</div>
@@ -456,14 +456,14 @@
       </div>
 
       <div class="equivalence-strip">
-        ≈ {{ eau_litres }} bouteilles d'eau non consommées 🍶
+        ≈ {{ eau_litres }} bouteilles d'eau non consommées <i class="ic fi-br-bottle"></i>
       </div>
     </div>
 
     <!-- ── Créateur ── -->
     <div class="section-card">
       <div class="section-title-row">
-        <span class="section-icon">🧵</span>
+        <span class="section-icon"><i class="ic fi-br-reel"></i></span>
         <span class="section-title">Le créateur</span>
       </div>
       <div class="creator-row">
@@ -483,7 +483,7 @@
 
   <!-- ── CTA ── -->
   <div class="cta-section" style="margin-top: 20px;">
-    <span class="cta-emoji">♻️</span>
+    <span class="cta-emoji"><i class="ic fi-br-recycle"></i></span>
     <h2 class="cta-title">Donnez vie à vos vêtements</h2>
     <p class="cta-subtitle">Rejoignez La Fabrique et créez votre propre mode circulaire</p>
     <a href="{% url 'inscription' %}" class="cta-btn">

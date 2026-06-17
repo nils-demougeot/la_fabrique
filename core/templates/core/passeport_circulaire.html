@@ -509,28 +509,28 @@
     <div class="blob-celebration blob-1"></div>
     <div class="blob-celebration blob-2"></div>
     <div class="blob-celebration blob-3"></div>
-    <div class="confetti-emoji">🎉</div>
+    <div class="confetti-emoji"><i class="ic fi-br-party-horn"></i></div>
     <h1 class="hero-title">Félicitations !</h1>
     <p class="hero-subtitle">Votre création est terminée</p>
     <div class="coins-badge">
-      +{{ coins_gagnes }} 🪙 gagnés
+      +{{ coins_gagnes }} <img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"> gagnés
     </div>
   </div>
 
   <!-- ── Stats rapides ── -->
   <div class="stats-row">
     <div class="stat-mini water">
-      <div class="stat-mini-icon">💧</div>
+      <div class="stat-mini-icon"><i class="ic fi-br-raindrops"></i></div>
       <div class="stat-mini-value">{{ eau_litres }}L</div>
       <div class="stat-mini-label">Eau sauvée</div>
     </div>
     <div class="stat-mini co2">
-      <div class="stat-mini-icon">🌿</div>
+      <div class="stat-mini-icon"><i class="ic fi-br-leaf"></i></div>
       <div class="stat-mini-value">{{ co2_economise }} kg</div>
       <div class="stat-mini-label">CO₂ évité</div>
     </div>
     <div class="stat-mini steps">
-      <div class="stat-mini-icon">✅</div>
+      <div class="stat-mini-icon"><i class="ic fi-br-check-circle"></i></div>
       <div class="stat-mini-value">{{ total_etapes }}</div>
       <div class="stat-mini-label">Étapes</div>
     </div>
@@ -548,7 +548,7 @@
           <span class="card-brand-name">La Fabrique</span>
           <span class="card-passport-title">Passeport Circulaire</span>
         </div>
-        <span class="card-passport-icon">🌿</span>
+        <span class="card-passport-icon"><i class="ic fi-br-leaf"></i></span>
       </div>
     </div>
 
@@ -577,11 +577,11 @@
         <span class="info-value">{{ noms_tissus_str }}</span>
       </div>
       <div class="info-row highlight-water">
-        <span class="info-key">💧 Eau sauvée</span>
+        <span class="info-key"><i class="ic fi-br-raindrops"></i> Eau sauvée</span>
         <span class="info-value">{{ eau_litres }} L</span>
       </div>
       <div class="info-row highlight-co2">
-        <span class="info-key">🌱 CO₂ évité</span>
+        <span class="info-key"><i class="ic fi-br-seedling"></i> CO₂ évité</span>
         <span class="info-value">{{ co2_economise }} kg</span>
       </div>
       <div class="info-row">
