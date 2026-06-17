@@ -1354,9 +1354,24 @@ def mon_profil(request):
 
 def inscription(request):
     if request.method == 'POST':
+        email = (request.POST.get('email') or '').strip()
+        password = request.POST.get('password') or ''
+
+        if not email or not password:
+            return render(request, 'core/inscription.html', {
+                'error': "L'adresse e-mail et le mot de passe sont obligatoires.",
+                'email': email,
+            })
+
+        if Utilisateur.objects.filter(email__iexact=email).exists():
+            return render(request, 'core/inscription.html', {
+                'error': "Un compte existe déjà avec cette adresse e-mail.",
+                'email': email,
+            })
+
         # On sauvegarde l'email et le mdp dans la session
-        request.session['reg_email'] = request.POST.get('email')
-        request.session['reg_password'] = request.POST.get('password')
+        request.session['reg_email'] = email
+        request.session['reg_password'] = password
         return redirect('inscription_etape1')
 
     return render(request, 'core/inscription.html')
@@ -1364,35 +1379,71 @@ def inscription(request):
 AVATAR_FILENAMES = [f'image {i}.png' for i in range(11, 27)]
 
 def inscription_etape1(request):
+    # Garde : si l'étape 0 n'a pas été faite (session expirée, accès direct),
+    # on renvoie au début plutôt que de crasher plus loin.
+    if not request.session.get('reg_email'):
+        return redirect('inscription')
+
     if request.method == 'POST':
-        request.session['reg_username'] = request.POST.get('username')
-        request.session['reg_avatar'] = request.POST.get('avatar', 'image 11.png')
+        username = (request.POST.get('username') or '').strip()
+        avatar = request.POST.get('avatar', 'image 11.png')
+
+        context = {'avatars': AVATAR_FILENAMES, 'username': username}
+
+        if not username:
+            context['error'] = "Choisis un nom d'utilisateur."
+            return render(request, 'core/inscription_etape1.html', context)
+
+        if Utilisateur.objects.filter(username__iexact=username).exists():
+            context['error'] = "Ce nom d'utilisateur est déjà pris."
+            return render(request, 'core/inscription_etape1.html', context)
+
+        request.session['reg_username'] = username
+        request.session['reg_avatar'] = avatar
         return redirect('inscription_etape2')
 
     return render(request, 'core/inscription_etape1.html', {'avatars': AVATAR_FILENAMES})
 
 def inscription_etape2(request):
+    # Garde : étapes précédentes obligatoires.
+    if not request.session.get('reg_email') or not request.session.get('reg_username'):
+        return redirect('inscription')
+
     if request.method == 'POST':
         # On sauvegarde le niveau
         request.session['reg_niveau'] = request.POST.get('experience_level')
         return redirect('inscription_etape3')
-        
+
     return render(request, 'core/inscription_etape2.html')
 
 def inscription_etape3(request):
-    if request.method == 'POST':
-        # 1. On récupère les cases cochées
-        cibles_list = request.POST.getlist('target')
-        cibles_str = ", ".join(cibles_list)
+    # 1. On récupère toutes les infos des étapes précédentes dans la session
+    email = request.session.get('reg_email')
+    password = request.session.get('reg_password')
+    username = request.session.get('reg_username')
 
-        # 2. On récupère toutes les infos des étapes précédentes dans la session
-        email = request.session.get('reg_email')
-        password = request.session.get('reg_password')
-        username = request.session.get('reg_username')
+    # Garde : si la session a expiré ou si l'on accède directement à cette URL,
+    # les données essentielles manquent → on recommence proprement (évite un 500).
+    if not email or not password or not username:
+        return redirect('inscription')
+
+    if request.method == 'POST':
         niveau = request.session.get('reg_niveau')
         avatar = request.session.get('reg_avatar', 'image 11.png')
 
-        # 3. On créé le compte dans la session
+        # 2. On récupère les cases cochées
+        cibles_list = request.POST.getlist('target')
+        cibles_str = ", ".join(cibles_list)
+
+        # 3. Revalidation anti-collision : un autre compte a pu prendre ce
+        # pseudo / cet e-mail entre l'étape 1 et maintenant.
+        if Utilisateur.objects.filter(username__iexact=username).exists():
+            request.session['reg_username'] = None
+            return redirect('inscription_etape1')
+        if Utilisateur.objects.filter(email__iexact=email).exists():
+            return redirect('inscription')
+
+        # 4. On crée le compte
         nouvel_utilisateur = Utilisateur.objects.create_user(
             username=username,
             email=email,
@@ -1402,13 +1453,13 @@ def inscription_etape3(request):
             avatar=avatar,
         )
 
-        # 4. On nettoie la session
+        # 5. On nettoie la session
         keys_to_delete = ['reg_email', 'reg_password', 'reg_username', 'reg_niveau', 'reg_avatar']
         for key in keys_to_delete:
             if key in request.session:
                 del request.session[key]
 
-        # 5. On connecte l'utilisateur automatiquement et on l'envoie sur l'accueil
+        # 6. On connecte l'utilisateur automatiquement et on l'envoie sur l'accueil
         login(request, nouvel_utilisateur)
         return redirect('home')
 
