@@ -1913,6 +1913,8 @@ def diagnostic_email(request):
     lignes.append("=== Configuration e-mail chargée ===")
     lignes.append(f"DEBUG               = {dj_settings.DEBUG}")
     lignes.append(f"EMAIL_BACKEND       = {dj_settings.EMAIL_BACKEND}")
+    lignes.append(f"BREVO_API_KEY       = {_mask(getattr(dj_settings, 'BREVO_API_KEY', ''))} "
+                  f"{'(API HTTP active ✓)' if getattr(dj_settings, 'BREVO_API_KEY', '') else '(non définie → SMTP)'}")
     lignes.append(f"EMAIL_HOST          = {dj_settings.EMAIL_HOST or '(vide)'}")
     lignes.append(f"EMAIL_PORT          = {dj_settings.EMAIL_PORT}")
     lignes.append(f"EMAIL_USE_TLS       = {dj_settings.EMAIL_USE_TLS}")
