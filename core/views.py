@@ -1,11 +1,14 @@
 import base64
 import binascii
+import hashlib
 import json
 import logging
 import re
 import threading
 import urllib.parse
 from io import BytesIO
+
+from django.core.cache import cache
 
 from django.conf import settings as dj_settings
 
@@ -63,14 +66,52 @@ def decode_base64_image(photo_data, name_prefix):
     if not raw or len(raw) > MAX_IMAGE_BYTES:
         raise ValueError('Image vide ou trop volumineuse.')
 
-    # Vérifie que le contenu est réellement une image décodable.
     try:
         with PILImage.open(BytesIO(raw)) as im:
-            im.verify()
+            im.load()
+            compressed = _compress_pil_image(im)
     except Exception:
         raise ValueError('Le fichier fourni n\'est pas une image valide.')
 
-    return ContentFile(raw, name=f'{name_prefix}.{ext}')
+    return ContentFile(compressed, name=f'{name_prefix}.jpg')
+
+
+def _compress_pil_image(im):
+    """Redimensionne à 1200px max et compresse en JPEG q85. Gère la transparence."""
+    if im.mode in ('RGBA', 'LA', 'P', 'PA'):
+        rgba = im.convert('RGBA')
+        bg = PILImage.new('RGB', rgba.size, (255, 255, 255))
+        bg.paste(rgba, mask=rgba.split()[3])
+        im = bg
+    elif im.mode != 'RGB':
+        im = im.convert('RGB')
+
+    w, h = im.size
+    if max(w, h) > 1200:
+        ratio = 1200 / max(w, h)
+        im = im.resize((max(1, int(w * ratio)), max(1, int(h * ratio))), PILImage.LANCZOS)
+
+    buf = BytesIO()
+    im.save(buf, format='JPEG', quality=85, optimize=True)
+    return buf.getvalue()
+
+
+def _compress_uploaded_image(uploaded_file, name_prefix):
+    """Compresse un fichier Django UploadedFile avant stockage. Renvoie None si absent."""
+    if not uploaded_file:
+        return None
+    try:
+        raw = uploaded_file.read()
+        with PILImage.open(BytesIO(raw)) as im:
+            im.load()
+            compressed = _compress_pil_image(im)
+        return ContentFile(compressed, name=f'{name_prefix}.jpg')
+    except Exception:
+        uploaded_file.seek(0)
+        return uploaded_file
+
+
+_PDF_CACHE_TTL = 60 * 60  # 1 heure
 
 
 BADGE_DEFINITIONS = [
@@ -629,7 +670,7 @@ def creer_patron(request):
             surfaceMax=surface_max if surface_max > 0 else surface_min,
             estPremium=est_premium,
             difficulte=difficulte,
-            photo=request.FILES.get('cover_image'),
+            photo=_compress_uploaded_image(request.FILES.get('cover_image'), 'patron'),
             duree=duree or None,
             materiel=materiel or None,
             matiere_requise=matiere_requise or None,
@@ -652,7 +693,7 @@ def creer_patron(request):
                 video_url=request.POST.get(f'etape_{i}_video', '').strip() or None,
                 conseil=request.POST.get(f'etape_{i}_conseil', '').strip() or None,
                 materiaux_etape=request.POST.get(f'etape_{i}_materiaux', '').strip() or None,
-                image=request.FILES.get(f'etape_{i}_image'),
+                image=_compress_uploaded_image(request.FILES.get(f'etape_{i}_image'), f'etape_{i}'),
             )
             numero += 1
 
@@ -868,8 +909,12 @@ def patron_pdf(request, pk):
             status=404, content_type='text/plain; charset=utf-8',
         )
 
-    from core.pdf_patron import build_patron_pdf
-    pdf_bytes = build_patron_pdf(patron, pieces)
+    cache_key = f'pdf_patron_pieces_{pk}'
+    pdf_bytes = cache.get(cache_key)
+    if pdf_bytes is None:
+        from core.pdf_patron import build_patron_pdf
+        pdf_bytes = build_patron_pdf(patron, pieces)
+        cache.set(cache_key, pdf_bytes, _PDF_CACHE_TTL)
 
     slug = re.sub(r'[^a-z0-9]+', '-', (patron.titre or 'patron').lower()).strip('-') or 'patron'
     disposition = 'attachment' if request.GET.get('download') == '1' else 'inline'
@@ -901,8 +946,12 @@ def patron_instructions_pdf(request, pk):
                 seen.add(m.lower())
                 materiel_list.append(m)
 
-    from core.pdf_patron import build_instructions_pdf
-    pdf_bytes = build_instructions_pdf(patron, etapes, materiel_list)
+    cache_key = f'pdf_patron_instructions_{pk}'
+    pdf_bytes = cache.get(cache_key)
+    if pdf_bytes is None:
+        from core.pdf_patron import build_instructions_pdf
+        pdf_bytes = build_instructions_pdf(patron, etapes, materiel_list)
+        cache.set(cache_key, pdf_bytes, _PDF_CACHE_TTL)
 
     disposition = 'attachment' if request.GET.get('download') == '1' else 'inline'
     resp = HttpResponse(pdf_bytes, content_type='application/pdf')
@@ -1094,19 +1143,25 @@ def qrcode_view(request):
     url = request.GET.get('url', '')
     if not url:
         return HttpResponse(status=400)
-    qr = qrcode_lib.QRCode(
-        version=None,
-        error_correction=qrcode_lib.constants.ERROR_CORRECT_M,
-        box_size=8,
-        border=2,
-    )
-    qr.add_data(url)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color=(35, 115, 41), back_color=(255, 251, 255))
-    buf = BytesIO()
-    img.save(buf, format='PNG')
-    buf.seek(0)
-    return HttpResponse(buf.read(), content_type='image/png')
+
+    cache_key = f'qrcode_{hashlib.md5(url.encode()).hexdigest()}'
+    png_bytes = cache.get(cache_key)
+    if png_bytes is None:
+        qr = qrcode_lib.QRCode(
+            version=None,
+            error_correction=qrcode_lib.constants.ERROR_CORRECT_M,
+            box_size=8,
+            border=2,
+        )
+        qr.add_data(url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color=(35, 115, 41), back_color=(255, 251, 255))
+        buf = BytesIO()
+        img.save(buf, format='PNG')
+        png_bytes = buf.getvalue()
+        cache.set(cache_key, png_bytes, 60 * 60 * 24 * 7)  # 7 jours
+
+    return HttpResponse(png_bytes, content_type='image/png')
 
 
 def passeport_public(request, patron_pk, user_pk):
