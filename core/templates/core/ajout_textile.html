@@ -2296,213 +2296,56 @@
         toastTimer = setTimeout(() => edToast.classList.remove('show'), 2800);
       }
 
-      // ── Détourage automatique : segmentation fond + tracé de contour ──
-      // Opération morphologique 3×3 (dilate=1 / erode=0) sur un masque binaire.
-      function morph(mask, w, h, dilate) {
-        const src = mask.slice();
-        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-          let val = dilate ? 0 : 1;
-          for (let dy = -1; dy <= 1 && (dilate ? !val : val); dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-              const nx = x + dx, ny = y + dy;
-              const s = (nx < 0 || ny < 0 || nx >= w || ny >= h) ? 0 : src[ny * w + nx];
-              if (dilate) { if (s) { val = 1; break; } }
-              else { if (!s) { val = 0; break; } }
+      // Message affiché quand aucun contour automatique n'est disponible
+      // (détourage serveur désactivé, en échec, ou aucun contour exploitable).
+      function noAutoDetectAvailable(manual) {
+        if (manual) showToast('Détourage automatique indisponible — place les points à la main');
+      }
+
+      // Détourage serveur (IA, rembg). REMBG_ENABLED est piloté par le réglage
+      // Django REMBG_DETOURAGE_ENABLED.
+      const REMBG_ENABLED = {{ rembg_enabled|yesno:"true,false" }};
+      const DETOURAGE_AUTO_URL = "{% url 'detourage_auto' %}";
+
+      function runAutoDetectServer(manual) {
+        const st = facesState[activeFace];
+        const photoData = st && st.photo;
+        if (!photoData) { noAutoDetectAvailable(manual); return; }
+
+        if (edAuto) edAuto.disabled = true;
+        if (manual) showToast('<i class="ic fi-br-sparkles"></i> Analyse en cours…');
+
+        const body = new URLSearchParams();
+        body.set('photo_data', photoData);
+
+        fetch(DETOURAGE_AUTO_URL, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+          body,
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (data && data.success && Array.isArray(data.polygon) && data.polygon.length >= 3) {
+              poly = data.polygon;
+              selDefect = -1;
+              draw();
+              updateButtons();
+              showToast('<i class="ic fi-br-sparkles"></i> Contour détecté (IA) — ajuste les points si besoin');
+            } else {
+              // Pas de contour exploitable (fond ambigu, échec…).
+              noAutoDetectAvailable(manual);
             }
-          }
-          mask[y * w + x] = val;
-        }
-      }
-
-      // Plus grande composante connexe (4-connexité).
-      function largestComponent(mask, w, h) {
-        const lbl = new Uint8Array(w * h);
-        const stack = [];
-        let best = null, bestSize = 0;
-        for (let s = 0; s < w * h; s++) {
-          if (mask[s] && !lbl[s]) {
-            stack.length = 0; stack.push(s); lbl[s] = 1;
-            const cells = [];
-            while (stack.length) {
-              const p = stack.pop(); cells.push(p);
-              const x = p % w, y = (p / w) | 0;
-              if (x > 0 && mask[p - 1] && !lbl[p - 1]) { lbl[p - 1] = 1; stack.push(p - 1); }
-              if (x < w - 1 && mask[p + 1] && !lbl[p + 1]) { lbl[p + 1] = 1; stack.push(p + 1); }
-              if (y > 0 && mask[p - w] && !lbl[p - w]) { lbl[p - w] = 1; stack.push(p - w); }
-              if (y < h - 1 && mask[p + w] && !lbl[p + w]) { lbl[p + w] = 1; stack.push(p + w); }
-            }
-            if (cells.length > bestSize) { bestSize = cells.length; best = cells; }
-          }
-        }
-        if (!best) return null;
-        const out = new Uint8Array(w * h);
-        best.forEach(p => out[p] = 1);
-        return out;
-      }
-
-      // Tracé de frontière de Moore (contour extérieur ordonné).
-      function mooreTrace(mask, w, h) {
-        const at = (x, y) => (x >= 0 && y >= 0 && x < w && y < h) ? mask[y * w + x] : 0;
-        const off = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
-        let sx = -1, sy = -1;
-        outer: for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { if (mask[y * w + x]) { sx = x; sy = y; break outer; } }
-        if (sx < 0) return [];
-        const contour = [];
-        let px = sx, py = sy, bx = sx - 1, by = sy;
-        let count = 0; const max = w * h * 8;
-        do {
-          contour.push([px, py]);
-          let start = 0;
-          for (let k = 0; k < 8; k++) { if (px + off[k][0] === bx && py + off[k][1] === by) { start = k; break; } }
-          let found = false;
-          for (let k = 1; k <= 8; k++) {
-            const d = (start + k) % 8;
-            const nx = px + off[d][0], ny = py + off[d][1];
-            if (at(nx, ny)) {
-              const pd = (start + k - 1) % 8;
-              bx = px + off[pd][0]; by = py + off[pd][1];
-              px = nx; py = ny; found = true; break;
-            }
-          }
-          if (!found) break;
-          count++;
-        } while ((px !== sx || py !== sy) && count < max);
-        return contour;
-      }
-
-      // Distance perpendiculaire d'un point au segment [a,b].
-      function perpDist(p, a, b) {
-        const dx = b[0] - a[0], dy = b[1] - a[1];
-        const len = Math.hypot(dx, dy) || 1e-6;
-        return Math.abs((p[0] - a[0]) * dy - (p[1] - a[1]) * dx) / len;
-      }
-
-      // Simplification Ramer–Douglas–Peucker.
-      function rdp(points, eps) {
-        if (points.length < 3) return points.slice();
-        const keep = new Array(points.length).fill(false);
-        keep[0] = keep[points.length - 1] = true;
-        const stack = [[0, points.length - 1]];
-        while (stack.length) {
-          const seg = stack.pop(), a = seg[0], b = seg[1];
-          let maxD = 0, idx = -1;
-          for (let i = a + 1; i < b; i++) {
-            const d = perpDist(points[i], points[a], points[b]);
-            if (d > maxD) { maxD = d; idx = i; }
-          }
-          if (maxD > eps && idx >= 0) { keep[idx] = true; stack.push([a, idx]); stack.push([idx, b]); }
-        }
-        const out = [];
-        for (let i = 0; i < points.length; i++) if (keep[i]) out.push(points[i]);
-        return out;
-      }
-
-      function autoDetectPolygon(image) {
-        const maxDim = 256;
-        const scale = Math.min(1, maxDim / Math.max(image.width, image.height));
-        const w = Math.max(1, Math.round(image.width * scale));
-        const h = Math.max(1, Math.round(image.height * scale));
-        const off = document.createElement('canvas');
-        off.width = w; off.height = h;
-        const octx = off.getContext('2d', { willReadFrequently: true });
-        octx.drawImage(image, 0, 0, w, h);
-        let data;
-        try { data = octx.getImageData(0, 0, w, h).data; }
-        catch (e) { return null; }
-        const N = w * h, idx = (x, y) => y * w + x;
-
-        // Modèle de fond : médiane d'un anneau de bordure
-        const ring = Math.max(2, Math.round(Math.min(w, h) * 0.05));
-        const border = [];
-        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-          if (x < ring || y < ring || x >= w - ring || y >= h - ring) {
-            const i = (y * w + x) * 4;
-            border.push([data[i], data[i + 1], data[i + 2]]);
-          }
-        }
-        const median = ch => { const a = border.map(p => p[ch]).sort((u, v) => u - v); return a[a.length >> 1]; };
-        const bg = [median(0), median(1), median(2)];
-
-        // Seuil adaptatif : moyenne + 2.5·écart-type des distances de bordure
-        let mean = 0;
-        const dists = border.map(p => {
-          const dr = p[0] - bg[0], dg = p[1] - bg[1], db = p[2] - bg[2];
-          const d = Math.sqrt(dr * dr + dg * dg + db * db); mean += d; return d;
-        });
-        mean /= dists.length;
-        let varr = 0; dists.forEach(d => varr += (d - mean) * (d - mean));
-        const std = Math.sqrt(varr / dists.length);
-        const threshold = Math.max(32, mean + 2.5 * std);
-
-        // Masque avant-plan
-        const fg = new Uint8Array(N);
-        for (let p = 0; p < N; p++) {
-          const i = p * 4;
-          const dr = data[i] - bg[0], dg = data[i + 1] - bg[1], db = data[i + 2] - bg[2];
-          if (Math.sqrt(dr * dr + dg * dg + db * db) > threshold) fg[p] = 1;
-        }
-
-        // Nettoyage : ouverture (specks) puis fermeture (petits trous)
-        morph(fg, w, h, 0); morph(fg, w, h, 1);
-        morph(fg, w, h, 1); morph(fg, w, h, 0);
-
-        // Remplir les trous internes : flood-fill du fond depuis les bords
-        const outside = new Uint8Array(N);
-        const stack = [];
-        for (let x = 0; x < w; x++) { if (!fg[idx(x, 0)]) stack.push(idx(x, 0)); if (!fg[idx(x, h - 1)]) stack.push(idx(x, h - 1)); }
-        for (let y = 0; y < h; y++) { if (!fg[idx(0, y)]) stack.push(idx(0, y)); if (!fg[idx(w - 1, y)]) stack.push(idx(w - 1, y)); }
-        while (stack.length) {
-          const p = stack.pop();
-          if (outside[p]) continue;
-          outside[p] = 1;
-          const x = p % w, y = (p / w) | 0;
-          if (x > 0 && !fg[p - 1] && !outside[p - 1]) stack.push(p - 1);
-          if (x < w - 1 && !fg[p + 1] && !outside[p + 1]) stack.push(p + 1);
-          if (y > 0 && !fg[p - w] && !outside[p - w]) stack.push(p - w);
-          if (y < h - 1 && !fg[p + w] && !outside[p + w]) stack.push(p + w);
-        }
-        const solid = new Uint8Array(N);
-        let area = 0;
-        for (let p = 0; p < N; p++) if (!outside[p]) { solid[p] = 1; area++; }
-        if (area < N * 0.02 || area > N * 0.93) return null;
-
-        // Plus grande composante
-        const comp = largestComponent(solid, w, h);
-        if (!comp) return null;
-
-        // Rejet si la silhouette sature les 4 bords (cadre ambigu)
-        let bt = 0, bb = 0, bl = 0, br = 0;
-        for (let x = 0; x < w; x++) { if (comp[idx(x, 0)]) bt++; if (comp[idx(x, h - 1)]) bb++; }
-        for (let y = 0; y < h; y++) { if (comp[idx(0, y)]) bl++; if (comp[idx(w - 1, y)]) br++; }
-        if (bt > w * 0.55 && bb > w * 0.55 && bl > h * 0.55 && br > h * 0.55) return null;
-
-        // Tracé de contour + simplification
-        const contour = mooreTrace(comp, w, h);
-        if (contour.length < 8) return null;
-        let eps = Math.max(w, h) * 0.018;
-        let simp = rdp(contour, eps);
-        let guard = 0;
-        while (simp.length > 28 && guard++ < 6) { eps *= 1.4; simp = rdp(contour, eps); }
-        while (simp.length < 8 && eps > 1 && guard++ < 12) { eps *= 0.6; simp = rdp(contour, eps); }
-        if (simp.length < 3) return null;
-
-        return simp.map(p => ({
-          x: Math.min(1, Math.max(0, p[0] / w)),
-          y: Math.min(1, Math.max(0, p[1] / h)),
-        }));
+          })
+          .catch(() => noAutoDetectAvailable(manual))
+          .finally(() => { if (edAuto) edAuto.disabled = false; });
       }
 
       function runAutoDetect(manual) {
         if (!img.width) return;
-        const detected = autoDetectPolygon(img);
-        if (detected) {
-          poly = detected;
-          selDefect = -1;
-          draw();
-          updateButtons();
-          showToast('<i class="ic fi-br-sparkles"></i> Contour détecté — ajuste les points si besoin');
-        } else if (manual) {
-          showToast('Fond trop complexe — place les points à la main');
+        if (REMBG_ENABLED) {
+          runAutoDetectServer(manual);
+        } else {
+          noAutoDetectAvailable(manual);
         }
       }
       edAuto.addEventListener('click', () => runAutoDetect(true));

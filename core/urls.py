@@ -22,6 +22,7 @@ urlpatterns = [
     path('passeport/<int:patron_pk>/<int:user_pk>/', views.passeport_public, name='passeport_public'),
     path('qrcode/', views.qrcode_view, name='qrcode_view'),
     path('ajout_textile/', views.ajout_textile, name='ajout_textile'),
+    path('ajout_textile/detourage-auto/', views.detourage_auto, name='detourage_auto'),
     # Communauté — désactivée pendant la bêta via le décorateur communaute_active_requise.
     # Réactivation : COMMUNAUTE_ACTIVE=True (les vues restent inchangées).
     path('communaute/', _bloc_communaute(views.communaute), name='communaute'),
