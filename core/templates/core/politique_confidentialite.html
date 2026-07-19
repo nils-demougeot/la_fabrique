@@ -64,7 +64,7 @@
     Le responsable du traitement des données est l'équipe éditrice de l'application
     <strong>La Fabrique</strong>. Pour toute question relative à vos données personnelles,
     vous pouvez nous contacter à l'adresse :
-    <a href="mailto:nils.demougeot@edu.devinci.fr">nils.demougeot@edu.devinci.fr</a>.
+    <a href="mailto:nils.demougeot@edu.devinci.fr" hx-boost="false">nils.demougeot@edu.devinci.fr</a>.
   </p>
 
   <h2>2. Données que nous collectons</h2>
@@ -126,7 +126,7 @@
     <p style="color: var(--text-dark); font-weight: 700; margin-bottom: 4px;">Exercer vos droits directement</p>
     <p>Vous pouvez accéder à vos données ou supprimer votre compte en un clic :</p>
     <div class="legal-actions">
-      <a href="{% url 'exporter_donnees' %}" class="legal-btn"><i class="ic fi-br-arrow-down"></i> Télécharger mes données</a>
+      <a href="{% url 'exporter_donnees' %}" hx-boost="false" class="legal-btn"><i class="ic fi-br-arrow-down"></i> Télécharger mes données</a>
       <a href="{% url 'supprimer_compte' %}" class="legal-btn" style="border-color: var(--color-accent); color: var(--color-accent);"><i class="ic fi-br-trash"></i> Supprimer mon compte</a>
     </div>
   </div>
@@ -134,9 +134,9 @@
 
   <p style="margin-top: 20px;">
     Vous pouvez également exercer ces droits, ou introduire une réclamation auprès de la
-    <strong>CNIL</strong> (<a href="https://www.cnil.fr" target="_blank" rel="noopener">www.cnil.fr</a>),
+    <strong>CNIL</strong> (<a href="https://www.cnil.fr" target="_blank" rel="noopener" hx-boost="false">www.cnil.fr</a>),
     en nous contactant à
-    <a href="mailto:nils.demougeot@edu.devinci.fr">nils.demougeot@edu.devinci.fr</a>.
+    <a href="mailto:nils.demougeot@edu.devinci.fr" hx-boost="false">nils.demougeot@edu.devinci.fr</a>.
   </p>
 </div>
 {% endblock %}
