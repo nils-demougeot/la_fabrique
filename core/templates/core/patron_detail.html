@@ -1148,7 +1148,7 @@
         {% if etapes %}
         <div class="materiel-card" style="margin-top:14px;">
           <div class="materiel-title"><i class="ic fi-br-book-open-cover"></i> Instructions à imprimer</div>
-          <a href="{% url 'patron_instructions_pdf' pk=patron.id %}" target="_blank" rel="noopener" class="dl-btn">
+          <a href="{% url 'patron_instructions_pdf' pk=patron.id %}" target="_blank" rel="noopener" hx-boost="false" class="dl-btn">
             <span class="dl-btn-ico"><i class="ic fi-br-print"></i></span>
             <span class="dl-btn-body">
               <span class="dl-btn-title">Toutes les étapes (PDF)</span>
@@ -1166,7 +1166,7 @@
           <div class="materiel-title"><i class="ic fi-br-scissors"></i> Patron à découper</div>
 
           {% if patron.pieces.all %}
-          <a href="{% url 'patron_pdf' pk=patron.id %}" target="_blank" rel="noopener" class="dl-btn go">
+          <a href="{% url 'patron_pdf' pk=patron.id %}" target="_blank" rel="noopener" hx-boost="false" class="dl-btn go">
             <span class="dl-btn-ico"><i class="ic fi-br-print"></i></span>
             <span class="dl-btn-body">
               <span class="dl-btn-title">Générer le PDF à imprimer</span>
@@ -1179,7 +1179,7 @@
           {% endif %}
 
           {% if patron.pdf_url %}
-          <a href="{{ patron.pdf_url }}" target="_blank" rel="noopener" class="dl-btn">
+          <a href="{{ patron.pdf_url }}" target="_blank" rel="noopener" hx-boost="false" class="dl-btn">
             <span class="dl-btn-ico"><i class="ic fi-br-document"></i></span>
             <span class="dl-btn-body">
               <span class="dl-btn-title">Planches du patron (PDF)</span>
@@ -1382,7 +1382,7 @@
        Export du patron (.json) — tout en bas
        ═══════════════════════════ -->
   {% if patron.createur_id == request.user.id or request.user.is_staff %}
-  <a href="{% url 'patron_export' pk=patron.id %}" class="dl-btn muted" style="margin-top:32px;">
+  <a href="{% url 'patron_export' pk=patron.id %}" hx-boost="false" class="dl-btn muted" style="margin-top:32px;">
     <span class="dl-btn-ico"><i class="ic fi-br-disk"></i></span>
     <span class="dl-btn-body">
       <span class="dl-btn-title">Exporter le patron (.json)</span>
