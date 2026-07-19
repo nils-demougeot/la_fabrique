@@ -221,6 +221,11 @@ LOGIN_URL = 'connexion'
 # définir COMMUNAUTE_ACTIVE=True dans l'environnement (aucune autre modif requise).
 COMMUNAUTE_ACTIVE = _env_bool('COMMUNAUTE_ACTIVE', False)
 
+# Détourage automatique par segmentation IA (rembg) côté serveur.
+# À False : pas de détection automatique, l'utilisateur place les points à la
+# main (l'ancien algorithme par seuillage colorimétrique a été supprimé).
+REMBG_DETOURAGE_ENABLED = _env_bool('REMBG_DETOURAGE_ENABLED', True)
+
 # ── E-mail (réinitialisation de mot de passe) ───────────────────────────────
 # En dev : les e-mails s'affichent dans la console (aucune config requise).
 # En prod : renseigner les variables SMTP (EMAIL_HOST, EMAIL_HOST_USER, …) via

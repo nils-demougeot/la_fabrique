@@ -364,7 +364,7 @@ def _analyser_face(request, prefix):
 
 @login_required
 def ajout_textile(request):
-    context = {'result_ready': False}
+    context = {'result_ready': False, 'rembg_enabled': dj_settings.REMBG_DETOURAGE_ENABLED}
 
     if request.method == 'POST':
         try:
@@ -434,6 +434,41 @@ def ajout_textile(request):
             context['error'] = "Erreur dans le calcul de la surface. Recommence le détourage."
 
     return render(request, 'core/ajout_textile.html', context)
+
+
+@login_required
+def detourage_auto(request):
+    """Détourage automatique côté serveur par segmentation IA (rembg).
+
+    Appelée en AJAX depuis l'éditeur de photo ; en cas d'échec, de
+    désactivation (REMBG_DETOURAGE_ENABLED=False) ou d'erreur quelconque,
+    le JS retombe automatiquement sur l'ancien algorithme côté client
+    (autoDetectPolygon dans ajout_textile.html).
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'method_not_allowed'}, status=405)
+
+    if not dj_settings.REMBG_DETOURAGE_ENABLED:
+        return JsonResponse({'success': False, 'error': 'disabled'}, status=503)
+
+    try:
+        photo_fichier = decode_base64_image(request.POST.get('photo_data', ''), 'detourage_tmp')
+    except ValueError as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    if photo_fichier is None:
+        return JsonResponse({'success': False, 'error': 'image manquante'}, status=400)
+
+    try:
+        from core.detourage import auto_polygon_rembg
+        polygon = auto_polygon_rembg(photo_fichier.read())
+    except Exception:
+        logger.exception('Échec du détourage automatique (rembg)')
+        return JsonResponse({'success': False, 'error': 'echec_traitement'}, status=500)
+
+    if not polygon:
+        return JsonResponse({'success': False, 'error': 'aucun_contour'})
+
+    return JsonResponse({'success': True, 'polygon': polygon})
 
 
 DIFFICULTE_LABELS = {1: 'Débutant', 2: 'Intermédiaire', 3: 'Avancé'}
