@@ -642,14 +642,16 @@
 
 {% block extra_js %}
 <script>
+(() => {
   const STATIC_PREFIX = "{{ STATIC_PREFIX }}";
 
-  function updateAvatarPreview(radio) {
+  // Exposée sur window : appelée depuis l'attribut onchange inline du HTML.
+  window.updateAvatarPreview = function(radio) {
     // data-url contient l'URL résolue côté serveur (nom haché en production).
     const src = radio.dataset.url;
     document.getElementById('avatarPreviewSmall').src = src;
     document.getElementById('bannerAvatar').src = src;
-  }
+  };
 
   // Toast succès après redirect
   {% if saved %}
@@ -661,5 +663,6 @@
     });
   }
   {% endif %}
+})();
 </script>
 {% endblock %}

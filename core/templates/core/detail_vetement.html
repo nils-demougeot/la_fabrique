@@ -453,7 +453,7 @@
 <canvas id="camera-hidden-canvas" style="display:none;"></canvas>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+(() => {
 
   // ── Type de vêtement ──
   const typeButtons    = document.querySelectorAll('.type-btn');
@@ -652,7 +652,7 @@ document.addEventListener('DOMContentLoaded', () => {
     img.src = dataUrl;
   });
 
-});
+})();
 </script>
 {% endblock %}
 

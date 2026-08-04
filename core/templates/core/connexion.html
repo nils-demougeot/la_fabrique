@@ -226,6 +226,7 @@ body {
   </main>
 
 <script>
+(() => {
   const toggleBtn = document.getElementById('toggle-pw');
   const pwInput = document.getElementById('password-input');
   const iconEye = document.getElementById('icon-eye');
@@ -237,6 +238,7 @@ body {
     iconEye.style.display = isHidden ? 'none' : '';
     iconEyeOff.style.display = isHidden ? '' : 'none';
   });
+})();
 </script>
 </body>
 </html>

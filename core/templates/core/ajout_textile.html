@@ -1671,8 +1671,8 @@
       {% endif %}
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      
+    (() => {
+
       // ==========================================
       // 1. GESTION DU TYPE DE VÊTEMENT
       // ==========================================
@@ -2488,7 +2488,7 @@
           alert('Détoure au moins la face avant avant de lancer l\'analyse.');
         }
       });
-    });
+    })();
   </script>
 {% endblock %}
 

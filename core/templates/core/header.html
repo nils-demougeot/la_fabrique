@@ -377,15 +377,22 @@
   </div>
 
   <script>
-    const avatarBtn = document.getElementById('avatarBtn');
-    const dropdownMenu = document.getElementById('dropdownMenu');
-    if (avatarBtn && dropdownMenu) {
-      avatarBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dropdownMenu.classList.toggle('open');
-      });
-      document.addEventListener('click', () => {
-        dropdownMenu.classList.remove('open');
+    // Délégation posée une seule fois sur document (le script se ré-exécute à
+    // chaque navigation htmx, mais document.addEventListener ne doit pas être
+    // réempilé à chaque fois).
+    if (!window.__avatarMenuInit) {
+      window.__avatarMenuInit = true;
+      document.addEventListener('click', (e) => {
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        if (!dropdownMenu) return;
+        if (e.target.closest('#avatarBtn')) {
+          e.stopPropagation();
+          dropdownMenu.classList.toggle('open');
+          return;
+        }
+        if (!e.target.closest('#dropdownMenu')) {
+          dropdownMenu.classList.remove('open');
+        }
       });
     }
   </script>
