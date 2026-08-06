@@ -236,6 +236,19 @@ def _couleur_hex(couleur):
     return COULEUR_HEX.get(couleur.split(',')[0].strip().lower(), '#EDE4D6')
 
 
+def _couleur_claire(hex_couleur):
+    """Vrai si un texte sombre est plus lisible que du blanc sur cet aplat.
+
+    Luminance perçue (ITU-R BT.601) : les tissus clairs (ivoire, beige…)
+    reçoivent une étiquette encre, les foncés (marine, noir…) une blanche.
+    """
+    try:
+        r, g, b = (int(hex_couleur[i:i + 2], 16) for i in (1, 3, 5))
+    except (ValueError, IndexError):
+        return True
+    return (r * 299 + g * 587 + b * 114) / 1000 > 150
+
+
 @login_required
 def dashboard(request):
     user = request.user
@@ -729,6 +742,17 @@ def calculer_stats_passeport(patron, garments):
     mat = max(all_mats, key=all_mats.get) if all_mats else 'coton'
     return round(masse_kg * EAU_PAR_MATIERE.get(mat, 15000)), round(masse_kg * CO2_PAR_MATIERE.get(mat, CO2_DEFAUT), 2)
 
+
+# Types produits par le scanner (ajout_textile) → libellé affiché.
+TYPE_VETEMENT_LABELS = {
+    'tshirt': 'T-shirt', 'jean': 'Jean', 'hoodie': 'Hoodie', 'robe': 'Robe',
+    'jupe': 'Jupe', 'manteau': 'Manteau', 'veste': 'Veste', 'blazer': 'Blazer',
+    'pull': 'Pull', 'chemise': 'Chemise', 'short': 'Short', 'gilet': 'Gilet',
+    'debardeur': 'Débardeur', 'combinaison': 'Combinaison', 'pyjama': 'Pyjama',
+    'accessoire': 'Accessoire', 'autre': 'Autre',
+}
+
+MATIERE_HEX_DEFAUT = '#C7BCA8'
 
 MATERIAL_COLORS = {
     'coton': '#D4C5A9', 'polyester': '#93A8B8', 'laine': '#C8A96A', 'lin': '#C9B882',
@@ -1742,34 +1766,79 @@ def supprimer_vetements(request):
 
 @login_required
 def mes_tissus(request):
-    vetements = Vetement.objects.filter(utilisateur=request.user).order_by('-id')
+    """Banque de tissus — inventaire, répartition par matière, mosaïque/liste."""
+    vetements = list(Vetement.objects.filter(utilisateur=request.user).order_by('-id'))
     total_surface = sum(v.surfaceExploitable for v in vetements)
-    total_co2 = round(sum(calculer_co2_vetement(v) for v in vetements), 1)
-    objectif = 15.0
-    progression_pct = min(100, int((total_surface / objectif) * 100)) if objectif > 0 else 0
-    circumference = 251
-    stroke_offset = round(circumference * (1 - min(1.0, total_surface / objectif)))
 
-    # Nombre de patrons compatibles par tissu (surfaceExploitable >= surfaceMin).
-    # On trie les surfaces minimales une seule fois, puis bisect compte en O(log n)
-    # par tissu au lieu d'une boucle imbriquée patrons × tissus.
-    import bisect
-    surfaces_min = sorted(Patron.objects.values_list('surfaceMin', flat=True))
+    # Surfaces minimales des patrons, triées : le socle de sélection s'en sert
+    # pour annoncer combien de patrons la sélection courante permet de couper,
+    # sans aller-retour serveur à chaque case cochée.
+    surfaces_patrons = sorted(Patron.objects.values_list('surfaceMin', flat=True))
+
     vetements_data = []
+    surface_par_matiere = {}
+    nb_par_type = {}
     for v in vetements:
-        nb_compatibles = bisect.bisect_right(surfaces_min, v.surfaceExploitable)
-        vetements_data.append({'vetement': v, 'nb_compatibles': nb_compatibles})
+        matiere = get_dominant_material(v.matiere) or 'coton'
+        surface_par_matiere[matiere] = surface_par_matiere.get(matiere, 0.0) + v.surfaceExploitable
+        nb_par_type[v.typeVetement] = nb_par_type.get(v.typeVetement, 0) + 1
 
-    context = {
+        # « État » de la pièce : part de sa surface encore exploitable une fois
+        # les taches et les trous retirés.
+        etat_pct = round(v.surfaceExploitable / v.surfaceTotale * 100) if v.surfaceTotale else 100
+
+        try:
+            defauts = json.loads(v.defauts) if v.defauts else []
+        except (ValueError, TypeError):
+            defauts = []
+        nb_taches = sum(1 for d in defauts if d.get('type') == 'tache')
+
+        couleur_hex = _couleur_hex(v.couleur)
+        vetements_data.append({
+            'vetement': v,
+            'matiere_label': MATERIAL_LABELS.get(matiere, matiere.capitalize()),
+            'couleur_hex': couleur_hex,
+            'couleur_claire': _couleur_claire(couleur_hex),
+            'etat_pct': min(100, max(0, etat_pct)),
+            'nb_taches': nb_taches,
+            'nb_trous': len(defauts) - nb_taches,
+        })
+
+    # Répartition par matière : les 4 plus présentes, le reste regroupé.
+    classement = sorted(surface_par_matiere.items(), key=lambda kv: kv[1], reverse=True)
+    repartition = [
+        {
+            'nom': MATERIAL_LABELS.get(nom, nom.capitalize()),
+            'hex': MATERIAL_COLORS.get(nom, MATIERE_HEX_DEFAUT),
+            'surface': round(surface, 1),
+            'pct': round(surface / total_surface * 100) if total_surface else 0,
+        }
+        for nom, surface in classement[:4]
+    ]
+    if len(classement) > 4:
+        surface_reste = sum(s for _, s in classement[4:])
+        repartition.append({
+            'nom': 'Autres',
+            'hex': MATIERE_HEX_DEFAUT,
+            'surface': round(surface_reste, 1),
+            'pct': round(surface_reste / total_surface * 100) if total_surface else 0,
+        })
+
+    # Chips de filtre : uniquement les types réellement présents dans la banque.
+    types_presents = [
+        {'slug': slug, 'label': TYPE_VETEMENT_LABELS.get(slug, slug.capitalize()), 'nb': nb}
+        for slug, nb in sorted(nb_par_type.items(), key=lambda kv: (-kv[1], kv[0]))
+    ]
+
+    return render(request, 'core/mes_tissus.html', {
         'vetements_data': vetements_data,
         'total_surface': round(total_surface, 2),
-        'total_co2': total_co2,
-        'nb_vetements': vetements.count(),
-        'progression_pct': progression_pct,
-        'stroke_offset': stroke_offset,
-        'circumference': circumference,
-    }
-    return render(request, 'core/mes_tissus.html', context)
+        'nb_vetements': len(vetements),
+        'nb_matieres': len(surface_par_matiere),
+        'repartition': repartition,
+        'types_presents': types_presents,
+        'surfaces_patrons': surfaces_patrons,
+    })
 
 
 @login_required
