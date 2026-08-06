@@ -19,16 +19,23 @@
 {% endcomment %}
 
 <style>
-  /* ── Socle ─────────────────────────────────────────────────────────── */
+  /* ── Socle ─────────────────────────────────────────────────────────────
+     La barre flotte au-dessus du contenu : le socle est sorti du flux et
+     transparent, seule la pastille noire est visible et cliquable. Chaque
+     page réserve elle-même la marge basse nécessaire (≈100 px). */
   .fab-nav-dock {
-    flex-shrink: 0;
-    position: relative;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 20;
     padding: 10px 14px calc(16px + env(safe-area-inset-bottom, 0px));
-    background: var(--bg-main);
+    background: transparent;
+    pointer-events: none;
   }
 
   .fab-nav {
+    pointer-events: auto;
     --fab-bar-bg:      #14120F;
     --fab-ink:         #FFFFFF;
     --fab-bar-height:  68px;

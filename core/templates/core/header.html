@@ -337,6 +337,11 @@
 
   <div class="app-container">
     
+    {% comment %}
+      Les pages qui portent leur propre en-tête (le tableau de bord depuis le
+      design V2) neutralisent ce bloc : {% block app_header %}{% endblock %}.
+    {% endcomment %}
+    {% block app_header %}
     <header class="header-global">
       <a href="{% url 'dashboard' %}" class="logo">
         <div class="logo-wrap">
@@ -386,6 +391,7 @@
         {% endif %}
       </div>
     </header>
+    {% endblock %}
 
     {% if user.is_authenticated and not user.email_verifie %}
       {% if request.GET.email_renvoye == '1' %}

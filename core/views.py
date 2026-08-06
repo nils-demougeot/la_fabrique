@@ -114,18 +114,36 @@ def _compress_uploaded_image(uploaded_file, name_prefix):
 _PDF_CACHE_TTL = 60 * 60  # 1 heure
 
 
+# Une teinte par badge, pour que les médaillons du tableau de bord ne soient
+# pas tous de la même couleur. arc = anneau de progression + libellé,
+# c1/c2 = dégradé de la pastille, bg/border = fond de la carte.
+BADGE_COLORS = {
+    'Premier Projet':    {'arc': '#C98600', 'c1': '#FFDC5E', 'c2': '#F0A800', 'bg': '#FFFAE6', 'border': '#F5E3AF'},
+    '5 Projets':         {'arc': '#D1591F', 'c1': '#FF9F45', 'c2': '#F2622A', 'bg': '#FFF3EC', 'border': '#F7DDCD'},
+    '10 Projets':        {'arc': '#8A5A12', 'c1': '#D9A441', 'c2': '#8A5A12', 'bg': '#F8F1E4', 'border': '#E6D6B8'},
+    '1er com':           {'arc': '#2E6FB0', 'c1': '#6FB6F2', 'c2': '#2E6FB0', 'bg': '#EEF6FF', 'border': '#D3E6F8'},
+    '5 com':             {'arc': '#0E7F7A', 'c1': '#5BD9D4', 'c2': '#12857F', 'bg': '#ECFAF8', 'border': '#CDEDEA'},
+    'Premier Like':      {'arc': '#C2405A', 'c1': '#FF8FA8', 'c2': '#D4365A', 'bg': '#FFF0F3', 'border': '#F7D6DD'},
+    '10 Likes':          {'arc': '#C2361B', 'c1': '#FF7A45', 'c2': '#D93E12', 'bg': '#FFF1EC', 'border': '#F8D6C9'},
+    'Première Création': {'arc': '#6B45F5', 'c1': '#9C84FF', 'c2': '#6B45F5', 'bg': '#F6F3FF', 'border': '#E1D9FB'},
+    'Artiste':           {'arc': '#9A3FA8', 'c1': '#D07BE0', 'c2': '#8E31A0', 'bg': '#FBF0FD', 'border': '#EEDAF3'},
+    'Éco Warrior':       {'arc': '#128F4A', 'c1': '#5BD98A', 'c2': '#128F4A', 'bg': '#F3FAF5', 'border': '#D8EEE1'},
+}
+
 BADGE_DEFINITIONS = [
-    {'nom': 'Premier Projet',      'emoji': '🏆', 'description': '1er projet terminé',        'condition': 'Terminer 1 projet'},
-    {'nom': '5 Projets',           'emoji': '⭐', 'description': 'Créateur confirmé',           'condition': 'Terminer 5 projets'},
-    {'nom': '10 Projets',          'emoji': '🥇', 'description': 'Grand créateur',             'condition': 'Terminer 10 projets'},
-    {'nom': '1er com',              'emoji': '💬', 'description': 'Actif dans la communauté',   'condition': 'Poster 1 commentaire'},
-    {'nom': '5 com',               'emoji': '🗣️', 'description': 'Très bavard !',             'condition': 'Poster 5 commentaires'},
-    {'nom': 'Premier Like',        'emoji': '❤️', 'description': 'Soutien de la communauté',  'condition': 'Donner 1 like'},
-    {'nom': '10 Likes',            'emoji': '🔥', 'description': 'Fan de la première heure',   'condition': 'Donner 10 likes'},
-    {'nom': 'Première Création',   'emoji': '✨', 'description': 'Première création partagée', 'condition': 'Partager 1 création'},
-    {'nom': 'Artiste',             'emoji': '🎨', 'description': 'Créateur prolifique',        'condition': 'Partager 5 créations'},
-    {'nom': 'Éco Warrior',         'emoji': '🌿', 'description': 'Badge exclusif',             'condition': 'Acheter dans la boutique'},
+    {'famille': 'projets',    'nom': 'Premier Projet',    'emoji': '🏆', 'description': '1er projet terminé',        'condition': 'Terminer 1 projet'},
+    {'famille': 'projets',    'nom': '5 Projets',         'emoji': '⭐', 'description': 'Créateur confirmé',           'condition': 'Terminer 5 projets'},
+    {'famille': 'projets',    'nom': '10 Projets',        'emoji': '🥇', 'description': 'Grand créateur',             'condition': 'Terminer 10 projets'},
+    {'famille': 'echanges',   'nom': '1er com',           'emoji': '💬', 'description': 'Actif dans la communauté',   'condition': 'Poster 1 commentaire'},
+    {'famille': 'echanges',   'nom': '5 com',            'emoji': '🗣️', 'description': 'Très bavard !',             'condition': 'Poster 5 commentaires'},
+    {'famille': 'soutien',    'nom': 'Premier Like',      'emoji': '❤️', 'description': 'Soutien de la communauté',  'condition': 'Donner 1 like'},
+    {'famille': 'soutien',    'nom': '10 Likes',          'emoji': '🔥', 'description': 'Fan de la première heure',   'condition': 'Donner 10 likes'},
+    {'famille': 'creations',  'nom': 'Première Création', 'emoji': '✨', 'description': 'Première création partagée', 'condition': 'Partager 1 création'},
+    {'famille': 'creations',  'nom': 'Artiste',           'emoji': '🎨', 'description': 'Créateur prolifique',        'condition': 'Partager 5 créations'},
+    {'famille': 'boutique',   'nom': 'Éco Warrior',       'emoji': '🌿', 'description': 'Badge exclusif',             'condition': 'Acheter dans la boutique'},
 ]
+
+BADGE_COLOR_DEFAUT = {'arc': '#6B45F5', 'c1': '#9C84FF', 'c2': '#6B45F5', 'bg': '#F6F3FF', 'border': '#E1D9FB'}
 
 
 def check_and_award_badges(user):
@@ -161,44 +179,153 @@ def home(request):
     return render(request, 'core/index.html')
 
 
+# Paliers de l'atelier affichés sur le tableau de bord : (points requis, nom).
+ATELIER_LEVELS = [
+    (0,    'Première aiguille'),
+    (120,  'Fil conducteur'),
+    (320,  'Main sûre'),
+    (620,  'Belle ouvrage'),
+    (1000, 'Artisan du textile'),
+    (1500, "Maître d'atelier"),
+]
+
+
+def _niveau_atelier(nb_vetements, nb_etapes, nb_projets):
+    """Palier d'atelier calculé sur l'activité réelle : tissus scannés, étapes
+    de couture réalisées et projets menés à terme."""
+    points = nb_vetements * 20 + nb_etapes * 10 + nb_projets * 60
+
+    index = 0
+    for i, (seuil, _) in enumerate(ATELIER_LEVELS):
+        if points >= seuil:
+            index = i
+
+    seuil_courant, nom = ATELIER_LEVELS[index]
+    if index + 1 < len(ATELIER_LEVELS):
+        seuil_suivant = ATELIER_LEVELS[index + 1][0]
+        pourcentage = round((points - seuil_courant) / (seuil_suivant - seuil_courant) * 100)
+        restants = seuil_suivant - points
+        niveau_suivant = index + 2
+    else:
+        pourcentage, restants, niveau_suivant = 100, 0, None
+
+    return {
+        'numero': index + 1,
+        'nom': nom,
+        'points': points,
+        'pourcentage': pourcentage,
+        'points_restants': restants,
+        'niveau_suivant': niveau_suivant,
+    }
+
+
+# Couleurs de tissu saisies au scan → pastille affichée sur le tableau de bord.
+COULEUR_HEX = {
+    'ivoire': '#F2EDD7', 'beige': '#D4B896', 'camel': '#C19A6B',
+    'terracotta': '#C2694F', 'rouge': '#CC2936', 'bordeaux': '#7B0C0C',
+    'rose': '#F4A0B0', 'mauve': '#967BB6', 'lavande': '#B57EDC',
+    'marine': '#1F305C', 'bleu ciel': '#89CFF0', 'vert sauge': '#9CAF88',
+    'vert forêt': '#228B22', 'moutarde': '#C8A415', 'gris ardoise': '#708090',
+    'noir': '#1A1A1A', 'blanc': '#F0EEE8', 'gris': '#A0A09A',
+}
+
+
+def _couleur_hex(couleur):
+    if not couleur:
+        return '#EDE4D6'
+    return COULEUR_HEX.get(couleur.split(',')[0].strip().lower(), '#EDE4D6')
+
+
 @login_required
 def dashboard(request):
     user = request.user
     OBJECTIF_M2 = 15.0
 
-    vetements_user = Vetement.objects.filter(utilisateur=user)
+    # ── Banque de tissus ────────────────────────────────────────────────
+    vetements_user = list(Vetement.objects.filter(utilisateur=user).order_by('-id'))
+    nb_vetements = len(vetements_user)
     surface_totale = round(sum(v.surfaceExploitable for v in vetements_user), 2)
     co2_economise = round(sum(calculer_co2_vetement(v) for v in vetements_user), 1)
 
     surface_pourcentage = min(100, round((surface_totale / OBJECTIF_M2) * 100))
     surface_restante = round(max(0, OBJECTIF_M2 - surface_totale), 1)
+    # Défi « banque de tissus » : 5 segments de 20 % chacun.
+    defi_segments = [surface_pourcentage >= (i + 1) * 20 for i in range(5)]
 
-    # Projets terminés
-    termines_qs = (
+    apercu_tissus = [
+        {'photo': v.photo_url, 'hex': _couleur_hex(v.couleur)}
+        for v in vetements_user[:3]
+    ]
+    reste_tissus = max(0, nb_vetements - len(apercu_tissus))
+
+    # ── Projets (en cours + terminés) ───────────────────────────────────
+    progressions = (
         ProgressionProjet.objects
-        .filter(utilisateur=user, termine=True)
+        .filter(utilisateur=user)
         .select_related('patron')
+        .annotate(nb_etapes=Count('patron__etapes'))
         .order_by('-date_derniere_activite')
     )
-    projets_termines = []
+
+    projet_en_cours = None
+    patrons_engages = set()
+    nb_projets_termines = 0
     nb_etapes_realisees = 0
-    for prog in termines_qs:
+
+    for prog in progressions:
         p = prog.patron
-        total_etapes = p.etapes.count()
-        nb_etapes_realisees += total_etapes
-        projets_termines.append({
+        patrons_engages.add(p.pk)
+
+        if prog.termine:
+            nb_projets_termines += 1
+            nb_etapes_realisees += prog.nb_etapes
+            continue
+
+        # Étapes déjà validées d'un projet en cours = étape courante − 1.
+        nb_etapes_realisees += max(0, prog.etape_actuelle - 1)
+        if projet_en_cours is None:  # le plus récemment travaillé
+            etape = p.etapes.filter(numero=prog.etape_actuelle).first()
+            projet_en_cours = {
+                'patron_id': p.pk,
+                'titre': p.titre,
+                'image': p.photo_url,
+                'etape_actuelle': prog.etape_actuelle,
+                'total_etapes': prog.nb_etapes,
+                'etape_titre': etape.titre if etape else 'Reprendre là où tu en étais',
+                'progression_pct': (
+                    round((prog.etape_actuelle - 1) / prog.nb_etapes * 100)
+                    if prog.nb_etapes else 0
+                ),
+            }
+
+    # ── Patrons réalisables avec les tissus disponibles ─────────────────
+    patrons_all = list(Patron.objects.all())
+    nb_patrons_total = len(patrons_all)
+    realisables = [p for p in patrons_all if p.surfaceMin and p.surfaceMin <= surface_totale]
+    nb_patrons_realisables = len(realisables)
+    patrons_pourcentage = (
+        round(nb_patrons_realisables / nb_patrons_total * 100) if nb_patrons_total else 0
+    )
+
+    patrons_suggeres = [
+        {
+            'id': p.pk,
             'titre': p.titre,
             'image': p.photo_url,
-            'difficulte_label': DIFFICULTE_LABELS.get(p.difficulte, str(p.difficulte)),
             'duree': p.duree or '?',
-            'date_fin': prog.date_derniere_activite,
-            'patron_id': p.pk,
-        })
+            'surface': p.surfaceMin,
+        }
+        for p in sorted(
+            (p for p in realisables if p.pk not in patrons_engages),
+            key=lambda p: p.surfaceMin,
+        )[:6]
+    ]
 
+    # ── Badges ──────────────────────────────────────────────────────────
     badges_earned = {b.nom: b for b in Badge.objects.filter(utilisateur=user)}
     has_eco_warrior = 'Éco Warrior' in badges_earned
 
-    nb_projets_badge      = ProgressionProjet.objects.filter(utilisateur=user, termine=True).count()
+    nb_projets_badge      = nb_projets_termines
     nb_commentaires_badge = CommentairePost.objects.filter(utilisateur=user).count()
     nb_likes_badge        = LikePost.objects.filter(utilisateur=user).count()
     nb_posts_badge        = PostCommunaute.objects.filter(utilisateur=user).count()
@@ -223,7 +350,9 @@ def dashboard(request):
         pct = round((current / max_val) * 100) if max_val > 0 else 0
         badges_display.append({
             'nom': bd['nom'],
+            'famille': bd['famille'],
             'emoji': bd['emoji'],
+            'couleur': BADGE_COLORS.get(bd['nom'], BADGE_COLOR_DEFAUT),
             'description': bd['description'],
             'condition': bd['condition'],
             'earned': earned is not None,
@@ -233,17 +362,50 @@ def dashboard(request):
             'progress_pct': pct,
         })
 
+    # Les 3 badges les plus proches d'être décrochés (complétés par les acquis).
+    # À progression égale on évite de montrer trois badges de la même famille :
+    # sinon un compte neuf n'affiche que les trois badges « projets ».
+    candidats = (
+        sorted((b for b in badges_display if not b['earned']),
+               key=lambda b: -b['progress_pct'])
+        + [b for b in badges_display if b['earned']]
+    )
+    badges_a_portee, familles_vues = [], set()
+    for passe in (1, 2):  # 1re passe : une famille au plus ; 2e : on complète
+        for b in candidats:
+            if len(badges_a_portee) == 3:
+                break
+            if b in badges_a_portee:
+                continue
+            if passe == 1 and b['famille'] in familles_vues:
+                continue
+            badges_a_portee.append(b)
+            familles_vues.add(b['famille'])
+
     context = {
+        'aujourd_hui': timezone.localdate(),
         'surface_totale': surface_totale,
         'surface_objectif': OBJECTIF_M2,
         'surface_pourcentage': surface_pourcentage,
         'surface_restante': surface_restante,
+        'defi_segments': defi_segments,
+        'nb_vetements': nb_vetements,
+        'apercu_tissus': apercu_tissus,
+        'reste_tissus': reste_tissus,
         'credits': user.soldePieces,
         'co2_economise': co2_economise,
-        'projets_termines': projets_termines,
-        'nb_projets_termines': len(projets_termines),
+        'niveau': _niveau_atelier(nb_vetements, nb_etapes_realisees, nb_projets_termines),
+        'projet_en_cours': projet_en_cours,
+        'nb_projets_termines': nb_projets_termines,
         'nb_etapes_realisees': nb_etapes_realisees,
+        'nb_patrons_total': nb_patrons_total,
+        'nb_patrons_realisables': nb_patrons_realisables,
+        'patrons_pourcentage': patrons_pourcentage,
+        'patrons_suggeres': patrons_suggeres,
         'badges_display': badges_display,
+        'badges_a_portee': badges_a_portee,
+        'nb_badges_obtenus': len(badges_earned),
+        'nb_badges_total': len(BADGE_DEFINITIONS),
         'has_eco_warrior': has_eco_warrior,
     }
     return render(request, 'core/dashboard.html', context)
