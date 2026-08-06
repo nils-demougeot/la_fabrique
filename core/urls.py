@@ -8,6 +8,7 @@ _bloc_communaute = views.communaute_active_requise
 urlpatterns = [
     path('', views.home, name='home'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('cours/', views.cours, name='cours'),
     path('patrons/', views.patrons, name='patrons'),
     path('patrons/creer/', views.creer_patron, name='creer_patron'),
     path('patrons/<int:pk>/', views.patron_detail, name='patron_detail'),
