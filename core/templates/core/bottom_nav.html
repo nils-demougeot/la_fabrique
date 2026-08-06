@@ -11,10 +11,12 @@
   'scanner' → tissus (le scan alimente « Mes tissus », son entrée dédiée a
   disparu de la barre au profit de « Cours »).
 
-  Timing — important : la bascule de la pastille dure 190 ms alors que le
-  swap htmx est retardé de 200 ms (hx-swap="… swap:200ms" sur chaque lien).
+  Timing — important : la bascule de la pastille dure 140 ms alors que le
+  swap htmx est retardé de 150 ms (hx-swap="… swap:150ms" sur chaque lien).
   L'animation est donc terminée quand htmx remplace le DOM : la barre
   re-rendue par le serveur arrive déjà dans l'état final, sans cassure.
+  Ce délai est le seul temps mort ajouté après la réponse serveur : la
+  transition de page, elle, démarre dès le clic (voir header.html).
   ─────────────────────────────────────────────────────────────────────────
 {% endcomment %}
 
@@ -40,7 +42,7 @@
     --fab-ink:         #FFFFFF;
     --fab-bar-height:  68px;
     --fab-pill-height: 52px;
-    --fab-dur:         190ms;                        /* < swap:200ms */
+    --fab-dur:         140ms;                        /* < swap:150ms */
     --fab-ease:        cubic-bezier(.22, .9, .3, 1);
 
     display: flex;
@@ -177,7 +179,7 @@
 
     {# 0 — Accueil #}
     <a class="fab-nav__item" href="{% url 'dashboard' %}" data-tab="accueil" data-index="0"
-       hx-swap="innerHTML swap:200ms"
+       hx-swap="innerHTML swap:150ms"
        {% if nav_active == 'accueil' %}aria-current="page"{% endif %}>
       <span class="fab-nav__ink" aria-hidden="true"></span>
       <svg class="fab-nav__icon" aria-hidden="true" focusable="false" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -188,7 +190,7 @@
 
     {# 1 — Mes tissus (le scan y est rattaché) #}
     <a class="fab-nav__item" href="{% url 'mes_tissus' %}" data-tab="tissus" data-index="1"
-       hx-swap="innerHTML swap:200ms"
+       hx-swap="innerHTML swap:150ms"
        {% if nav_active == 'tissus' or nav_active == 'scanner' %}aria-current="page"{% endif %}>
       <span class="fab-nav__ink" aria-hidden="true"></span>
       <svg class="fab-nav__icon" aria-hidden="true" focusable="false" viewBox="0 0 24 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -199,7 +201,7 @@
 
     {# 2 — Patrons #}
     <a class="fab-nav__item" href="{% url 'patrons' %}" data-tab="patrons" data-index="2"
-       hx-swap="innerHTML swap:200ms"
+       hx-swap="innerHTML swap:150ms"
        {% if nav_active == 'patrons' %}aria-current="page"{% endif %}>
       <span class="fab-nav__ink" aria-hidden="true"></span>
       <svg class="fab-nav__icon" aria-hidden="true" focusable="false" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -210,7 +212,7 @@
 
     {# 3 — Cours #}
     <a class="fab-nav__item" href="{% url 'cours' %}" data-tab="cours" data-index="3"
-       hx-swap="innerHTML swap:200ms"
+       hx-swap="innerHTML swap:150ms"
        {% if nav_active == 'cours' %}aria-current="page"{% endif %}>
       <span class="fab-nav__ink" aria-hidden="true"></span>
       <svg class="fab-nav__icon" aria-hidden="true" focusable="false" viewBox="0 0 24 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -222,7 +224,7 @@
     {# 4 — Partage (communauté) #}
     <a class="fab-nav__item {% if not COMMUNAUTE_ACTIVE %}is-muted{% endif %}"
        href="{% url 'communaute' %}" data-tab="partage" data-index="4"
-       hx-swap="innerHTML swap:200ms"
+       hx-swap="innerHTML swap:150ms"
        {% if not COMMUNAUTE_ACTIVE %}aria-disabled="true"{% endif %}
        {% if nav_active == 'partage' or nav_active == 'communaute' %}aria-current="page"{% endif %}>
       <span class="fab-nav__ink" aria-hidden="true"></span>
