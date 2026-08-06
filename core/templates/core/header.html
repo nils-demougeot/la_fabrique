@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" href="{% static 'core/images/favicon/favicon-logo.png' %}">
   <link rel="apple-touch-icon" href="{% static 'core/images/favicon/favicon-logo.png' %}">
 
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" rel="stylesheet">
 
   {# ── Flaticon UIcons – Bold Rounded (icônes du site, hors navbar) ── #}
   <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-bold-rounded/css/uicons-bold-rounded.css">
@@ -291,6 +291,43 @@
     }
     .verif-banner button:hover { opacity: 0.9; }
 
+    /* =========================================================
+       Transition de page « swipe » entre onglets de la navbar
+       =========================================================
+       Ne s'applique QU'AUX navigations déclenchées depuis la barre de
+       navigation : le contrôleur JS (bas de page) pose data-nav-dir sur
+       <body> au clic, et seuls ces liens portent un hx-swap sans
+       `transition:true`. Toutes les autres navigations gardent donc le
+       fondu View Transitions déjà en place.
+
+       forward = onglet plus à droite → la page sortante part à gauche.
+       back    = onglet plus à gauche → la page sortante part à droite.
+       Le flou de mouvement suit la vitesse : maximal en fin de sortie,
+       résorbé à l'arrivée (l'entrée est animée en JS via WAAPI).       */
+    @keyframes fabPageOutForward {
+      from { transform: translate3d(0, 0, 0);    filter: blur(0px); opacity: 1; }
+      to   { transform: translate3d(-24%, 0, 0); filter: blur(9px); opacity: 0; }
+    }
+    @keyframes fabPageOutBack {
+      from { transform: translate3d(0, 0, 0);   filter: blur(0px); opacity: 1; }
+      to   { transform: translate3d(24%, 0, 0); filter: blur(9px); opacity: 0; }
+    }
+
+    body.htmx-swapping[data-nav-dir] .scrollable-content {
+      will-change: transform, filter, opacity;
+      backface-visibility: hidden;
+    }
+    body.htmx-swapping[data-nav-dir="forward"] .scrollable-content {
+      animation: fabPageOutForward 195ms cubic-bezier(.45, 0, .9, .55) forwards;
+    }
+    body.htmx-swapping[data-nav-dir="back"] .scrollable-content {
+      animation: fabPageOutBack 195ms cubic-bezier(.45, 0, .9, .55) forwards;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body.htmx-swapping[data-nav-dir] .scrollable-content { animation: none; }
+    }
+
   </style>
   {% block extra_css %}{% endblock %}
   <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
@@ -394,6 +431,133 @@
           dropdownMenu.classList.remove('open');
         }
       });
+    }
+  </script>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════════════════
+       Contrôleur de la barre de navigation (design V2)
+
+       1. Retour immédiat au tap : onde au point de contact + bascule de la
+          pastille sans attendre la réponse serveur. La bascule dure 190 ms
+          et le swap htmx est retardé de 200 ms (hx-swap="… swap:200ms" sur
+          les liens de la barre) : l'animation est donc terminée quand htmx
+          remplace le DOM par la barre re-rendue, déjà dans le même état.
+       2. Sens du swipe : comparaison des index d'onglets. Il n'est posé que
+          pour un déplacement d'onglet à onglet — toute autre navigation
+          garde le fondu View Transitions par défaut.
+       ═══════════════════════════════════════════════════════════════════ */
+    if (!window.__fabNavInit) {
+      window.__fabNavInit = true;
+
+      (function () {
+        var body = document.body;
+        var reduce = window.matchMedia
+          ? window.matchMedia('(prefers-reduced-motion: reduce)')
+          : { matches: false };
+
+        // Onglet actif avant le clic, pour restaurer la pastille si la
+        // requête échoue (aucun swap → la barre serveur n'arrive jamais).
+        var tabAvantClic = null;
+
+        function laNav() { return document.getElementById('fab-nav'); }
+
+        function ongletActif() {
+          var nav = laNav();
+          if (!nav) return null;
+          var actif = nav.querySelector('.fab-nav__item[aria-current="page"]');
+          return actif ? actif.getAttribute('data-tab') : null;
+        }
+
+        function activerOnglet(tab) {
+          var nav = laNav();
+          if (!nav) return;
+          var items = nav.querySelectorAll('.fab-nav__item');
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].getAttribute('data-tab') === tab) {
+              items[i].setAttribute('aria-current', 'page');
+            } else {
+              items[i].removeAttribute('aria-current');
+            }
+          }
+        }
+
+        // ── Onde au point de contact ─────────────────────────────────
+        document.addEventListener('pointerdown', function (e) {
+          var item = e.target.closest && e.target.closest('.fab-nav__item');
+          if (!item || reduce.matches) return;
+          var r = item.getBoundingClientRect();
+          item.style.setProperty('--ink-x', (e.clientX - r.left) + 'px');
+          item.style.setProperty('--ink-y', (e.clientY - r.top) + 'px');
+          item.classList.remove('is-inking');
+          void item.offsetWidth;          // force le redémarrage de l'animation
+          item.classList.add('is-inking');
+        }, true);
+
+        document.addEventListener('animationend', function (e) {
+          if (e.animationName === 'fabNavInk' && e.target.parentElement) {
+            e.target.parentElement.classList.remove('is-inking');
+          }
+        }, true);
+
+        // ── Clic : sens du swipe + bascule optimiste de la pastille ──
+        document.addEventListener('click', function (e) {
+          var item = e.target.closest && e.target.closest('.fab-nav__item');
+          if (!item) return;
+
+          var nav = laNav();
+          var depuis = ongletActif();
+          var vers = item.getAttribute('data-tab');
+
+          body.removeAttribute('data-nav-dir');
+          if (!nav || !vers || vers === depuis) return;   // déjà sur la page
+
+          var actuel = nav.querySelector('.fab-nav__item[data-tab="' + depuis + '"]');
+          if (actuel) {
+            var i = parseInt(actuel.getAttribute('data-index'), 10);
+            var j = parseInt(item.getAttribute('data-index'), 10);
+            if (!isNaN(i) && !isNaN(j)) {
+              body.setAttribute('data-nav-dir', j > i ? 'forward' : 'back');
+            }
+          }
+
+          tabAvantClic = depuis;
+          activerOnglet(vers);
+        }, true);
+
+        // ── Entrée de la nouvelle page ───────────────────────────────
+        document.addEventListener('htmx:afterSwap', function () {
+          var dir = body.getAttribute('data-nav-dir');
+          if (!dir) return;
+          body.removeAttribute('data-nav-dir');
+          tabAvantClic = null;
+
+          var page = document.querySelector('.scrollable-content');
+          if (!page || !page.animate || reduce.matches) return;
+
+          var sens = dir === 'forward' ? 1 : -1;   // arrive du côté opposé
+          page.animate([
+            { transform: 'translate3d(' + (sens * 30) + '%, 0, 0)', filter: 'blur(9px)', opacity: 0 },
+            { transform: 'translate3d(' + (sens * 6)  + '%, 0, 0)', filter: 'blur(2px)', opacity: 1, offset: 0.55 },
+            { transform: 'translate3d(0, 0, 0)',                    filter: 'blur(0px)', opacity: 1 }
+          ], {
+            duration: 340,
+            easing: 'cubic-bezier(.16, .84, .3, 1)',
+            fill: 'both'
+          }).onfinish = function () { page.style.willChange = ''; };
+          page.style.willChange = 'transform, filter, opacity';
+        });
+
+        // ── Filets de sécurité : requête avortée ou en erreur ────────
+        function annuler() {
+          body.removeAttribute('data-nav-dir');
+          if (tabAvantClic) { activerOnglet(tabAvantClic); tabAvantClic = null; }
+        }
+        document.addEventListener('htmx:responseError', annuler);
+        document.addEventListener('htmx:sendError', annuler);
+        document.addEventListener('htmx:timeout', annuler);
+        document.addEventListener('htmx:swapError', annuler);
+      })();
     }
   </script>
   {% block extra_js %}{% endblock %}

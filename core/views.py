@@ -603,6 +603,12 @@ def _compatibilite(surface_user, surface_min):
 
 
 @login_required
+def cours(request):
+    """Onglet « Cours » de la barre de navigation — page encore vide."""
+    return render(request, 'core/cours.html')
+
+
+@login_required
 def patrons(request):
     surface_user = (
         Vetement.objects
