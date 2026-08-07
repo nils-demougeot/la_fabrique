@@ -448,7 +448,11 @@
     </header>
     {% endblock %}
 
-    {% if user.is_authenticated and not user.email_verifie %}
+    {% comment %}
+      Bandeau de vérification d'e-mail masqué temporairement : retirer le
+      « False and » ci-dessous pour le réafficher.
+    {% endcomment %}
+    {% if False and user.is_authenticated and not user.email_verifie %}
       {% if request.GET.email_renvoye == '1' %}
       <div class="verif-banner sent">
         <span><i class="ic fi-br-check-circle"></i> E-mail de vérification renvoyé. Pensez à regarder vos spams.</span>
