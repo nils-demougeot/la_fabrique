@@ -29,6 +29,13 @@ class Utilisateur(AbstractUser):
     def avatar_url(self):
         return f'core/images/avatars/{self.avatar or "image 11.png"}'
 
+    def save(self, *args, **kwargs):
+        # Les comptes administrateurs (root et autres superutilisateurs) n'ont
+        # pas de boucle de vérification d'e-mail : ils sont vérifiés d'office.
+        if self.is_superuser:
+            self.email_verifie = True
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.username
 
