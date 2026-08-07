@@ -21,6 +21,7 @@ from django.core.mail import send_mail
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import validate_email
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
@@ -2011,13 +2012,20 @@ def mon_profil(request):
 
 
 def inscription(request):
+    """Étape 1/4 du parcours d'inscription : l'adresse e-mail."""
     if request.method == 'POST':
         email = (request.POST.get('email') or '').strip()
-        password = request.POST.get('password') or ''
 
-        if not email or not password:
+        if not email:
             return render(request, 'core/inscription.html', {
-                'error': "L'adresse e-mail et le mot de passe sont obligatoires.",
+                'error': "L'adresse e-mail est obligatoire.",
+            })
+
+        try:
+            validate_email(email)
+        except DjangoValidationError:
+            return render(request, 'core/inscription.html', {
+                'error': "Cette adresse e-mail n'a pas l'air valide.",
                 'email': email,
             })
 
@@ -2027,121 +2035,152 @@ def inscription(request):
                 'email': email,
             })
 
-        # Validation du mot de passe selon les règles Django (longueur, robustesse…).
-        try:
-            validate_password(password)
-        except DjangoValidationError as e:
-            return render(request, 'core/inscription.html', {
-                'error': ' '.join(e.messages),
-                'email': email,
-            })
-
-        # On sauvegarde l'email et le mdp dans la session
         request.session['reg_email'] = email
-        request.session['reg_password'] = password
         return redirect('inscription_etape1')
 
-    return render(request, 'core/inscription.html')
+    return render(request, 'core/inscription.html', {
+        'email': request.session.get('reg_email', ''),
+    })
+
 
 AVATAR_FILENAMES = [f'image {i}.png' for i in range(11, 27)]
 
+NIVEAUX_COUTURE = {
+    'debutant': 'Débutant·e',
+    'intermediaire': 'Intermédiaire',
+    'avance': 'Confirmé·e',
+}
+
+
 def inscription_etape1(request):
-    # Garde : si l'étape 0 n'a pas été faite (session expirée, accès direct),
+    """Étape 2/4 : le prénom, qui sert de nom d'utilisateur."""
+    # Garde : si l'étape 1 n'a pas été faite (session expirée, accès direct),
     # on renvoie au début plutôt que de crasher plus loin.
     if not request.session.get('reg_email'):
         return redirect('inscription')
 
     if request.method == 'POST':
         username = (request.POST.get('username') or '').strip()
-        avatar = request.POST.get('avatar', 'image 11.png')
-
-        context = {'avatars': AVATAR_FILENAMES, 'username': username}
+        context = {'username': username}
 
         if not username:
-            context['error'] = "Choisis un nom d'utilisateur."
+            context['error'] = "Indique un prénom pour ton profil."
             return render(request, 'core/inscription_etape1.html', context)
 
         if Utilisateur.objects.filter(username__iexact=username).exists():
-            context['error'] = "Ce nom d'utilisateur est déjà pris."
+            context['error'] = "Ce nom est déjà pris. Ajoute une initiale, par exemple."
             return render(request, 'core/inscription_etape1.html', context)
 
         request.session['reg_username'] = username
-        request.session['reg_avatar'] = avatar
         return redirect('inscription_etape2')
 
-    return render(request, 'core/inscription_etape1.html', {'avatars': AVATAR_FILENAMES})
+    return render(request, 'core/inscription_etape1.html', {
+        'username': request.session.get('reg_username', ''),
+    })
+
 
 def inscription_etape2(request):
+    """Étape 3/4 : le mot de passe."""
     # Garde : étapes précédentes obligatoires.
     if not request.session.get('reg_email') or not request.session.get('reg_username'):
         return redirect('inscription')
 
     if request.method == 'POST':
-        # On sauvegarde le niveau
-        request.session['reg_niveau'] = request.POST.get('experience_level')
+        password = request.POST.get('password') or ''
+
+        if not password:
+            return render(request, 'core/inscription_etape2.html', {
+                'error': "Le mot de passe est obligatoire.",
+            })
+
+        # Validation selon les règles Django (longueur, robustesse…).
+        try:
+            validate_password(password)
+        except DjangoValidationError as e:
+            return render(request, 'core/inscription_etape2.html', {
+                'error': ' '.join(e.messages),
+            })
+
+        request.session['reg_password'] = password
         return redirect('inscription_etape3')
 
     return render(request, 'core/inscription_etape2.html')
 
+
 def inscription_etape3(request):
+    """Étape 4/4 : niveau de couture, consentement RGPD et création du compte."""
     # 1. On récupère toutes les infos des étapes précédentes dans la session
     email = request.session.get('reg_email')
-    password = request.session.get('reg_password')
     username = request.session.get('reg_username')
+    password = request.session.get('reg_password')
 
     # Garde : si la session a expiré ou si l'on accède directement à cette URL,
     # les données essentielles manquent → on recommence proprement (évite un 500).
-    if not email or not password or not username:
+    if not email or not username or not password:
         return redirect('inscription')
 
     if request.method == 'POST':
-        niveau = request.session.get('reg_niveau')
-        avatar = request.session.get('reg_avatar', 'image 11.png')
+        niveau = request.POST.get('experience_level') or 'debutant'
+        if niveau not in NIVEAUX_COUTURE:
+            niveau = 'debutant'
 
-        # 2. On récupère les cases cochées
-        cibles_list = request.POST.getlist('target')
-        cibles_str = ", ".join(cibles_list)
-
-        # 3. Consentement RGPD obligatoire : sans acceptation explicite, pas de compte.
-        consentement = request.POST.get('consentement_rgpd') == 'on'
-        if not consentement:
+        # 2. Consentement RGPD obligatoire : sans acceptation explicite, pas de compte.
+        if request.POST.get('consentement_rgpd') != 'on':
             return render(request, 'core/inscription_etape3.html', {
                 'error': "Vous devez accepter la politique de confidentialité pour créer votre compte.",
+                'niveau': niveau,
             })
 
-        # 4. Revalidation anti-collision juste avant la création : un autre compte
-        # a pu prendre ce pseudo / cet e-mail entre l'étape 1 et maintenant → évite un 500.
+        # 3. Revalidation anti-collision juste avant la création : un autre compte
+        # a pu prendre ce pseudo / cet e-mail entre l'étape 2 et maintenant → évite un 500.
         if (Utilisateur.objects.filter(username__iexact=username).exists()
                 or Utilisateur.objects.filter(email__iexact=email).exists()):
             return render(request, 'core/inscription.html',
                           {'error': "Ce compte existe déjà. Essayez de vous connecter."})
 
-        # 5. On crée le compte (avec preuve horodatée du consentement RGPD)
+        # 4. On crée le compte (avec preuve horodatée du consentement RGPD)
         nouvel_utilisateur = Utilisateur.objects.create_user(
             username=username,
             email=email,
             password=password,
             niveau_couture=niveau,
-            envies_creation=cibles_str,
-            avatar=avatar,
+            avatar=AVATAR_FILENAMES[0],
             consentementRGPD=True,
             dateConsentementRGPD=timezone.now(),
         )
 
-        # 6. On nettoie la session
-        keys_to_delete = ['reg_email', 'reg_password', 'reg_username', 'reg_niveau', 'reg_avatar']
-        for key in keys_to_delete:
-            if key in request.session:
-                del request.session[key]
+        # 5. On nettoie la session
+        for key in ('reg_email', 'reg_username', 'reg_password'):
+            request.session.pop(key, None)
 
-        # 7. On envoie l'e-mail de vérification (vérification souple)
+        # 6. On envoie l'e-mail de vérification (vérification souple)
         _envoyer_email_verification(request, nouvel_utilisateur)
 
-        # 8. On connecte l'utilisateur automatiquement et on l'envoie sur l'accueil
+        # 7. On connecte l'utilisateur et on lui montre sa carte d'atelier
         login(request, nouvel_utilisateur)
-        return redirect('home')
+        return redirect('inscription_bienvenue')
 
-    return render(request, 'core/inscription_etape3.html')
+    return render(request, 'core/inscription_etape3.html', {'niveau': 'debutant'})
+
+
+@login_required
+def inscription_bienvenue(request):
+    """Écran de fin d'inscription : la carte d'atelier du nouveau membre.
+
+    Accepte aussi le changement d'avatar depuis la carte (bouton crayon)."""
+    if request.method == 'POST':
+        avatar = request.POST.get('avatar', '')
+        if avatar in AVATAR_FILENAMES:
+            request.user.avatar = avatar
+            request.user.save(update_fields=['avatar'])
+        return redirect('inscription_bienvenue')
+
+    return render(request, 'core/inscription_bienvenue.html', {
+        'avatars': AVATAR_FILENAMES,
+        'numero_atelier': f'{12400 + request.user.pk:,}'.replace(',', ' '),
+        'nb_membres': f'{Utilisateur.objects.count():,}'.replace(',', ' '),
+        'niveau_label': NIVEAUX_COUTURE.get(request.user.niveau_couture, 'Débutant·e'),
+    })
 
 
 # ── RGPD : page légale, export et suppression des données ───────────────────
