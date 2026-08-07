@@ -60,7 +60,7 @@
     flex: none;
     background: var(--violet);
     border-radius: 0 0 44px 44px;
-    padding: 30px 22px 34px;
+    padding: 30px 22px 52px;
   }
   .pat-hero-top { display: flex; align-items: center; gap: 10px; }
   .pat-title {
@@ -179,7 +179,6 @@
   }
   .pat-chip svg { width: 12px; height: 12px; flex: none; }
   .pat-chip.is-active { background: var(--ink); color: #fff; font-weight: 800; }
-  .pat-chip.likes-chip.is-active { background: var(--red); }
 
   /* ── Bascule « pièces à gagner » ──────────────────────── */
   .pat-toggle-row {
@@ -195,14 +194,7 @@
     font-family: var(--text);
     text-align: left;
   }
-  .pat-toggle-coin {
-    width: 15px; height: 15px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #FFD86B, var(--yellow));
-    display: block;
-    flex: none;
-    box-shadow: inset 0 -1.5px 0 rgba(20,18,15,.15);
-  }
+  .pat-toggle-coin { width: 15px; height: auto; display: block; flex: none; }
   .pat-toggle-label { flex: 1; font-size: 12px; color: var(--muted-d); }
   .pat-toggle-track {
     width: 34px; height: 19px;
@@ -307,9 +299,9 @@
     border-radius: 12px;
     padding: 6px 10px;
   }
-  .pat-feature-reward .pat-coin { width: 12px; height: 12px; }
+  .pat-feature-reward .pat-coin { width: 13px; }
   .pat-feature-reward span { font: 800 11px var(--display); color: var(--ink); }
-  .pat-coin { border-radius: 50%; background: var(--yellow); display: block; flex: none; }
+  .pat-coin { display: block; flex: none; width: 12px; height: auto; }
 
   .pat-feature-body { padding: 15px 18px 17px; }
   .pat-feature-title {
@@ -414,25 +406,25 @@
     border-radius: 10px;
     padding: 4px 8px;
   }
-  .pat-tile-reward .pat-coin { width: 10px; height: 10px; }
+  .pat-tile-reward .pat-coin { width: 11px; }
   .pat-tile-reward span { font: 800 10px var(--display); }
   .pat-tile-name { font: 800 15px var(--display); margin-top: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pat-tile-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
   /* ── Cartes « Pour ton tissu » ────────────────────────── */
   .pat-match-card {
-    width: 214px;
+    width: 252px;
     flex: none;
     box-sizing: border-box;
     background: var(--paper);
     border: 1.5px solid var(--line);
-    border-radius: 24px;
-    padding: 12px;
+    border-radius: 22px;
+    padding: 10px;
     display: flex;
-    gap: 12px;
+    gap: 11px;
   }
   .pat-match-thumb {
-    width: 66px; height: 78px;
+    width: 58px; height: 64px;
     border-radius: 15px;
     flex: none;
     overflow: hidden;
@@ -442,7 +434,8 @@
   .pat-match-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
   .pat-match-name { font: 800 15px/1.1 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pat-match-meta { font-size: 11px; color: var(--muted); }
-  .pat-match-badges { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+  .pat-match-badges { display: flex; gap: 5px; align-items: center; flex-wrap: nowrap; }
+  .pat-match-badges .pat-mini-badge { white-space: nowrap; }
   .pat-mini-badge {
     display: inline-flex;
     align-items: center;
@@ -455,7 +448,7 @@
   .pat-mini-badge.is-almost { background: var(--yellow-l); color: var(--ink); }
   .pat-mini-badge.is-premium { background: #F3E5D8; color: #7C4A1E; }
   .pat-mini-badge.is-progress { background: var(--yellow-l); color: var(--ink); }
-  .pat-mini-badge .pat-coin { width: 10px; height: 10px; }
+  .pat-mini-badge .pat-coin { width: 11px; }
 
   /* =========================================================
      Tous les patrons (cible de la recherche et des filtres)
@@ -464,7 +457,8 @@
 
   .pat-card {
     position: relative;
-    background: var(--sand);
+    background: var(--paper);
+    border: 1.5px solid var(--line);
     border-radius: 24px;
     padding: 12px;
     display: flex;
@@ -495,12 +489,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #FFE1D8;
+    background: var(--sand);
     flex: none;
     transition: transform .15s, background .2s;
   }
   .pat-card-like:active { transform: scale(.88); }
-  .pat-card-like.is-liked { background: var(--red); }
+  .pat-card-like.is-liked { background: var(--ink); }
   .pat-card-like svg { width: 15px; height: 15px; pointer-events: none; }
 
   /* =========================================================
@@ -533,6 +527,72 @@
   }
   .pat-done-more span { font: 800 16px var(--display); color: var(--muted); }
   .pat-done-more-label { font: 700 11px var(--display); color: var(--muted); margin-top: 7px; text-align: center; }
+
+  /* ── Bouton « voir tous les patrons » ─────────────────── */
+  .pat-expand {
+    margin: 12px 20px 0;
+    width: calc(100% - 40px);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 13px;
+    border: 1.5px solid var(--line);
+    border-radius: 18px;
+    background: var(--paper);
+    color: var(--muted-d);
+    font: 800 13px var(--display);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .pat-expand svg { width: 14px; height: 14px; flex: none; transition: transform .25s ease; }
+  .pat-expand.is-open svg { transform: rotate(180deg); }
+  .pat-expand:active { background: var(--sand); }
+  .pat.is-searching .pat-expand { display: none; }
+
+  /* =========================================================
+     Mode recherche — seule la liste de patrons reste visible
+     ========================================================= */
+  .pat-browse {
+    transition: opacity .22s ease, transform .22s ease;
+  }
+  .pat.is-searching .pat-browse {
+    display: none;
+  }
+  .pat-browse.is-leaving {
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+  }
+  .pat.is-searching #allSection > .pat-section-head { display: none; }
+
+  @keyframes patCardIn {
+    from { opacity: 0; transform: translateY(10px) scale(.985); }
+    to   { opacity: 1; transform: none; }
+  }
+  .pat.is-searching .pat-wrap { animation: patCardIn .3s cubic-bezier(.22,.61,.36,1) backwards; }
+
+  /* Barre de recherche mise en avant à la saisie */
+  .pat-search-row { transition: box-shadow .25s ease, transform .25s ease; }
+  .pat.is-searching .pat-search-row {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 34px rgba(20,18,15,.26), 0 0 0 2px rgba(124,92,255,.55);
+  }
+  .pat-search-clear {
+    flex: none;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,.14);
+    color: #fff;
+    cursor: pointer;
+  }
+  .pat-search-clear svg { width: 12px; height: 12px; }
+  .pat.is-searching .pat-search-clear { display: flex; }
 
   /* =========================================================
      État vide
@@ -603,6 +663,9 @@
         <path d="M15.5 15.5 20 20"/>
       </svg>
       <input id="searchInput" class="pat-search-input" type="search" placeholder="Chercher un patron…" autocomplete="off">
+      <button type="button" class="pat-search-clear" id="searchClear" aria-label="Effacer la recherche">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
       <button type="button" class="pat-filter-btn" id="filterBtn">Filtres</button>
     </div>
   </div>
@@ -626,7 +689,7 @@
 
   <!-- ══════════════ Bascule « pièces à gagner » ══════════════ -->
   <button type="button" class="pat-toggle-row" id="rewardsToggle" aria-pressed="true">
-    <span class="pat-toggle-coin"></span>
+    <img class="pat-toggle-coin" src="{% static 'core/images/icons/coin.png' %}" alt="">
     <span class="pat-toggle-label">Afficher les pièces à gagner</span>
     <span class="pat-toggle-track"><span class="pat-toggle-knob"></span></span>
   </button>
@@ -634,7 +697,7 @@
   <div class="pat-body">
 
     {% if user.is_staff %}
-    <a href="{% url 'creer_patron' %}" class="pat-create pat-link">
+    <a href="{% url 'creer_patron' %}" class="pat-create pat-link pat-browse">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Créer un patron
     </a>
@@ -642,7 +705,7 @@
 
     <!-- ══════════════ Patron de la semaine ══════════════ -->
     {% if patron_vedette %}
-    <section>
+    <section class="pat-browse">
       <a href="{% url 'patron_detail' patron_vedette.id %}" class="pat-feature pat-link">
         <div class="pat-feature-media">
           {% if patron_vedette.image %}
@@ -652,7 +715,7 @@
           {% endif %}
           <span class="pat-feature-tag">Patron de la semaine</span>
           <span class="pat-feature-reward" data-reward>
-            <span class="pat-coin"></span>
+            <img class="pat-coin" src="{% static 'core/images/icons/coin.png' %}" alt="">
             <span>+{{ patron_vedette.pieces }}</span>
           </span>
         </div>
@@ -679,7 +742,7 @@
 
     <!-- ══════════════ En cours ══════════════ -->
     {% if projets_en_cours %}
-    <section>
+    <section class="pat-browse">
       <div class="pat-section-head">
         <h2 class="pat-section-title">En cours</h2>
         <span class="pat-section-count">{{ projets_en_cours|length }} projet{{ projets_en_cours|length|pluralize }}</span>
@@ -714,7 +777,7 @@
 
     <!-- ══════════════ Une heure ou moins ══════════════ -->
     {% if patrons_rapides %}
-    <section>
+    <section class="pat-browse">
       <div class="pat-section-head">
         <h2 class="pat-section-title">Une heure ou moins</h2>
         <span class="pat-section-count">{{ patrons_rapides|length }}</span>
@@ -730,7 +793,7 @@
             <span class="pat-tile-flag">Faisable</span>
             {% endif %}
             <span class="pat-tile-reward" data-reward>
-              <span class="pat-coin"></span>
+              <img class="pat-coin" src="{% static 'core/images/icons/coin.png' %}" alt="">
               <span>+{{ patron.pieces }}</span>
             </span>
           </div>
@@ -744,7 +807,7 @@
 
     <!-- ══════════════ Pour ton tissu ══════════════ -->
     {% if tissu_focus %}
-    <section>
+    <section class="pat-browse">
       <div class="pat-section-head">
         <h2 class="pat-section-title">Pour ton {{ tissu_focus.nom }}</h2>
         <span class="pat-section-count">{{ tissu_focus.surface }} m² à placer</span>
@@ -762,7 +825,7 @@
               {% if patron.faisable_ici %}
               <span class="pat-mini-badge is-compat">Faisable</span>
               <span class="pat-mini-badge is-progress" data-reward>
-                <span class="pat-coin"></span>+{{ patron.pieces }}
+                <img class="pat-coin" src="{% static 'core/images/icons/coin.png' %}" alt="">+{{ patron.pieces }}
               </span>
               {% else %}
               <span class="pat-mini-badge is-almost">Presque</span>
@@ -775,8 +838,45 @@
     </section>
     {% endif %}
 
+
+    <!-- ══════════════ Déjà cousus ══════════════ -->
+    {% if projets_termines %}
+    <section class="pat-browse">
+      <div class="pat-done-box">
+        <div class="pat-done-head">
+          <span class="pat-done-title">Déjà cousus</span>
+          <span class="pat-done-count">{{ nb_termines }}</span>
+          <span class="pat-done-saved">{{ surface_sauvee }} m² sauvés</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none"><path d="M9 5.5 15.5 12 9 18.5" stroke="#A79E92" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="pat-done-rail">
+          {% for prog in projets_termines|slice:":6" %}
+          <a href="{% url 'passeport_circulaire' prog.patron_id %}" class="pat-done-item pat-link">
+            <div class="pat-done-thumb">
+              {% if prog.image %}
+              <img src="{{ prog.image }}" alt="{{ prog.titre }}">
+              {% endif %}
+              <span class="pat-done-check">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+            </div>
+            <div class="pat-done-name">{{ prog.titre|truncatechars:14 }}</div>
+            <div class="pat-done-time">{{ prog.date_derniere_activite|timesince }}</div>
+          </a>
+          {% endfor %}
+          {% if nb_termines > 6 %}
+          <a href="{% url 'mon_profil' %}" class="pat-done-item pat-link">
+            <div class="pat-done-more"><span>+{{ nb_termines|add:"-6" }}</span></div>
+            <div class="pat-done-more-label">Tout voir</div>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
     <!-- ══════════════ Tous les patrons ══════════════ -->
-    <section>
+    <section id="allSection">
       <div class="pat-section-head">
         <h2 class="pat-section-title">Tous les patrons</h2>
         <span class="pat-section-count">{{ patrons|length }}</span>
@@ -813,7 +913,7 @@
                 <span class="pat-mini-badge is-progress">En cours</span>
                 {% endif %}
                 <span class="pat-mini-badge is-progress" data-reward>
-                  <span class="pat-coin"></span>+{{ patron.pieces }}
+                  <img class="pat-coin" src="{% static 'core/images/icons/coin.png' %}" alt="">+{{ patron.pieces }}
                 </span>
               </div>
             </a>
@@ -824,8 +924,8 @@
                     data-liked="{{ patron.est_liked|yesno:'true,false' }}">
               <svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
                    class="like-icon"
-                   fill="{% if patron.est_liked %}white{% else %}#7C2E19{% endif %}"
-                   stroke="{% if patron.est_liked %}white{% else %}#7C2E19{% endif %}">
+                   fill="{% if patron.est_liked %}white{% else %}#8E877E{% endif %}"
+                   stroke="{% if patron.est_liked %}white{% else %}#8E877E{% endif %}">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
             </button>
@@ -841,43 +941,12 @@
         <p class="pat-empty-title">Aucun résultat</p>
         <p class="pat-empty-sub">Essaie d'autres mots-clés ou ajuste les filtres.</p>
       </div>
-    </section>
 
-    <!-- ══════════════ Déjà cousus ══════════════ -->
-    {% if projets_termines %}
-    <section>
-      <div class="pat-done-box">
-        <div class="pat-done-head">
-          <span class="pat-done-title">Déjà cousus</span>
-          <span class="pat-done-count">{{ nb_termines }}</span>
-          <span class="pat-done-saved">{{ surface_sauvee }} m² sauvés</span>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none"><path d="M9 5.5 15.5 12 9 18.5" stroke="#A79E92" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <div class="pat-done-rail">
-          {% for prog in projets_termines|slice:":6" %}
-          <a href="{% url 'passeport_circulaire' prog.patron_id %}" class="pat-done-item pat-link">
-            <div class="pat-done-thumb">
-              {% if prog.image %}
-              <img src="{{ prog.image }}" alt="{{ prog.titre }}">
-              {% endif %}
-              <span class="pat-done-check">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </span>
-            </div>
-            <div class="pat-done-name">{{ prog.titre|truncatechars:14 }}</div>
-            <div class="pat-done-time">{{ prog.date_derniere_activite|timesince }}</div>
-          </a>
-          {% endfor %}
-          {% if nb_termines > 6 %}
-          <a href="{% url 'mon_profil' %}" class="pat-done-item pat-link">
-            <div class="pat-done-more"><span>+{{ nb_termines|add:"-6" }}</span></div>
-            <div class="pat-done-more-label">Tout voir</div>
-          </a>
-          {% endif %}
-        </div>
-      </div>
+      <button type="button" class="pat-expand" id="expandBtn">
+        <span id="expandLabel">Voir tous les patrons</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
     </section>
-    {% endif %}
 
   </div>
 </main>
@@ -900,11 +969,19 @@
 
   const root        = document.getElementById('patRoot');
   const searchInput = document.getElementById('searchInput');
+  const searchClear = document.getElementById('searchClear');
   const filterBtn   = document.getElementById('filterBtn');
   const chipRow     = document.getElementById('chipRow');
   const listEmpty   = document.getElementById('listEmpty');
+  const expandBtn   = document.getElementById('expandBtn');
+  const expandLabel = document.getElementById('expandLabel');
   const wraps       = Array.from(document.querySelectorAll('.pat-wrap'));
   const chips       = Array.from(document.querySelectorAll('.pat-chip'));
+  const browse      = Array.from(document.querySelectorAll('.pat-browse'));
+
+  /* Nombre de cartes affichées tant que la liste n'est pas dépliée. */
+  const COLLAPSED = 4;
+  let expanded = false;
 
   /* ── Bascule « pièces à gagner » ──────────────────────── */
   const rewardsToggle = document.getElementById('rewardsToggle');
@@ -951,8 +1028,8 @@
     wrap.dataset.liked = nowLiked ? 'true' : 'false';
     btn.classList.toggle('is-liked', nowLiked);
     if (icon) {
-      icon.setAttribute('fill', nowLiked ? 'white' : '#7C2E19');
-      icon.setAttribute('stroke', nowLiked ? 'white' : '#7C2E19');
+      icon.setAttribute('fill', nowLiked ? 'white' : '#8E877E');
+      icon.setAttribute('stroke', nowLiked ? 'white' : '#8E877E');
     }
     if (nowLiked) {
       likedIds.add(patronId);
@@ -969,8 +1046,8 @@
       wrap.dataset.liked = wasLiked ? 'true' : 'false';
       btn.classList.toggle('is-liked', wasLiked);
       if (icon) {
-        icon.setAttribute('fill', wasLiked ? 'white' : '#7C2E19');
-        icon.setAttribute('stroke', wasLiked ? 'white' : '#7C2E19');
+        icon.setAttribute('fill', wasLiked ? 'white' : '#8E877E');
+        icon.setAttribute('stroke', wasLiked ? 'white' : '#8E877E');
       }
       wasLiked ? likedIds.add(patronId) : likedIds.delete(patronId);
     });
@@ -1004,8 +1081,47 @@
     return active ? active.dataset.filter : 'all';
   }
 
-  /* ── Recherche ────────────────────────────────────────── */
-  searchInput.addEventListener('input', applyAll);
+  /* ── Recherche ────────────────────────────────────────────
+     Dès qu'une recherche est saisie, les sections éditoriales
+     s'effacent (fondu court) et seule la liste filtrée reste. */
+  let searching = false;
+
+  function setSearching(on) {
+    if (on === searching) return;
+    searching = on;
+    if (on) {
+      browse.forEach(el => el.classList.add('is-leaving'));
+      setTimeout(() => {
+        if (searching) root.classList.add('is-searching');
+      }, 180);
+    } else {
+      root.classList.remove('is-searching');
+      requestAnimationFrame(() => browse.forEach(el => el.classList.remove('is-leaving')));
+    }
+  }
+
+  searchInput.addEventListener('input', () => {
+    setSearching(searchInput.value.trim() !== '');
+    applyAll();
+  });
+
+  searchClear.addEventListener('click', () => {
+    searchInput.value = '';
+    setSearching(false);
+    applyAll();
+    searchInput.focus();
+  });
+
+  /* ── Dépliage de la liste complète ────────────────────── */
+  expandBtn.addEventListener('click', () => {
+    expanded = !expanded;
+    expandBtn.classList.toggle('is-open', expanded);
+    expandLabel.textContent = expanded ? 'Réduire la liste' : 'Voir tous les patrons';
+    applyAll();
+    if (!expanded) {
+      document.getElementById('allSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
 
   /* ── Application combinée ─────────────────────────────── */
   function matchesFilter(wrap, filter) {
@@ -1025,16 +1141,31 @@
   function applyAll() {
     const query = searchInput.value.toLowerCase().trim();
     const filter = activeFilter();
+    /* Hors recherche et liste repliée, on ne montre que les premières cartes. */
+    const limit = (searching || expanded) ? Infinity : COLLAPSED;
 
+    let shown = 0;
+    let matching = 0;
     wraps.forEach(wrap => {
-      const matchSearch = !query || wrap.dataset.title.includes(query);
-      const matchFilter = matchesFilter(wrap, filter);
-      wrap.style.display = (matchSearch && matchFilter) ? '' : 'none';
+      const match = (!query || wrap.dataset.title.includes(query))
+                    && matchesFilter(wrap, filter);
+      if (match) matching++;
+      const visible = match && shown < limit;
+      if (visible) {
+        shown++;
+        wrap.style.animationDelay = searching ? `${Math.min(shown, 8) * 28}ms` : '';
+      }
+      wrap.style.display = visible ? '' : 'none';
     });
 
-    const hasVisible = wraps.some(w => w.style.display !== 'none');
-    listEmpty.style.display = hasVisible ? 'none' : 'flex';
+    listEmpty.style.display = matching ? 'none' : 'flex';
+
+    const hidden = matching - shown;
+    expandBtn.style.display = (matching > COLLAPSED || expanded) ? 'flex' : 'none';
+    if (!expanded) expandLabel.textContent = `Voir les ${hidden} autres patrons`;
   }
+
+  applyAll();
 
   /* ── Init boutons like ────────────────────────────────── */
   wraps.forEach(wrap => {

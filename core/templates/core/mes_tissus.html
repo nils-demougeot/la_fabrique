@@ -5,7 +5,7 @@
   ─────────────────────────────────────────────────────────────────────────
   Banque de tissus — design V2 (même langage visuel que le tableau de bord
   et la barre de navigation : Bricolage Grotesque + DM Sans/Mono, encre
-  #14120F, papier #FFFDF8, vert #1FA85C).
+  #14120F, papier #FFFDF8, jaune #FFC93C).
 
   La page porte son propre en-tête vert : le bandeau global du gabarit est
   neutralisé, comme sur le tableau de bord.
@@ -35,7 +35,7 @@
     --muted:    #8E877E;
     --stone:    #9C9184;
     --slate:    #6E655B;
-    --green:    #1FA85C;
+    --green:    #FFC93C;   /* jaune de la barre de navigation */
     --orange:   #FF6B3D;
 
     --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -64,7 +64,7 @@
     background: var(--green);
     border-radius: 0 0 44px 44px;
     padding: 30px 22px 36px;
-    color: #fff;
+    color: var(--ink);
   }
   .tis-hero h1 {
     font-family: var(--display);
@@ -76,7 +76,7 @@
   .tis-hero hr {
     height: 1.5px;
     border: 0;
-    background: rgba(255, 253, 248, .28);
+    background: rgba(20, 18, 15, .18);
     margin: 16px 0;
   }
   .tis-hero-figures { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
@@ -87,7 +87,7 @@
     line-height: 1;
     letter-spacing: -.03em;
   }
-  .tis-hero-detail { font-size: 12px; color: rgba(255, 255, 255, .82); padding-bottom: 3px; }
+  .tis-hero-detail { font-size: 12px; color: rgba(20, 18, 15, .68); padding-bottom: 3px; }
 
   /* =========================================================
      Recherche + filtres
@@ -125,7 +125,7 @@
     border: 0;
     cursor: pointer;
     background: var(--green);
-    color: #fff;
+    color: var(--ink);
     border-radius: 14px;
     padding: 9px 12px;
     font-family: var(--display);
@@ -287,7 +287,7 @@
     transition: background .12s ease, border-color .12s ease, transform .12s ease;
   }
   .tis-check:active { transform: scale(.88); }
-  .tis-check svg { opacity: 0; color: #fff; transition: opacity .12s ease; }
+  .tis-check svg { opacity: 0; color: var(--ink); transition: opacity .12s ease; }
   .tis-card.is-picked .tis-check { background: var(--green); border-color: var(--green); }
   .tis-card.is-picked .tis-check svg { opacity: 1; }
 
@@ -481,12 +481,12 @@
     border: 0;
     border-radius: 26px;
     background: var(--green);
-    color: #fff;
+    color: var(--ink);
     display: inline-flex;
     align-items: center;
     gap: 8px;
     padding: 0 18px 0 15px;
-    box-shadow: 0 12px 26px rgba(31, 168, 92, .42);
+    box-shadow: 0 12px 26px rgba(255, 201, 60, .5);
     font-family: var(--display);
     font-weight: 800;
     font-size: 14px;
@@ -554,7 +554,7 @@
     border-radius: 14px;
     padding: 10px 13px;
     background: var(--green);
-    color: #fff;
+    color: var(--ink);
     font-family: var(--display);
     font-weight: 800;
     font-size: 12px;
