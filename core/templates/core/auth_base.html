@@ -1,0 +1,230 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="icon" type="image/png" href="{% static 'core/images/favicon/favicon-logo.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'core/images/favicon/favicon-logo.png' %}">
+  <title>{% block title %}La Fabrique{% endblock %}</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================================
+       Parcours d'inscription / connexion — jetons de design
+       Bricolage Grotesque + DM Sans/Mono, encre #14120F,
+       papier #FFFDF8, vert #1FA85C.
+       ========================================================= */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:     #14120F;
+      --paper:   #FFFDF8;
+      --sand:    #F2EADD;
+      --line:    #E7DED0;
+      --line-d:  #D8CFC0;
+      --muted:   #7A7168;
+      --faint:   #9C9184;
+      --green:   #1FA85C;
+      --green-d: #0E6B37;
+      --yellow:  #FFD166;
+      --violet:  #E3DBFF;
+      --red:     #A24A33;
+
+      --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
+      --text:    'DM Sans', 'Manrope', system-ui, sans-serif;
+      --mono:    'DM Mono', ui-monospace, monospace;
+    }
+
+    body {
+      background: #EDE6DA;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100dvh;
+      font-family: var(--text);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { text-decoration: none; color: inherit; }
+
+    .auth {
+      width: 100%;
+      max-width: 430px;
+      min-height: 100dvh;
+      background: var(--paper);
+      display: flex;
+      flex-direction: column;
+      padding: 14px 24px calc(28px + env(safe-area-inset-bottom));
+      position: relative;
+    }
+    .auth--green { background: var(--green); color: var(--paper); }
+
+    /* ── Barre du haut : retour + progression ───────────────── */
+    .auth-top { display: flex; align-items: center; gap: 14px; flex: none; }
+
+    .auth-back {
+      width: 40px; height: 40px; flex: none;
+      border-radius: 14px; background: var(--sand);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink);
+      transition: transform .14s ease;
+    }
+    .auth-back:active { transform: scale(.94); }
+
+    .auth-progress { flex: 1; display: flex; gap: 6px; }
+    .auth-progress span {
+      flex: 1; height: 5px; border-radius: 3px;
+      background: var(--line); display: block;
+    }
+    .auth-progress span.is-done { background: var(--ink); }
+
+    .auth-count { font: 500 11px var(--mono); color: var(--faint); flex: none; }
+
+    /* ── Corps ──────────────────────────────────────────────── */
+    .auth-body { flex: 1; display: flex; flex-direction: column; }
+
+    .auth-eyebrow {
+      font: 500 10px var(--mono);
+      color: var(--faint);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-top: 38px;
+    }
+    .auth-title {
+      font: 800 40px/1 var(--display);
+      letter-spacing: -.03em;
+      margin-top: 12px;
+      text-wrap: pretty;
+    }
+    .auth-lead {
+      font: 400 14px/1.5 var(--text);
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    /* ── Champ « à la ligne » (souligné, grande typo) ────────── */
+    .auth-field {
+      border: none; border-bottom: 2px solid var(--ink);
+      background: transparent;
+      width: 100%;
+      padding: 0 2px 12px;
+      margin-top: 34px;
+      font: 800 26px var(--display);
+      letter-spacing: -.02em;
+      color: var(--ink);
+      outline: none;
+      border-radius: 0;
+      caret-color: var(--green);
+    }
+    .auth-field::placeholder { color: var(--line-d); }
+    .auth-field:focus { border-bottom-color: var(--green); }
+    .auth-field--pw { letter-spacing: .16em; font-size: 30px; }
+
+    .auth-field-row { position: relative; }
+    .auth-field-row .auth-field { padding-right: 84px; }
+    .auth-reveal {
+      position: absolute; right: 0; bottom: 14px;
+      background: none; border: none; cursor: pointer;
+      font: 700 12px var(--text); color: var(--green);
+    }
+
+    .auth-hint { font: 500 12px var(--mono); color: var(--faint); margin-top: 14px; }
+    .auth-hint--ok { color: var(--green); }
+
+    /* ── Liste de contrôles ─────────────────────────────────── */
+    .auth-checks { margin-top: 22px; display: flex; flex-direction: column; gap: 8px; }
+    .auth-check { display: flex; align-items: center; gap: 10px; }
+    .auth-check i {
+      width: 18px; height: 18px; flex: none;
+      border-radius: 6px; border: 1.5px solid var(--line-d);
+      display: flex; align-items: center; justify-content: center;
+      font: 700 11px var(--text); font-style: normal; color: transparent;
+    }
+    .auth-check span { font: 400 13px var(--text); color: var(--faint); }
+    .auth-check.is-ok i { background: var(--green); border-color: var(--green); color: #fff; }
+    .auth-check.is-ok span { color: #4A443C; }
+
+    /* ── Jauge de robustesse ────────────────────────────────── */
+    .auth-meter { display: flex; gap: 6px; margin-top: 16px; }
+    .auth-meter span { flex: 1; height: 6px; border-radius: 3px; background: var(--line); display: block; }
+    .auth-meter span.is-on { background: var(--green); }
+
+    /* ── Options radio (cartes) ─────────────────────────────── */
+    .auth-options { display: flex; flex-direction: column; gap: 10px; margin-top: 26px; }
+    .auth-option { display: block; cursor: pointer; }
+    .auth-option input { position: absolute; opacity: 0; pointer-events: none; }
+    .auth-option-card {
+      border: 1.5px solid var(--line); border-radius: 22px;
+      padding: 18px 20px; background: #fff;
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      transition: background .14s ease, border-color .14s ease, color .14s ease;
+    }
+    .auth-option-card b { font: 800 17px var(--display); display: block; }
+    .auth-option-card em { font: 400 12px var(--text); font-style: normal; color: var(--muted); display: block; margin-top: 3px; }
+    .auth-option-dot {
+      width: 26px; height: 26px; flex: none; border-radius: 50%;
+      border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center;
+      font: 700 14px var(--text); color: transparent;
+    }
+    .auth-option input:checked + .auth-option-card {
+      background: var(--green); border-color: var(--green); color: #fff;
+    }
+    .auth-option input:checked + .auth-option-card em { color: rgba(255,255,255,.85); }
+    .auth-option input:checked + .auth-option-card .auth-option-dot {
+      background: #fff; border-color: #fff; color: var(--green);
+    }
+
+    /* ── Consentement ───────────────────────────────────────── */
+    .auth-consent { display: flex; gap: 10px; align-items: flex-start; margin-top: 22px; cursor: pointer; }
+    .auth-consent input { position: absolute; opacity: 0; pointer-events: none; }
+    .auth-consent-box {
+      width: 22px; height: 22px; flex: none; border-radius: 8px;
+      border: 1.5px solid var(--line-d); background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font: 700 13px var(--text); color: transparent;
+    }
+    .auth-consent input:checked + .auth-consent-box {
+      background: var(--ink); border-color: var(--ink); color: #fff;
+    }
+    .auth-consent-text { font: 400 12px/1.45 var(--text); color: var(--muted); }
+    .auth-consent-text a { color: var(--green); font-weight: 700; }
+
+    /* ── Actions ────────────────────────────────────────────── */
+    .auth-actions { margin-top: auto; padding-top: 28px; display: flex; flex-direction: column; gap: 12px; }
+    .auth-btn {
+      display: block; width: 100%; border: none; cursor: pointer;
+      border-radius: 26px; padding: 19px 0; text-align: center;
+      background: var(--green); color: #fff;
+      font: 800 17px var(--display);
+      transition: transform .12s ease, filter .12s ease;
+    }
+    .auth-btn:active { transform: scale(.985); filter: brightness(.95); }
+    .auth-btn--ink { background: var(--ink); color: var(--paper); }
+    .auth-btn--ghost {
+      background: transparent; color: var(--ink);
+      border: 1.5px solid var(--line); padding: 17px 0; font-size: 15px;
+    }
+    .auth-btn--text {
+      background: transparent; padding: 0; color: var(--muted);
+      font: 700 13px var(--text);
+    }
+
+    /* ── Erreur ─────────────────────────────────────────────── */
+    .auth-error {
+      background: #FCE8E6; color: var(--red);
+      border-radius: 16px; padding: 14px 18px; margin-top: 22px;
+      font: 500 13px/1.45 var(--text);
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <main class="auth {% block auth_class %}{% endblock %}">
+    {% block auth_content %}{% endblock %}
+  </main>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

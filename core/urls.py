@@ -78,4 +78,5 @@ urlpatterns = [
     path('inscription/etape1/', views.inscription_etape1, name='inscription_etape1'),
     path('inscription/etape2/', views.inscription_etape2, name='inscription_etape2'),
     path('inscription/etape3/', views.inscription_etape3, name='inscription_etape3'),
+    path('inscription/bienvenue/', views.inscription_bienvenue, name='inscription_bienvenue'),
 ]

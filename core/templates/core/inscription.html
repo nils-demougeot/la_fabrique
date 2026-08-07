@@ -1,306 +1,57 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="{% static 'core/images/favicon/favicon-logo.png' %}">
-  <link rel="apple-touch-icon" href="{% static 'core/images/favicon/favicon-logo.png' %}">
-  <title>La Fabrique - Connexion</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,700;0,800;1,800&display=swap" rel="stylesheet">
+{% extends 'core/auth_base.html' %}
 
-<style>
-/* =========================================
-   Variables CSS (Design System)
-   ========================================= */
-:root {
-  /* Couleurs */
-  --bg-main: #FFFBFF;
-  --bg-card: #FDFAE5;
-  --bg-input: #ECE9D1;
-  --text-dark: #39382B;
-  --text-muted: #666556;
-  --text-muted-light: rgba(102, 101, 86, 0.50);
-  --color-primary: #237329;
-  --color-secondary: #2E7D32;
-  --color-accent: #A24A33;
-  --color-white: #FFFFFF;
-  --blur-color: rgba(157, 241, 151, 0.30);
+{% comment %}
+  Inscription — étape 1/4 : l'adresse e-mail.
+{% endcomment %}
 
-  /* Polices */
-  --font-title: 'Plus Jakarta Sans', sans-serif;
-  --font-body: 'Manrope', sans-serif;
-  --font-btn: 'Manrope', sans-serif;
-}
+{% block title %}La Fabrique — Inscription (1/4){% endblock %}
 
-/* =========================================
-   Reset basique
-   ========================================= */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+{% block auth_content %}
+<div class="auth-top">
+  <a href="{% url 'home' %}" class="auth-back" aria-label="Retour">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  </a>
+  <div class="auth-progress" role="progressbar" aria-valuenow="1" aria-valuemin="1" aria-valuemax="4">
+    <span class="is-done"></span><span></span><span></span><span></span>
+  </div>
+  <span class="auth-count">01/04</span>
+</div>
 
-body {
-  background-color: #f0f0f0;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100dvh;
-}
+<form class="auth-body" method="POST" action="{% url 'inscription' %}" novalidate>
+  {% csrf_token %}
 
-/* =========================================
-   Layout principal (Simili-Mobile)
-   ========================================= */
-.app-container {
-  width: 100%;
-  max-width: 430px;
-  min-height: 100vh;
-  min-height: 100dvh;
-  position: relative;
-  background: var(--bg-main);
-  font-family: var(--font-body);
-}
+  <div class="auth-eyebrow">Étape 1 · ton compte</div>
+  <h1 class="auth-title">On t'écrit où&nbsp;?</h1>
+  <p class="auth-lead">Juste pour tes patrons et tes rappels de projet. Zéro pub.</p>
 
-.decorative-blur {
-  width: 256px;
-  height: 158px;
-  position: absolute;
-  left: 173px;
-  top: -50px;
-  background: var(--blur-color);
-  border-radius: 50%;
-  filter: blur(32px);
-  z-index: 0;
-}
+  {% if error %}<div class="auth-error">{{ error }}</div>{% endif %}
 
-/* =========================================
-   En-tête (Header)
-   ========================================= */
-.header-section {
-  position: relative;
-  z-index: 1;
-  padding: 48px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+  <input type="email" name="email" id="email" class="auth-field"
+         placeholder="camille.b@mail.fr" value="{{ email|default:'' }}"
+         autocomplete="email" autocapitalize="off" spellcheck="false" required autofocus>
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
+  <div class="auth-checks">
+    <div class="auth-check" id="chk-valid"><i>✓</i><span>Adresse valide</span></div>
+    <div class="auth-check"><i>✓</i><span>Pas encore utilisée sur La Fabrique</span></div>
+  </div>
 
-.brand-logo {
-  width: 32px;
-  height: 32px;
-  background: var(--color-primary);
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+  <div class="auth-actions">
+    <button type="submit" class="auth-btn">Continuer</button>
+    <a href="{% url 'connexion' %}" class="auth-btn auth-btn--ghost">J'ai déjà un compte</a>
+  </div>
+</form>
+{% endblock %}
 
-.logo-inner {
-  width: 13.5px;
-  height: 13.5px;
-  background: var(--color-white);
-}
-
-.brand-name {
-  color: var(--text-dark);
-  font-size: 24px;
-  font-family: var(--font-title);
-  font-weight: 800;
-}
-
-.main-title {
-  color: var(--text-dark);
-  font-size: 42px;
-  font-family: var(--font-title);
-  font-weight: 800;
-  line-height: 1;
-}
-
-.text-italic-green {
-  color: var(--color-secondary);
-  font-style: italic;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 1.5;
-  margin-top: 8px;
-}
-
-/* =========================================
-   Carte Formulaire
-   ========================================= */
-.login-card {
-  position: relative;
-  z-index: 1;
-  margin: 20px 24px;
-  padding: 32px;
-  background: var(--bg-card);
-  box-shadow: 0px 20px 50px rgba(57, 56, 43, 0.08);
-  border-radius: 48px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  transform: rotate(1deg);
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-label {
-  color: var(--text-dark);
-  font-size: 14px;
-  font-family: var(--font-title);
-  font-weight: 700;
-}
-
-.form-input {
-  width: 100%;
-  padding: 18px 20px;
-  background: var(--bg-input);
-  border: none;
-  border-radius: 6px;
-  color: var(--text-dark);
-  font-size: 16px;
-  font-family: var(--font-body);
-  outline: none;
-}
-
-.form-input::placeholder {
-  color: var(--text-muted-light);
-}
-
-.form-input:focus {
-  box-shadow: 0 0 0 2px var(--color-primary);
-}
-
-/* Bouton Soumettre */
-.btn-submit {
-  position: relative;
-  width: 100%;
-  padding: 20px;
-  margin-top: 8px;
-  border: none;
-  border-radius: 9999px;
-  background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
-  box-shadow: 0 6px 0 #1B5E20, 0 10px 24px rgba(35,115,41,0.35);
-  transform: translateY(0);
-  transition: transform 0.08s, box-shadow 0.08s;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  color: var(--color-white);
-  font-size: 18px;
-  font-family: var(--font-btn);
-  font-weight: 700;
-  cursor: pointer;
-  overflow: hidden;
-}
-.btn-submit::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.13) 0%, transparent 55%);
-  border-radius: inherit; pointer-events: none;
-}
-.btn-submit:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 0 #1B5E20, 0 14px 28px rgba(35,115,41,0.4);
-}
-.btn-submit:active {
-  transform: translateY(5px);
-  box-shadow: 0 1px 0 #1B5E20, 0 4px 12px rgba(35,115,41,0.25);
-}
-
-/* Pied de carte */
-.login-footer {
-  text-align: center;
-  margin-top: 8px;
-}
-
-.footer-text {
-  color: var(--text-muted);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.footer-link {
-  color: var(--color-accent);
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: underline;
-}
-
-.footer-link:hover {
-  text-decoration: none;
-}
-</style>
-</head>
-<body>
-
-  <main class="app-container">
-    <div class="decorative-blur"></div>
-
-    <header class="header-section">
-      <div class="brand">
-        <a href="{% url 'home' %}" style="line-height: 0; display: block;">
-          <img src="{% static 'core/images/logo-la-fabrique.svg' %}" alt="La Fabrique" style="height: 34px;">
-        </a>
-      </div>
-      
-      <h1 class="main-title">
-        Bienvenue dans <span class="text-italic-green">l’atelier</span> !
-      </h1>
-      
-      <p class="subtitle">Chaque chute de tissu est une quête. Commencez la vôtre.</p>
-    </header>
-
-    <form class="login-card" method="POST" action="{% url 'inscription' %}">
-      {% csrf_token %}
-      {% if error %}
-      <div style="background:#FCE8E6;color:#A24A33;padding:14px 18px;border-radius:14px;font-size:14px;font-weight:600;line-height:1.4;">
-        {{ error }}
-      </div>
-      {% endif %}
-      <div class="form-group">
-        <label for="email" class="form-label">Adresse e-mail</label>
-        <input type="email" name="email" id="email" class="form-input" placeholder="tissserand@atelier.com" value="{{ email|default:'' }}" required>
-      </div>
-
-      <div class="form-group">
-        <label for="password" class="form-label">Mot de passe</label>
-        <input type="password" name="password" id="password" class="form-input" placeholder="••••••••" required>
-      </div>
-
-      <button type="submit" class="btn-submit">
-        Débuter l’aventure
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </button>
-
-      <div class="login-footer">
-        <span class="footer-text">Déjà de la partie ? </span>
-        <a href="{% url 'connexion' %}" class="footer-link">Se connecter</a>
-        <p style="margin-top:10px;font-size:12px;">
-          <a href="{% url 'politique_confidentialite' %}" class="footer-link">Politique de confidentialité</a>
-        </p>
-      </div>
-    </form>
-  </main>
-
-</body>
-</html>
+{% block extra_js %}
+<script>
+  // Coche « Adresse valide » en direct : simple retour visuel, la vraie
+  // validation reste côté serveur.
+  (() => {
+    const input = document.getElementById('email');
+    const chk = document.getElementById('chk-valid');
+    const sync = () => chk.classList.toggle('is-ok', /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(input.value.trim()));
+    input.addEventListener('input', sync);
+    sync();
+  })();
+</script>
+{% endblock %}
