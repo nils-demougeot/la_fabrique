@@ -788,6 +788,31 @@ def _compatibilite(surface_user, surface_min):
     return 0
 
 
+def _duree_minutes(duree):
+    """Convertit une durée libre (« 1 h 30 », « 45 min », « 2h ») en minutes."""
+    if not duree:
+        return None
+    txt = str(duree).lower().replace(' ', ' ')
+    heures = re.search(r'(\d+(?:[.,]\d+)?)\s*h', txt)
+    minutes = re.search(r'(\d+)\s*(?:min|m\b)', txt)
+    total = 0.0
+    if heures:
+        total += float(heures.group(1).replace(',', '.')) * 60
+        reste = re.search(r'h\s*(\d{1,2})\b', txt)
+        if reste and not minutes:
+            total += float(reste.group(1))
+    if minutes:
+        total += float(minutes.group(1))
+    if total <= 0 and not heures and not minutes:
+        return None
+    return int(total)
+
+
+def _pieces_gagnees(difficulte):
+    """Pièces gagnées à la réalisation d'un patron, dérivées de sa difficulté."""
+    return {1: 20, 2: 45, 3: 60}.get(difficulte, 20)
+
+
 @login_required
 def cours(request):
     """Onglet « Cours » de la barre de navigation — page encore vide."""
@@ -818,11 +843,16 @@ def patrons(request):
         patrons_list.append({
             'id': p.pk,
             'titre': p.titre,
+            'description': p.description or '',
             'image': p.photo_url,
             'compatibilite': _compatibilite(surface_user, p.surfaceMin),
             'tissu': p.typeObjet,
+            'difficulte': p.difficulte,
             'difficulte_label': DIFFICULTE_LABELS.get(p.difficulte, str(p.difficulte)),
             'duree': p.duree or '?',
+            'duree_min': _duree_minutes(p.duree),
+            'surface_min': round(p.surfaceMin, 2),
+            'pieces': _pieces_gagnees(p.difficulte),
             'est_premium': p.estPremium,
             'est_liked': p.pk in liked_ids,
             'en_cours': p.pk in en_cours_patron_ids,
@@ -831,22 +861,102 @@ def patrons(request):
     projets_en_cours = []
     for prog in progressions_qs:
         p = prog.patron
-        total_etapes = p.etapes.count()
+        etapes = list(p.etapes.all().order_by('numero'))
+        total_etapes = len(etapes)
         pct = round((prog.etape_actuelle / total_etapes) * 100) if total_etapes > 0 else 0
+        etape_courante = next(
+            (e for e in etapes if e.numero == prog.etape_actuelle), None
+        )
         projets_en_cours.append({
             'patron_id': p.pk,
             'titre': p.titre,
             'image': p.photo_url,
             'etape_actuelle': prog.etape_actuelle,
+            'etape_titre': etape_courante.titre if etape_courante else '',
+            'etapes_range': range(total_etapes),
             'total_etapes': total_etapes,
             'progression_pct': pct,
+            'date_derniere_activite': prog.date_derniere_activite,
             'difficulte_label': DIFFICULTE_LABELS.get(p.difficulte, str(p.difficulte)),
         })
 
+    projets_termines_qs = (
+        ProgressionProjet.objects
+        .filter(utilisateur=request.user, termine=True)
+        .select_related('patron')
+        .order_by('-date_derniere_activite')
+    )
+    projets_termines = [
+        {
+            'patron_id': prog.patron_id,
+            'titre': prog.patron.titre,
+            'image': prog.patron.photo_url,
+            'date_derniere_activite': prog.date_derniere_activite,
+        }
+        for prog in projets_termines_qs
+    ]
+    surface_sauvee = round(
+        sum(prog.patron.surfaceMin for prog in projets_termines_qs), 2
+    )
+
+    nb_realisables = sum(1 for p in patrons_list if p['compatibilite'] >= 100)
+    patron_vedette = max(patrons_list, key=lambda p: p['compatibilite']) if patrons_list else None
+
+    # ── « Une heure ou moins » : patrons courts, les faisables d'abord ──
+    patrons_rapides = sorted(
+        [p for p in patrons_list if p['duree_min'] is not None and p['duree_min'] <= 60],
+        key=lambda p: (-p['compatibilite'], p['duree_min']),
+    )[:8]
+
+    # ── « Pour ton <tissu> » : le vêtement le plus grand de la penderie ──
+    plus_grand = (
+        Vetement.objects
+        .filter(utilisateur=request.user)
+        .order_by('-surfaceExploitable')
+        .first()
+    )
+    tissu_focus = None
+    if plus_grand:
+        matiere = get_dominant_material(plus_grand.matiere)
+        surface_dispo = round(plus_grand.surfaceExploitable, 2)
+        # Les patrons que ce tissu couvre d'abord, du plus ajusté au plus petit.
+        suggestions = sorted(
+            patrons_list,
+            key=lambda p: (p['surface_min'] > surface_dispo,
+                           abs(p['surface_min'] - surface_dispo)),
+        )[:6]
+        tissu_focus = {
+            'nom': matiere or plus_grand.nomVetement,
+            'surface': surface_dispo,
+            'patrons': [
+                dict(p, faisable_ici=p['surface_min'] <= surface_dispo)
+                for p in suggestions
+            ],
+        }
+
+    # ── Progression de couture : 100 XP par projet terminé, 500 XP par niveau ──
+    xp_total = len(projets_termines) * 100
+    niveau = xp_total // 500 + 1
+    xp_niveau = xp_total % 500
+    NIVEAU_TITRES = {1: 'Apprenti·e', 2: 'Aiguille agile', 3: 'Couturier·ère', 4: 'Artisan·e'}
+
     return render(request, 'core/patrons.html', {
         'patrons': patrons_list,
+        'patrons_rapides': patrons_rapides,
+        'tissu_focus': tissu_focus,
         'projets_en_cours': projets_en_cours,
+        'projets_termines': projets_termines,
+        'nb_termines': len(projets_termines),
+        'surface_sauvee': surface_sauvee,
         'liked_ids_json': list(liked_ids),
+        'nb_realisables': nb_realisables,
+        'patron_vedette': patron_vedette,
+        'surface_user': round(surface_user, 2),
+        'niveau': niveau,
+        'niveau_titre': NIVEAU_TITRES.get(niveau, 'Maître couturier·ère'),
+        'xp_niveau': xp_niveau,
+        'xp_palier': 500,
+        'xp_pct': round(xp_niveau / 500 * 100),
     })
 
 

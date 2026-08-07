@@ -569,6 +569,21 @@
 
         function leDrap() { return document.getElementById('fab-curtain'); }
 
+        // Une animation terminée en `fill: both` continue d'imposer sa dernière
+        // image : `transform` reste alors non nul sur .scrollable-content, ce
+        // qui en fait le bloc conteneur de ses descendants `position: fixed`.
+        // Boutons flottants, socles et modales se mettraient donc à défiler
+        // avec la page après la première transition. On relâche la page dès
+        // qu'elle n'a plus rien à jouer — sa dernière image est de toute façon
+        // l'état neutre, la coupure est invisible.
+        function libererPage(page) {
+          if (!page) return;
+          page.style.willChange = '';
+          if (page.getAnimations) {
+            page.getAnimations().forEach(function (a) { a.cancel(); });
+          }
+        }
+
         function laToile(drap) {
           return drap ? drap.querySelector('.fab-curtain__sheet') : null;
         }
@@ -649,7 +664,11 @@
             delay: 40,
             easing: 'cubic-bezier(.16, .84, .3, 1)',
             fill: 'both'
-          }).onfinish = function () { page.style.willChange = ''; };
+          }).onfinish = function () {
+            // `enCours` : une nouvelle transition a déjà repris la page, c'est
+            // à son propre dénouement de la relâcher.
+            if (!enCours) libererPage(page);
+          };
         }
 
         function peutReveler() {
@@ -680,9 +699,20 @@
             toile.getAnimations().forEach(function (a) { a.cancel(); });
           }).catch(function () {});
 
+          // La page était sortie sous le drap : on la ramène en entier, pas
+          // seulement en opacité — sinon le décalage et le flou de la sortie,
+          // eux aussi en `fill: both`, resteraient appliqués.
           if (page && page.animate && !reduce.matches) {
-            page.animate([{ opacity: 0 }, { opacity: 1 }],
-                         { duration: 220, easing: 'ease-out', fill: 'both' });
+            var sens = etat.dir === 'forward' ? -1 : 1;
+            var retourPage = page.animate([
+              { transform: tx(sens * 12), filter: 'blur(8px)', opacity: 0 },
+              { transform: tx(0),         filter: 'blur(0px)', opacity: 1 }
+            ], { duration: 220, easing: 'ease-out', fill: 'both' });
+            retourPage.finished.then(function () {
+              if (!enCours) libererPage(page);
+            }).catch(function () {});
+          } else {
+            libererPage(page);
           }
         }
 
