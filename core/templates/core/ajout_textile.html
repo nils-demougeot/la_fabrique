@@ -45,6 +45,9 @@
     --text:    'DM Sans', 'Manrope', system-ui, sans-serif;
     --mono:    'DM Mono', ui-monospace, monospace;
 
+    --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
     background: var(--paper);
     height: 100%;
     display: flex;
@@ -525,6 +528,103 @@
   @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
   /* =========================================================
+     t1 · Célébration (fin d'analyse, avant le ticket)
+     ========================================================= */
+  .aj-celebrate {
+    position: fixed;
+    inset: 0;
+    z-index: 2700;
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--paper);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    pointer-events: none;
+    animation: aj-cel-out .34s var(--ease-in-out) forwards;
+    animation-delay: 1s;
+  }
+  .aj-celebrate-burst {
+    position: relative;
+    width: 96px; height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .aj-check-circle {
+    stroke-dasharray: 201;
+    stroke-dashoffset: 201;
+    transform-origin: 36px 36px;
+    animation: aj-cel-circle .5s var(--ease-out) .08s forwards;
+  }
+  .aj-check-mark {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    animation: aj-cel-check .3s var(--ease-out) .52s forwards;
+  }
+  .aj-celebrate-burst::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--green-l);
+    opacity: 0;
+    animation: aj-cel-pulse .6s var(--ease-out) .5s forwards;
+    z-index: -1;
+  }
+  .aj-celebrate-txt {
+    font: 800 15px var(--display);
+    letter-spacing: -.01em;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: aj-cel-txt .35s var(--ease-out) .58s forwards;
+  }
+  .aj-confetti { position: absolute; inset: 0; pointer-events: none; }
+  .aj-confetto {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 7px; height: 7px;
+    border-radius: 2px;
+    background: var(--dot, var(--green));
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--rot)) translateY(0) scale(.4);
+    animation: aj-cel-confetti .75s var(--ease-out) .5s forwards;
+  }
+  .aj-confetto:nth-child(1) { --rot: 0deg;    --dot: var(--green);  animation-delay: .50s; }
+  .aj-confetto:nth-child(2) { --rot: 33deg;   --dot: var(--yellow); animation-delay: .53s; }
+  .aj-confetto:nth-child(3) { --rot: 66deg;   --dot: var(--green);  animation-delay: .49s; }
+  .aj-confetto:nth-child(4) { --rot: 99deg;   --dot: #FF6B3D;       animation-delay: .55s; }
+  .aj-confetto:nth-child(5) { --rot: 132deg;  --dot: var(--yellow); animation-delay: .51s; }
+  .aj-confetto:nth-child(6) { --rot: 165deg;  --dot: var(--green);  animation-delay: .56s; }
+  .aj-confetto:nth-child(7) { --rot: 198deg;  --dot: #7C5CFF;       animation-delay: .48s; }
+  .aj-confetto:nth-child(8) { --rot: 231deg;  --dot: var(--yellow); animation-delay: .54s; }
+  .aj-confetto:nth-child(9) { --rot: 264deg;  --dot: var(--green);  animation-delay: .52s; }
+  .aj-confetto:nth-child(10){ --rot: 297deg;  --dot: #FF6B3D;       animation-delay: .57s; }
+  .aj-confetto:nth-child(11){ --rot: 330deg;  --dot: var(--yellow); animation-delay: .50s; }
+  .aj-confetto:nth-child(12){ --rot: 360deg;  --dot: var(--green);  animation-delay: .55s; }
+
+  @keyframes aj-cel-circle { to { stroke-dashoffset: 0; } }
+  @keyframes aj-cel-check  { to { stroke-dashoffset: 0; } }
+  @keyframes aj-cel-pulse  { 0% { opacity: .55; transform: scale(.7); } 100% { opacity: 0; transform: scale(1.7); } }
+  @keyframes aj-cel-txt    { to { opacity: 1; transform: translateY(0); } }
+  @keyframes aj-cel-confetti {
+    0%   { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot)) translateY(0)     scale(.9); }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rot)) translateY(-64px) scale(.4); }
+  }
+  @keyframes aj-cel-out { to { opacity: 0; transform: scale(1.02); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .aj-celebrate { animation-duration: .2s; animation-delay: .5s; }
+    .aj-check-circle, .aj-check-mark { animation-duration: .01s; animation-delay: 0s; }
+    .aj-celebrate-burst::after { display: none; }
+    .aj-celebrate-txt { animation: aj-cel-txt-fade .2s ease .1s forwards; }
+    .aj-confetto { display: none; }
+  }
+  @keyframes aj-cel-txt-fade { to { opacity: 1; transform: none; } }
+
+  /* =========================================================
      t2 · Ticket de soustraction (écran de fin)
      ========================================================= */
   .aj-ticket {
@@ -587,6 +687,49 @@
     padding: 11px 14px;
     font: 800 14px var(--display);
     white-space: nowrap;
+  }
+
+  /* Apparition progressive du contenu du ticket, séquencée après
+     la célébration : chaque bloc entre en fondu + léger décalage,
+     du total détouré vers les lignes de défauts puis le résultat. */
+  .aj-reveal {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: aj-reveal-in .34s var(--ease-out) forwards;
+  }
+  .aj-ticket-head.aj-reveal        { animation-delay: .70s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(1)  { animation-delay: .84s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(2)  { animation-delay: .95s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(3)  { animation-delay: 1.06s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(4)  { animation-delay: 1.17s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(5)  { animation-delay: 1.28s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(6)  { animation-delay: 1.39s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(7)  { animation-delay: 1.50s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(8)  { animation-delay: 1.61s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(9)  { animation-delay: 1.72s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(10) { animation-delay: 1.83s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(n+11) { animation-delay: 1.83s; }
+  .aj-ticket-rule.aj-reveal        { animation-delay: 1.96s; transform: none; animation-name: aj-reveal-fade; }
+  .aj-ticket-foot.aj-reveal        { animation-delay: 2.02s; }
+  .aj-ticket-badge.aj-reveal       { animation-delay: 2.16s; }
+  .aj-cta.aj-reveal                { animation-delay: 2.18s; }
+  .aj-cta-ghost.aj-reveal          { animation-delay: 2.24s; }
+
+  @keyframes aj-reveal-in   { to { opacity: 1; transform: none; } }
+  @keyframes aj-reveal-fade { to { opacity: 1; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .aj-reveal {
+      transform: none;
+      animation-name: aj-reveal-fade;
+      animation-duration: .2s;
+    }
+    .aj-ticket-head.aj-reveal  { animation-delay: .55s; }
+    .aj-ticket-line.aj-reveal  { animation-delay: .6s; }
+    .aj-ticket-rule.aj-reveal,
+    .aj-ticket-foot.aj-reveal,
+    .aj-ticket-badge.aj-reveal { animation-delay: .68s; }
+    .aj-cta.aj-reveal, .aj-cta-ghost.aj-reveal { animation-delay: .74s; }
   }
 
   /* =========================================================
@@ -1423,6 +1566,23 @@
   {% endif %}
 
   {% if result_ready %}
+  <!-- ═══════════ t1 · Célébration (fin d'analyse) ═══════════ -->
+  <div class="aj-celebrate" aria-hidden="true">
+    <div class="aj-celebrate-burst">
+      <div class="aj-confetti">
+        <span class="aj-confetto"></span><span class="aj-confetto"></span><span class="aj-confetto"></span>
+        <span class="aj-confetto"></span><span class="aj-confetto"></span><span class="aj-confetto"></span>
+        <span class="aj-confetto"></span><span class="aj-confetto"></span><span class="aj-confetto"></span>
+        <span class="aj-confetto"></span><span class="aj-confetto"></span><span class="aj-confetto"></span>
+      </div>
+      <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+        <circle class="aj-check-circle" cx="36" cy="36" r="32" stroke="#1FA85C" stroke-width="4" stroke-linecap="round"/>
+        <path class="aj-check-mark" d="M22 37l10 10 18-20" stroke="#1FA85C" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <p class="aj-celebrate-txt">Vêtement enregistré</p>
+  </div>
+
   <!-- ═══════════ t2 · Ticket de soustraction (fin du parcours) ═══════════ -->
   <div class="aj-ticket">
     <div class="aj-ticket-in">
@@ -1436,14 +1596,14 @@
         {{ ticket.matieres }}{% if ticket.couleurs %} · {{ ticket.couleurs }}{% endif %}
       </p>
 
-      <div class="aj-ticket-head">
+      <div class="aj-ticket-head aj-reveal">
         <span class="aj-ticket-label">SURFACE DÉTOURÉE</span>
         <span class="aj-ticket-total">{{ ticket.surface_totale|floatformat:2 }}</span>
       </div>
 
       <div class="aj-ticket-lines">
         {% for l in ticket.lignes %}
-        <div class="aj-ticket-line">
+        <div class="aj-ticket-line aj-reveal">
           <span class="aj-ticket-dot" data-dtype="{{ l.type }}"></span>
           <div class="aj-ticket-line-txt">
             <div class="aj-ticket-line-name">{{ l.libelle }} · {{ l.face|lower }}</div>
@@ -1452,7 +1612,7 @@
           <span class="aj-ticket-minus">−{{ l.perte_m2|floatformat:2 }}</span>
         </div>
         {% endfor %}
-        <div class="aj-ticket-line">
+        <div class="aj-ticket-line aj-reveal">
           <span class="aj-ticket-dot" data-dtype="chutes"></span>
           <div class="aj-ticket-line-txt">
             <div class="aj-ticket-line-name">Chutes de bords</div>
@@ -1462,19 +1622,19 @@
         </div>
       </div>
 
-      <div class="aj-ticket-rule"></div>
+      <div class="aj-ticket-rule aj-reveal"></div>
 
-      <div class="aj-ticket-foot">
+      <div class="aj-ticket-foot aj-reveal">
         <div>
           <div class="aj-ticket-label">EXPLOITABLE</div>
-          <div class="aj-ticket-big">{{ usable_area|floatformat:2 }}</div>
+          <div class="aj-ticket-big" id="aj-ticket-big" data-target="{{ usable_area|floatformat:2 }}">0,00</div>
           <div class="aj-ticket-unit">MÈTRES CARRÉS</div>
         </div>
-        <span class="aj-ticket-badge">{{ percentage }} % SAUVÉ</span>
+        <span class="aj-ticket-badge aj-reveal">{{ percentage }} % SAUVÉ</span>
       </div>
 
-      <a href="{% url 'patrons' %}" class="aj-cta" style="margin-top:auto;">Voir les patrons</a>
-      <a href="{% url 'mes_tissus' %}" class="aj-cta-ghost" style="margin-top:10px;">Voir mes tissus</a>
+      <a href="{% url 'patrons' %}" class="aj-cta aj-reveal" style="margin-top:auto;">Voir les patrons</a>
+      <a href="{% url 'mes_tissus' %}" class="aj-cta-ghost aj-reveal" style="margin-top:10px;">Voir mes tissus</a>
     </div>
   </div>
   {% endif %}
@@ -2760,6 +2920,33 @@
       updateSubmit();
       renderFacesPage();
       nomInput.addEventListener('input', renderFacesPage);
+
+      // ==========================================
+      // TICKET — total « exploitable » qui défile
+      // ==========================================
+      const ticketBig = document.getElementById('aj-ticket-big');
+      if (ticketBig) {
+        const target = parseFloat(ticketBig.dataset.target.replace(',', '.')) || 0;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const fmt = (v) => v.toFixed(2).replace('.', ',');
+
+        if (reduceMotion) {
+          ticketBig.textContent = fmt(target);
+        } else {
+          const delay = 2080;   // synchronisé avec l'apparition du pied de ticket (aj-ticket-foot)
+          const duration = 600;
+          const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+          setTimeout(() => {
+            const start = performance.now();
+            function tick(now) {
+              const p = Math.min(1, (now - start) / duration);
+              ticketBig.textContent = fmt(target * easeOut(p));
+              if (p < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+          }, delay);
+        }
+      }
     })();
   </script>
 {% endblock %}
