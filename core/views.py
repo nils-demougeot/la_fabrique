@@ -180,6 +180,24 @@ def home(request):
     return render(request, 'core/index.html')
 
 
+def service_worker(request):
+    """Sert le service worker depuis la racine du domaine.
+
+    Le scope d'un service worker est limité au dossier qui le sert : servi
+    depuis /static/..., il ne pourrait contrôler que /static/. On le lit donc
+    depuis le disque et on le renvoie sur l'URL racine /service-worker.js,
+    avec un en-tête Service-Worker-Allowed explicite et sans cache — un SW
+    obsolète en cache empêcherait les mises à jour de se propager.
+    """
+    sw_path = dj_settings.BASE_DIR / 'core' / 'static' / 'core' / 'js' / 'service-worker.js'
+    with open(sw_path, 'rb') as f:
+        content = f.read()
+    response = HttpResponse(content, content_type='application/javascript')
+    response['Service-Worker-Allowed'] = '/'
+    response['Cache-Control'] = 'no-cache'
+    return response
+
+
 # Paliers de l'atelier affichés sur le tableau de bord : (points requis, nom).
 ATELIER_LEVELS = [
     (0,    'Première aiguille'),

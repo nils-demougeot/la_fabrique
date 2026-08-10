@@ -7,6 +7,7 @@ _bloc_communaute = views.communaute_active_requise
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('service-worker.js', views.service_worker, name='service_worker'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('cours/', views.cours, name='cours'),
     path('patrons/', views.patrons, name='patrons'),
