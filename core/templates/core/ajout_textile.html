@@ -1,80 +1,628 @@
-﻿{% extends 'core/header.html' %}
+{% extends 'core/header.html' %}
 {% load static %}
+
+{% comment %}
+  ─────────────────────────────────────────────────────────────────────────
+  Ajout d'un vêtement — parcours en 7 étapes (design « rayon X »).
+
+  Le formulaire est unique : chaque étape est une section montrée/masquée
+  côté client (.aj-page), l'envoi n'a lieu qu'à la dernière. Les noms des
+  champs sont inchangés, la vue ajout_textile n'a pas eu à bouger.
+
+  Numérotation : 01 nom · 02 faces à photographier · 03 faces détourées ·
+  04 type · 05 = passe « défauts » de l'éditeur plein écran · 06 couleurs ·
+  07 matières & qualité. L'éditeur plein écran (photo, détourage,
+  étalonnage, défauts) et l'overlay caméra sont conservés tels quels en
+  attendant leur propre refonte.
+
+  Bricolage Grotesque + DM Sans/Mono, encre #14120F, papier #FFFDF8.
+  ─────────────────────────────────────────────────────────────────────────
+{% endcomment %}
+
+{% block app_header %}{% endblock %}
+
 {% block extra_css %}
-  <style>
-    /* Variables de couleurs */
-    :root {
-      --bg-page: #FFFBFF;
-      --bg-header: #FEFCF3;
-      --bg-card: #FBFAF0;
-      --bg-input: #EFEEE3;
-      --bg-result: #F5F4EA;
-      
-      --primary-green: #237329;
-      --dark-green: #4E6C50;
-      --light-green: #D2F4D1;
-      
-      --text-dark: #383832;
-      --text-gray: #65655E;
-      --text-light-gray: #666556;
-      
-      --font-title: 'Plus Jakarta Sans', sans-serif;
-      --font-body: 'Manrope', sans-serif;
-    }
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* =========================================================
+     Jetons de design
+     ========================================================= */
+  .aj {
+    --ink:     #14120F;
+    --paper:   #FFFDF8;
+    --sand:    #F6F0E6;
+    --sand-d:  #F2EADD;
+    --line:    #E7DED0;
+    --muted:   #7A7168;
+    --faint:   #9C9184;
+    --green:   #1FA85C;
+    --green-l: #F1FBF5;
+    --red:     #C4452D;
+    --yellow:  #FFD166;
 
-    body {
-      background-color: #f4f4f4;
-      font-family: var(--font-body);
-      display: flex;
-      justify-content: center;
-    }
+    --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --text:    'DM Sans', 'Manrope', system-ui, sans-serif;
+    --mono:    'DM Mono', ui-monospace, monospace;
 
-    .app-container {
-      width: 100%;
-      max-width: 430px;
-      background-color: var(--bg-page);
-      overflow: hidden;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
+    background: var(--paper);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--text);
+    color: var(--ink);
+  }
+  .aj :where(a) { text-decoration: none; color: inherit; }
+  .aj button { font-family: inherit; }
 
-    header {
-      background-color: var(--bg-header);
-      padding: 16px 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+  /* =========================================================
+     Barre de progression
+     ========================================================= */
+  .aj-top {
+    flex: none;
+    padding: 26px 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .aj-back {
+    width: 36px; height: 36px;
+    border: none;
+    border-radius: 12px;
+    background: var(--sand-d);
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    cursor: pointer;
+    transition: transform .12s ease;
+  }
+  .aj-back:active { transform: scale(.92); }
+  .aj-bars { flex: 1; display: flex; gap: 5px; }
+  .aj-bar {
+    flex: 1;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--line);
+    transition: background .25s ease;
+  }
+  .aj-bar.on { background: var(--ink); }
+  .aj-count {
+    flex: none;
+    font: 500 11px var(--mono);
+    color: var(--faint);
+    letter-spacing: .08em;
+  }
 
-    .logo {
-      font-family: var(--font-title);
-      font-weight: 700;
-      font-size: 20px;
-      color: var(--dark-green);
-    }
+  /* =========================================================
+     Squelette d'une étape
+     ========================================================= */
+  .aj-form { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .aj-page { display: none; flex: 1; flex-direction: column; min-height: 0; }
+  .aj-page.on { display: flex; }
+  .aj-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 30px 24px 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .aj-foot {
+    flex: none;
+    padding: 20px 24px calc(26px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
-    .user-stats { display: flex; align-items: center; gap: 10px; }
-    .coins {
-      background-color: var(--bg-result);
-      color: var(--dark-green);
-      font-weight: 700;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 14px;
-    }
-    .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--light-green); object-fit: cover;}
+  .aj-eyebrow {
+    font: 500 10px var(--mono);
+    color: var(--faint);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .aj-title {
+    font: 800 clamp(30px, 9vw, 38px)/1.04 var(--display);
+    letter-spacing: -.03em;
+    margin: 12px 0 0;
+    text-wrap: pretty;
+  }
+  .aj-lead {
+    font: 400 14px/1.5 var(--text);
+    color: var(--muted);
+    margin: 12px 0 0;
+  }
+  .aj-section-label {
+    font: 500 10px var(--mono);
+    color: var(--faint);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
 
-    main { padding: 32px 24px 60px; display: flex; flex-direction: column; gap: 40px; }
+  .aj-cta {
+    display: block;
+    width: 100%;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: 26px;
+    padding: 20px 0;
+    text-align: center;
+    font: 800 18px var(--display);
+    cursor: pointer;
+    transition: transform .1s ease, opacity .15s ease;
+  }
+  .aj-cta:active { transform: scale(.985); }
+  .aj-cta:disabled { opacity: .45; cursor: default; }
+  .aj-cta-ghost {
+    display: block;
+    width: 100%;
+    background: none;
+    border: 1.5px solid var(--line);
+    border-radius: 26px;
+    padding: 17px 0;
+    text-align: center;
+    font: 800 15px var(--display);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .aj-cta-ghost:active { transform: scale(.985); }
 
-    .form-ajout_textile { display: flex; flex-direction: column; gap: 32px; }
+  /* Encart d'aide bas de page */
+  .aj-note {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--sand);
+    border-radius: 26px;
+    padding: 16px 18px;
+  }
+  .aj-note-ico {
+    width: 40px; height: 40px;
+    border-radius: 14px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .aj-note p { font: 400 12px/1.45 var(--text); color: #4A443C; flex: 1; margin: 0; }
+  .aj-push { margin-top: auto; margin-bottom: 20px; }
 
-    .header-titles h1 { font-family: var(--font-title); font-size: 32px; font-weight: 800; color: var(--text-dark); margin-bottom: 8px; line-height: 1.2; }
-    .header-titles p { color: var(--text-gray); font-size: 16px; font-weight: 500; }
+  /* =========================================================
+     01 · Nom
+     ========================================================= */
+  .aj-name-field {
+    border: none;
+    border-bottom: 2px solid var(--ink);
+    background: none;
+    padding: 0 2px 12px;
+    margin-top: 36px;
+    width: 100%;
+    font: 800 28px var(--display);
+    letter-spacing: -.02em;
+    color: var(--ink);
+    caret-color: var(--green);
+  }
+  .aj-name-field::placeholder { color: #C4B9A8; }
+  .aj-name-field:focus { outline: none; border-bottom-color: var(--green); }
 
-    .card { background-color: var(--bg-card); padding: 24px; border-radius: 32px; display: flex; flex-direction: column; gap: 16px; }
-    .card h2 { font-family: var(--font-title); font-size: 16px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; }
-    .icon-square { width: 16px; height: 16px; }
+  .aj-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .aj-chip {
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 10px 14px;
+    font: 700 13px var(--text);
+    color: #4A443C;
+    background: none;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .aj-chip:active { background: var(--sand); border-color: var(--ink); }
+
+  /* =========================================================
+     02 / 03 · Faces
+     ========================================================= */
+  .aj-faces { display: flex; gap: 12px; margin-top: 26px; }
+  .face-card {
+    flex: 1;
+    min-width: 0;
+    border: 1.5px solid var(--line);
+    background: none;
+    border-radius: 26px;
+    padding: 14px;
+    text-align: left;
+    cursor: pointer;
+    position: relative;
+    transition: border-color .18s ease;
+  }
+  .face-card[data-face="avant"] { border-width: 2px; border-color: var(--ink); }
+  .face-card.done { border-width: 2px; border-color: var(--green); }
+  .face-card.pending { border-style: dashed; border-color: #C4B9A8; }
+  .face-thumb {
+    height: 150px;
+    border-radius: 18px;
+    background: var(--sand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .face-card[data-face="avant"]:not(.done) .face-thumb {
+    background: repeating-linear-gradient(135deg, var(--sand-d) 0 9px, #EAE0CF 9px 18px);
+  }
+  .face-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .face-thumb-emoji { color: #B5A895; display: flex; }
+  .face-name { display: block; font: 800 17px var(--display); margin-top: 12px; }
+  .face-card:not(.done) .face-name { color: #6E655B; }
+  .face-card[data-face="avant"]:not(.done) .face-name { color: var(--ink); }
+  .face-status {
+    display: block;
+    font: 500 10px var(--mono);
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-top: 4px;
+  }
+  .face-card[data-face="avant"]:not(.done) .face-status { color: var(--red); }
+  .face-card.done .face-status { color: var(--green); }
+  .face-badge {
+    position: absolute;
+    right: 12px; top: 12px;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--green);
+    color: #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .face-card.done .face-badge { display: flex; }
+
+  .aj-surface {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--sand);
+    border-radius: 26px;
+    padding: 16px 18px;
+    margin-top: 22px;
+  }
+  .aj-surface-val { font: 800 25px var(--display); margin-top: 3px; }
+  .aj-surface-hint { font: 400 11px/1.4 var(--text); color: var(--muted); flex: 1; }
+
+  /* =========================================================
+     04 · Type
+     ========================================================= */
+  .aj-types { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+  .type-btn {
+    width: calc(50% - 5px);
+    border: 1.5px solid var(--line);
+    background: none;
+    border-radius: 24px;
+    padding: 18px;
+    text-align: left;
+    cursor: pointer;
+    position: relative;
+    transition: border-color .16s ease, background .16s ease;
+  }
+  .type-ico {
+    width: 38px; height: 38px;
+    border-radius: 14px;
+    background: var(--sand-d);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+  }
+  .type-ico img { width: 26px; height: 26px; display: block; }
+  .type-btn span.type-label { display: block; font: 800 17px var(--display); margin-top: 14px; }
+  .type-btn.active { border-width: 2px; border-color: var(--green); background: var(--green-l); }
+  .type-btn.active .type-ico { background: var(--green); color: #fff; }
+  .type-btn.active .type-ico img { filter: brightness(0) invert(1); }
+  .type-check {
+    position: absolute;
+    right: 14px; top: 14px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--green);
+    color: #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .type-btn.active .type-check { display: flex; }
+  #btn-other-type { border-style: dashed; border-color: #C4B9A8; }
+  #btn-other-type .type-ico { background: var(--sand); color: #8E877E; }
+  #btn-other-type .type-label { color: #6E655B; }
+  #btn-other-type.active { border-style: solid; }
+  #btn-other-type.active .type-label { color: var(--ink); }
+
+  /* =========================================================
+     06 · Couleurs
+     ========================================================= */
+  .aj-color-slots { display: flex; gap: 10px; margin-top: 24px; }
+  .aj-slot {
+    flex: 1;
+    min-width: 0;
+    border: 1.5px dashed #C4B9A8;
+    border-radius: 24px;
+    padding: 14px;
+    text-align: center;
+  }
+  .aj-slot.filled { border-style: solid; border-color: var(--line); }
+  .aj-slot:first-child.filled { border-width: 2px; border-color: var(--ink); }
+  .aj-slot-chip {
+    width: 100%;
+    height: 56px;
+    border-radius: 16px;
+    background: var(--sand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8E877E;
+  }
+  .aj-slot-name {
+    font: 800 14px var(--display);
+    margin-top: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .aj-slot:not(.filled) .aj-slot-name { color: #6E655B; }
+  .aj-slot-role { font: 500 10px var(--mono); color: var(--faint); margin-top: 3px; text-transform: uppercase; }
+
+  .aj-palette { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .color-swatch-input { position: absolute; opacity: 0; pointer-events: none; }
+  .color-swatch {
+    width: 52px; height: 52px;
+    border-radius: 18px;
+    display: block;
+    cursor: pointer;
+    position: relative;
+    transition: transform .14s ease, box-shadow .14s ease, opacity .14s ease;
+  }
+  .color-swatch:active { transform: scale(.94); }
+  .color-swatch-input:checked + .color-swatch {
+    box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink);
+  }
+  .color-swatch.maxed { opacity: .35; cursor: default; }
+
+  /* =========================================================
+     07 · Matières & qualité
+     ========================================================= */
+  .aj-materials { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+  .material-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 22px;
+    padding: 14px 16px;
+  }
+  .material-select-wrapper { flex: 1; min-width: 0; position: relative; display: flex; align-items: center; }
+  .material-name-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: none;
+    border: none;
+    width: 100%;
+    font: 800 17px var(--display);
+    color: var(--ink);
+    padding-right: 18px;
+    cursor: pointer;
+  }
+  .material-name-select:focus { outline: none; }
+  .material-select-chevron { position: absolute; right: 0; color: var(--faint); pointer-events: none; }
+  .material-percent-input {
+    width: 46px;
+    border: none;
+    border-bottom: 2px solid var(--ink);
+    background: none;
+    text-align: center;
+    font: 800 17px var(--display);
+    color: var(--ink);
+    padding: 0 0 3px;
+    -moz-appearance: textfield;
+  }
+  .material-percent-input::-webkit-outer-spin-button,
+  .material-percent-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .material-percent-input:focus { outline: none; border-bottom-color: var(--green); }
+  .material-percent-unit { font: 500 13px var(--mono); color: var(--faint); }
+  .material-delete-btn {
+    background: none;
+    border: none;
+    color: var(--faint);
+    cursor: pointer;
+    display: flex;
+    padding: 0;
+  }
+  .btn-add-material {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1.5px dashed #C4B9A8;
+    background: none;
+    border-radius: 22px;
+    padding: 14px 16px;
+    font: 800 17px var(--display);
+    color: #6E655B;
+    cursor: pointer;
+    width: 100%;
+  }
+  .aj-total-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+  .aj-total-bar { flex: 1; height: 8px; border-radius: 5px; background: var(--sand-d); overflow: hidden; }
+  .aj-total-fill { display: block; height: 100%; width: 0; background: var(--yellow); transition: width .2s ease, background .2s ease; }
+  .aj-total-text { font: 500 11px var(--mono); color: var(--faint); }
+  .aj-total-text.valid { color: var(--green); }
+  .aj-total-text.over  { color: var(--red); }
+
+  .aj-quality { display: flex; gap: 10px; margin-top: 12px; }
+  .aj-quality-btn {
+    flex: 1;
+    border: 1.5px solid var(--line);
+    background: none;
+    border-radius: 20px;
+    padding: 14px 0;
+    text-align: center;
+    font: 800 14px var(--display);
+    color: #6E655B;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+  .aj-quality-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* =========================================================
+     Écran d'analyse (étape finale, pendant l'envoi)
+     ========================================================= */
+  .aj-analyse {
+    display: none;
+    position: fixed;
+    inset: 0;
+    max-width: 430px;
+    margin: 0 auto;
+    z-index: 2400;
+    background: var(--green);
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .aj-analyse.on { display: flex; }
+  .aj-analyse::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(58deg, rgba(255,255,255,.09) 0 3px, rgba(255,255,255,0) 3px 12px);
+  }
+  .aj-analyse-in {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 34px 24px 28px;
+    overflow-y: auto;
+  }
+  .aj-analyse-eyebrow {
+    font: 500 10px var(--mono);
+    color: rgba(255,253,248,.9);
+    text-transform: uppercase;
+    letter-spacing: .16em;
+  }
+  .aj-analyse-title {
+    font: 800 40px/.98 var(--display);
+    color: var(--paper);
+    margin: 14px 0 0;
+    letter-spacing: -.035em;
+  }
+  .aj-analyse-card { background: var(--paper); border-radius: 30px; padding: 22px; margin-top: 30px; }
+  .aj-analyse-head { display: flex; align-items: center; gap: 16px; }
+  .aj-analyse-thumb {
+    width: 78px; height: 96px;
+    border-radius: 18px;
+    flex: none;
+    overflow: hidden;
+    background: repeating-linear-gradient(135deg, #EDE4D6 0 8px, #E3D8C7 8px 16px);
+  }
+  .aj-analyse-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .aj-analyse-area { font: 800 24px var(--display); letter-spacing: -.02em; }
+  .aj-analyse-sub { font: 400 12px/1.4 var(--text); color: var(--muted); margin-top: 3px; }
+  .aj-analyse-rule { height: 1px; background: #EAE0CF; margin: 18px 0; }
+  .aj-analyse-steps { display: flex; flex-direction: column; gap: 10px; }
+  .aj-analyse-step { display: flex; align-items: center; gap: 10px; font: 400 13px var(--text); color: #9C9184; }
+  .aj-analyse-step .tick {
+    width: 18px; height: 18px;
+    border-radius: 6px;
+    border: 1.5px solid #D8CFC0;
+    box-sizing: border-box;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    font: 700 11px var(--text);
+  }
+  .aj-analyse-step.done { color: #4A443C; }
+  .aj-analyse-step.done .tick { background: var(--green); border-color: var(--green); color: #fff; }
+  .aj-analyse-progress { background: rgba(20,18,15,.85); border-radius: 22px; padding: 18px 20px; margin-top: 14px; }
+  .aj-analyse-progress-head { display: flex; align-items: center; justify-content: space-between; }
+  .aj-analyse-progress-head span:first-child {
+    font: 500 10px var(--mono);
+    color: #B5ADA2;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+  }
+  .aj-analyse-pct { font: 800 14px var(--display); color: var(--paper); }
+  .aj-analyse-track { height: 8px; border-radius: 5px; background: #2A2620; margin-top: 12px; overflow: hidden; }
+  .aj-analyse-fill { display: block; height: 100%; width: 4%; background: var(--green); border-radius: 5px; transition: width .4s ease; }
+
+  /* =========================================================
+     Résultat
+     ========================================================= */
+  .aj-result {
+    position: fixed;
+    inset: 0;
+    z-index: 2400;
+    background: rgba(20,18,15,.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .aj-result-sheet {
+    background: var(--paper);
+    border-radius: 34px 34px 0 0;
+    width: 100%;
+    max-width: 430px;
+    padding: 14px 24px 34px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: slideUp .3s ease;
+  }
+  .aj-result-handle { width: 40px; height: 4px; border-radius: 99px; background: #D8CFC0; }
+  .aj-result-label {
+    font: 500 10px var(--mono);
+    color: var(--faint);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-top: 22px;
+  }
+  .aj-result-value { font: 800 46px var(--display); letter-spacing: -.03em; margin-top: 6px; }
+  .aj-result-bar { width: 100%; margin-top: 20px; }
+  .aj-result-bar-head { display: flex; justify-content: space-between; font: 400 12px var(--text); color: var(--muted); }
+  .aj-result-track { height: 8px; border-radius: 5px; background: var(--sand-d); margin-top: 8px; overflow: hidden; }
+  .aj-result-fill { display: block; height: 100%; background: var(--green); border-radius: 5px; }
+  .aj-result-coins {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--green-l);
+    color: var(--green);
+    border-radius: 99px;
+    padding: 10px 18px;
+    font: 800 14px var(--display);
+    margin-top: 20px;
+  }
+  .aj-result-cta { margin-top: 18px; width: 100%; }
+
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+  /* =========================================================
+     Legacy — variables des blocs conservés tels quels
+     (éditeur plein écran, caméra, feuille « autre type »)
+     ========================================================= */
+  #editor-overlay, #camera-overlay, #other-type-modal {
+    --bg-page: #FFFBFF;
+    --bg-card: #FBFAF0;
+    --bg-input: #EFEEE3;
+    --primary-green: #237329;
+    --dark-green: #4E6C50;
+    --text-dark: #383832;
+    --text-gray: #65655E;
+    --text-light-gray: #666556;
+    --font-title: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Manrope', sans-serif;
+  }
+  #editor-overlay *, #camera-overlay *, #other-type-modal * { box-sizing: border-box; }
 
     .photo-source-picker {
       display: flex;
@@ -174,500 +722,6 @@
     }
     #btn-camera-capture:active { transform: scale(0.92); }
 
-    .photo-preview {
-      width: 100%; border-radius: 16px; overflow: hidden; display: none;
-    }
-    .photo-preview img {
-      width: 100%; height: 180px; object-fit: cover; display: block;
-    }
-    /* ── Étoiles ── */
-    .star-label {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      color: var(--text-gray);
-      letter-spacing: 1px;
-      margin-top: 4px;
-    }
-    .star-rating {
-      display: flex;
-      flex-direction: row-reverse;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-    .star-rating input { display: none; }
-    .star-rating label {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      background: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      color: #BCBAA8;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s, transform 0.1s;
-      outline: 1.5px solid rgba(187,185,177,0.35);
-      outline-offset: -1px;
-      user-select: none;
-    }
-    .star-rating label:active { transform: scale(0.92); }
-    .star-rating input:checked ~ label,
-    .star-rating label:hover,
-    .star-rating label:hover ~ label {
-      background: #D2F4D1;
-      color: #237329;
-      outline-color: rgba(35,115,41,0.25);
-    }
-    .card-divider {
-      height: 1px;
-      background: rgba(187,185,177,0.3);
-      margin: 4px 0;
-    }
-
-    /* ── Palette couleurs ── */
-    .color-grid {
-      display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      gap: 8px;
-    }
-    .color-swatch-input { display: none; }
-    .color-swatch {
-      aspect-ratio: 1;
-      border-radius: 10px;
-      cursor: pointer;
-      position: relative;
-      transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
-      border: 2px solid transparent;
-    }
-    .color-swatch:hover { transform: scale(1.12); }
-    .color-swatch-input:checked + .color-swatch {
-      border-color: white;
-      box-shadow: 0 0 0 2.5px #237329;
-      transform: scale(1.12);
-    }
-    .color-swatch-input:checked + .color-swatch::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.28);
-    }
-    .color-swatch.maxed { opacity: 0.35; cursor: not-allowed; }
-    .color-swatch.maxed:hover { transform: none; }
-
-    /* ── Cache header/nav quand caméra ou popup active ── */
-    body.camera-open .header-global,
-    body.camera-open .bottom-nav { display: none !important; }
-    body.other-open .bottom-nav { display: none !important; }
-
-    /* ── Modal résultat ── */
-    #result-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 3000;
-      background: rgba(0,0,0,0.5);
-      justify-content: center;
-      align-items: flex-end;
-    }
-    #result-modal.active { display: flex; }
-    .result-modal-sheet {
-      background: var(--bg-page);
-      border-radius: 32px 32px 0 0;
-      padding: 32px 24px 48px;
-      width: 100%;
-      max-width: 430px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      animation: slideUp 0.3s ease;
-    }
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to   { transform: translateY(0); }
-    }
-    .result-modal-handle {
-      width: 40px; height: 4px;
-      background: #BCBAA8;
-      border-radius: 99px;
-      margin-bottom: 8px;
-    }
-
-    .photo-retake-btn {
-      background: none; border: none;
-      color: var(--primary-green); font-family: var(--font-body);
-      font-size: 14px; font-weight: 700; cursor: pointer;
-      text-decoration: underline; margin-top: 8px; display: none;
-    }
-
-    .type-grid { 
-      display: grid;
-      grid-template-columns: repeat(3, 1fr); 
-      gap: 10px; 
-    }
-
-    .type-btn {
-      background-color: white; 
-      border: 2px solid transparent; 
-      padding: 12px 4px; 
-      border-radius: 16px;
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      gap: 8px; 
-      cursor: pointer;
-      font-family: var(--font-title); 
-      font-size: 11px; 
-      font-weight: 700; 
-      text-transform: uppercase; 
-      color: var(--text-light-gray);
-      transition: all 0.2s ease;
-    }
-
-    .type-btn.active { 
-      background-color: var(--primary-green); 
-      color: white; 
-      box-shadow: 0 4px 15px rgba(35, 115, 41, 0.2); 
-    }
-
-    .type-icon-img {
-      width: 28px;
-      height: 28px;
-      transition: filter 0.2s ease;
-    }
-
-    .type-btn.active .type-icon-img {
-      filter: brightness(0) invert(1);
-    }
-
-    .details-section { display: flex; flex-direction: column; gap: 24px; }
-    .input-group label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-gray); letter-spacing: 1px; margin-bottom: 8px; display: block; }
-    
-    .custom-input {
-      background-color: var(--bg-input); 
-      border: none; 
-      border-radius: 99px; 
-      padding: 16px 24px;
-      width: 100%; 
-      font-family: var(--font-body); 
-      font-size: 16px; 
-      font-weight: 600; 
-      color: var(--text-dark); 
-      outline: none;
-    }
-
-    .custom-select {
-      background-color: var(--bg-input); 
-      border: none; 
-      border-radius: 99px; 
-      padding: 16px 24px;
-      width: 100%; 
-      font-family: var(--font-body); 
-      font-size: 16px; 
-      font-weight: 600; 
-      color: var(--text-dark); 
-      outline: none;
-      
-      appearance: none;
-      -webkit-appearance: none;
-      
-      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2365655E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 24px center;
-      background-size: 16px;
-      padding-right: 48px;
-    }
-
-    .dimensions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .dimension-box { background-color: var(--bg-input); border-radius: 99px; padding: 16px; display: flex; align-items: center; justify-content: space-between; }
-    .dimension-box input { background: none; border: none; font-family: var(--font-title); font-size: 24px; font-weight: 800; color: var(--primary-green); width: 60%; outline: none; }
-    .dimension-box span { color: var(--text-light-gray); font-weight: 700; }
-
-    .tags {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 16px;
-      width: 100%;
-    }
-
-    .hidden-radio {
-      display: none;
-    }
-
-    .tag {
-      flex: 1;
-      display: flex;
-      gap: 6px;
-      justify-content: center;
-      align-items: center;
-      background-color: #EAE9DD;
-      padding: 12px 16px;
-      border-radius: 9999px;
-      font-size: 14px;
-      font-family: var(--font-body);
-      font-weight: 700;
-      color: var(--text-dark);
-      fill : #383832;
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .tag img {
-      filter: brightness(0) opacity(0.45);
-      transition: filter 0.15s;
-    }
-    .hidden-radio:checked + .tag {
-      border-color: var(--primary-green);
-      color: var(--primary-green);
-    }
-    .hidden-radio:checked + .tag img {
-      filter: brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(456%) hue-rotate(91deg) brightness(87%) contrast(91%);
-    }
-
-    input[type=range] { width: 100%; margin: 10px 0; accent-color: var(--primary-green); }
-    .slider-labels { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: var(--text-gray); }
-    .current-slider-value { text-align: center; font-family: var(--font-title); font-weight: 800; color: var(--primary-green); font-size: 18px; margin-bottom: 8px; }
-
-    .btn-delete-damage {
-      background: rgba(162, 74, 51, 0.07);
-      border: 1.5px solid rgba(162, 74, 51, 0.25);
-      border-radius: 99px;
-      color: #A24A33;
-      font-family: var(--font-body);
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 8px;
-      padding: 10px 20px;
-      display: block;
-      width: 100%;
-      text-align: center;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    .btn-delete-damage:hover {
-      background: rgba(162, 74, 51, 0.13);
-      border-color: rgba(162, 74, 51, 0.45);
-    }
-
-    .btn-add-damage {
-      width: 100%;
-      background: transparent;
-      border: 2px dashed rgba(35, 115, 41, 0.35);
-      border-radius: 99px;
-      color: var(--primary-green);
-      font-family: var(--font-body);
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      padding: 14px 20px;
-      margin-top: 8px;
-      margin-bottom: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    .btn-add-damage:hover {
-      background: rgba(35, 115, 41, 0.06);
-      border-color: rgba(35, 115, 41, 0.6);
-    }
-
-    .toggle-icon {
-      transition: transform 0.3s ease-in-out;
-    }
-
-    .no-damage-row {
-      display: flex;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 16px;
-      margin-bottom: 12px;
-      border: 1.5px solid rgba(187, 185, 177, 0.3);
-      overflow: hidden;
-    }
-    .no-damage-label {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      padding: 14px 16px;
-      cursor: pointer;
-      font-family: var(--font-body);
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-dark);
-      gap: 12px;
-    }
-    .toggle-sw-wrap {
-      position: relative;
-      width: 44px;
-      height: 24px;
-      flex-shrink: 0;
-    }
-    .toggle-sw-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
-    .toggle-sw-track {
-      position: absolute;
-      inset: 0;
-      background: rgba(187, 185, 177, 0.5);
-      border-radius: 99px;
-      transition: background 0.2s;
-      cursor: pointer;
-    }
-    .toggle-sw-track::before {
-      content: '';
-      position: absolute;
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      top: 3px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.2s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-    .toggle-sw-wrap input:checked + .toggle-sw-track { background: var(--primary-green); }
-    .toggle-sw-wrap input:checked + .toggle-sw-track::before { transform: translateX(20px); }
-
-    .btn-primary {
-      background-color: var(--primary-green); color: white; border: none; border-radius: 30px; padding: 20px;
-      width: 100%; font-family: var(--font-title); font-size: 16px; font-weight: 700; cursor: pointer;
-      box-shadow: 0 8px 20px rgba(35, 115, 41, 0.3); transition: transform 0.2s;
-    }
-    .btn-primary:hover { transform: translateY(-2px); }
-
-    /* ── Bouton Analyser ── */
-    .btn-analyze {
-      position: relative;
-      width: 100%;
-      border: none;
-      border-radius: 20px;
-      padding: 20px 24px;
-      font-family: var(--font-title);
-      font-size: 17px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      color: white;
-      cursor: pointer;
-      background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
-      box-shadow: 0 6px 0 #1B5E20, 0 10px 24px rgba(35,115,41,0.35);
-      transform: translateY(0);
-      transition: transform 0.08s, box-shadow 0.08s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      overflow: hidden;
-    }
-    .btn-analyze::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%);
-      border-radius: inherit;
-      pointer-events: none;
-    }
-    .btn-analyze:hover {
-      box-shadow: 0 8px 0 #1B5E20, 0 14px 28px rgba(35,115,41,0.4);
-      transform: translateY(-2px);
-    }
-    .btn-analyze:active {
-      transform: translateY(5px);
-      box-shadow: 0 1px 0 #1B5E20, 0 4px 12px rgba(35,115,41,0.25);
-    }
-    .btn-analyze-icon { font-size: 20px; }
-
-    .result-card { background-color: var(--bg-result); border-radius: 32px; padding: 32px 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; }
-    .result-icon { width: 80px; height: 80px; background-color: var(--light-green); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 8px; }
-    .inner-icon { width: 30px; height: 30px; }
-    .result-label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-gray); letter-spacing: 1px; }
-    .result-value { font-family: var(--font-title); font-size: 36px; font-weight: 800; color: var(--text-dark); }
-    
-    .progress-container { width: 100%; margin-top: 8px; }
-    .progress-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
-    .progress-header span:first-child { color: var(--text-gray); }
-    .progress-header span:last-child { color: var(--dark-green); }
-    .progress-bar { height: 12px; background-color: #EAE9DD; border-radius: 10px; overflow: hidden; }
-    .progress-fill { height: 100%; background-color: var(--dark-green); border-radius: 10px; transition: width 0.5s ease-in-out; }
-
-    .bonus-badge { background-color: rgba(255, 148, 119, 0.1); padding: 16px; border-radius: 30px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 8px; }
-    .bonus-badge span:first-child { font-size: 24px; }
-    .bonus-badge span:last-child { color: #A24A33; font-family: var(--font-title); font-weight: 800; font-size: 16px; }
-
-    .error-msg { color: #A24A33; font-weight: bold; text-align: center; margin-top: 10px; }
-
-
-    /* --- Styles pour la Modale et le Canvas --- */
-    .modal {
-      display: none; /* Caché par défaut */
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .modal.active {
-      display: flex;
-    }
-
-    .modal-content {
-      background-color: var(--bg-page);
-      padding: 24px;
-      border-radius: 24px;
-      width: 90%;
-      max-width: 400px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .modal-content h3 {
-      font-family: var(--font-title);
-      color: var(--text-dark);
-    }
-
-    .modal-content p {
-      font-size: 14px;
-      color: var(--text-gray);
-    }
-
-    .canvas-container {
-      width: 100%;
-      background-color: #000;
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    canvas {
-      max-width: 100%;
-      cursor: crosshair;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 12px;
-    }
-
-    .btn-secondary {
-      background-color: var(--bg-input);
-      color: var(--text-dark);
-      border: none;
-      border-radius: 30px;
-      padding: 16px;
-      flex: 1;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
     /* ── Autre type modal ── */
     #other-type-modal {
       display: none;
@@ -747,229 +801,6 @@
       margin-top: 4px;
     }
     .btn-other-cancel:hover { background: #E0DDD1; }
-
-    /* ── Matières ── */
-    .material-input-group { padding: 12px 0; }
-    .material-section { display: flex; flex-direction: column; gap: 10px; }
-    #material-list {
-      background: white;
-      border-radius: 32px;
-      outline: 1.5px solid rgba(187,185,177,0.25);
-      outline-offset: -1px;
-      overflow: hidden;
-      transition: outline-color 0.2s;
-    }
-    #material-list:focus-within { outline-color: rgba(35,115,41,0.4); }
-    .material-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 18px;
-      border-bottom: 1px solid rgba(187,185,177,0.2);
-    }
-    .material-row:last-child { border-bottom: none; }
-    .material-dot {
-      width: 13px;
-      height: 13px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      transition: background 0.3s;
-    }
-    .material-select-wrapper {
-      flex: 1;
-      position: relative;
-      display: flex;
-      align-items: center;
-      min-width: 0;
-    }
-    .material-name-select {
-      flex: 1;
-      background: none;
-      border: none;
-      font-family: var(--font-body);
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-dark);
-      outline: none;
-      cursor: pointer;
-      appearance: none;
-      -webkit-appearance: none;
-      min-width: 0;
-      padding-right: 20px;
-    }
-    .material-select-chevron {
-      position: absolute;
-      right: 0;
-      pointer-events: none;
-      color: #BCBAA8;
-      flex-shrink: 0;
-    }
-    .material-percent-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      background: var(--bg-input);
-      border-radius: 99px;
-      padding: 6px 12px;
-      flex-shrink: 0;
-    }
-    .material-percent-input {
-      width: 38px;
-      background: none;
-      border: none;
-      font-family: var(--font-title);
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--primary-green);
-      text-align: right;
-      outline: none;
-      -moz-appearance: textfield;
-    }
-    .material-percent-input::-webkit-outer-spin-button,
-    .material-percent-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-    .material-percent-unit {
-      font-family: var(--font-title);
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-gray);
-    }
-    .material-delete-btn {
-      background: none;
-      border: none;
-      color: #BCBAA8;
-      font-size: 17px;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-      transition: color 0.15s, background 0.15s;
-      flex-shrink: 0;
-      border-radius: 50%;
-      width: 26px;
-      height: 26px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .material-delete-btn:hover { color: #A24A33; background: rgba(162,74,51,0.08); }
-    .material-total-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 2px 2px 0;
-    }
-    .material-total-bar-wrapper {
-      flex: 1;
-      height: 6px;
-      background: #EAE9DD;
-      border-radius: 99px;
-      overflow: hidden;
-    }
-    .material-total-bar-fill {
-      height: 100%;
-      background: var(--primary-green);
-      border-radius: 99px;
-      transition: width 0.3s ease, background 0.3s ease;
-      width: 0%;
-    }
-    .material-total-text {
-      font-family: var(--font-title);
-      font-size: 13px;
-      font-weight: 800;
-      white-space: nowrap;
-      transition: color 0.3s;
-      min-width: 72px;
-      text-align: right;
-      color: var(--text-gray);
-    }
-    .material-total-text.valid { color: var(--primary-green); }
-    .material-total-text.over  { color: #A24A33; }
-    .btn-add-material {
-      width: 100%;
-      background: transparent;
-      border: 2px dashed rgba(35, 115, 41, 0.35);
-      border-radius: 99px;
-      color: var(--primary-green);
-      font-family: var(--font-body);
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    .btn-add-material:hover {
-      background: rgba(35, 115, 41, 0.06);
-      border-color: rgba(35, 115, 41, 0.6);
-    }
-
-    /* ════════ Cartes de face (avant / arrière) ════════ */
-    .faces-hint {
-      font-size: 13px;
-      color: var(--text-gray);
-      line-height: 1.4;
-      margin-top: -4px;
-    }
-    .faces-grid { display: flex; flex-direction: column; gap: 12px; }
-    .face-card {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      width: 100%;
-      background: white;
-      border: 1.5px solid rgba(187,185,177,0.35);
-      border-radius: 22px;
-      padding: 12px 14px;
-      cursor: pointer;
-      text-align: left;
-      font-family: var(--font-body);
-      transition: border-color 0.18s, box-shadow 0.18s, transform 0.08s;
-    }
-    .face-card:active { transform: scale(0.99); }
-    .face-card:hover { border-color: rgba(35,115,41,0.45); }
-    .face-card.done {
-      border-color: var(--primary-green);
-      box-shadow: 0 6px 18px rgba(35,115,41,0.12);
-    }
-    .face-thumb {
-      width: 58px; height: 58px;
-      flex-shrink: 0;
-      border-radius: 16px;
-      background: var(--bg-input);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-    .face-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .face-thumb-emoji { font-size: 26px; }
-    .face-info { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-    .face-name {
-      font-family: var(--font-title);
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--text-dark);
-    }
-    .face-status {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-gray);
-    }
-    .face-card.done .face-status { color: var(--primary-green); }
-    .face-badge {
-      width: 38px; height: 38px;
-      flex-shrink: 0;
-      border-radius: 50%;
-      background: var(--bg-result);
-      color: var(--dark-green);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.18s, color 0.18s;
-    }
-    .face-card.done .face-badge { background: var(--primary-green); color: white; }
 
     /* ════════ Éditeur plein écran ════════ */
     body.editor-open .header-global,
@@ -1263,470 +1094,605 @@
 {% endblock %}
 
 {% block content %}
-    <main>
-      <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: inline-flex">
-        <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
-          <div style="align-self: stretch; text-align: center; justify-content: center; display: flex; flex-direction: column; color: #237329; font-size: 32px; font-family: Plus Jakarta Sans; font-style: italic; font-weight: 800; text-transform: uppercase; line-height: 40px; word-wrap: break-word">Nouveau vêtement</div>
+<div class="aj">
+
+  <!-- ═══════════ Barre de progression ═══════════ -->
+  <div class="aj-top">
+    <button type="button" class="aj-back" id="aj-back" aria-label="Retour">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M14.5 5 8 12l6.5 7" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="aj-bars" id="aj-bars">
+      <span class="aj-bar"></span><span class="aj-bar"></span><span class="aj-bar"></span>
+      <span class="aj-bar"></span><span class="aj-bar"></span><span class="aj-bar"></span>
+      <span class="aj-bar"></span>
+    </div>
+    <span class="aj-count" id="aj-count">01 / 07</span>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data" class="aj-form" id="aj-form">
+    {% csrf_token %}
+
+    <!-- ═══════════ 01 · Nom ═══════════ -->
+    <section class="aj-page on" data-page="1">
+      <div class="aj-body">
+        <span class="aj-eyebrow">Nouveau vêtement</span>
+        <h1 class="aj-title">On passe ton futur chef-d'œuvre au rayon X</h1>
+        <p class="aj-lead">Donne-lui un nom, tu le retrouveras dans ton atelier.</p>
+
+        <input type="text" name="nom_vetement" id="aj-nom" class="aj-name-field"
+               placeholder="Jean droit délavé" maxlength="30" autocomplete="off">
+
+        <span class="aj-section-label" style="margin-top:26px;">Suggestions</span>
+        <div class="aj-chips">
+          <button type="button" class="aj-chip">Vieux jean bleu</button>
+          <button type="button" class="aj-chip">Chemise rayée</button>
+          <button type="button" class="aj-chip">Drap usé</button>
         </div>
-        <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
-          <div style="align-self: stretch; text-align: center; justify-content: center; display: flex; flex-direction: column; color: #65655E; font-size: 16px; font-family: Manrope; font-weight: 500; line-height: 24px; word-wrap: break-word">On passe ton futur chef-d'œuvre au rayon X.</div>
+
+        <div class="aj-note aj-push">
+          <span class="aj-note-ico" style="background:var(--yellow);">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="13.5" r="7.5" stroke="#14120F" stroke-width="2"/><path d="M12 10v3.5l2.2 1.6M9.5 2.8h5M12 2.8v2.6M18.6 6.2l1.5-1.5" stroke="#14120F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <p>Sept étapes : nom, photo, détourage, défauts, matières. Environ 3 minutes.</p>
         </div>
       </div>
+      <div class="aj-foot">
+        <button type="button" class="aj-cta" data-next>Passer au scan</button>
+      </div>
+    </section>
 
-      {% if error %}
-        <p class="error-msg">{{ error }}</p>
-      {% endif %}
+    <!-- ═══════════ 02 / 03 · Faces (à détourer, puis détourées) ═══════════ -->
+    <section class="aj-page" data-page="2" id="aj-page-faces">
+      <div class="aj-body">
+        <span class="aj-eyebrow" id="aj-faces-eyebrow">Nouveau vêtement</span>
+        <h1 class="aj-title" id="aj-faces-title">Photographie chaque face</h1>
+        <p class="aj-lead" id="aj-faces-lead">L'avant est obligatoire. L'arrière améliore la précision du calcul de surface.</p>
 
-      <form method="POST" enctype="multipart/form-data" class="form-ajout_textile">
-        {% csrf_token %}
-
-        <section class="card">
-          <h2>
-            <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-scan.svg' %}" alt="Scan">
-            Nom du vêtement
-          </h2>
-          <input type="text" name="nom_vetement" class="custom-input" placeholder="Ex : Vieux jean bleu, Chemise rayée…" maxlength="30">
-
-          <div class="card-divider"></div>
-
-          <p class="star-label">Qualité du tissu</p>
-          <div class="star-rating">
-            {% for i in "54321" %}
-            <input type="radio" name="qualite" id="star{{ i }}" value="{{ i }}" {% if i == "3" %}checked{% endif %}>
-            <label for="star{{ i }}"><i class="ic fi-br-star"></i></label>
-            {% endfor %}
-          </div>
-
-        </section>
-
-        <section class="card">
-          <h2>
-            <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-scan.svg' %}" alt="Scan">
-            Détourage du vêtement
-          </h2>
-          <p class="faces-hint">Photographie et détoure chaque face. L'avant est obligatoire, l'arrière améliore la précision.</p>
-
-          <div class="faces-grid">
-            <!-- Face AVANT -->
-            <button type="button" class="face-card" data-face="avant">
-              <div class="face-thumb" id="face-thumb-avant">
-                <span class="face-thumb-emoji">👕</span>
-              </div>
-              <div class="face-info">
-                <span class="face-name">Face avant</span>
-                <span class="face-status" id="face-status-avant">À détourer · requis</span>
-              </div>
-              <span class="face-badge" id="face-badge-avant">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <div class="aj-faces">
+          <!-- Face AVANT -->
+          <button type="button" class="face-card" data-face="avant">
+            <span class="face-thumb" id="face-thumb-avant">
+              <span class="face-thumb-emoji">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2L9 4.8h6L16.5 7h2A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" stroke="currentColor" stroke-width="2"/></svg>
               </span>
-            </button>
+            </span>
+            <span class="face-name">Face avant</span>
+            <span class="face-status" id="face-status-avant">À détourer · requis</span>
+            <span class="face-badge" id="face-badge-avant"></span>
+          </button>
 
-            <!-- Face ARRIÈRE -->
-            <button type="button" class="face-card" data-face="arriere">
-              <div class="face-thumb" id="face-thumb-arriere">
-                <span class="face-thumb-emoji"><i class="ic fi-br-refresh"></i></span>
-              </div>
-              <div class="face-info">
-                <span class="face-name">Face arrière</span>
-                <span class="face-status" id="face-status-arriere">À détourer · optionnel</span>
-              </div>
-              <span class="face-badge" id="face-badge-arriere">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <!-- Face ARRIÈRE -->
+          <button type="button" class="face-card pending" data-face="arriere">
+            <span class="face-thumb" id="face-thumb-arriere">
+              <span class="face-thumb-emoji">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
               </span>
-            </button>
+            </span>
+            <span class="face-name">Face arrière</span>
+            <span class="face-status" id="face-status-arriere">Optionnel</span>
+            <span class="face-badge" id="face-badge-arriere"></span>
+          </button>
+        </div>
+
+        <!-- Aide (tant que rien n'est détouré) -->
+        <div class="aj-note" id="aj-faces-note" style="margin-top:22px;">
+          <span class="aj-note-ico" style="background:#D9E8F7;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#2C6CA8" stroke-width="2"/><path d="M12 11v5.2" stroke="#2C6CA8" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="7.8" r="1.3" fill="#2C6CA8"/></svg>
+          </span>
+          <p>Pose le vêtement à plat sur un fond uni. Le détourage sera calculé tout seul.</p>
+        </div>
+
+        <!-- Récapitulatif de surface (une fois l'avant détouré) -->
+        <div class="aj-surface" id="aj-faces-surface" style="display:none;">
+          <div style="flex:1;">
+            <div class="aj-section-label">Surface totale</div>
+            <div class="aj-surface-val" id="aj-surface-val">—</div>
           </div>
-        </section>
+          <span class="aj-surface-hint" id="aj-surface-hint">+0,9 m² estimés si tu scannes l'arrière</span>
+        </div>
+      </div>
+      <div class="aj-foot">
+        <button type="button" class="aj-cta" id="aj-faces-cta">Photographier l'avant</button>
+        <button type="button" class="aj-cta-ghost" id="aj-faces-ghost" style="display:none;">Scanner l'arrière</button>
+      </div>
+    </section>
+
+    <!-- ═══════════ 04 · Type ═══════════ -->
+    <section class="aj-page" data-page="4">
+      <div class="aj-body">
+        <h1 class="aj-title">C'est quel type de pièce&nbsp;?</h1>
+        <p class="aj-lead">Ça nous sert à estimer les coutures et les zones réutilisables.</p>
 
         <input type="hidden" name="clothing_type" id="clothing_type_input" value="tshirt">
-
-        <section class="card">
-          <h2><img class="type-square" src="{% static 'core/images/ajout_textile/icon-shirt.svg' %}" alt="Vêtement"> Type de vêtement</h2>
-          <div class="type-grid">
-            
-            <button type="button" class="type-btn active" data-type="tshirt">
-              <img class="type-icon-img" src="{% static 'core/images/ajout_textile/shirt.svg' %}" alt="Shirt">
-              T-Shirt
-            </button>
-
-            <button type="button" class="type-btn" data-type="jean">
-              <img class="type-icon-img" src="{% static 'core/images/ajout_textile/pants.svg' %}" alt="Pantalon">
-              Jean
-            </button>
-
-            <button type="button" class="type-btn" data-type="hoodie">
-              <img class="type-icon-img" src="{% static 'core/images/ajout_textile/hoodie.svg' %}" alt="Hoodie">
-              Hoodie
-            </button>
-
-            <button type="button" class="type-btn" data-type="robe">
-              <img class="type-icon-img" src="{% static 'core/images/ajout_textile/dress.svg' %}" alt="Robe">
-              Robe
-            </button>
-
-            <button type="button" class="type-btn" data-type="jupe">
-              <img class="type-icon-img" src="{% static 'core/images/ajout_textile/skirt.svg' %}" alt="Jupe">
-              Jupe
-            </button>
-
-            <button type="button" class="type-btn" id="btn-other-type" data-type="">
-              <svg class="type-icon-img" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="7" cy="14" r="2.5" fill="currentColor"/>
-                <circle cx="14" cy="14" r="2.5" fill="currentColor"/>
-                <circle cx="21" cy="14" r="2.5" fill="currentColor"/>
-              </svg>
-              <span class="other-btn-label">Autre</span>
-            </button>
-
-          </div>
-
-          <div class="card-divider"></div>
-
-          <p class="star-label">Couleur(s) <span style="font-weight:500;text-transform:none;letter-spacing:0;color:#9E9E88;">— 3 max</span></p>
-          <input type="hidden" name="couleur" id="couleur-input" value="">
-          <div class="color-grid">
-            <input type="checkbox" name="couleur_pick" id="c-ivoire"     class="color-swatch-input" value="ivoire">
-            <label for="c-ivoire"     class="color-swatch" style="background:#F5F0E8;outline:1px solid rgba(0,0,0,0.1);outline-offset:-1px;" title="Ivoire"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-beige"      class="color-swatch-input" value="beige">
-            <label for="c-beige"      class="color-swatch" style="background:#D4C5A9;" title="Beige"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-camel"      class="color-swatch-input" value="camel">
-            <label for="c-camel"      class="color-swatch" style="background:#C19A6B;" title="Camel"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-terracotta" class="color-swatch-input" value="terracotta">
-            <label for="c-terracotta" class="color-swatch" style="background:#C8604A;" title="Terracotta"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-rouge"      class="color-swatch-input" value="rouge">
-            <label for="c-rouge"      class="color-swatch" style="background:#C0392B;" title="Rouge"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-bordeaux"   class="color-swatch-input" value="bordeaux">
-            <label for="c-bordeaux"   class="color-swatch" style="background:#722F37;" title="Bordeaux"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-rose"       class="color-swatch-input" value="rose">
-            <label for="c-rose"       class="color-swatch" style="background:#F2C4CE;outline:1px solid rgba(0,0,0,0.07);outline-offset:-1px;" title="Rose"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-marron"     class="color-swatch-input" value="marron">
-            <label for="c-marron"     class="color-swatch" style="background:#7B4226;" title="Marron"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-lavande"    class="color-swatch-input" value="lavande">
-            <label for="c-lavande"    class="color-swatch" style="background:#B39DDB;" title="Lavande"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-marine"     class="color-swatch-input" value="marine">
-            <label for="c-marine"     class="color-swatch" style="background:#1F3461;" title="Marine"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-ciel"       class="color-swatch-input" value="bleu ciel">
-            <label for="c-ciel"       class="color-swatch" style="background:#6AAFE6;" title="Bleu ciel"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-sauge"      class="color-swatch-input" value="vert sauge">
-            <label for="c-sauge"      class="color-swatch" style="background:#8FAF8A;" title="Vert sauge"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-foret"      class="color-swatch-input" value="vert forêt">
-            <label for="c-foret"      class="color-swatch" style="background:#355E3B;" title="Vert forêt"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-moutarde"   class="color-swatch-input" value="moutarde">
-            <label for="c-moutarde"   class="color-swatch" style="background:#D4A017;" title="Moutarde"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-ardoise"    class="color-swatch-input" value="gris ardoise">
-            <label for="c-ardoise"    class="color-swatch" style="background:#607D8B;" title="Gris ardoise"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-noir"       class="color-swatch-input" value="noir">
-            <label for="c-noir"       class="color-swatch" style="background:#2C2C2C;" title="Noir"></label>
-          </div>
-        </section>
-
-        <div class="details-section">
-          <input type="hidden" name="material" id="material-hidden" value="coton:100">
-          <div class="input-group material-input-group">
-            <label>Matière(s) du vêtement <span style="font-weight:500;text-transform:none;letter-spacing:0;color:#9E9E88;">— indiquer les %</span></label>
-            <div class="material-section">
-              <div id="material-list"></div>
-              <div class="material-total-row">
-                <div class="material-total-bar-wrapper">
-                  <div class="material-total-bar-fill" id="material-total-fill"></div>
-                </div>
-                <span class="material-total-text" id="material-total-text">Total : 0%</span>
-              </div>
-              <button type="button" class="btn-add-material" id="btn-add-material">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Ajouter une matière
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" class="btn-analyze" id="btn-submit">
-            <span class="btn-analyze-icon"><i class="ic fi-br-microscope"></i></span>
-            Analyser le tissu
+        <div class="aj-types">
+          <button type="button" class="type-btn active" data-type="tshirt">
+            <span class="type-ico"><img src="{% static 'core/images/ajout_textile/shirt.svg' %}" alt=""></span>
+            <span class="type-label">T-Shirt</span>
+            <span class="type-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button type="button" class="type-btn" data-type="jean">
+            <span class="type-ico"><img src="{% static 'core/images/ajout_textile/pants.svg' %}" alt=""></span>
+            <span class="type-label">Jean</span>
+            <span class="type-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button type="button" class="type-btn" data-type="hoodie">
+            <span class="type-ico"><img src="{% static 'core/images/ajout_textile/hoodie.svg' %}" alt=""></span>
+            <span class="type-label">Hoodie</span>
+            <span class="type-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button type="button" class="type-btn" data-type="robe">
+            <span class="type-ico"><img src="{% static 'core/images/ajout_textile/dress.svg' %}" alt=""></span>
+            <span class="type-label">Robe</span>
+            <span class="type-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button type="button" class="type-btn" data-type="jupe">
+            <span class="type-ico"><img src="{% static 'core/images/ajout_textile/skirt.svg' %}" alt=""></span>
+            <span class="type-label">Jupe</span>
+            <span class="type-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button type="button" class="type-btn" id="btn-other-type" data-type="">
+            <span class="type-ico">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
+            </span>
+            <span class="type-label other-btn-label">Autre</span>
+            <span class="type-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           </button>
         </div>
+      </div>
+      <div class="aj-foot">
+        <button type="button" class="aj-cta" data-next>Continuer</button>
+      </div>
+    </section>
 
-        <!-- Données par face (remplies par l'éditeur plein écran) -->
-        <input type="hidden" name="photo_data_avant"     id="photo_data_avant">
-        <input type="hidden" name="polygon_avant"        id="polygon_avant"        value="[]">
-        <input type="hidden" name="calib_coords_avant"   id="calib_coords_avant"   value="[]">
-        <input type="hidden" name="calib_distance_avant" id="calib_distance_avant" value="0">
-        <input type="hidden" name="img_w_avant"          id="img_w_avant"          value="0">
-        <input type="hidden" name="img_h_avant"          id="img_h_avant"          value="0">
-        <input type="hidden" name="defects_avant"        id="defects_avant"        value="[]">
+    <!-- ═══════════ 06 · Couleurs ═══════════ -->
+    <section class="aj-page" data-page="6">
+      <div class="aj-body">
+        <h1 class="aj-title">Ses couleurs</h1>
+        <p class="aj-lead">Trois maximum. Choisis la dominante en premier.</p>
 
-        <input type="hidden" name="photo_data_arriere"     id="photo_data_arriere">
-        <input type="hidden" name="polygon_arriere"        id="polygon_arriere"        value="[]">
-        <input type="hidden" name="calib_coords_arriere"   id="calib_coords_arriere"   value="[]">
-        <input type="hidden" name="calib_distance_arriere" id="calib_distance_arriere" value="0">
-        <input type="hidden" name="img_w_arriere"          id="img_w_arriere"          value="0">
-        <input type="hidden" name="img_h_arriere"          id="img_h_arriere"          value="0">
-        <input type="hidden" name="defects_arriere"        id="defects_arriere"        value="[]">
-      </form>
-
-      <!-- ═══════════ ÉDITEUR PLEIN ÉCRAN (détourage · étalonnage · défauts) ═══════════ -->
-      <div id="editor-overlay">
-        <!-- Barre du haut -->
-        <header id="editor-topbar">
-          <button type="button" id="editor-close" aria-label="Fermer">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-          <div id="editor-title-wrap">
-            <span id="editor-face-name">Face avant</span>
-            <div id="editor-steps">
-              <span class="ed-step" data-step="1"></span>
-              <span class="ed-step" data-step="2"></span>
-              <span class="ed-step" data-step="3"></span>
-            </div>
-          </div>
-          <button type="button" id="editor-undo" aria-label="Annuler">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
-          </button>
-        </header>
-
-        <!-- Zone photo / canvas -->
-        <div id="editor-stage">
-          <canvas id="edit-canvas"></canvas>
-          <!-- Loupe de précision -->
-          <div id="loupe"><canvas id="loupe-canvas"></canvas></div>
-          <!-- Toast d'info -->
-          <div id="editor-toast"></div>
-          <!-- Sélecteur de source (avant prise de photo) -->
-          <div id="editor-source">
-            <div class="editor-source-inner">
-              <span class="editor-source-emoji"><i class="ic fi-br-camera"></i></span>
-              <p class="editor-source-title">Ajoute la photo de cette face</p>
-              <div class="editor-source-btns">
-                <button type="button" class="photo-source-btn" id="ed-pick-file">
-                  <span class="src-icon"><i class="ic fi-br-picture"></i></span>
-                  Mes fichiers
-                </button>
-                <button type="button" class="photo-source-btn" id="ed-open-camera">
-                  <span class="src-icon"><i class="ic fi-br-camera"></i></span>
-                  Caméra
-                </button>
-              </div>
-              <input type="file" id="ed-file-input" accept="image/*" style="display:none;">
-            </div>
-          </div>
+        <input type="hidden" name="couleur" id="couleur-input" value="">
+        <div class="aj-color-slots" id="aj-color-slots">
+          <div class="aj-slot"><span class="aj-slot-chip"></span><div class="aj-slot-name">Dominante</div><div class="aj-slot-role">À choisir</div></div>
+          <div class="aj-slot"><span class="aj-slot-chip"></span><div class="aj-slot-name">Secondaire</div><div class="aj-slot-role">Optionnel</div></div>
+          <div class="aj-slot"><span class="aj-slot-chip"></span><div class="aj-slot-name">Tertiaire</div><div class="aj-slot-role">3 max</div></div>
         </div>
 
-        <!-- Panneau du bas (instructions + contrôles + navigation) -->
-        <div id="editor-panel">
-          <p class="editor-instruction" id="editor-instruction"></p>
+        <span class="aj-section-label" style="margin-top:30px;">Palette</span>
+        <div class="aj-palette">
+          <input type="checkbox" id="c-ivoire" class="color-swatch-input" value="ivoire" data-hex="#F5F0E8" data-label="Ivoire">
+          <label for="c-ivoire" class="color-swatch" style="background:#F5F0E8;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);" title="Ivoire"></label>
 
-          <!-- Détourage auto (étape 1) -->
-          <div class="editor-auto-row" id="editor-auto-row" style="display:none;">
-            <button type="button" class="editor-auto-btn" id="editor-auto">
-              <span><i class="ic fi-br-sparkles"></i></span> Détourage auto
+          <input type="checkbox" id="c-beige" class="color-swatch-input" value="beige" data-hex="#D4C5A9" data-label="Beige">
+          <label for="c-beige" class="color-swatch" style="background:#D4C5A9;" title="Beige"></label>
+
+          <input type="checkbox" id="c-camel" class="color-swatch-input" value="camel" data-hex="#C19A6B" data-label="Camel">
+          <label for="c-camel" class="color-swatch" style="background:#C19A6B;" title="Camel"></label>
+
+          <input type="checkbox" id="c-terracotta" class="color-swatch-input" value="terracotta" data-hex="#C8604A" data-label="Terracotta">
+          <label for="c-terracotta" class="color-swatch" style="background:#C8604A;" title="Terracotta"></label>
+
+          <input type="checkbox" id="c-rouge" class="color-swatch-input" value="rouge" data-hex="#C0392B" data-label="Rouge">
+          <label for="c-rouge" class="color-swatch" style="background:#C0392B;" title="Rouge"></label>
+
+          <input type="checkbox" id="c-bordeaux" class="color-swatch-input" value="bordeaux" data-hex="#722F37" data-label="Bordeaux">
+          <label for="c-bordeaux" class="color-swatch" style="background:#722F37;" title="Bordeaux"></label>
+
+          <input type="checkbox" id="c-rose" class="color-swatch-input" value="rose" data-hex="#F2C4CE" data-label="Rose">
+          <label for="c-rose" class="color-swatch" style="background:#F2C4CE;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07);" title="Rose"></label>
+
+          <input type="checkbox" id="c-marron" class="color-swatch-input" value="marron" data-hex="#7B4226" data-label="Marron">
+          <label for="c-marron" class="color-swatch" style="background:#7B4226;" title="Marron"></label>
+
+          <input type="checkbox" id="c-lavande" class="color-swatch-input" value="lavande" data-hex="#B39DDB" data-label="Lavande">
+          <label for="c-lavande" class="color-swatch" style="background:#B39DDB;" title="Lavande"></label>
+
+          <input type="checkbox" id="c-marine" class="color-swatch-input" value="marine" data-hex="#1F3461" data-label="Marine">
+          <label for="c-marine" class="color-swatch" style="background:#1F3461;" title="Marine"></label>
+
+          <input type="checkbox" id="c-ciel" class="color-swatch-input" value="bleu ciel" data-hex="#6AAFE6" data-label="Bleu ciel">
+          <label for="c-ciel" class="color-swatch" style="background:#6AAFE6;" title="Bleu ciel"></label>
+
+          <input type="checkbox" id="c-sauge" class="color-swatch-input" value="vert sauge" data-hex="#8FAF8A" data-label="Vert sauge">
+          <label for="c-sauge" class="color-swatch" style="background:#8FAF8A;" title="Vert sauge"></label>
+
+          <input type="checkbox" id="c-foret" class="color-swatch-input" value="vert forêt" data-hex="#355E3B" data-label="Vert forêt">
+          <label for="c-foret" class="color-swatch" style="background:#355E3B;" title="Vert forêt"></label>
+
+          <input type="checkbox" id="c-moutarde" class="color-swatch-input" value="moutarde" data-hex="#D4A017" data-label="Moutarde">
+          <label for="c-moutarde" class="color-swatch" style="background:#D4A017;" title="Moutarde"></label>
+
+          <input type="checkbox" id="c-ardoise" class="color-swatch-input" value="gris ardoise" data-hex="#607D8B" data-label="Gris ardoise">
+          <label for="c-ardoise" class="color-swatch" style="background:#607D8B;" title="Gris ardoise"></label>
+
+          <input type="checkbox" id="c-noir" class="color-swatch-input" value="noir" data-hex="#2C2C2C" data-label="Noir">
+          <label for="c-noir" class="color-swatch" style="background:#2C2C2C;" title="Noir"></label>
+        </div>
+
+        <div class="aj-note aj-push">
+          <span class="aj-note-ico" style="background:#E3DBFF;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#5B3FE0" stroke-width="2"/><path d="M12 8.5v7M8.5 12h7" stroke="#5B3FE0" stroke-width="2" stroke-linecap="round"/></svg>
+          </span>
+          <p>La couleur sert à te proposer des associations de chutes cohérentes.</p>
+        </div>
+      </div>
+      <div class="aj-foot">
+        <button type="button" class="aj-cta" data-next>Continuer</button>
+      </div>
+    </section>
+
+    <!-- ═══════════ 07 · Matières & qualité ═══════════ -->
+    <section class="aj-page" data-page="7">
+      <div class="aj-body">
+        <h1 class="aj-title">De quoi est-il fait&nbsp;?</h1>
+        <p class="aj-lead">Regarde l'étiquette. Le total doit faire 100&nbsp;%.</p>
+
+        <input type="hidden" name="material" id="material-hidden" value="coton:100">
+        <div class="aj-materials" id="material-list"></div>
+        <button type="button" class="btn-add-material" id="btn-add-material" style="margin-top:10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
+          Ajouter une matière
+        </button>
+
+        <div class="aj-total-row">
+          <div class="aj-total-bar"><span class="aj-total-fill" id="material-total-fill"></span></div>
+          <span class="aj-total-text" id="material-total-text">Total : 0 %</span>
+        </div>
+
+        <span class="aj-section-label" style="margin-top:28px;">Qualité du tissu</span>
+        <input type="hidden" name="qualite" id="qualite-input" value="3">
+        <div class="aj-quality">
+          <button type="button" class="aj-quality-btn" data-qualite="2">Fatigué</button>
+          <button type="button" class="aj-quality-btn active" data-qualite="3">Correct</button>
+          <button type="button" class="aj-quality-btn" data-qualite="5">Comme neuf</button>
+        </div>
+      </div>
+      <div class="aj-foot">
+        <button type="submit" class="aj-cta" id="btn-submit">Lancer l'analyse</button>
+      </div>
+    </section>
+
+    <!-- Données par face (remplies par l'éditeur plein écran) -->
+    <input type="hidden" name="photo_data_avant"     id="photo_data_avant">
+    <input type="hidden" name="polygon_avant"        id="polygon_avant"        value="[]">
+    <input type="hidden" name="calib_coords_avant"   id="calib_coords_avant"   value="[]">
+    <input type="hidden" name="calib_distance_avant" id="calib_distance_avant" value="0">
+    <input type="hidden" name="img_w_avant"          id="img_w_avant"          value="0">
+    <input type="hidden" name="img_h_avant"          id="img_h_avant"          value="0">
+    <input type="hidden" name="defects_avant"        id="defects_avant"        value="[]">
+
+    <input type="hidden" name="photo_data_arriere"     id="photo_data_arriere">
+    <input type="hidden" name="polygon_arriere"        id="polygon_arriere"        value="[]">
+    <input type="hidden" name="calib_coords_arriere"   id="calib_coords_arriere"   value="[]">
+    <input type="hidden" name="calib_distance_arriere" id="calib_distance_arriere" value="0">
+    <input type="hidden" name="img_w_arriere"          id="img_w_arriere"          value="0">
+    <input type="hidden" name="img_h_arriere"          id="img_h_arriere"          value="0">
+    <input type="hidden" name="defects_arriere"        id="defects_arriere"        value="[]">
+  </form>
+
+  <!-- ═══════════ Écran d'analyse (pendant l'envoi) ═══════════ -->
+  <div class="aj-analyse" id="aj-analyse">
+    <div class="aj-analyse-in">
+      <span class="aj-analyse-eyebrow">Rayon X en cours</span>
+      <h2 class="aj-analyse-title" id="aj-analyse-title">Ton vêtement</h2>
+
+      <div class="aj-analyse-card">
+        <div class="aj-analyse-head">
+          <div class="aj-analyse-thumb" id="aj-analyse-thumb"></div>
+          <div style="flex:1;">
+            <div class="aj-analyse-area" id="aj-analyse-area">—</div>
+            <div class="aj-analyse-sub" id="aj-analyse-sub">surface détourée</div>
+          </div>
+        </div>
+        <div class="aj-analyse-rule"></div>
+        <div class="aj-analyse-steps">
+          <div class="aj-analyse-step done"><span class="tick">✓</span>Contours vérifiés</div>
+          <div class="aj-analyse-step done"><span class="tick">✓</span>Défauts cartographiés</div>
+          <div class="aj-analyse-step" id="aj-analyse-step3"><span class="tick">✓</span>Recherche de patrons compatibles</div>
+        </div>
+      </div>
+
+      <div class="aj-analyse-progress">
+        <div class="aj-analyse-progress-head">
+          <span>Analyse</span>
+          <span class="aj-analyse-pct" id="aj-analyse-pct">4 %</span>
+        </div>
+        <div class="aj-analyse-track"><span class="aj-analyse-fill" id="aj-analyse-fill"></span></div>
+      </div>
+    </div>
+  </div>
+
+  {% if error %}
+  <div class="aj-result">
+    <div class="aj-result-sheet">
+      <div class="aj-result-handle"></div>
+      <div class="aj-result-label">Analyse impossible</div>
+      <p style="font:400 14px/1.5 var(--text);color:var(--muted);text-align:center;margin-top:14px;">{{ error }}</p>
+      <button type="button" class="aj-cta aj-result-cta" onclick="this.closest('.aj-result').remove()">Reprendre</button>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if result_ready %}
+  <div class="aj-result">
+    <div class="aj-result-sheet">
+      <div class="aj-result-handle"></div>
+      <div class="aj-result-label">Résultats de l'analyse</div>
+      <div class="aj-result-value">{{ usable_area }} m²</div>
+
+      <div class="aj-result-bar">
+        <div class="aj-result-bar-head">
+          <span>Zone réutilisable</span>
+          <span>{{ percentage }} %</span>
+        </div>
+        <div class="aj-result-track"><span class="aj-result-fill" style="width:{{ percentage }}%;"></span></div>
+      </div>
+
+      <div class="aj-result-coins">
+        <span><i class="ic fi-br-party-horn"></i></span>
+        +{{ coins_earned }} pièce{% if coins_earned > 1 %}s{% endif %}
+      </div>
+
+      <a href="{% url 'dashboard' %}" class="aj-cta aj-result-cta">Voir mon tableau de bord</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ═══════════ Éditeur plein écran (détourage · étalonnage · défauts) ═══════════
+       Conservé tel quel en attendant sa propre refonte. -->
+  <div id="editor-overlay">
+    <header id="editor-topbar">
+      <button type="button" id="editor-close" aria-label="Fermer">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div id="editor-title-wrap">
+        <span id="editor-face-name">Face avant</span>
+        <div id="editor-steps">
+          <span class="ed-step" data-step="1"></span>
+          <span class="ed-step" data-step="2"></span>
+          <span class="ed-step" data-step="3"></span>
+        </div>
+      </div>
+      <button type="button" id="editor-undo" aria-label="Annuler">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+      </button>
+    </header>
+
+    <div id="editor-stage">
+      <canvas id="edit-canvas"></canvas>
+      <div id="loupe"><canvas id="loupe-canvas"></canvas></div>
+      <div id="editor-toast"></div>
+      <div id="editor-source">
+        <div class="editor-source-inner">
+          <span class="editor-source-emoji"><i class="ic fi-br-camera"></i></span>
+          <p class="editor-source-title">Ajoute la photo de cette face</p>
+          <div class="editor-source-btns">
+            <button type="button" class="photo-source-btn" id="ed-pick-file">
+              <span class="src-icon"><i class="ic fi-br-picture"></i></span>
+              Mes fichiers
+            </button>
+            <button type="button" class="photo-source-btn" id="ed-open-camera">
+              <span class="src-icon"><i class="ic fi-br-camera"></i></span>
+              Caméra
             </button>
           </div>
+          <input type="file" id="ed-file-input" accept="image/*" style="display:none;">
+        </div>
+      </div>
+    </div>
 
-          <!-- Contrôles étalonnage (étape 2) -->
-          <div class="editor-calib-row" id="editor-calib-row" style="display:none;">
-            <span class="editor-calib-label">Distance réelle</span>
-            <div class="editor-calib-input-wrap">
-              <input type="number" id="editor-calib-distance" min="1" step="0.1" placeholder="ex : 20">
-              <span>cm</span>
-            </div>
+    <div id="editor-panel">
+      <p class="editor-instruction" id="editor-instruction"></p>
+
+      <div class="editor-auto-row" id="editor-auto-row" style="display:none;">
+        <button type="button" class="editor-auto-btn" id="editor-auto">
+          <span><i class="ic fi-br-sparkles"></i></span> Détourage auto
+        </button>
+      </div>
+
+      <div class="editor-calib-row" id="editor-calib-row" style="display:none;">
+        <span class="editor-calib-label">Distance réelle</span>
+        <div class="editor-calib-input-wrap">
+          <input type="number" id="editor-calib-distance" min="1" step="0.1" placeholder="ex : 20">
+          <span>cm</span>
+        </div>
+      </div>
+
+      <div class="editor-defect-controls" id="editor-defect-controls" style="display:none;">
+        <div class="defect-empty" id="defect-empty">Touche le vêtement pour marquer une tache ou un trou.</div>
+        <div class="defect-editor" id="defect-editor" style="display:none;">
+          <div class="defect-type-tags">
+            <button type="button" class="defect-type-btn" data-dtype="tache">
+              <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-tache.svg' %}" alt=""> Tache
+            </button>
+            <button type="button" class="defect-type-btn" data-dtype="trou">
+              <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-trou.svg' %}" alt=""> Trou
+            </button>
           </div>
-
-          <!-- Contrôles défauts (étape 3) -->
-          <div class="editor-defect-controls" id="editor-defect-controls" style="display:none;">
-            <div class="defect-empty" id="defect-empty">Touche le vêtement pour marquer une tache ou un trou.</div>
-            <div class="defect-editor" id="defect-editor" style="display:none;">
-              <div class="defect-type-tags">
-                <button type="button" class="defect-type-btn" data-dtype="tache">
-                  <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-tache.svg' %}" alt=""> Tache
-                </button>
-                <button type="button" class="defect-type-btn" data-dtype="trou">
-                  <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-trou.svg' %}" alt=""> Trou
-                </button>
-              </div>
-              <div class="defect-radius-row">
-                <span class="defect-radius-label">Rayon</span>
-                <input type="range" id="defect-radius" min="3" max="80" value="18">
-                <button type="button" class="defect-delete-btn" id="defect-delete" aria-label="Supprimer ce défaut">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Navigation -->
-          <div class="editor-nav">
-            <button type="button" class="editor-btn-ghost" id="editor-back">Retour</button>
-            <button type="button" class="editor-btn-main" id="editor-next">Suivant</button>
+          <div class="defect-radius-row">
+            <span class="defect-radius-label">Rayon</span>
+            <input type="range" id="defect-radius" min="3" max="80" value="18">
+            <button type="button" class="defect-delete-btn" id="defect-delete" aria-label="Supprimer ce défaut">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- ── Overlay caméra ── -->
-      <div id="camera-overlay">
-        <div id="camera-viewfinder">
-          <video id="camera-video" autoplay playsinline muted></video>
-          <div id="camera-crop-box">
-            <span class="cam-corner-br"></span>
-            <span class="cam-corner-bl"></span>
-          </div>
-        </div>
-        <div id="camera-controls">
-          <button type="button" id="btn-camera-cancel">Annuler</button>
-          <button type="button" id="btn-camera-capture"></button>
-          <div style="width:70px;"></div>
-        </div>
+      <div class="editor-nav">
+        <button type="button" class="editor-btn-ghost" id="editor-back">Retour</button>
+        <button type="button" class="editor-btn-main" id="editor-next">Suivant</button>
       </div>
-      <canvas id="camera-hidden-canvas" style="display:none;"></canvas>
+    </div>
+  </div>
 
-      <!-- ── Popup "Autre type" ── -->
-      <div id="other-type-modal">
-        <div class="other-type-sheet">
-          <div class="other-type-handle"></div>
-          <p class="other-type-title">Choisir un type</p>
-          <div class="other-type-grid">
-            <button type="button" class="other-type-btn" data-type="manteau">
-              <span class="other-type-emoji">🧥</span>Manteau
-            </button>
-            <button type="button" class="other-type-btn" data-type="veste">
-              <span class="other-type-emoji">🥼</span>Veste
-            </button>
-            <button type="button" class="other-type-btn" data-type="blazer">
-              <span class="other-type-emoji">👔</span>Blazer
-            </button>
-            <button type="button" class="other-type-btn" data-type="pull">
-              <span class="other-type-emoji">🧤</span>Pull
-            </button>
-            <button type="button" class="other-type-btn" data-type="chemise">
-              <span class="other-type-emoji">👕</span>Chemise
-            </button>
-            <button type="button" class="other-type-btn" data-type="short">
-              <span class="other-type-emoji">🩳</span>Short
-            </button>
-            <button type="button" class="other-type-btn" data-type="gilet">
-              <span class="other-type-emoji">🦺</span>Gilet
-            </button>
-            <button type="button" class="other-type-btn" data-type="debardeur">
-              <span class="other-type-emoji">🩱</span>Débardeur
-            </button>
-            <button type="button" class="other-type-btn" data-type="combinaison">
-              <span class="other-type-emoji">👘</span>Combinaison
-            </button>
-            <button type="button" class="other-type-btn" data-type="pyjama">
-              <span class="other-type-emoji">😴</span>Pyjama
-            </button>
-            <button type="button" class="other-type-btn" data-type="accessoire">
-              <span class="other-type-emoji"><i class="ic fi-br-ribbon"></i></span>Accessoire
-            </button>
-            <button type="button" class="other-type-btn" data-type="autre">
-              <span class="other-type-emoji">•••</span>Autre
-            </button>
-          </div>
-          <button type="button" class="btn-other-cancel" id="btn-other-cancel">Annuler</button>
-        </div>
+  <!-- ── Overlay caméra ── -->
+  <div id="camera-overlay">
+    <div id="camera-viewfinder">
+      <video id="camera-video" autoplay playsinline muted></video>
+      <div id="camera-crop-box">
+        <span class="cam-corner-br"></span>
+        <span class="cam-corner-bl"></span>
       </div>
+    </div>
+    <div id="camera-controls">
+      <button type="button" id="btn-camera-cancel">Annuler</button>
+      <button type="button" id="btn-camera-capture"></button>
+      <div style="width:70px;"></div>
+    </div>
+  </div>
+  <canvas id="camera-hidden-canvas" style="display:none;"></canvas>
 
-      {% if result_ready %}
-      <div id="result-modal" class="active">
-        <div class="result-modal-sheet">
-          <div class="result-modal-handle"></div>
-          <div class="result-icon">
-            <div class="inner-icon"><img src="{% static 'core/images/ajout_textile/icon-surface.svg' %}" alt="Surface"></div>
-          </div>
-          <div class="result-label">Résultats de l'analyse</div>
-          <div class="result-value">{{ usable_area }} m²</div>
-
-          <div class="progress-container" style="width:100%;">
-            <div class="progress-header">
-              <span>Zone réutilisable</span>
-              <span>{{ percentage }}%</span>
-            </div>
-            <div class="progress-bar">
-              <div class="progress-fill" style="width: {{ percentage }}%;"></div>
-            </div>
-          </div>
-
-          <div class="bonus-badge">
-            <span><i class="ic fi-br-party-horn"></i></span>
-            <span>+{{ coins_earned }} pièce{% if coins_earned > 1 %}s{% endif %}</span>
-          </div>
-
-          <a href="{% url 'dashboard' %}" class="btn-primary" style="text-align:center; text-decoration:none; margin-top:8px;">
-            Voir mon tableau de bord
-          </a>
-        </div>
+  <!-- ── Popup « Autre type » ── -->
+  <div id="other-type-modal">
+    <div class="other-type-sheet">
+      <div class="other-type-handle"></div>
+      <p class="other-type-title">Choisir un type</p>
+      <div class="other-type-grid">
+        <button type="button" class="other-type-btn" data-type="manteau"><span class="other-type-emoji">🧥</span>Manteau</button>
+        <button type="button" class="other-type-btn" data-type="veste"><span class="other-type-emoji">🥼</span>Veste</button>
+        <button type="button" class="other-type-btn" data-type="blazer"><span class="other-type-emoji">👔</span>Blazer</button>
+        <button type="button" class="other-type-btn" data-type="pull"><span class="other-type-emoji">🧤</span>Pull</button>
+        <button type="button" class="other-type-btn" data-type="chemise"><span class="other-type-emoji">👕</span>Chemise</button>
+        <button type="button" class="other-type-btn" data-type="short"><span class="other-type-emoji">🩳</span>Short</button>
+        <button type="button" class="other-type-btn" data-type="gilet"><span class="other-type-emoji">🦺</span>Gilet</button>
+        <button type="button" class="other-type-btn" data-type="debardeur"><span class="other-type-emoji">🩱</span>Débardeur</button>
+        <button type="button" class="other-type-btn" data-type="combinaison"><span class="other-type-emoji">👘</span>Combinaison</button>
+        <button type="button" class="other-type-btn" data-type="pyjama"><span class="other-type-emoji">😴</span>Pyjama</button>
+        <button type="button" class="other-type-btn" data-type="accessoire"><span class="other-type-emoji"><i class="ic fi-br-ribbon"></i></span>Accessoire</button>
+        <button type="button" class="other-type-btn" data-type="autre"><span class="other-type-emoji">•••</span>Autre</button>
       </div>
-      {% endif %}
+      <button type="button" class="btn-other-cancel" id="btn-other-cancel">Annuler</button>
+    </div>
+  </div>
 
+</div>
   <script>
     (() => {
 
       // ==========================================
-      // 1. GESTION DU TYPE DE VÊTEMENT
+      // NAVIGATION ENTRE LES ÉTAPES
       // ==========================================
-      const typeButtons = document.querySelectorAll('.type-btn');
+      // Les sections portent leur numéro d'étape (data-page) ; 05 est la
+      // passe « défauts » de l'éditeur plein écran, elle n'a pas de section.
+      const pages    = [...document.querySelectorAll('.aj-page')];
+      const bars     = [...document.querySelectorAll('.aj-bar')];
+      const countEl  = document.getElementById('aj-count');
+      const backBtn  = document.getElementById('aj-back');
+      const DASHBOARD_URL = "{% url 'dashboard' %}";
+      let pageIdx = 0;
+
+      function renderProgress() {
+        const step = parseInt(pages[pageIdx].dataset.page, 10);
+        bars.forEach((b, i) => b.classList.toggle('on', i < step));
+        countEl.textContent = String(step).padStart(2, '0') + ' / 07';
+      }
+
+      function goTo(idx) {
+        pageIdx = Math.max(0, Math.min(pages.length - 1, idx));
+        pages.forEach((p, i) => p.classList.toggle('on', i === pageIdx));
+        pages[pageIdx].querySelector('.aj-body').scrollTop = 0;
+        renderProgress();
+      }
+
+      document.querySelectorAll('[data-next]').forEach(btn => {
+        btn.addEventListener('click', () => goTo(pageIdx + 1));
+      });
+
+      backBtn.addEventListener('click', () => {
+        if (pageIdx === 0) { window.location.href = DASHBOARD_URL; return; }
+        goTo(pageIdx - 1);
+      });
+
+      renderProgress();
+
+      // ==========================================
+      // 01 · NOM — suggestions
+      // ==========================================
+      const nomInput = document.getElementById('aj-nom');
+      document.querySelectorAll('.aj-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          nomInput.value = chip.textContent.trim();
+          nomInput.focus();
+        });
+      });
+
+      // ==========================================
+      // 04 · TYPE DE VÊTEMENT
+      // ==========================================
+      const typeButtons    = document.querySelectorAll('.type-btn');
       const hiddenTypeInput = document.getElementById('clothing_type_input');
-      const btnOtherType  = document.getElementById('btn-other-type');
+      const btnOtherType   = document.getElementById('btn-other-type');
       const otherTypeModal = document.getElementById('other-type-modal');
 
-      function openOtherModal()  { otherTypeModal && otherTypeModal.classList.add('active');    document.body.classList.add('other-open'); }
-      function closeOtherModal() { otherTypeModal && otherTypeModal.classList.remove('active'); document.body.classList.remove('other-open'); }
+      function openOtherModal()  { otherTypeModal.classList.add('active');    document.body.classList.add('other-open'); }
+      function closeOtherModal() { otherTypeModal.classList.remove('active'); document.body.classList.remove('other-open'); }
 
       typeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-          if (btn.id === 'btn-other-type') {
-            openOtherModal();
-            return;
-          }
+          if (btn.id === 'btn-other-type') { openOtherModal(); return; }
           typeButtons.forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
-          hiddenTypeInput.value = btn.getAttribute('data-type');
-          if (btnOtherType) btnOtherType.querySelector('.other-btn-label').textContent = 'Autre';
+          hiddenTypeInput.value = btn.dataset.type;
+          btnOtherType.querySelector('.other-btn-label').textContent = 'Autre';
         });
       });
 
       document.querySelectorAll('.other-type-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          const type  = btn.getAttribute('data-type');
           const label = btn.textContent.replace(btn.querySelector('.other-type-emoji').textContent, '').trim();
           typeButtons.forEach(b => b.classList.remove('active'));
-          if (btnOtherType) {
-            btnOtherType.classList.add('active');
-            btnOtherType.querySelector('.other-btn-label').textContent = label;
-          }
-          hiddenTypeInput.value = type;
+          btnOtherType.classList.add('active');
+          btnOtherType.querySelector('.other-btn-label').textContent = label;
+          hiddenTypeInput.value = btn.dataset.type;
           closeOtherModal();
         });
       });
 
-      document.getElementById('btn-other-cancel') &&
-        document.getElementById('btn-other-cancel').addEventListener('click', closeOtherModal);
+      document.getElementById('btn-other-cancel').addEventListener('click', closeOtherModal);
 
-      otherTypeModal && otherTypeModal.addEventListener('click', e => {
-        if (e.target === otherTypeModal) closeOtherModal();
+      // ==========================================
+      // 06 · COULEURS — 3 max, la 1ʳᵉ cochée est la dominante
+      // ==========================================
+      const couleurInput = document.getElementById('couleur-input');
+      const slots        = [...document.querySelectorAll('#aj-color-slots .aj-slot')];
+      const SLOT_ROLES   = ['Dominante', 'Secondaire', 'Tertiaire'];
+      const MAX_COLORS   = 3;
+      const colorInputs  = [...document.querySelectorAll('.color-swatch-input')];
+      let colorOrder = [];   // ids cochés, dans l'ordre de sélection
+
+      function syncCouleur() {
+        colorOrder = colorOrder.filter(id => document.getElementById(id).checked);
+        couleurInput.value = colorOrder.map(id => document.getElementById(id).value).join(',');
+
+        const atMax = colorOrder.length >= MAX_COLORS;
+        colorInputs.forEach(cb => {
+          cb.nextElementSibling.classList.toggle('maxed', !cb.checked && atMax);
+        });
+
+        slots.forEach((slot, i) => {
+          const cb = colorOrder[i] ? document.getElementById(colorOrder[i]) : null;
+          slot.classList.toggle('filled', !!cb);
+          slot.querySelector('.aj-slot-chip').style.background = cb ? cb.dataset.hex : '';
+          slot.querySelector('.aj-slot-name').textContent = cb ? cb.dataset.label : SLOT_ROLES[i];
+          slot.querySelector('.aj-slot-role').textContent =
+            cb ? SLOT_ROLES[i] : (i === 0 ? 'À choisir' : i === 1 ? 'Optionnel' : '3 max');
+        });
+      }
+
+      colorInputs.forEach(cb => {
+        cb.addEventListener('change', () => {
+          if (cb.checked) {
+            if (colorOrder.length >= MAX_COLORS) { cb.checked = false; return; }
+            colorOrder.push(cb.id);
+          }
+          syncCouleur();
+        });
       });
+      syncCouleur();
 
       // ==========================================
-      // GESTION DES MATIÈRES
+      // 07 · MATIÈRES & QUALITÉ
       // ==========================================
-      const MATERIAL_COLORS = {
-        coton:'#D4C5A9', polyester:'#93A8B8', laine:'#C8A96A', lin:'#C9B882',
-        soie:'#C4B0D8', viscose:'#7FC9CF', nylon:'#F4A06A', elasthanne:'#8DC89A',
-        acrylique:'#F4A0B4', cachemire:'#C4AFA9', bambou:'#9DBE94', velours:'#9A80C8',
-        denim:'#5B8BB4', cuir:'#8D6E63', satin:'#F0B0C8', modal:'#80C4BE',
-      };
       const MATERIALS_LIST = [
         {value:'coton',      label:'Coton'},
         {value:'polyester',  label:'Polyester'},
@@ -1746,11 +1712,11 @@
         {value:'modal',      label:'Modal'},
       ];
 
-      const materialListEl    = document.getElementById('material-list');
-      const materialTotalFill = document.getElementById('material-total-fill');
-      const materialTotalText = document.getElementById('material-total-text');
+      const materialListEl      = document.getElementById('material-list');
+      const materialTotalFill   = document.getElementById('material-total-fill');
+      const materialTotalText   = document.getElementById('material-total-text');
       const materialHiddenInput = document.getElementById('material-hidden');
-      const btnAddMaterial    = document.getElementById('btn-add-material');
+      const btnAddMaterial      = document.getElementById('btn-add-material');
 
       function getMaterialOptions(selected) {
         return MATERIALS_LIST.map(m =>
@@ -1759,48 +1725,38 @@
       }
 
       function updateMaterialTotal() {
-        if (!materialListEl) return;
-        const rows = materialListEl.querySelectorAll('.material-row');
+        const rows = [...materialListEl.querySelectorAll('.material-row')];
         let total = 0;
-        rows.forEach(row => { total += parseInt(row.querySelector('.material-percent-input').value) || 0; });
+        rows.forEach(row => { total += parseInt(row.querySelector('.material-percent-input').value, 10) || 0; });
 
-        if (materialTotalFill) {
-          materialTotalFill.style.width = Math.min(total, 100) + '%';
-          materialTotalFill.style.background = total > 100 ? '#A24A33' : total === 100 ? 'var(--primary-green)' : '#C8A96A';
-        }
-        if (materialTotalText) {
-          materialTotalText.textContent = `Total : ${total}%`;
-          materialTotalText.className = 'material-total-text' + (total > 100 ? ' over' : total === 100 ? ' valid' : '');
-        }
+        materialTotalFill.style.width = Math.min(total, 100) + '%';
+        materialTotalFill.style.background =
+          total > 100 ? 'var(--red)' : total === 100 ? 'var(--green)' : 'var(--yellow)';
+        materialTotalText.textContent = `Total : ${total} %`;
+        materialTotalText.className = 'aj-total-text' + (total > 100 ? ' over' : total === 100 ? ' valid' : '');
+
         const parts = [];
         rows.forEach(row => {
           const sel = row.querySelector('.material-name-select');
           const inp = row.querySelector('.material-percent-input');
-          if (sel && inp && inp.value) parts.push(`${sel.value}:${inp.value}`);
+          if (inp.value) parts.push(`${sel.value}:${inp.value}`);
         });
-        if (materialHiddenInput) materialHiddenInput.value = parts.join(',');
-
-        rows.forEach(row => {
-          const sel = row.querySelector('.material-name-select');
-          const dot = row.querySelector('.material-dot');
-          if (sel && dot) dot.style.background = MATERIAL_COLORS[sel.value] || '#BCBAA8';
-        });
+        materialHiddenInput.value = parts.join(',');
       }
 
       function createMaterialRow(matValue, percent) {
         const row = document.createElement('div');
         row.className = 'material-row';
         row.innerHTML = `
-          <span class="material-dot" style="background:${MATERIAL_COLORS[matValue] || '#BCBAA8'};"></span>
           <div class="material-select-wrapper">
             <select class="material-name-select">${getMaterialOptions(matValue)}</select>
             <svg class="material-select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
-          <div class="material-percent-wrapper">
-            <input type="number" class="material-percent-input" min="0" max="100" value="${percent}">
-            <span class="material-percent-unit">%</span>
-          </div>
-          <button type="button" class="material-delete-btn" title="Supprimer">×</button>
+          <input type="number" class="material-percent-input" min="0" max="100" value="${percent}">
+          <span class="material-percent-unit">%</span>
+          <button type="button" class="material-delete-btn" aria-label="Supprimer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6.5 17.5 18M17.5 6.5 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </button>
         `;
         row.querySelector('.material-name-select').addEventListener('change', updateMaterialTotal);
         row.querySelector('.material-percent-input').addEventListener('input', updateMaterialTotal);
@@ -1813,47 +1769,25 @@
         return row;
       }
 
-      if (materialListEl) {
-        materialListEl.appendChild(createMaterialRow('coton', 100));
-        updateMaterialTotal();
-      }
+      materialListEl.appendChild(createMaterialRow('coton', 100));
+      updateMaterialTotal();
 
-      btnAddMaterial && btnAddMaterial.addEventListener('click', () => {
+      btnAddMaterial.addEventListener('click', () => {
         const used = [...materialListEl.querySelectorAll('.material-name-select')].map(s => s.value);
         const next = MATERIALS_LIST.find(m => !used.includes(m.value)) || MATERIALS_LIST[1];
         materialListEl.appendChild(createMaterialRow(next.value, 0));
         updateMaterialTotal();
       });
 
-      // ── Couleur : multi-select checkbox (max 3) → hidden input ──
-      const couleurInput = document.getElementById('couleur-input');
-      const MAX_COLORS = 3;
-
-      function syncCouleur() {
-        const checked = [...document.querySelectorAll('.color-swatch-input:checked')];
-        couleurInput.value = checked.map(c => c.value).join(',');
-        const atMax = checked.length >= MAX_COLORS;
-        document.querySelectorAll('.color-swatch-input').forEach(cb => {
-          const label = cb.nextElementSibling;
-          if (!cb.checked && atMax) {
-            label.classList.add('maxed');
-          } else {
-            label.classList.remove('maxed');
-          }
-        });
-      }
-
-      document.querySelectorAll('.color-swatch-input').forEach(cb => {
-        cb.addEventListener('change', () => {
-          const checked = document.querySelectorAll('.color-swatch-input:checked');
-          if (checked.length > MAX_COLORS) {
-            cb.checked = false;
-          }
-          syncCouleur();
+      // Qualité : 3 crans mappés sur l'échelle 1-5 stockée en base.
+      const qualiteInput = document.getElementById('qualite-input');
+      document.querySelectorAll('.aj-quality-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.aj-quality-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          qualiteInput.value = btn.dataset.qualite;
         });
       });
-
-
 
       // ==========================================
       // 2. ÉDITEUR PLEIN ÉCRAN — détourage · étalonnage · défauts
@@ -2233,54 +2167,115 @@
         st.defects.forEach(d => { const rcm = d.r * w * cmpp; def += Math.PI * rcm * rcm; });
         return { area: areaCm2 / 10000, usable: Math.max(0, (areaCm2 - def) / 10000) };
       }
+      // ==========================================
+      // 02 / 03 · CARTES DE FACE
+      // ==========================================
+      // Une seule section pour les deux étapes : tant que l'avant n'est pas
+      // détouré on est à l'étape 02 (« photographie »), ensuite à l'étape 03
+      // (« avant détouré » + surface).
+      const facesPage    = document.getElementById('aj-page-faces');
+      const facesEyebrow = document.getElementById('aj-faces-eyebrow');
+      const facesTitle   = document.getElementById('aj-faces-title');
+      const facesLead    = document.getElementById('aj-faces-lead');
+      const facesNote    = document.getElementById('aj-faces-note');
+      const facesSurface = document.getElementById('aj-faces-surface');
+      const surfaceVal   = document.getElementById('aj-surface-val');
+      const surfaceHint  = document.getElementById('aj-surface-hint');
+      const facesCta     = document.getElementById('aj-faces-cta');
+      const facesGhost   = document.getElementById('aj-faces-ghost');
 
-      const CHECK_SVG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-      const PLUS_SVG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+      const CHECK_BADGE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
       function refreshFaceCard(face) {
-        const st = facesState[face];
-        const card = document.querySelector('.face-card[data-face="' + face + '"]');
-        const thumb = document.getElementById('face-thumb-' + face);
+        const st     = facesState[face];
+        const card   = document.querySelector('.face-card[data-face="' + face + '"]');
+        const thumb  = document.getElementById('face-thumb-' + face);
         const status = document.getElementById('face-status-' + face);
-        const badge = document.getElementById('face-badge-' + face);
+        const badge  = document.getElementById('face-badge-' + face);
+
         if (st.done) {
           card.classList.add('done');
+          card.classList.remove('pending');
           thumb.innerHTML = '<img src="' + st.photo + '" alt="">';
           const fa = faceArea(st);
-          status.innerHTML = fa ? '<i class="ic fi-br-check"></i> Détouré · ' + fa.usable.toFixed(2) + ' m² utiles' : '<i class="ic fi-br-check"></i> Détouré';
-          badge.innerHTML = CHECK_SVG;
+          status.textContent = fa
+            ? 'Détourée · ' + fa.usable.toFixed(2).replace('.', ',') + ' m²'
+            : 'Détourée';
+          badge.innerHTML = CHECK_BADGE;
         } else {
           card.classList.remove('done');
-          thumb.innerHTML = '<span class="face-thumb-emoji">' + (face === 'avant' ? '👕' : '<i class="ic fi-br-refresh"></i>') + '</span>';
-          status.textContent = 'À détourer · ' + (face === 'avant' ? 'requis' : 'optionnel');
-          badge.innerHTML = PLUS_SVG;
+          if (face === 'arriere') card.classList.add('pending');
+          status.textContent = face === 'avant' ? 'À détourer · requis' : 'Optionnel';
+          badge.innerHTML = '';
         }
+        renderFacesPage();
       }
+
+      function totalUsable() {
+        let total = 0;
+        ['avant', 'arriere'].forEach(f => {
+          const fa = facesState[f].done ? faceArea(facesState[f]) : null;
+          if (fa) total += fa.usable;
+        });
+        return total;
+      }
+
+      function renderFacesPage() {
+        const avantDone   = facesState.avant.done;
+        const arriereDone = facesState.arriere.done;
+
+        facesPage.dataset.page = avantDone ? '3' : '2';
+        if (facesPage.classList.contains('on')) renderProgress();
+
+        facesEyebrow.textContent = nomInput.value.trim() || 'Nouveau vêtement';
+        facesTitle.textContent   = avantDone ? 'Avant détouré' : 'Photographie chaque face';
+        facesLead.textContent    = avantDone
+          ? "Ajoute l'arrière pour affiner le calcul, ou passe à la suite."
+          : "L'avant est obligatoire. L'arrière améliore la précision du calcul de surface.";
+
+        facesNote.style.display    = avantDone ? 'none' : 'flex';
+        facesSurface.style.display = avantDone ? 'flex' : 'none';
+
+        if (avantDone) {
+          surfaceVal.textContent = totalUsable().toFixed(2).replace('.', ',') + ' m²';
+          surfaceHint.textContent = arriereDone
+            ? 'Les deux faces sont prises en compte.'
+            : "L'arrière sera estimé identique à l'avant si tu ne le scannes pas.";
+        }
+
+        facesCta.textContent     = avantDone ? 'Continuer' : "Photographier l'avant";
+        facesGhost.style.display = avantDone && !arriereDone ? 'block' : 'none';
+      }
+
+      facesCta.addEventListener('click', () => {
+        if (facesState.avant.done) goTo(pageIdx + 1);
+        else openFace('avant');
+      });
+      facesGhost.addEventListener('click', () => openFace('arriere'));
 
       function writeFaceInputs(face) {
         const st = facesState[face];
-        document.getElementById('photo_data_' + face).value = st.photo || '';
-        document.getElementById('polygon_' + face).value = JSON.stringify(st.polygon);
-        document.getElementById('calib_coords_' + face).value = JSON.stringify(st.calib);
+        document.getElementById('photo_data_' + face).value     = st.photo || '';
+        document.getElementById('polygon_' + face).value        = JSON.stringify(st.polygon);
+        document.getElementById('calib_coords_' + face).value   = JSON.stringify(st.calib);
         document.getElementById('calib_distance_' + face).value = st.calibDist || 0;
-        document.getElementById('img_w_' + face).value = st.imgW || 0;
-        document.getElementById('img_h_' + face).value = st.imgH || 0;
-        document.getElementById('defects_' + face).value = JSON.stringify(st.defects);
+        document.getElementById('img_w_' + face).value          = st.imgW || 0;
+        document.getElementById('img_h_' + face).value          = st.imgH || 0;
+        document.getElementById('defects_' + face).value        = JSON.stringify(st.defects);
       }
 
       function updateSubmit() {
         btnSubmit.disabled = !facesState.avant.done;
-        btnSubmit.style.opacity = facesState.avant.done ? '1' : '0.5';
       }
 
       function finalizeFace() {
         if (poly.length < 3 || calib.length !== 2 || !(parseFloat(calibDistInput.value) > 0)) return;
         const st = facesState[activeFace];
-        st.polygon = poly.map(p => ({ x: p.x, y: p.y }));
-        st.calib = calib.map(p => ({ x: p.x, y: p.y }));
+        st.polygon   = poly.map(p => ({ x: p.x, y: p.y }));
+        st.calib     = calib.map(p => ({ x: p.x, y: p.y }));
         st.calibDist = parseFloat(calibDistInput.value);
-        st.defects = defects.map(d => ({ x: d.x, y: d.y, r: d.r, type: d.type }));
-        st.done = true;
+        st.defects   = defects.map(d => ({ x: d.x, y: d.y, r: d.r, type: d.type }));
+        st.done      = true;
         writeFaceInputs(activeFace);
         refreshFaceCard(activeFace);
         updateSubmit();
@@ -2480,20 +2475,51 @@
         }
       });
 
-      // Empêcher l'envoi tant que la face avant n'est pas détourée
-      updateSubmit();
-      btnSubmit.addEventListener('click', (e) => {
+      // ==========================================
+      // ENVOI · écran « analyse en cours »
+      // ==========================================
+      const form        = document.getElementById('aj-form');
+      const analyse     = document.getElementById('aj-analyse');
+      const analyseTtl  = document.getElementById('aj-analyse-title');
+      const analyseThmb = document.getElementById('aj-analyse-thumb');
+      const analyseArea = document.getElementById('aj-analyse-area');
+      const analyseSub  = document.getElementById('aj-analyse-sub');
+      const analysePct  = document.getElementById('aj-analyse-pct');
+      const analyseFill = document.getElementById('aj-analyse-fill');
+      const analyseStep3 = document.getElementById('aj-analyse-step3');
+
+      function showAnalyse() {
+        const st = facesState.avant;
+        analyseTtl.textContent = nomInput.value.trim() || 'Ton vêtement';
+        if (st.photo) analyseThmb.innerHTML = '<img src="' + st.photo + '" alt="">';
+        analyseArea.textContent = totalUsable().toFixed(2).replace('.', ',') + ' m²';
+        const nbDefauts = facesState.avant.defects.length + facesState.arriere.defects.length;
+        analyseSub.textContent = 'surface détourée, ' + nbDefauts + ' défaut' + (nbDefauts > 1 ? 's' : '') + ' déduit' + (nbDefauts > 1 ? 's' : '');
+        analyse.classList.add('on');
+
+        // Progression indicative : la vraie fin, c'est la réponse du serveur.
+        let pct = 4;
+        const timer = setInterval(() => {
+          pct = Math.min(96, pct + Math.random() * 9);
+          analyseFill.style.width = pct + '%';
+          analysePct.textContent = Math.round(pct) + ' %';
+          if (pct > 70) analyseStep3.classList.add('done');
+          if (pct >= 96) clearInterval(timer);
+        }, 380);
+      }
+
+      form.addEventListener('submit', (e) => {
         if (!facesState.avant.done) {
           e.preventDefault();
-          alert('Détoure au moins la face avant avant de lancer l\'analyse.');
+          goTo(pages.indexOf(facesPage));
+          return;
         }
+        showAnalyse();
       });
+
+      updateSubmit();
+      renderFacesPage();
+      nomInput.addEventListener('input', renderFacesPage);
     })();
   </script>
-{% endblock %}
-
-{% block bottom_nav %}
-  {% with nav_active='scanner' %}
-    {% include 'core/bottom_nav.html' %}
-  {% endwith %}
 {% endblock %}
