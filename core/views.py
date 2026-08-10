@@ -483,6 +483,24 @@ def _polygon_area_px2(px_points):
     return abs(area) / 2.0
 
 
+# Types de défauts posés dans l'éditeur (le modèle n'en stocke que deux
+# surfaces, cf. _analyser_face ; ces libellés servent au ticket de fin).
+DEFAUT_LABELS = {
+    'tache':  'Tache',
+    'trou':   'Trou',
+    'usure':  'Usure',
+    'ourlet': 'Ourlet',
+    'autre':  'Autre',
+}
+FACE_LABELS = {'avant': 'Face avant', 'arriere': 'Face arrière'}
+
+# Part de la surface détourée perdue en coutures, ourlets et bords non
+# exploitables. Constante volontairement prudente : c'est une estimation,
+# pas une mesure — elle est déduite de la surface exploitable et affichée
+# telle quelle sur le ticket de fin.
+CHUTES_BORDS_RATIO = 0.08
+
+
 def _analyser_face(request, prefix):
     """
     Analyse une face (avant / arrière) à partir des données du formulaire.
@@ -518,14 +536,25 @@ def _analyser_face(request, prefix):
 
     tache_m2 = 0.0
     trou_m2 = 0.0
+    lignes = []
     for d in defects:
         # rayon stocké normalisé par rapport à la largeur de l'image
         r_cm = float(d.get('r', 0)) * img_w * cm_per_px
         circle_m2 = math.pi * r_cm * r_cm / 10000.0
-        if d.get('type') == 'tache':
-            tache_m2 += circle_m2
-        else:
+        # Le modèle ne connaît que deux surfaces perdues : les trous d'un côté,
+        # tout le reste (tache, usure, ourlet, autre) de l'autre. Le type précis
+        # reste stocké dans le JSON `defauts` pour l'affichage.
+        if d.get('type') == 'trou':
             trou_m2 += circle_m2
+        else:
+            tache_m2 += circle_m2
+        lignes.append({
+            'type': d.get('type', 'tache'),
+            'libelle': DEFAUT_LABELS.get(d.get('type'), 'Défaut'),
+            'face': FACE_LABELS.get(prefix, prefix),
+            'taille_cm': round(r_cm * 2),
+            'perte_m2': circle_m2,
+        })
 
     return {
         'area_m2': area_m2,
@@ -535,6 +564,7 @@ def _analyser_face(request, prefix):
         'cm_per_px': cm_per_px,
         'polygon': polygon,
         'defects': defects,
+        'lignes': lignes,
     }
 
 
@@ -556,14 +586,17 @@ def ajout_textile(request):
                 surface_totale_m2 = face_av['area_m2'] + face_ar['area_m2']
                 tache_m2 = face_av['tache_m2'] + face_ar['tache_m2']
                 trou_m2 = face_av['trou_m2'] + face_ar['trou_m2']
+                lignes_defauts = face_av['lignes'] + face_ar['lignes']
             else:
                 # Face arrière ignorée : on suppose l'arrière identique à l'avant.
                 surface_totale_m2 = face_av['area_m2'] * 2
                 tache_m2 = face_av['tache_m2'] * 2
                 trou_m2 = face_av['trou_m2'] * 2
+                lignes_defauts = face_av['lignes']
 
             total_defect_area_m2 = tache_m2 + trou_m2
-            usable_area_m2 = max(0, surface_totale_m2 - total_defect_area_m2)
+            chutes_m2 = surface_totale_m2 * CHUTES_BORDS_RATIO
+            usable_area_m2 = max(0, surface_totale_m2 - total_defect_area_m2 - chutes_m2)
             percentage = int((usable_area_m2 / surface_totale_m2) * 100) if surface_totale_m2 > 0 else 0
 
             # SAUVEGARDE DANS LA BASE DE DONNÉES
@@ -575,7 +608,7 @@ def ajout_textile(request):
 
             photo_fichier = decode_base64_image(face_av['photo_data'], 'vetement')
 
-            Vetement.objects.create(
+            vetement = Vetement.objects.create(
                 utilisateur=request.user,
                 nomVetement=nom_vetement,
                 photoURL=photo_fichier,
@@ -599,11 +632,30 @@ def ajout_textile(request):
             request.user.soldePieces += coins_earned
             request.user.save()
 
+            # ── Ticket de fin ──
+            matieres_txt = ' · '.join(
+                f"{MATERIAL_LABELS.get(n.strip().lower(), n.strip().capitalize())} {p} %"
+                for n, p in (part.split(':', 1) for part in matiere_raw.split(',') if ':' in part)
+            )
+            couleurs_txt = ' · '.join(c.strip() for c in couleur.split(',') if c.strip())
+            nb_patrons = Patron.objects.filter(surfaceMin__lte=usable_area_m2).count()
+
             context.update({
                 'result_ready': True,
                 'usable_area': round(usable_area_m2, 2),
                 'percentage': percentage,
                 'coins_earned': coins_earned,
+                'ticket': {
+                    'ref': f'{vetement.pk:06d}',
+                    'date': timezone.localdate().strftime('%d.%m.%y'),
+                    'nom': nom_vetement,
+                    'matieres': matieres_txt,
+                    'couleurs': couleurs_txt,
+                    'surface_totale': round(surface_totale_m2, 2),
+                    'lignes': lignes_defauts,
+                    'chutes': round(chutes_m2, 2),
+                    'nb_patrons': nb_patrons,
+                },
             })
 
         except (ValueError, json.JSONDecodeError, ZeroDivisionError):
