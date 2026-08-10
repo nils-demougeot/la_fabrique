@@ -54,6 +54,10 @@ class Vetement(models.Model):
     qualite = models.IntegerField(default=3)
     couleur = models.CharField(max_length=30, blank=True, null=True)
     matiere = models.CharField(max_length=200, blank=True, null=True)  # ex: "coton:70,polyester:30"
+    numeroIdentite = models.CharField(
+        max_length=50, blank=True, null=True,
+        help_text="Numéro d'identité facultatif, saisi si le tissu a déjà été suivi ailleurs sur l'app."
+    )
 
     # Données d'échelle/forme de la face avant (photoURL), pour le placement des pièces.
     echelle_cm_px = models.FloatField(null=True, blank=True)            # cm par pixel de la photo

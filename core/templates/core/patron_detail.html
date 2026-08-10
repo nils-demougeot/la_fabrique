@@ -1,1509 +1,1186 @@
 {% extends 'core/header.html' %}
-{% load static %}
+{% load static l10n %}
+
+{% comment %}
+  ─────────────────────────────────────────────────────────────────────────
+  Fiche patron — design « 15b ». Même langage visuel que la liste des
+  patrons (design « 28a ») : encre #14120F, papier #FFFDF8, sable #F6F0E6,
+  Bricolage Grotesque + DM Sans/Mono. Héros photo plein cadre avec bandeau
+  flottant (retour + accès), carte titre en surimpression, grille de stats,
+  bandeau difficulté, sélection des tissus (carte encre), plan de coupe,
+  outils, chronologie des étapes, CTA fixe en bas.
+  ─────────────────────────────────────────────────────────────────────────
+{% endcomment %}
+
+{% block app_header %}{% endblock %}
 
 {% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 
-  body { background: #FFFBFF; }
+  /* =========================================================
+     Jetons de design (identiques à patrons.html)
+     ========================================================= */
+  .pd {
+    --ink:      #14120F;
+    --paper:    #FFFDF8;
+    --sand:     #F6F0E6;
+    --line:     #EFE6D8;
+    --muted:    #8E877E;
+    --muted-d:  #6E655B;
+    --faint:    #A79E92;
+    --green:    #1FA85C;
+    --green-l:  #DFF5E8;
+    --green-d:  #0E6B37;
+    --yellow:   #FFC93C;
+    --yellow-l: #FFEFC2;
+    --amber-l:  #F3E5D8;
+    --amber-d:  #7C4A1E;
+    --violet:   #7C5CFF;
+    --red:      #A24A33;
 
-  .detail-wrapper {
-    max-width: 390px;
-    margin: 0 auto;
-    padding: 16px 16px 130px;
+    --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --text:    'DM Sans', 'Manrope', system-ui, sans-serif;
+    --mono:    'DM Mono', ui-monospace, monospace;
+
+    background: var(--paper);
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--text);
+    color: var(--ink);
+    padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+  .pd :where(a) { text-decoration: none; color: inherit; }
+  .pd svg { display: block; }
+
+  /* Défilement doux vers les onglets d'ancrage, sans affecter les autres pages. */
+  body:has(.pd) .scrollable-content { scroll-behavior: smooth; }
+
+  /* =========================================================
+     Héros photo
+     ========================================================= */
+  .pd-hero {
+    flex: none;
+    position: relative;
+    height: 300px;
+    overflow: hidden;
+    background: var(--ink);
+  }
+  .pd-hero-media { position: absolute; inset: 0; }
+  .pd-hero-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pd-hero-fallback {
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(135deg, #3A342A 0 14px, #2C2720 14px 28px);
+  }
+  .pd-hero-scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(14,13,11,.55) 0%, rgba(14,13,11,.05) 32%, rgba(14,13,11,.72) 100%);
   }
 
-  /* ── Barre du haut (retour + badge accès) ── */
-  .page-top-bar {
+  .pd-hero-top {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 24px;
+    padding: 16px 16px 0;
   }
-  .back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: #65655E;
-    font-family: 'Manrope', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-    padding: 8px 0;
-    transition: color 0.15s;
-  }
-  .back-btn:hover { color: #4E6C50; }
-  .back-btn svg { flex-shrink: 0; }
-
-  /* ── Section du haut ── */
-  .top-section {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-
-  /* ── Carte Informations ── */
-  .info-card {
-    background: #FBFAF0;
-    border-radius: 32px;
-    padding: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .info-card-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .info-card-header .green-dot {
-    width: 14px; height: 14px;
-    background: #237329;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .info-card-header h3 {
-    color: #383832;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0;
-    line-height: 28px;
-  }
-
-  .info-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .info-row {
-    background: white;
-    border-radius: 16px;
-    padding: 14px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .info-row-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .info-row-icon {
-    width: 20px; height: 20px;
+  .pd-hero-back {
+    width: 38px; height: 38px;
+    border-radius: 13px;
+    background: rgba(20,18,15,.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #fff;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    color: #845C32;
+    flex: none;
+    transition: background .15s;
   }
-  .info-row-label {
-    color: #65655E;
-    font-family: 'Manrope', sans-serif;
-    font-size: 15px;
-    font-weight: 600;
-  }
-  .info-row-value {
-    font-family: 'Manrope', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    text-align: right;
-    white-space: nowrap;
-  }
-  .info-row-value.green  { color: #237329; }
-  .info-row-value.neutral{ color: #383832; }
-  .info-row-value.orange { color: #B86300; }
-  .info-row-value.red    { color: #C62828; }
-
-  .info-row-matiere {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-  .matiere-mini {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-family: 'Manrope', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    color: #383832;
-  }
-  .matiere-mini + .matiere-mini::before {
-    content: '·';
-    color: #BCBAA8;
-    font-weight: 400;
-    margin-right: 2px;
-  }
-  .matiere-mini-dot {
-    width: 9px; height: 9px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  /* Matériel */
-  .materiel-card {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .materiel-title {
-    color: #65655E;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.7px;
-  }
-  .materiel-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .materiel-chip {
-    background: #EFEEE3;
-    border-radius: 9999px;
-    padding: 7px 14px;
-    color: #383832;
-    font-family: 'Manrope', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    outline: 1px rgba(187, 185, 177, 0.20) solid;
-    outline-offset: -1px;
-  }
-  .chip-dot {
-    width: 5px; height: 5px;
-    background: #65655E;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  /* ── Badge difficulté ── */
-  .difficulty-badge {
-    background: rgba(252, 200, 149, 0.30);
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    outline: 1px rgba(252, 200, 149, 0.20) solid;
-    outline-offset: -1px;
-  }
-  .difficulty-icon-circle {
-    width: 48px; height: 48px;
-    background: #FCC895;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .difficulty-icon-circle svg { color: #634018; }
-  .difficulty-label-small {
-    color: rgba(99, 64, 24, 0.70);
-    font-family: 'Manrope', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    line-height: 16px;
-    margin-bottom: 2px;
-  }
-  .difficulty-value {
-    color: #634018;
-    font-family: 'Manrope', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    line-height: 24px;
-  }
-
-  /* Accès premium */
-  .access-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 4px;
-  }
-  .access-badge {
+  .pd-hero-back:active { background: rgba(20,18,15,.65); }
+  .pd-hero-badge {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    background: #FCC895;
-    border-radius: 9999px;
-    padding: 3px 10px;
-    color: #634018;
-    font-family: 'Manrope', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    border-radius: 13px;
+    padding: 9px 12px;
+    font: 800 11px var(--display);
+    letter-spacing: .03em;
   }
-  .access-badge.free {
-    background: #D2F4D1;
-    color: #2F5E4A;
+  .pd-hero-badge.is-free { background: var(--green-l); color: var(--green-d); }
+  .pd-hero-badge.is-premium { background: var(--amber-l); color: var(--amber-d); }
+  .pd-hero-badge svg { width: 11px; height: 11px; }
+
+  /* =========================================================
+     Corps — carte qui remonte sur le bas de la photo (comme la
+     référence 15b : margin-top négatif + coins arrondis en haut).
+     ========================================================= */
+  .pd-body {
+    flex: 1;
+    margin-top: -32px;
+    border-radius: 32px 32px 0 0;
+    background: var(--paper);
+    position: relative;
+    z-index: 1;
+    padding: 24px 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
   }
 
-  /* ── Carte photo (inclinée) ── */
-  .photo-card-wrapper {
-    transform: rotate(-1.2deg);
-    transform-origin: top left;
+  /* Repère + titre, en tout premier dans la carte — texte plat, pas de
+     surimpression flottante sur la photo. */
+  .pd-title-block { margin-bottom: -8px; }
+  .pd-title-eyebrow {
+    font: 500 10px var(--mono);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
   }
-  .photo-card {
-    background: white;
-    border-radius: 32px;
+  .pd-title-heading {
+    font: 800 28px/1.05 var(--display);
+    letter-spacing: -.025em;
+    color: var(--ink);
+    margin-top: 7px;
+  }
+
+  /* Bandeau vérification e-mail (redirigé depuis le CTA). */
+  .pd-verif-alert {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--yellow-l); color: #7C4A00;
+    border-radius: 16px; padding: 12px 14px;
+    font-size: 13px; font-weight: 600; line-height: 1.35;
+  }
+  .pd-verif-alert span { flex: 1; }
+
+  /* ── Onglets d'ancrage ─────────────────────────────────── */
+  .pd-tabs {
+    display: flex;
+    gap: 7px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .pd-tabs::-webkit-scrollbar { display: none; }
+  .pd-tab {
+    flex: none;
+    background: var(--sand);
+    border-radius: 14px;
+    padding: 9px 14px;
+    font: 700 12px var(--display);
+    color: var(--muted-d);
+    scroll-margin-top: 12px;
+  }
+  .pd-tab.is-primary { background: var(--ink); color: #fff; }
+
+  /* Cible de défilement des sections (offset pour ne pas coller en haut). */
+  .pd-anchor { scroll-margin-top: 14px; }
+
+  /* ── Description ───────────────────────────────────────── */
+  .pd-desc {
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--muted-d);
+  }
+
+  /* ── Grille de stats ───────────────────────────────────── */
+  .pd-stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+  .pd-stat-tile {
+    background: var(--sand);
+    border-radius: 18px;
+    padding: 13px 14px;
+  }
+  .pd-stat-label {
+    font: 500 9.5px var(--mono);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+  }
+  .pd-stat-value {
+    font: 800 16px var(--display);
+    margin-top: 5px;
+    letter-spacing: -.01em;
+  }
+  .pd-stat-value.is-green  { color: var(--green); }
+  .pd-stat-value.is-orange { color: #B86300; }
+  .pd-stat-value.is-red    { color: var(--red); }
+
+  /* ── Matière acceptée ──────────────────────────────────── */
+  .pd-materials-row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .pd-material-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--sand);
+    border-radius: 9999px;
+    padding: 7px 12px 7px 8px;
+    font: 700 12px var(--text);
+    color: var(--ink);
+  }
+  .pd-material-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+
+  /* ── Bandeau difficulté ────────────────────────────────── */
+  .pd-difficulty {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--yellow-l);
+    border-radius: 20px;
+    padding: 14px 16px;
+  }
+  .pd-difficulty-icon {
+    width: 46px; height: 46px;
+    border-radius: 15px;
+    background: var(--yellow);
+    color: #5A3A0E;
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  .pd-difficulty-body { flex: 1; min-width: 0; }
+  .pd-difficulty-label {
+    font: 700 10px var(--mono);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #8A6E20;
+  }
+  .pd-difficulty-row { display: flex; align-items: center; gap: 9px; margin-top: 4px; }
+  .pd-difficulty-value { font: 800 16px var(--display); color: #5A3A0E; }
+  .pd-difficulty-xp {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #5A3A0E;
+    color: var(--yellow-l);
+    border-radius: 9px;
+    padding: 3px 8px;
+    font: 800 11px var(--display);
+  }
+  .pd-difficulty-xp img { height: 11px; width: auto; }
+  .pd-difficulty-dots { display: flex; gap: 3px; flex: none; }
+  .pd-difficulty-dots span { width: 7px; height: 20px; border-radius: 3px; background: rgba(90,58,14,.18); display: block; }
+  .pd-difficulty-dots span.is-on { background: #5A3A0E; }
+
+  /* ── Section headers ───────────────────────────────────── */
+  .pd-section-head { display: flex; align-items: baseline; gap: 8px; }
+  .pd-section-title { font: 800 19px var(--display); letter-spacing: -.01em; margin: 0; }
+  .pd-section-hint { font-size: 13px; color: var(--muted); margin-top: -6px; line-height: 1.4; }
+
+  /* ── Carte « Choisir vos tissus » (encre) ─────────────────── */
+  .pd-garments-card {
+    background: var(--ink);
+    border-radius: 26px;
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+  }
+  .pd-garments-head { display: flex; align-items: center; gap: 9px; }
+  .pd-garments-head h3 { flex: 1; font: 800 17px var(--display); color: #fff; margin: 0; }
+  .pd-garments-required {
+    background: var(--yellow);
+    color: #5A3A0E;
+    border-radius: 9px;
+    padding: 4px 8px;
+    font: 800 9px var(--display);
+    letter-spacing: .03em;
+    flex: none;
+  }
+  .pd-garments-hint { font-size: 12px; line-height: 1.45; color: #B7AFA4; margin-top: -6px; }
+
+  .pd-garment {
+    background: #1B1814;
+    border: 1.5px solid #2A2620;
+    border-radius: 20px;
+    padding: 11px 12px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color .15s, background .15s;
+  }
+  .pd-garment.is-selected {
+    background: #221E19;
+    border-color: var(--green);
+  }
+  .pd-garment.is-incompatible { opacity: .58; }
+  .pd-garment-thumb {
+    width: 46px; height: 46px;
+    border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.22);
-    position: relative;
+    flex: none;
+    background: repeating-linear-gradient(135deg, #4A443C 0 7px, #3D3830 7px 14px);
+    display: flex; align-items: center; justify-content: center;
+    color: #9C9184;
   }
-  .photo-card img {
-    width: 100%;
-    height: 270px;
-    object-fit: cover;
-    display: block;
+  .pd-garment-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pd-garment-info { flex: 1; min-width: 0; }
+  .pd-garment-name {
+    font: 800 13.5px var(--display);
+    color: #fff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .photo-placeholder {
-    width: 100%;
-    height: 270px;
-    background: linear-gradient(135deg, #D2F4D1 0%, #EFEEE3 100%);
+  .pd-garment-meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+  .pd-garment-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .pd-garment-mat { font: 400 11px var(--text); color: #9C9184; }
+  .pd-garment-sep { color: #4A443C; }
+  .pd-garment-surface { font: 700 11px var(--text); color: var(--green); }
+  .pd-garment-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; }
+  .pd-garment-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    border-radius: 9px; padding: 3px 8px;
+    font: 800 9px var(--display);
+    white-space: nowrap;
+  }
+  .pd-garment-badge.is-ok   { background: var(--green-l); color: var(--green-d); }
+  .pd-garment-badge.is-warn { background: #3A2F1A; color: var(--yellow); }
+  .pd-garment-badge.is-bad  { background: rgba(198,40,40,.18); color: #FF8A80; }
+  .pd-garment-checkbox {
+    width: 22px; height: 22px;
+    border-radius: 7px;
+    border: 2px solid #4A443C;
+    box-sizing: border-box;
+    flex: none;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, border-color .15s;
+  }
+  .pd-garment.is-selected .pd-garment-checkbox { background: var(--green); border-color: var(--green); }
+  .pd-garment-checkbox svg { display: none; width: 12px; height: 12px; }
+  .pd-garment.is-selected .pd-garment-checkbox svg { display: block; }
+
+  .pd-garment.pd-garment-extra { display: none; }
+  .pd-garments-card.is-expanded .pd-garment.pd-garment-extra { display: flex; }
+
+  .pd-garments-expand {
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  .photo-placeholder svg { width: 48px; height: 48px; color: #4E6C50; opacity: 0.4; }
-  .photo-overlay {
-    position: absolute;
-    left: 20px; right: 20px;
-    bottom: 18px;
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-radius: 48px;
-    padding: 12px 22px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-  }
-  .photo-overlay-label {
-    color: #237329;
-    font-family: 'Manrope', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    line-height: 16px;
-    margin-bottom: 2px;
-  }
-  .photo-overlay-title {
-    color: #383832;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 26px;
-    font-weight: 800;
-    line-height: 32px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* ── Description ── */
-  .description-section {
-    background: #FBFAF0;
-    border-radius: 24px;
-    padding: 24px;
-    margin-bottom: 32px;
-  }
-  .description-section p {
-    color: #65655E;
-    font-family: 'Manrope', sans-serif;
-    font-size: 15px;
-    font-weight: 400;
-    line-height: 26px;
-    margin: 0;
-  }
-
-  /* ── Section instructions ── */
-  .instructions-section {
-    display: flex;
-    flex-direction: column;
-    gap: 36px;
-  }
-  .instructions-header h2 {
-    color: #383832;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 28px;
-    font-weight: 800;
-    line-height: 36px;
-    margin: 0 0 6px 0;
-  }
-  .instructions-header p {
-    color: #65655E;
-    font-family: 'Manrope', sans-serif;
-    font-size: 15px;
-    font-weight: 500;
-    margin: 0;
-  }
-  .instructions-empty {
-    color: #65655E;
-    font-family: 'Manrope', sans-serif;
-    font-size: 14px;
-    text-align: center;
-    padding: 24px;
-    background: #FBFAF0;
-    border-radius: 20px;
-  }
-
-  /* ── Steps timeline ── */
-  .steps-list {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .step-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 20px;
-    margin-bottom: 40px;
-  }
-  .step-item:last-child { margin-bottom: 0; }
-
-  .step-indicator {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    align-self: stretch;
-    flex-shrink: 0;
-  }
-  .step-number {
-    width: 40px; height: 40px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    background: #EAE9DD;
-    color: #383832;
-    font-family: 'Manrope', sans-serif;
-    font-size: 17px;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-  .step-number.active {
-    background: #4E6C50;
-    color: white;
-    box-shadow: 0 4px 6px -4px rgba(78,108,80,0.30), 0 10px 15px -3px rgba(78,108,80,0.20);
-  }
-  .step-line {
-    width: 2px;
-    flex: 1;
-    min-height: 32px;
-    margin-top: 12px;
-    background: linear-gradient(180deg, rgba(78,108,80,0.30) 0%, rgba(78,108,80,0) 100%);
-    border-radius: 1px;
-  }
-
-  .step-card {
-    flex: 1;
-    background: #FBFAF0;
-    border-radius: 28px;
-    padding: 22px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-width: 0;
-  }
-  .step-card-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .step-type-icon {
-    width: 20px; height: 20px;
-    color: #2E7D32;
-    flex-shrink: 0;
-    margin-top: 4px;
-  }
-  .step-title {
-    color: #383832;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 26px;
-  }
-  .step-desc {
-    color: #65655E;
-    font-family: 'Manrope', sans-serif;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 24px;
-    margin: 0;
-  }
-  .step-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: #4E6C50;
-    font-family: 'Manrope', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-    margin-top: 4px;
-    transition: opacity 0.15s;
-  }
-  .step-link:hover { opacity: 0.75; }
-  .step-link svg { flex-shrink: 0; }
-
-  /* overlay top row (label + badge accès) */
-  .overlay-top-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 2px;
-  }
-
-  /* ── CTA bas fixe ── */
-  .bottom-cta {
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 390px;
-    background: rgba(254, 252, 243, 0.88);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-top: 1px solid rgba(187, 185, 177, 0.20);
-    box-shadow: 0 -10px 40px rgba(56, 56, 50, 0.06);
-    padding: 16px 24px 20px;
-    box-sizing: border-box;
-    z-index: 50;
-  }
-  .btn-start {
-    position: relative;
-    display: block;
+    gap: 7px;
     width: 100%;
     box-sizing: border-box;
-    background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
-    color: white;
-    border: none;
-    border-radius: 20px;
-    padding: 18px 24px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 17px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
+    background: transparent;
+    border: 1.5px dashed #3D3830;
+    border-radius: 14px;
+    padding: 10px;
+    color: #B7AFA4;
+    font: 700 12px var(--display);
     cursor: pointer;
-    text-align: center;
-    text-decoration: none;
-    box-shadow: 0 6px 0 #1B5E20, 0 10px 24px rgba(35,115,41,0.35);
-    transform: translateY(0);
-    transition: transform 0.08s, box-shadow 0.08s;
-    overflow: hidden;
   }
-  .btn-start::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%);
-    border-radius: inherit;
-    pointer-events: none;
-  }
-  .btn-start:hover {
-    box-shadow: 0 8px 0 #1B5E20, 0 14px 28px rgba(35,115,41,0.4);
-    transform: translateY(-2px);
-  }
-  .btn-start:active {
-    transform: translateY(5px);
-    box-shadow: 0 1px 0 #1B5E20, 0 4px 12px rgba(35,115,41,0.25);
-  }
+  .pd-garments-expand svg { transition: transform .2s ease; }
+  .pd-garments-card.is-expanded .pd-garments-expand svg { transform: rotate(180deg); }
 
-  /* ── Section tissus requis ── */
-  .tissus-card {
-    background: linear-gradient(135deg, rgba(210,244,209,0.35) 0%, rgba(255,255,255,0.8) 100%);
-    border-radius: 16px;
-    padding: 20px;
+  .pd-garments-empty {
+    background: #1B1814;
+    border-radius: 18px;
+    padding: 20px 16px;
+    text-align: center;
+    color: #B7AFA4;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .pd-garments-empty a { color: var(--yellow); font-weight: 700; }
+
+  .pd-surface-meter { background: #221E19; border-radius: 16px; padding: 12px 13px; display: flex; flex-direction: column; gap: 8px; }
+  .pd-surface-meter-head { display: flex; align-items: baseline; justify-content: space-between; }
+  .pd-surface-meter-label { font: 500 10px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: #9C9184; }
+  .pd-surface-meter-value { font: 800 13px var(--display); color: #fff; }
+  .pd-surface-meter-value small { font: 400 11px var(--text); color: #9C9184; }
+  .pd-surface-meter-track { height: 7px; border-radius: 4px; background: #2E2A24; overflow: hidden; }
+  .pd-surface-meter-fill { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #0E6B37 0%, #1FA85C 100%); width: 0%; transition: width .25s ease; }
+  .pd-surface-meter-note { font: 700 11px var(--text); }
+  .pd-surface-meter-note.is-ok   { color: var(--green); }
+  .pd-surface-meter-note.is-low  { color: var(--yellow); }
+
+  .pd-feasibility-cta {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--green);
+    border-radius: 18px;
+    padding: 13px 14px;
+  }
+  .pd-feasibility-icon {
+    width: 40px; height: 40px; border-radius: 13px;
+    background: rgba(255,255,255,.2);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  .pd-feasibility-body { flex: 1; min-width: 0; }
+  .pd-feasibility-title { font: 800 14px var(--display); color: #fff; }
+  .pd-feasibility-sub { font-size: 11px; color: rgba(255,255,255,.85); margin-top: 2px; }
+  .pd-feasibility-arrow { color: #fff; flex: none; }
+
+  /* ── Plan de coupe / outils ─────────────────────────────── */
+  .pd-card {
+    background: var(--sand);
+    border-radius: 22px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    border: 1.5px solid rgba(35,115,41,0.15);
+    gap: 12px;
   }
-  .tissus-card-header {
+  .pd-card-title {
+    font: 700 11px var(--display);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted-d);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .pd-pieces-list { display: flex; flex-direction: column; gap: 7px; }
+  .pd-piece-row {
+    background: var(--paper);
+    border-radius: 14px;
+    padding: 9px 11px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
-  .tissus-title {
-    color: #237329;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.7px;
+  .pd-piece-num {
+    width: 22px; height: 22px; border-radius: 7px;
+    background: var(--violet);
+    color: #fff;
+    font: 800 10px var(--display);
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
   }
-  .tissu-chip {
-    background: white;
-    border-radius: 9999px;
-    padding: 7px 14px;
-    color: #383832;
-    font-family: 'Manrope', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
+  .pd-piece-info { flex: 1; min-width: 0; }
+  .pd-piece-name { font: 700 12.5px var(--text); color: var(--ink); }
+  .pd-piece-meta { font-size: 10.5px; color: var(--muted); margin-top: 1px; }
+  .pd-piece-thumb { width: 32px; height: 32px; flex: none; display: flex; align-items: center; justify-content: center; }
+  .pd-piece-thumb img { max-width: 100%; max-height: 100%; }
+
+  .pd-dl-btn {
     display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 18px;
+    padding: 11px 12px;
+    box-shadow: 0 3px 0 rgba(101,101,94,.1);
+    transition: transform .1s, box-shadow .1s;
+  }
+  .pd-dl-btn:active { transform: translateY(2px); box-shadow: 0 0 0 rgba(101,101,94,.1); }
+  .pd-dl-icon {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: var(--sand);
+    color: var(--muted-d);
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  .pd-dl-body { flex: 1; min-width: 0; }
+  .pd-dl-title { font: 800 12.5px var(--display); color: var(--ink); line-height: 1.25; }
+  .pd-dl-sub { display: block; font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+  .pd-dl-arrow {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--sand); color: var(--muted-d);
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  .pd-dl-btn.is-primary { background: var(--ink); border-color: transparent; box-shadow: 0 4px 0 #000; }
+  .pd-dl-btn.is-primary .pd-dl-icon { background: var(--yellow); color: #5A3A0E; }
+  .pd-dl-btn.is-primary .pd-dl-title { color: #fff; }
+  .pd-dl-btn.is-primary .pd-dl-sub { color: #B7AFA4; }
+  .pd-dl-btn.is-primary .pd-dl-arrow { background: rgba(255,255,255,.16); color: #fff; }
+  .pd-dl-btn.is-primary:active { box-shadow: 0 1px 0 #000; }
+  .pd-dl-btn.is-muted { box-shadow: none; opacity: .82; }
+
+  /* ── Outils nécessaires ─────────────────────────────────── */
+  .pd-tools-row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .pd-tool-chip {
+    display: inline-flex;
     align-items: center;
     gap: 7px;
-    border: 1.5px solid rgba(35,115,41,0.2);
-  }
-  .tissu-chip .chip-color {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .tissus-surface-hint {
-    color: #4E6C50;
-    font-family: 'Manrope', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  /* ── Carte sélection vêtements ── */
-  .garments-selection-card {
-    background: #FBFAF0;
-    border-radius: 32px;
-    padding: 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
-  .garments-selection-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .garments-selection-header h3 {
-    color: #383832;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0;
-  }
-  .garments-hint {
-    color: #65655E;
-    font-family: 'Manrope', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    margin: -6px 0 0;
-  }
-  .garments-empty {
-    background: white;
-    border-radius: 20px;
-    padding: 24px;
-    text-align: center;
-    color: #65655E;
-    font-family: 'Manrope', sans-serif;
-    font-size: 14px;
-  }
-
-  /* ── Carte vêtement individuelle ── */
-  .garment-item {
-    background: white;
-    border-radius: 20px;
-    padding: 14px 16px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-    user-select: none;
-  }
-  .garment-item:hover {
-    border-color: rgba(35,115,41,0.3);
-    box-shadow: 0 2px 12px rgba(35,115,41,0.08);
-  }
-  .garment-item.selected {
-    border-color: #237329;
-    background: rgba(210,244,209,0.25);
-    box-shadow: 0 2px 12px rgba(35,115,41,0.12);
-  }
-  .garment-item.incompatible {
-    opacity: 0.65;
-  }
-  .garment-thumb {
-    width: 52px; height: 52px;
-    border-radius: 14px;
-    overflow: hidden;
-    flex-shrink: 0;
-    background: #EFEEE3;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-  }
-  .garment-thumb img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-  }
-  .garment-info {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .garment-name {
-    color: #383832;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .garment-meta {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .garment-matiere-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .garment-matiere-label {
-    color: #65655E;
-    font-family: 'Manrope', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-  }
-  .garment-surface {
-    color: #4E6C50;
-    font-family: 'Manrope', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-  }
-  .garment-badges {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-  .garment-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
     border-radius: 9999px;
-    padding: 3px 9px;
-    font-family: 'Manrope', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-  .badge-ok    { background: #D2F4D1; color: #1B5E20; }
-  .badge-warn  { background: rgba(252,200,149,0.4); color: #7C4A00; }
-  .badge-bad   { background: rgba(198,40,40,0.1); color: #C62828; }
-  .garment-checkbox {
-    width: 22px; height: 22px;
-    border-radius: 7px;
-    border: 2px solid #BCBAA8;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    transition: background 0.15s, border-color 0.15s;
-  }
-  .garment-item.selected .garment-checkbox {
-    background: #237329;
-    border-color: #237329;
-  }
-  .garment-checkbox svg { display: none; }
-  .garment-item.selected .garment-checkbox svg { display: block; }
-
-  /* Matériel clicable — look « bouton à cocher » bien visible */
-  .materiel-chip {
-    background: #FFFFFF;
-    border-radius: 9999px;
-    padding: 7px 14px 7px 8px;
-    color: #383832;
-    font-family: 'Manrope', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    border: 1.5px solid #D6D4C4;
-    outline: none;
-    box-shadow: 0 2px 0 rgba(101, 101, 94, 0.18);
+    padding: 7px 12px 7px 8px;
+    font: 700 12px var(--text);
+    color: var(--ink);
     cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s, background 0.15s, color 0.15s, border-color 0.15s;
     -webkit-tap-highlight-color: transparent;
+    transition: background .15s, border-color .15s, color .15s;
   }
-  .materiel-chip:hover { border-color: #B9B7A5; }
-  .materiel-chip:active { transform: translateY(2px); box-shadow: 0 0 0 rgba(101, 101, 94, 0.18); }
-  .materiel-chip .chip-dot {
-    width: 16px;
-    height: 16px;
-    background: #fff;
-    border: 1.5px solid #BCBAA8;
+  .pd-tool-dot {
+    width: 16px; height: 16px;
     border-radius: 50%;
-    flex-shrink: 0;
+    background: var(--paper);
+    border: 1.5px solid var(--faint);
+    flex: none;
     position: relative;
-    transition: background 0.15s, border-color 0.15s;
   }
-  .materiel-chip.owned {
-    background: #E5F7E4;
-    color: #1B5E20;
-    border-color: rgba(35, 115, 41, 0.35);
-    box-shadow: 0 2px 0 rgba(35, 115, 41, 0.18);
-  }
-  .materiel-chip.owned .chip-dot {
-    background: #237329;
-    border-color: #237329;
-  }
-  .materiel-chip.owned .chip-dot::after {
-    content: '';
-    position: absolute;
-    left: 4.5px; top: 1.5px;
-    width: 4px; height: 8px;
-    border: solid #fff;
-    border-width: 0 2px 2px 0;
+  .pd-tool-chip.is-owned { background: var(--green-l); border-color: rgba(31,168,92,.35); color: var(--green-d); }
+  .pd-tool-chip.is-owned .pd-tool-dot { background: var(--green); border-color: var(--green); }
+  .pd-tool-chip.is-owned .pd-tool-dot::after {
+    content: ''; position: absolute; left: 4.5px; top: 1.5px;
+    width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0;
     transform: rotate(45deg);
   }
 
-  /* ── Boutons de téléchargement (gamifiés, ton miel/ambre) ── */
-  .dl-btn {
+  /* ── Chronologie des étapes ─────────────────────────────── */
+  .pd-steps { display: flex; flex-direction: column; }
+  .pd-step { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 22px; }
+  .pd-step:last-child { padding-bottom: 0; }
+  .pd-step-rail { display: flex; flex-direction: column; align-items: center; align-self: stretch; flex: none; }
+  .pd-step-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--sand); color: var(--muted-d);
+    font: 800 13px var(--display);
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  .pd-step-num.is-active { background: var(--ink); color: #fff; }
+  .pd-step-line { width: 2px; flex: 1; min-height: 20px; margin-top: 8px; background: var(--line); border-radius: 1px; }
+  .pd-step-card { flex: 1; min-width: 0; background: var(--sand); border-radius: 18px; padding: 14px 15px; }
+  .pd-step-title { font: 800 14.5px var(--display); color: var(--ink); }
+  .pd-step-desc { font-size: 12.5px; line-height: 1.5; color: var(--muted-d); margin-top: 5px; }
+  .pd-step-video {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--ink); color: #fff;
+    border-radius: 10px; padding: 5px 9px;
+    font: 700 10.5px var(--text);
+    margin-top: 9px;
+  }
+  .pd-steps-empty { background: var(--sand); border-radius: 18px; padding: 20px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  /* ── CTA fixe en bas — valeurs identiques à la référence 15b ──────── */
+  .pd-bottom-cta {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    padding: 14px 22px calc(24px + env(safe-area-inset-bottom, 0px));
+    background: rgba(255,253,248,.94);
+    border-top: 1px solid #EDE4D6;
     display: flex;
     align-items: center;
-    gap: 13px;
-    background: linear-gradient(135deg, #FFF7EB 0%, #FFFFFF 100%);
-    border: 1.5px solid rgba(184, 99, 0, 0.22);
-    border-radius: 18px;
-    padding: 12px 13px;
-    text-decoration: none;
-    box-shadow: 0 3px 0 rgba(184, 99, 0, 0.16);
-    transition: transform 0.1s, box-shadow 0.1s, border-color 0.1s;
+    box-sizing: border-box;
+    z-index: 40;
   }
-  .dl-btn + .dl-btn { margin-top: 12px; }
-  .dl-btn:hover { border-color: rgba(184, 99, 0, 0.4); }
-  .dl-btn:active { transform: translateY(3px); box-shadow: 0 0 0 rgba(184, 99, 0, 0.16); }
-  .dl-btn-ico {
-    width: 42px; height: 42px;
-    border-radius: 13px;
-    background: #FCC895;
-    color: #7C4A00;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 19px;
-    flex-shrink: 0;
-  }
-  .dl-btn-body { flex: 1; min-width: 0; }
-  .dl-btn-title {
-    font-family: 'Manrope', sans-serif;
-    font-weight: 800;
-    font-size: 14px;
-    color: #5A3A0E;
-    line-height: 1.25;
-  }
-  .dl-btn-sub {
+  .pd-start-btn {
+    flex: 1;
     display: block;
-    font-weight: 500;
-    font-size: 11.5px;
-    color: #9A7A4A;
-    margin-top: 1px;
-    line-height: 1.3;
-  }
-  .dl-btn-arrow {
-    width: 30px; height: 30px;
-    border-radius: 50%;
-    background: rgba(184, 99, 0, 0.12);
-    color: #B86300;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    transition: transform 0.12s;
-  }
-  .dl-btn:hover .dl-btn-arrow { transform: translateX(3px); }
-
-  /* Variante « action principale » de téléchargement (ambre plein) */
-  .dl-btn.primary {
-    background: linear-gradient(135deg, #F4A23A 0%, #E07B1A 100%);
-    border-color: transparent;
-    box-shadow: 0 4px 0 #B86300, 0 8px 18px rgba(184, 99, 0, 0.28);
-  }
-  .dl-btn.primary:active { transform: translateY(4px); box-shadow: 0 0 0 #B86300; }
-  .dl-btn.primary .dl-btn-ico { background: rgba(255,255,255,0.25); color: #fff; }
-  .dl-btn.primary .dl-btn-title { color: #fff; }
-  .dl-btn.primary .dl-btn-sub { color: rgba(255,255,255,0.88); }
-  .dl-btn.primary .dl-btn-arrow { background: rgba(255,255,255,0.28); color: #fff; }
-
-  /* Variante « comme Démarrer le projet » (vert plein, effet 3D) */
-  .dl-btn.go {
-    background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
-    border-color: transparent;
-    box-shadow: 0 6px 0 #1B5E20, 0 10px 24px rgba(35,115,41,0.35);
-  }
-  .dl-btn.go:hover { border-color: transparent; }
-  .dl-btn.go:active { transform: translateY(5px); box-shadow: 0 1px 0 #1B5E20, 0 4px 12px rgba(35,115,41,0.25); }
-  .dl-btn.go .dl-btn-ico { background: rgba(255,255,255,0.22); color: #fff; }
-  .dl-btn.go .dl-btn-title { color: #fff; }
-  .dl-btn.go .dl-btn-sub { color: rgba(255,255,255,0.88); }
-  .dl-btn.go .dl-btn-arrow { background: rgba(255,255,255,0.25); color: #fff; }
-
-  /* Variante neutre (export .json, discret, tout en bas) */
-  .dl-btn.muted {
-    background: #fff;
-    border-color: rgba(187, 185, 177, 0.5);
-    box-shadow: 0 3px 0 rgba(101, 101, 94, 0.12);
-  }
-  .dl-btn.muted:active { box-shadow: 0 0 0 rgba(101, 101, 94, 0.12); }
-  .dl-btn.muted .dl-btn-ico { background: #EFEEE3; color: #65655E; }
-  .dl-btn.muted .dl-btn-title { color: #383832; }
-  .dl-btn.muted .dl-btn-arrow { background: #EFEEE3; color: #65655E; }
-
-  /* ── CTA « Vérifier la faisabilité » gamifié ── */
-  .feasibility-cta {
-    display: flex;
-    align-items: center;
-    gap: 13px;
     width: 100%;
     box-sizing: border-box;
-    background: linear-gradient(135deg, #4E6C50 0%, #74A878 100%);
+    background: #E4DACA;
     border: none;
-    border-radius: 18px;
-    padding: 14px 15px;
-    text-decoration: none;
+    border-radius: 26px;
+    padding: 14px 0;
+    text-align: center;
     cursor: pointer;
-    box-shadow: 0 5px 0 #3A5240, 0 10px 22px rgba(78, 108, 80, 0.3);
-    transition: transform 0.1s, box-shadow 0.1s;
-    overflow: hidden;
-    position: relative;
+    transition: background .15s ease;
   }
-  .feasibility-cta:active { transform: translateY(4px); box-shadow: 0 1px 0 #3A5240; }
-  .feasibility-cta-ico {
-    width: 46px; height: 46px;
-    border-radius: 15px;
-    background: rgba(255,255,255,0.22);
-    color: #fff;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-    flex-shrink: 0;
+  .pd-start-btn:active { opacity: .92; }
+  .pd-start-btn-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    font: 800 15px var(--display);
+    color: #4A443C;
   }
-  .feasibility-cta-body { flex: 1; min-width: 0; text-align: left; }
-  .feasibility-cta-title {
-    color: #fff;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-weight: 800;
-    font-size: 15px;
-    line-height: 1.2;
-  }
-  .feasibility-cta-sub {
+  .pd-start-btn-sub {
     display: block;
-    color: rgba(255,255,255,0.88);
-    font-family: 'Manrope', sans-serif;
-    font-size: 11.5px;
-    font-weight: 600;
-    margin-top: 2px;
+    font: 500 10.5px var(--text);
+    color: #6E655B;
+    margin-top: 3px;
   }
-  .feasibility-cta-arrow {
-    color: #fff;
-    font-size: 16px;
-    flex-shrink: 0;
-    transition: transform 0.12s;
-  }
-  .feasibility-cta:hover .feasibility-cta-arrow { transform: translateX(3px); }
+  .pd-start-btn.is-ready { background: var(--green); }
+  .pd-start-btn.is-ready .pd-start-btn-title { color: #fff; }
+  .pd-start-btn.is-ready .pd-start-btn-sub { color: rgba(255,255,255,.85); }
+  .pd-start-btn[disabled] { background: var(--sand); cursor: not-allowed; }
+  .pd-start-btn[disabled] .pd-start-btn-title { color: var(--muted); }
+  .pd-start-btn[disabled] .pd-start-btn-sub { color: var(--muted); }
+  .pd-start-btn svg, .pd-start-btn i { flex: none; }
+  .pd-bottom-cta form { flex: 1; display: block; }
 
 </style>
 {% endblock %}
 
 
 {% block content %}
-<div class="detail-wrapper">
-
-  <!-- Barre retour + badge accès -->
-  <div class="page-top-bar">
-    <a href="{% url 'patrons' %}" class="back-btn">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-           stroke="currentColor" stroke-width="2.5"
-           stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-      Retour aux patrons
-    </a>
-    {% if patron.estPremium %}
-    <span class="access-badge"><i class="ic fi-br-sparkles"></i> Premium</span>
-    {% else %}
-    <span class="access-badge free">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
-           stroke="currentColor" stroke-width="3.5"
-           stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-      Gratuit
-    </span>
-    {% endif %}
-  </div>
+<div class="pd">
 
   <!-- ═══════════════════════════
-       Photo + Description (haut)
+       Héros photo
        ═══════════════════════════ -->
-  <div class="photo-card-wrapper" style="margin-bottom: 16px;">
-    <div class="photo-card">
+  <div class="pd-hero">
+    <div class="pd-hero-media">
       {% if patron.photo_url %}
       <img src="{{ patron.photo_url }}" alt="{{ patron.titre }}">
       {% else %}
-      <div class="photo-placeholder">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M3 9a2 2 0 0 1 2-2h.93a2 2 0 0 0 1.664-.89l.812-1.22A2 2 0 0 1 10.07 4h3.86a2 2 0 0 1 1.664.89l.812 1.22A2 2 0 0 0 18.07 7H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"/>
-          <circle cx="12" cy="13" r="3"/>
-        </svg>
-      </div>
+      <div class="pd-hero-fallback"></div>
       {% endif %}
-      <div class="photo-overlay">
-        <div class="photo-overlay-label">Patron choisi</div>
-        <div class="photo-overlay-title">{{ patron.titre }}</div>
-      </div>
+      <div class="pd-hero-scrim"></div>
+    </div>
+
+    <div class="pd-hero-top">
+      <a href="{% url 'patrons' %}" class="pd-hero-back" aria-label="Retour aux patrons">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </a>
+      {% if patron.estPremium %}
+      <span class="pd-hero-badge is-premium">
+        <i class="ic fi-br-sparkles"></i> Premium
+      </span>
+      {% else %}
+      <span class="pd-hero-badge is-free">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Gratuit
+      </span>
+      {% endif %}
     </div>
   </div>
 
-  {% if patron.description %}
-  <div class="description-section">
-    <p>{{ patron.description }}</p>
-  </div>
-  {% endif %}
-
   <!-- ═══════════════════════════
-       Informations + Difficulté
+       Corps
        ═══════════════════════════ -->
-  <div class="top-section">
+  <div class="pd-body">
 
-    <!-- Carte informations -->
-    <div class="info-card">
-      <div class="info-card-header">
-        <span class="green-dot"></span>
-        <h3>Informations</h3>
+    <div class="pd-title-block">
+      <div class="pd-title-eyebrow">{{ patron.typeObjet }} · {{ difficulte_label|lower }}{% if etapes %} · {{ etapes|length }} étape{{ etapes|length|pluralize }}{% endif %}</div>
+      <div class="pd-title-heading">{{ patron.titre }}</div>
+    </div>
+
+    {% if verif_requise and not email_verifie %}
+    <div class="pd-verif-alert">
+      <i class="ic fi-br-envelope"></i>
+      <span>Vérifiez votre adresse e-mail pour pouvoir démarrer un projet.</span>
+    </div>
+    {% endif %}
+
+    <!-- Onglets d'ancrage -->
+    <nav class="pd-tabs">
+      <a href="#pd-apercu" class="pd-tab is-primary">Aperçu</a>
+      <a href="#pd-tissus" class="pd-tab">Tissus</a>
+      <a href="#pd-outils" class="pd-tab">Outils</a>
+      <a href="#pd-etapes" class="pd-tab">Étapes</a>
+    </nav>
+
+    <!-- ── Aperçu ───────────────────────────────────────── -->
+    <div id="pd-apercu" class="pd-anchor" style="display:flex; flex-direction:column; gap:22px;">
+
+      {% if patron.description %}
+      <p class="pd-desc">{{ patron.description }}</p>
+      {% endif %}
+
+      <div class="pd-stat-grid">
+        <div class="pd-stat-tile">
+          <div class="pd-stat-label">Surface de tissu</div>
+          <div class="pd-stat-value is-green">{{ patron.surfaceMin }} – {{ patron.surfaceMax }} m²</div>
+        </div>
+        <div class="pd-stat-tile">
+          <div class="pd-stat-label">Durée estimée</div>
+          <div class="pd-stat-value">{{ patron.duree|default:"—" }}</div>
+        </div>
+        <div class="pd-stat-tile">
+          <div class="pd-stat-label">Type d'objet</div>
+          <div class="pd-stat-value">{{ patron.typeObjet }}</div>
+        </div>
+        <div class="pd-stat-tile">
+          <div class="pd-stat-label">Compatibilité</div>
+          <div class="pd-stat-value {% if compatibilite >= 80 %}is-green{% elif compatibilite >= 50 %}is-orange{% else %}is-red{% endif %}">
+            {{ compatibilite }}%
+          </div>
+        </div>
       </div>
 
-      <div class="info-rows">
-
-        <!-- Surface -->
-        <div class="info-row">
-          <div class="info-row-left">
-            <div class="info-row-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="2"
-                   stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-            </div>
-            <span class="info-row-label">Surface de tissu</span>
-          </div>
-          <span class="info-row-value green">{{ patron.surfaceMin }} – {{ patron.surfaceMax }} m²</span>
+      <div>
+        <div class="pd-card-title" style="margin-bottom:9px;"><i class="ic fi-br-reel"></i> Matière acceptée</div>
+        <div class="pd-materials-row">
+          {% if matieres_requises_display %}
+            {% for m in matieres_requises_display %}
+            <span class="pd-material-chip">
+              <span class="pd-material-dot" style="background: {{ m.color }};"></span>{{ m.label }}
+            </span>
+            {% endfor %}
+          {% else %}
+            <span class="pd-material-chip">
+              <span class="pd-material-dot" style="background: var(--faint);"></span>Tout tissu
+            </span>
+          {% endif %}
         </div>
+      </div>
 
-        <!-- Durée -->
-        {% if patron.duree %}
-        <div class="info-row">
-          <div class="info-row-left">
-            <div class="info-row-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="2"
-                   stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-              </svg>
-            </div>
-            <span class="info-row-label">Durée estimée</span>
-          </div>
-          <span class="info-row-value neutral">{{ patron.duree }}</span>
+      <div class="pd-difficulty">
+        <div class="pd-difficulty-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
         </div>
-        {% endif %}
-
-        <!-- Type -->
-        <div class="info-row">
-          <div class="info-row-left">
-            <div class="info-row-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="2"
-                   stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/>
-              </svg>
-            </div>
-            <span class="info-row-label">Type d'objet</span>
-          </div>
-          <span class="info-row-value neutral">{{ patron.typeObjet }}</span>
-        </div>
-
-        <!-- Matière du tissu -->
-        <div class="info-row">
-          <div class="info-row-left">
-            <div class="info-row-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="2"
-                   stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-                <polyline points="2 17 12 22 22 17"/>
-                <polyline points="2 12 12 17 22 12"/>
-              </svg>
-            </div>
-            <span class="info-row-label">Matière du tissu</span>
-          </div>
-          <div class="info-row-matiere">
-            {% if matieres_requises_display %}
-              {% for m in matieres_requises_display %}
-              <span class="matiere-mini">
-                <span class="matiere-mini-dot" style="background: {{ m.color }};"></span>{{ m.label }}
-              </span>
-              {% endfor %}
-            {% else %}
-              <span class="info-row-value neutral">Tout tissu</span>
+        <div class="pd-difficulty-body">
+          <div class="pd-difficulty-label">Niveau de difficulté</div>
+          <div class="pd-difficulty-row">
+            <span class="pd-difficulty-value">{{ difficulte_label }}</span>
+            {% if pieces_gagnees %}
+            <span class="pd-difficulty-xp"><img src="{% static 'core/images/icons/coin.png' %}" alt="">+{{ pieces_gagnees }}</span>
             {% endif %}
           </div>
         </div>
+        <div class="pd-difficulty-dots">
+          <span class="{% if patron.difficulte >= 1 %}is-on{% endif %}"></span>
+          <span class="{% if patron.difficulte >= 2 %}is-on{% endif %}"></span>
+          <span class="{% if patron.difficulte >= 3 %}is-on{% endif %}"></span>
+        </div>
+      </div>
 
-        <!-- Compatibilité -->
-        {% if compatibilite %}
-        <div class="info-row">
-          <div class="info-row-left">
-            <div class="info-row-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="2"
-                   stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
+    </div>
+
+    <!-- ── Tissus ───────────────────────────────────────── -->
+    <div id="pd-tissus" class="pd-anchor" style="display:flex; flex-direction:column; gap:12px;">
+      <div class="pd-section-head">
+        <h2 class="pd-section-title">Vos tissus</h2>
+      </div>
+
+      <div class="pd-garments-card">
+        <div class="pd-garments-head">
+          <h3>Choisir vos tissus</h3>
+          <span class="pd-garments-required">OBLIGATOIRE</span>
+        </div>
+        <p class="pd-garments-hint">Sélectionnez le ou les tissus que vous souhaitez utiliser pour ce projet.</p>
+
+        {% if vetements_compatibles %}
+          <div id="pd-garments-list" style="display:flex; flex-direction:column; gap:13px;">
+          {% for item in vetements_compatibles %}
+          <div class="pd-garment {% if not item.compatible %}is-incompatible{% endif %} {% if item.selected %}is-selected{% endif %} {% if forloop.counter > 4 %}pd-garment-extra{% endif %}"
+               data-id="{{ item.vetement.id }}"
+               data-surface="{{ item.vetement.surfaceExploitable|unlocalize }}">
+
+            <div class="pd-garment-thumb">
+              {% if item.vetement.photoURL %}
+              <img src="{{ item.vetement.photoURL.url }}" alt="{{ item.vetement.nomVetement }}">
+              {% else %}
+              <i class="ic fi-br-reel"></i>
+              {% endif %}
             </div>
-            <span class="info-row-label">Compatibilité</span>
-          </div>
-          <span class="info-row-value {% if compatibilite >= 80 %}green{% elif compatibilite >= 50 %}orange{% else %}red{% endif %}">
-            {{ compatibilite }}%
-          </span>
-        </div>
-        {% endif %}
 
-        <!-- Nombre d'étapes -->
-        {% if etapes %}
-        <div class="info-row">
-          <div class="info-row-left">
-            <div class="info-row-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="2"
-                   stroke-linecap="round" stroke-linejoin="round">
-                <line x1="8" y1="6" x2="21" y2="6"/>
-                <line x1="8" y1="12" x2="21" y2="12"/>
-                <line x1="8" y1="18" x2="21" y2="18"/>
-                <line x1="3" y1="6" x2="3.01" y2="6"/>
-                <line x1="3" y1="12" x2="3.01" y2="12"/>
-                <line x1="3" y1="18" x2="3.01" y2="18"/>
-              </svg>
-            </div>
-            <span class="info-row-label">Nombre d'étapes</span>
-          </div>
-          <span class="info-row-value neutral">{{ etapes|length }} étape{{ etapes|length|pluralize }}</span>
-        </div>
-        {% endif %}
-
-        <!-- Tissus requis -->
-        {% if matieres_requises_display %}
-        <div class="tissus-card">
-          <div class="tissus-card-header">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="#237329" stroke-width="2.5"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
-              <path d="M12 8v4l3 3"/>
-            </svg>
-            <span class="tissus-title"><i class="ic fi-br-reel"></i> Tissus requis</span>
-          </div>
-          <div class="materiel-chips">
-            {% for m in matieres_requises_display %}
-            <span class="tissu-chip">
-              <span class="chip-color" style="background: {{ m.color }};"></span>{{ m.label }}
-            </span>
-            {% endfor %}
-          </div>
-          <div class="tissus-surface-hint">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2.5"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-            Surface nécessaire : {{ patron.surfaceMin }} – {{ patron.surfaceMax }} m²
-          </div>
-        </div>
-        {% endif %}
-
-        <!-- Outils nécessaires -->
-        {% if materiel_list %}
-        <div class="materiel-card">
-          <div class="materiel-title"><i class="ic fi-br-wrench-simple"></i> Outils nécessaires</div>
-          <div class="materiel-chips" id="materielChips">
-            {% for item in materiel_list %}
-            <button class="materiel-chip" data-material="{{ item }}">
-              <span class="chip-dot"></span>{{ item }}
-            </button>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
-        <!-- Instructions imprimables -->
-        {% if etapes %}
-        <div class="materiel-card" style="margin-top:14px;">
-          <div class="materiel-title"><i class="ic fi-br-book-open-cover"></i> Instructions à imprimer</div>
-          <a href="{% url 'patron_instructions_pdf' pk=patron.id %}" target="_blank" rel="noopener" hx-boost="false" class="dl-btn">
-            <span class="dl-btn-ico"><i class="ic fi-br-print"></i></span>
-            <span class="dl-btn-body">
-              <span class="dl-btn-title">Toutes les étapes (PDF)</span>
-            </span>
-            <span class="dl-btn-arrow">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </span>
-          </a>
-        </div>
-        {% endif %}
-
-        <!-- Planches PDF + pièces à découper -->
-        {% if patron.pdf_url or patron.pieces.all %}
-        <div class="materiel-card" style="margin-top:14px;">
-          <div class="materiel-title"><i class="ic fi-br-scissors"></i> Patron à découper</div>
-
-          {% if patron.pieces.all %}
-          <a href="{% url 'patron_pdf' pk=patron.id %}" target="_blank" rel="noopener" hx-boost="false" class="dl-btn go">
-            <span class="dl-btn-ico"><i class="ic fi-br-print"></i></span>
-            <span class="dl-btn-body">
-              <span class="dl-btn-title">Générer le PDF à imprimer</span>
-              <span class="dl-btn-sub">Pièces à taille réelle, à découper et assembler</span>
-            </span>
-            <span class="dl-btn-arrow">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </span>
-          </a>
-          {% endif %}
-
-          {% if patron.pdf_url %}
-          <a href="{{ patron.pdf_url }}" target="_blank" rel="noopener" hx-boost="false" class="dl-btn">
-            <span class="dl-btn-ico"><i class="ic fi-br-document"></i></span>
-            <span class="dl-btn-body">
-              <span class="dl-btn-title">Planches du patron (PDF)</span>
-              <span class="dl-btn-sub">À imprimer et découper</span>
-            </span>
-            <span class="dl-btn-arrow">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </span>
-          </a>
-          {% endif %}
-
-          {% if patron.pieces.all %}
-          <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px;">
-            {% for piece in patron.pieces.all %}
-            <div style="background:#fff; border:1.5px solid rgba(187,185,177,0.4); border-radius:14px; padding:10px; display:flex; flex-direction:column; gap:6px; align-items:center; text-align:center;">
-              <div style="width:100%; height:64px; display:flex; align-items:center; justify-content:center;">
-                {% if piece.svg_url %}
-                <img src="{{ piece.svg_url }}" alt="{{ piece.nom }}" style="max-width:100%; max-height:64px;">
-                {% else %}
-                <span style="font-size:24px;"><i class="ic fi-br-scissors"></i></span>
+            <div class="pd-garment-info">
+              <div class="pd-garment-name">{{ item.vetement.nomVetement }}</div>
+              <div class="pd-garment-meta">
+                {% if item.dominant_label %}
+                <span class="pd-garment-dot" style="background: {{ item.dominant_color }};"></span>
+                <span class="pd-garment-mat">{{ item.dominant_label }}</span>
+                <span class="pd-garment-sep">·</span>
                 {% endif %}
+                <span class="pd-garment-surface">{{ item.vetement.surfaceExploitable|floatformat:2 }} m²</span>
               </div>
-              <div style="font-family:var(--font-body); font-weight:700; font-size:12px; color:var(--text-dark); line-height:1.2;">{{ piece.nom }}</div>
-              <div style="font-size:11px; color:var(--text-muted);">
+            </div>
+
+            <div class="pd-garment-badges">
+              {% if item.compatible %}
+              <span class="pd-garment-badge is-ok">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Compatible
+              </span>
+              {% else %}
+                {% if not item.surface_ok %}
+                <span class="pd-garment-badge is-warn">Surface insuff.</span>
+                {% endif %}
+                {% if not item.matiere_ok %}
+                <span class="pd-garment-badge is-bad">Matière <i class="ic fi-br-cross-small"></i></span>
+                {% endif %}
+              {% endif %}
+            </div>
+
+            <div class="pd-garment-checkbox">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          {% endfor %}
+          </div>
+
+          {% if vetements_compatibles|length > 4 %}
+          <button type="button" class="pd-garments-expand" id="pd-garments-expand" onclick="pdToggleGarmentsExpand()">
+            <span id="pd-garments-expand-label">Voir les {{ vetements_compatibles|length|add:"-4" }} autres tissus</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          {% endif %}
+
+          <div class="pd-surface-meter">
+            <div class="pd-surface-meter-head">
+              <span class="pd-surface-meter-label">Surface retenue</span>
+              <span class="pd-surface-meter-value" id="pd-surface-value">0 m² <small>/ {{ patron.surfaceMin }} requis</small></span>
+            </div>
+            <span class="pd-surface-meter-track">
+              <span class="pd-surface-meter-fill" id="pd-surface-fill"></span>
+            </span>
+            <span class="pd-surface-meter-note is-low" id="pd-surface-note">Sélectionnez un ou plusieurs tissus.</span>
+          </div>
+
+          <a href="{% url 'faisabilite_patron' pk=patron.id %}" class="pd-feasibility-cta" id="pd-feasibility-link">
+            <span class="pd-feasibility-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <span class="pd-feasibility-body">
+              <span class="pd-feasibility-title">Vérifier la faisabilité</span>
+              <span class="pd-feasibility-sub" id="pd-feasibility-sub">Place les pièces sur tes tissus pour voir si ça rentre</span>
+            </span>
+            <span class="pd-feasibility-arrow">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </span>
+          </a>
+
+        {% else %}
+        <div class="pd-garments-empty">
+          Vous n'avez pas encore de tissu scanné.<br>
+          <a href="{% url 'mes_tissus' %}">Ajoutez un premier tissu</a> pour pouvoir démarrer ce projet.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ── Outils ───────────────────────────────────────── -->
+    <div id="pd-outils" class="pd-anchor" style="display:flex; flex-direction:column; gap:12px;">
+      <div class="pd-section-head">
+        <h2 class="pd-section-title">Outils &amp; patron</h2>
+      </div>
+
+      {% if patron.pieces.all or patron.pdf_url %}
+      <div class="pd-card">
+        <div class="pd-card-title"><i class="ic fi-br-scissors"></i> Plan de coupe</div>
+
+        {% if patron.pieces.all %}
+        <div class="pd-pieces-list">
+          {% for piece in patron.pieces.all %}
+          <div class="pd-piece-row">
+            {% if piece.svg_url %}
+            <span class="pd-piece-thumb"><img src="{{ piece.svg_url }}" alt=""></span>
+            {% else %}
+            {% cycle '#7C5CFF' '#1FA85C' '#FFC93C' '#3B5FC0' '#A24A33' as pd_num_bg silent %}
+            {% cycle '#fff' '#fff' '#5A3A0E' '#fff' '#fff' as pd_num_fg silent %}
+            <span class="pd-piece-num" style="background: {{ pd_num_bg }}; color: {{ pd_num_fg }};">{{ forloop.counter }}</span>
+            {% endif %}
+            <div class="pd-piece-info">
+              <div class="pd-piece-name">{{ piece.nom }}</div>
+              <div class="pd-piece-meta">
                 ×{{ piece.quantite }}{% if piece.largeur_cm and piece.hauteur_cm %} · {{ piece.largeur_cm|floatformat:0 }}×{{ piece.hauteur_cm|floatformat:0 }} cm{% endif %}
               </div>
             </div>
-            {% endfor %}
           </div>
-          {% endif %}
+          {% endfor %}
+
+          <a href="{% url 'patron_pdf' pk=patron.id %}" target="_blank" rel="noopener" hx-boost="false" class="pd-dl-btn is-primary">
+            <span class="pd-dl-icon"><i class="ic fi-br-print"></i></span>
+            <span class="pd-dl-body">
+              <span class="pd-dl-title">Générer le PDF à imprimer</span>
+              <span class="pd-dl-sub">Pièces à taille réelle, à découper et assembler</span>
+            </span>
+            <span class="pd-dl-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </span>
+          </a>
         </div>
         {% endif %}
 
-      </div>
-    </div>
-
-    <!-- Badge difficulté -->
-    <div class="difficulty-badge">
-      <div class="difficulty-icon-circle">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-          <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
-        </svg>
-      </div>
-      <div>
-        <div class="difficulty-label-small">Niveau de difficulté</div>
-        <div class="difficulty-value">{{ difficulte_label }}</div>
-      </div>
-    </div>
-
-  </div><!-- /.top-section -->
-
-  <!-- ═══════════════════════════
-       Sélection des vêtements
-       ═══════════════════════════ -->
-  {% if vetements_compatibles %}
-  <div class="garments-selection-card" style="margin-bottom: 32px;" id="garments-section">
-    <div class="garments-selection-header">
-      <span class="green-dot"></span>
-      <h3>Choisir vos tissus</h3>
-    </div>
-    <p class="garments-hint">
-      Sélectionnez le(s) vêtement(s) que vous souhaitez utiliser pour ce projet.
-    </p>
-
-    {% for item in vetements_compatibles %}
-    <div class="garment-item {% if not item.compatible %}incompatible{% endif %} {% if item.selected %}selected{% endif %}"
-         data-id="{{ item.vetement.id }}"
-         onclick="toggleGarment(this)">
-
-      <!-- Vignette photo -->
-      <div class="garment-thumb">
-        {% if item.vetement.photoURL %}
-        <img src="{{ item.vetement.photoURL.url }}" alt="{{ item.vetement.nomVetement }}">
-        {% else %}
-        <span><i class="ic fi-br-reel"></i></span>
+        {% if patron.pdf_url %}
+        <a href="{{ patron.pdf_url }}" target="_blank" rel="noopener" hx-boost="false" class="pd-dl-btn">
+          <span class="pd-dl-icon"><i class="ic fi-br-document"></i></span>
+          <span class="pd-dl-body">
+            <span class="pd-dl-title">Planches du patron (PDF)</span>
+            <span class="pd-dl-sub">À imprimer et découper</span>
+          </span>
+          <span class="pd-dl-arrow">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </span>
+        </a>
         {% endif %}
       </div>
+      {% endif %}
 
-      <!-- Infos -->
-      <div class="garment-info">
-        <div class="garment-name">{{ item.vetement.nomVetement }}</div>
-        <div class="garment-meta">
-          {% if item.dominant_label %}
-          <span class="garment-matiere-dot" style="background: {{ item.dominant_color }};"></span>
-          <span class="garment-matiere-label">{{ item.dominant_label }}</span>
-          <span style="color:#BCBAA8;">·</span>
-          {% endif %}
-          <span class="garment-surface">{{ item.vetement.surfaceExploitable|floatformat:2 }} m²</span>
+      {% if materiel_list %}
+      <div class="pd-card">
+        <div class="pd-card-title"><i class="ic fi-br-wrench-simple"></i> Outils nécessaires</div>
+        <div class="pd-tools-row" id="pd-tools-row">
+          {% for item in materiel_list %}
+          <button type="button" class="pd-tool-chip" data-material="{{ item }}">
+            <span class="pd-tool-dot"></span>{{ item }}
+          </button>
+          {% endfor %}
         </div>
       </div>
+      {% endif %}
 
-      <!-- Badges compatibilité -->
-      <div class="garment-badges">
-        {% if item.compatible %}
-        <span class="garment-badge badge-ok">
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="3.5"
-               stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          Compatible
-        </span>
-        {% else %}
-          {% if not item.surface_ok %}
-          <span class="garment-badge badge-warn">Surface insuff.</span>
-          {% endif %}
-          {% if not item.matiere_ok %}
-          <span class="garment-badge badge-bad">Matière <i class="ic fi-br-cross-small"></i></span>
-          {% endif %}
-        {% endif %}
+      {% if not patron.pieces.all and not patron.pdf_url and not materiel_list %}
+      <div class="pd-garments-empty" style="background:var(--sand); color:var(--muted-d);">
+        Aucun outil ni patron à télécharger pour ce projet.
       </div>
-
-      <!-- Checkbox -->
-      <div class="garment-checkbox">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-             stroke="white" stroke-width="3"
-             stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-      </div>
-
-    </div>
-    {% endfor %}
-
-    <!-- CTA gamifié : vérifier la faisabilité avec les tissus choisis -->
-    <a href="{% url 'faisabilite_patron' pk=patron.id %}" class="feasibility-cta" id="feasibility-link">
-      <span class="feasibility-cta-ico">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      </span>
-      <span class="feasibility-cta-body">
-        <span class="feasibility-cta-title">Vérifier la faisabilité</span>
-        <span class="feasibility-cta-sub" id="feasibility-sub">Place les pièces sur tes tissus pour voir si ça rentre</span>
-      </span>
-      <span class="feasibility-cta-arrow">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </span>
-    </a>
-
-  </div>
-  {% endif %}
-
-  <!-- ═══════════════════════════
-       Instructions (étapes)
-       ═══════════════════════════ -->
-  <div class="instructions-section">
-    <div class="instructions-header">
-      <h2>Instructions</h2>
-      <p>{{ etapes|length }} étape{{ etapes|length|pluralize }} pour réaliser ce projet.</p>
+      {% endif %}
     </div>
 
-    {% if etapes %}
-    <div class="steps-list">
-      {% for etape in etapes %}
-      <div class="step-item">
+    <!-- ── Étapes ───────────────────────────────────────── -->
+    <div id="pd-etapes" class="pd-anchor" style="display:flex; flex-direction:column; gap:12px;">
+      <div class="pd-section-head">
+        <h2 class="pd-section-title">Instructions</h2>
+        <span class="pd-section-hint" style="margin-top:0;">{{ etapes|length }} étape{{ etapes|length|pluralize }}</span>
+      </div>
 
-        <div class="step-indicator">
-          <div class="step-number {% if forloop.first %}active{% endif %}">
-            {{ forloop.counter }}
+      {% if etapes %}
+      <div class="pd-steps">
+        {% for etape in etapes %}
+        <div class="pd-step">
+          <div class="pd-step-rail">
+            <div class="pd-step-num {% if forloop.first %}is-active{% endif %}">{{ forloop.counter }}</div>
+            {% if not forloop.last %}<div class="pd-step-line"></div>{% endif %}
           </div>
-          {% if not forloop.last %}
-          <div class="step-line"></div>
-          {% endif %}
-        </div>
-
-        <div class="step-card">
-          <div class="step-card-header">
+          <div class="pd-step-card">
+            <div class="pd-step-title">{{ etape.titre }}</div>
+            <p class="pd-step-desc">{{ etape.description|truncatechars:120 }}</p>
             {% if etape.video_url %}
-            <svg class="step-type-icon" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
-            {% else %}
-            <svg class="step-type-icon" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-            </svg>
+            <span class="pd-step-video">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Vidéo disponible
+            </span>
             {% endif %}
-            <span class="step-title">{{ etape.titre }}</span>
           </div>
-
-          <p class="step-desc">{{ etape.description|truncatechars:120 }}</p>
         </div>
-
+        {% endfor %}
       </div>
-      {% endfor %}
+      {% else %}
+      <p class="pd-steps-empty">Aucune instruction disponible pour ce patron.</p>
+      {% endif %}
     </div>
-    {% else %}
-    <p class="instructions-empty">Aucune instruction disponible pour ce patron.</p>
+
+    <!-- ── Téléchargements secondaires (tout en bas) ─────── -->
+    {% if etapes or patron.createur_id == request.user.id or request.user.is_staff %}
+    <div style="display:flex; flex-direction:column; gap:9px;">
+      {% if etapes %}
+      <a href="{% url 'patron_instructions_pdf' pk=patron.id %}" target="_blank" rel="noopener" hx-boost="false" class="pd-dl-btn is-muted">
+        <span class="pd-dl-icon"><i class="ic fi-br-book-open-cover"></i></span>
+        <span class="pd-dl-body">
+          <span class="pd-dl-title">Instructions à imprimer (PDF)</span>
+          <span class="pd-dl-sub">Toutes les étapes sur une fiche</span>
+        </span>
+        <span class="pd-dl-arrow">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </span>
+      </a>
+      {% endif %}
+
+      {% if patron.createur_id == request.user.id or request.user.is_staff %}
+      <a href="{% url 'patron_export' pk=patron.id %}" hx-boost="false" class="pd-dl-btn is-muted">
+        <span class="pd-dl-icon"><i class="ic fi-br-disk"></i></span>
+        <span class="pd-dl-body">
+          <span class="pd-dl-title">Exporter le patron (.json)</span>
+          <span class="pd-dl-sub">Réimportable dans le formulaire de création</span>
+        </span>
+        <span class="pd-dl-arrow">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </span>
+      </a>
+      {% endif %}
+    </div>
     {% endif %}
 
-  </div>
+  </div><!-- /.pd-body -->
 
   <!-- ═══════════════════════════
-       Export du patron (.json) — tout en bas
+       CTA fixe en bas — reste À L'INTÉRIEUR de .pd : les jetons de
+       design (--green, --sand, --muted…) sont des custom properties
+       posées sur .pd, elles ne traversent pas vers un frère placé
+       après sa fermeture. .pd n'a ni transform ni filter ni contain,
+       donc position:fixed reste bien relatif au viewport ici.
        ═══════════════════════════ -->
-  {% if patron.createur_id == request.user.id or request.user.is_staff %}
-  <a href="{% url 'patron_export' pk=patron.id %}" hx-boost="false" class="dl-btn muted" style="margin-top:32px;">
-    <span class="dl-btn-ico"><i class="ic fi-br-disk"></i></span>
-    <span class="dl-btn-body">
-      <span class="dl-btn-title">Exporter le patron (.json)</span>
-      <span class="dl-btn-sub">Sauvegarde réimportable dans le formulaire de création</span>
-    </span>
-    <span class="dl-btn-arrow">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    </span>
-  </a>
-  {% endif %}
-
-</div><!-- /.detail-wrapper -->
-
-<!-- ═══════════════════════════
-     CTA fixe en bas
-     ═══════════════════════════ -->
-<div class="bottom-cta">
+  <div class="pd-bottom-cta">
   {% if premiere_etape %}
-  {% if email_verifie %}
-  <form method="POST" id="start-form">
-    {% csrf_token %}
-    <input type="hidden" name="vetement_ids" id="selected-vetement-ids" value="[]">
-    <button type="submit" class="btn-start" id="btn-demarrer">
-      <i class="ic fi-br-reel"></i> Démarrer le projet
+    {% if email_verifie %}
+    <form method="POST" id="pd-start-form">
+      {% csrf_token %}
+      <input type="hidden" name="vetement_ids" id="pd-selected-ids" value="[]">
+      <button type="submit" class="pd-start-btn" id="pd-start-btn">
+        <span class="pd-start-btn-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M7 11V8a5 5 0 0 1 10 0v3M5.5 11h13v9h-13z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span id="pd-start-btn-label">Démarrer le projet</span>
+        </span>
+        <span class="pd-start-btn-sub" id="pd-start-btn-sub">Choisissez vos tissus ci-dessus</span>
+      </button>
+    </form>
+    {% else %}
+    <button class="pd-start-btn" disabled>
+      <span class="pd-start-btn-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M7 11V8a5 5 0 0 1 10 0v3M5.5 11h13v9h-13z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Vérifiez votre e-mail
+      </span>
+      <span class="pd-start-btn-sub">pour pouvoir démarrer un projet</span>
     </button>
-  </form>
+    {% endif %}
   {% else %}
-  <button class="btn-start" disabled style="opacity: 0.5; cursor: not-allowed;">
-    <i class="ic fi-br-lock"></i> Vérifiez votre e-mail pour démarrer
+  <button class="pd-start-btn" disabled>
+    <span class="pd-start-btn-title">Instructions bientôt disponibles</span>
   </button>
   {% endif %}
-  {% else %}
-  <button class="btn-start" disabled style="opacity: 0.5; cursor: not-allowed;">
-    Instructions bientôt disponibles
-  </button>
-  {% endif %}
-</div>
+  </div>
+
+</div><!-- /.pd -->
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  // ── Outils : tap pour cocher (localStorage) ──
-  const STORAGE_KEY = 'lafabrique_owned_materials';
-  function getOwned() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-    catch(e) { return []; }
-  }
-  function saveOwned(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
-  function normalise(s) { return s.trim().toLowerCase(); }
+  // Tout est encapsulé dans une IIFE : ce bloc est réévalué à chaque
+  // navigation htmx (le body entier est reswappé), et des `const`/`let`
+  // au premier niveau d'un script inline persistent dans la portée lexicale
+  // globale du document — une seconde exécution provoquerait un
+  // SyntaxError « already declared » qui casserait TOUT le script,
+  // outils compris. La fonction s'exécute à nouveau à chaque fois sans
+  // jamais entrer en collision avec l'exécution précédente.
+  (function () {
 
-  document.querySelectorAll('.materiel-chip[data-material]').forEach(btn => {
-    if (getOwned().includes(normalise(btn.dataset.material))) btn.classList.add('owned');
-    btn.addEventListener('click', () => {
-      let current = getOwned();
-      const k = normalise(btn.dataset.material);
-      if (current.includes(k)) {
-        current = current.filter(x => x !== k);
-        btn.classList.remove('owned');
-      } else {
-        current.push(k);
-        btn.classList.add('owned');
-      }
-      saveOwned(current);
+    // ── Outils : tap pour cocher (mémorisé côté appareil) ──
+    var PD_STORAGE_KEY = 'lafabrique_owned_materials';
+    function pdGetOwned() {
+      try { return JSON.parse(localStorage.getItem(PD_STORAGE_KEY)) || []; }
+      catch (e) { return []; }
+    }
+    function pdSaveOwned(arr) { localStorage.setItem(PD_STORAGE_KEY, JSON.stringify(arr)); }
+    function pdNormalise(s) { return s.trim().toLowerCase(); }
+
+    var toolsRow = document.getElementById('pd-tools-row');
+    if (toolsRow) {
+      toolsRow.querySelectorAll('.pd-tool-chip[data-material]').forEach(function (btn) {
+        if (pdGetOwned().includes(pdNormalise(btn.dataset.material))) btn.classList.add('is-owned');
+      });
+      // Délégation sur le conteneur : robuste même si les puces sont
+      // recréées ou si ce script est ré-exécuté plusieurs fois.
+      toolsRow.addEventListener('click', function (e) {
+        var btn = e.target.closest('.pd-tool-chip[data-material]');
+        if (!btn || !toolsRow.contains(btn)) return;
+        var current = pdGetOwned();
+        var k = pdNormalise(btn.dataset.material);
+        if (current.includes(k)) {
+          current = current.filter(function (x) { return x !== k; });
+          btn.classList.remove('is-owned');
+        } else {
+          current.push(k);
+          btn.classList.add('is-owned');
+        }
+        pdSaveOwned(current);
+      });
+    }
+
+    // ── Sélection des tissus ──
+    var pdSurfaceMin = parseFloat('{{ patron.surfaceMin|default:0|unlocalize }}') || 0;
+    var pdSelectedIds = new Set();
+    var pdHiddenInput = document.getElementById('pd-selected-ids');
+    var pdFeasLink = document.getElementById('pd-feasibility-link');
+    var pdFeasSub = document.getElementById('pd-feasibility-sub');
+    var pdFeasBaseHref = pdFeasLink ? pdFeasLink.getAttribute('href').split('?')[0] : '';
+    var pdGarmentsList = document.getElementById('pd-garments-list');
+
+    document.querySelectorAll('.pd-garment.is-selected').forEach(function (el) {
+      pdSelectedIds.add(el.dataset.id);
     });
-  });
 
-  // ── Sélection des vêtements ──
-  const selectedIds = new Set();
-  const hiddenInput = document.getElementById('selected-vetement-ids');
-  const feasLink = document.getElementById('feasibility-link');
-  const feasSub = document.getElementById('feasibility-sub');
-  const feasBaseHref = feasLink ? feasLink.getAttribute('href').split('?')[0] : '';
-
-  // Pré-sélectionner les vêtements déjà associés au projet (depuis le serveur)
-  document.querySelectorAll('.garment-item.selected').forEach(el => {
-    selectedIds.add(el.dataset.id);
-  });
-  syncHiddenInput();
-
-  function toggleGarment(el) {
-    const id = el.dataset.id;
-    if (selectedIds.has(id)) {
-      selectedIds.delete(id);
-      el.classList.remove('selected');
-    } else {
-      selectedIds.add(id);
-      el.classList.add('selected');
+    if (pdGarmentsList) {
+      pdGarmentsList.addEventListener('click', function (e) {
+        var el = e.target.closest('.pd-garment');
+        if (!el || !pdGarmentsList.contains(el)) return;
+        var id = el.dataset.id;
+        if (pdSelectedIds.has(id)) {
+          pdSelectedIds.delete(id);
+          el.classList.remove('is-selected');
+        } else {
+          pdSelectedIds.add(id);
+          el.classList.add('is-selected');
+        }
+        pdSyncSelection();
+      });
     }
-    syncHiddenInput();
-    updateStartBtn();
-  }
 
-  function syncHiddenInput() {
-    if (hiddenInput) hiddenInput.value = JSON.stringify([...selectedIds]);
-    updateFeasibilityLink();
-  }
-
-  // ── Lien « vérifier la faisabilité » : ne propose que les tissus choisis ──
-  function updateFeasibilityLink() {
-    if (!feasLink) return;
-    const ids = [...selectedIds];
-    if (ids.length) {
-      feasLink.href = feasBaseHref + '?vetements=' + ids.join(',');
-      if (feasSub) feasSub.textContent = 'Sur ' + ids.length + ' tissu' + (ids.length > 1 ? 's' : '') + ' sélectionné' + (ids.length > 1 ? 's' : '');
-    } else {
-      feasLink.href = feasBaseHref;
-      if (feasSub) feasSub.textContent = 'Place les pièces sur tes tissus pour voir si ça rentre';
+    function pdSyncSelection() {
+      if (pdHiddenInput) pdHiddenInput.value = JSON.stringify(Array.from(pdSelectedIds));
+      pdUpdateFeasibilityLink();
+      pdUpdateSurfaceMeter();
+      pdUpdateStartBtn();
     }
-  }
 
-  function updateStartBtn() {
-    const btn = document.getElementById('btn-demarrer');
-    if (!btn) return;
-    if (selectedIds.size > 0) {
-      btn.innerHTML = `<i class="ic fi-br-reel"></i> Démarrer avec ${selectedIds.size} tissu${selectedIds.size > 1 ? 's' : ''}`;
-    } else {
-      btn.innerHTML = '<i class="ic fi-br-reel"></i> Démarrer le projet';
+    function pdUpdateFeasibilityLink() {
+      if (!pdFeasLink) return;
+      var ids = Array.from(pdSelectedIds);
+      if (ids.length) {
+        pdFeasLink.href = pdFeasBaseHref + '?vetements=' + ids.join(',');
+        if (pdFeasSub) pdFeasSub.textContent = 'Sur ' + ids.length + ' tissu' + (ids.length > 1 ? 's' : '') + ' sélectionné' + (ids.length > 1 ? 's' : '');
+      } else {
+        pdFeasLink.href = pdFeasBaseHref;
+        if (pdFeasSub) pdFeasSub.textContent = 'Place les pièces sur tes tissus pour voir si ça rentre';
+      }
     }
-  }
 
-  updateStartBtn();
+    function pdSelectedSurface() {
+      var total = 0;
+      document.querySelectorAll('.pd-garment.is-selected').forEach(function (el) {
+        total += parseFloat(el.dataset.surface) || 0;
+      });
+      return total;
+    }
+
+    function pdUpdateSurfaceMeter() {
+      var valueEl = document.getElementById('pd-surface-value');
+      var fillEl = document.getElementById('pd-surface-fill');
+      var noteEl = document.getElementById('pd-surface-note');
+      if (!valueEl || !fillEl || !noteEl) return;
+
+      var total = pdSelectedSurface();
+      valueEl.innerHTML = total.toFixed(2).replace('.', ',') + ' m² <small>/ {{ patron.surfaceMin|floatformat:2 }} requis</small>';
+      var pct = pdSurfaceMin > 0 ? Math.min(100, Math.round((total / pdSurfaceMin) * 100)) : (total > 0 ? 100 : 0);
+      fillEl.style.width = pct + '%';
+
+      if (pdSelectedIds.size === 0) {
+        noteEl.textContent = 'Sélectionnez un ou plusieurs tissus.';
+        noteEl.className = 'pd-surface-meter-note is-low';
+      } else if (total >= pdSurfaceMin) {
+        noteEl.textContent = 'Largement de quoi couper les pièces.';
+        noteEl.className = 'pd-surface-meter-note is-ok';
+      } else {
+        noteEl.textContent = 'Surface encore insuffisante pour ce patron.';
+        noteEl.className = 'pd-surface-meter-note is-low';
+      }
+    }
+
+    function pdUpdateStartBtn() {
+      var btn = document.getElementById('pd-start-btn');
+      var label = document.getElementById('pd-start-btn-label');
+      var sub = document.getElementById('pd-start-btn-sub');
+      if (!btn) return;
+
+      var ready = pdSelectedIds.size > 0 && pdSelectedSurface() >= pdSurfaceMin;
+      btn.classList.toggle('is-ready', ready);
+
+      if (label) {
+        label.textContent = pdSelectedIds.size > 0
+          ? 'Démarrer avec ' + pdSelectedIds.size + ' tissu' + (pdSelectedIds.size > 1 ? 's' : '')
+          : 'Démarrer le projet';
+      }
+      if (sub) {
+        if (pdSelectedIds.size === 0) {
+          sub.textContent = 'Choisissez vos tissus ci-dessus';
+        } else if (ready) {
+          sub.textContent = 'Prêt à démarrer !';
+        } else {
+          sub.textContent = 'Surface encore insuffisante';
+        }
+      }
+    }
+
+    // ── « Voir tous les tissus » ──
+    window.pdToggleGarmentsExpand = function () {
+      var card = document.querySelector('.pd-garments-card');
+      var label = document.getElementById('pd-garments-expand-label');
+      if (!card) return;
+      var expanded = card.classList.toggle('is-expanded');
+      if (label) {
+        var hiddenCount = card.querySelectorAll('.pd-garment-extra').length;
+        label.textContent = expanded ? 'Réduire la liste' : 'Voir les ' + hiddenCount + ' autres tissus';
+      }
+    };
+
+    pdSyncSelection();
+  })();
 </script>
 {% endblock %}

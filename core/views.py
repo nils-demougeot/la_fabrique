@@ -623,6 +623,7 @@ def ajout_textile(request):
             qualite = int(request.POST.get('qualite', 3))
             couleur = request.POST.get('couleur', '')
             matiere_raw = request.POST.get('material', 'coton:100').strip() or 'coton:100'
+            numero_identite = request.POST.get('numero_identite', '').strip()
 
             photo_fichier = decode_base64_image(face_av['photo_data'], 'vetement')
 
@@ -641,6 +642,7 @@ def ajout_textile(request):
                 qualite=qualite,
                 couleur=couleur,
                 matiere=matiere_raw,
+                numeroIdentite=numero_identite or None,
                 echelle_cm_px=face_av['cm_per_px'],
                 detourage=json.dumps(face_av['polygon']),
                 defauts=json.dumps(face_av['defects']),
@@ -1238,6 +1240,7 @@ def patron_detail(request, pk):
         'has_compatible': any(v['compatible'] for v in vetements_compatibles),
         'email_verifie': request.user.email_verifie,
         'verif_requise': request.GET.get('verif_requise') == '1',
+        'pieces_gagnees': _pieces_gagnees(patron.difficulte),
     }
     return render(request, 'core/patron_detail.html', context)
 
