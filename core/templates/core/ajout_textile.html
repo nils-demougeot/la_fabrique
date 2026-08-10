@@ -474,88 +474,6 @@
   .aj-quality-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
 
   /* =========================================================
-     Écran d'analyse (étape finale, pendant l'envoi)
-     ========================================================= */
-  .aj-analyse {
-    display: none;
-    position: fixed;
-    inset: 0;
-    max-width: 430px;
-    margin: 0 auto;
-    z-index: 2400;
-    background: var(--green);
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .aj-analyse.on { display: flex; }
-  .aj-analyse::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(58deg, rgba(255,255,255,.09) 0 3px, rgba(255,255,255,0) 3px 12px);
-  }
-  .aj-analyse-in {
-    position: relative;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 34px 24px 28px;
-    overflow-y: auto;
-  }
-  .aj-analyse-eyebrow {
-    font: 500 10px var(--mono);
-    color: rgba(255,253,248,.9);
-    text-transform: uppercase;
-    letter-spacing: .16em;
-  }
-  .aj-analyse-title {
-    font: 800 40px/.98 var(--display);
-    color: var(--paper);
-    margin: 14px 0 0;
-    letter-spacing: -.035em;
-  }
-  .aj-analyse-card { background: var(--paper); border-radius: 30px; padding: 22px; margin-top: 30px; }
-  .aj-analyse-head { display: flex; align-items: center; gap: 16px; }
-  .aj-analyse-thumb {
-    width: 78px; height: 96px;
-    border-radius: 18px;
-    flex: none;
-    overflow: hidden;
-    background: repeating-linear-gradient(135deg, #EDE4D6 0 8px, #E3D8C7 8px 16px);
-  }
-  .aj-analyse-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .aj-analyse-area { font: 800 24px var(--display); letter-spacing: -.02em; }
-  .aj-analyse-sub { font: 400 12px/1.4 var(--text); color: var(--muted); margin-top: 3px; }
-  .aj-analyse-rule { height: 1px; background: #EAE0CF; margin: 18px 0; }
-  .aj-analyse-steps { display: flex; flex-direction: column; gap: 10px; }
-  .aj-analyse-step { display: flex; align-items: center; gap: 10px; font: 400 13px var(--text); color: #9C9184; }
-  .aj-analyse-step .tick {
-    width: 18px; height: 18px;
-    border-radius: 6px;
-    border: 1.5px solid #D8CFC0;
-    box-sizing: border-box;
-    flex: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: transparent;
-    font: 700 11px var(--text);
-  }
-  .aj-analyse-step.done { color: #4A443C; }
-  .aj-analyse-step.done .tick { background: var(--green); border-color: var(--green); color: #fff; }
-  .aj-analyse-progress { background: rgba(20,18,15,.85); border-radius: 22px; padding: 18px 20px; margin-top: 14px; }
-  .aj-analyse-progress-head { display: flex; align-items: center; justify-content: space-between; }
-  .aj-analyse-progress-head span:first-child {
-    font: 500 10px var(--mono);
-    color: #B5ADA2;
-    text-transform: uppercase;
-    letter-spacing: .09em;
-  }
-  .aj-analyse-pct { font: 800 14px var(--display); color: var(--paper); }
-  .aj-analyse-track { height: 8px; border-radius: 5px; background: #2A2620; margin-top: 12px; overflow: hidden; }
-  .aj-analyse-fill { display: block; height: 100%; width: 4%; background: var(--green); border-radius: 5px; transition: width .4s ease; }
-
-  /* =========================================================
      Résultat
      ========================================================= */
   .aj-result {
@@ -607,121 +525,533 @@
   @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
   /* =========================================================
-     Legacy — variables des blocs conservés tels quels
-     (éditeur plein écran, caméra, feuille « autre type »)
+     t2 · Ticket de soustraction (écran de fin)
      ========================================================= */
-  #editor-overlay, #camera-overlay, #other-type-modal {
+  .aj-ticket {
+    position: fixed;
+    inset: 0;
+    z-index: 2600;
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--paper);
+    overflow-y: auto;
+  }
+  .aj-ticket-in {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 32px 26px calc(26px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+  }
+  .aj-ticket-top { display: flex; align-items: center; justify-content: space-between; }
+  .aj-ticket-ref {
+    font: 500 10px var(--mono);
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: .16em;
+  }
+  .aj-ticket-date {
+    background: var(--sand-d);
+    border-radius: 11px;
+    padding: 6px 10px;
+    font: 500 10px var(--mono);
+    letter-spacing: .08em;
+  }
+  .aj-ticket-nom { font: 800 34px/1 var(--display); margin: 20px 0 0; letter-spacing: -.03em; }
+  .aj-ticket-meta { font: 400 13px var(--text); color: var(--muted); margin: 8px 0 0; }
+
+  .aj-ticket-head { display: flex; align-items: baseline; justify-content: space-between; margin-top: 30px; }
+  .aj-ticket-label { font: 500 10px var(--mono); color: var(--faint); letter-spacing: .12em; }
+  .aj-ticket-total { font: 800 40px var(--display); letter-spacing: -.03em; }
+
+  .aj-ticket-lines { display: flex; flex-direction: column; gap: 14px; margin-top: 22px; }
+  .aj-ticket-line { display: flex; align-items: center; gap: 14px; }
+  .aj-ticket-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; display: block; background: #C4B9A8; }
+  .aj-ticket-dot[data-dtype="tache"]  { background: #FF6B3D; }
+  .aj-ticket-dot[data-dtype="trou"]   { background: #7C5CFF; }
+  .aj-ticket-dot[data-dtype="usure"]  { background: #FFC93C; }
+  .aj-ticket-dot[data-dtype="ourlet"] { background: #2C6CA8; }
+  .aj-ticket-line-txt { flex: 1; min-width: 0; }
+  .aj-ticket-line-name { font: 700 14px var(--text); }
+  .aj-ticket-line-sub { font: 500 10px var(--mono); color: var(--faint); margin-top: 2px; text-transform: uppercase; }
+  .aj-ticket-minus { font: 800 24px var(--display); color: var(--red); letter-spacing: -.02em; }
+
+  .aj-ticket-rule { height: 3px; background: var(--ink); margin-top: 24px; }
+  .aj-ticket-foot { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 18px; }
+  .aj-ticket-big { font: 800 68px/.9 var(--display); letter-spacing: -.05em; margin-top: 6px; }
+  .aj-ticket-unit { font: 500 12px var(--mono); color: var(--muted); margin-top: 4px; }
+  .aj-ticket-badge {
+    background: var(--green);
+    color: #fff;
+    border-radius: 16px;
+    padding: 11px 14px;
+    font: 800 14px var(--display);
+    white-space: nowrap;
+  }
+
+  /* =========================================================
+     Legacy — variables de la feuille « autre type »,
+     seul bloc encore écrit dans l'ancienne charte.
+     ========================================================= */
+  #other-type-modal {
     --bg-page: #FFFBFF;
-    --bg-card: #FBFAF0;
     --bg-input: #EFEEE3;
     --primary-green: #237329;
-    --dark-green: #4E6C50;
     --text-dark: #383832;
     --text-gray: #65655E;
     --text-light-gray: #666556;
     --font-title: 'Plus Jakarta Sans', sans-serif;
     --font-body: 'Manrope', sans-serif;
   }
-  #editor-overlay *, #camera-overlay *, #other-type-modal * { box-sizing: border-box; }
+  #other-type-modal * { box-sizing: border-box; }
 
-    .photo-source-picker {
-      display: flex;
-      gap: 12px;
-    }
-    .photo-source-btn {
-      flex: 1;
-      background-color: rgba(255, 255, 255, 0.9);
-      border: 2px dashed rgba(187, 185, 177, 0.5);
-      border-radius: 18px;
-      padding: 28px 12px;
-      text-align: center;
-      cursor: pointer;
-      color: var(--text-gray);
-      font-weight: 600;
-      font-size: 13px;
-      font-family: var(--font-body);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      transition: border-color 0.15s, background-color 0.15s;
-    }
-    .photo-source-btn:hover {
-      border-color: var(--primary-green);
-      background-color: rgba(35, 115, 41, 0.05);
-    }
-    .photo-source-btn .src-icon { font-size: 26px; }
+  /* =========================================================
+     Éditeur plein écran — caméra, détourage, échelle, défauts
+     =========================================================
+     Écrans 03 à 09 : fond encre, panneaux sombres, mêmes familles
+     typographiques que le reste du parcours. */
+  #editor-overlay {
+    --ink:    #14120F;
+    --panel:  #1E1B17;
+    --chip:   #221F1B;
+    --chip-2: #2A2620;
+    --line:   #3A342C;
+    --muted:  #9C9184;
+    --soft:   #B5ADA2;
+    --paper:  #FFFDF8;
+    --green:  #1FA85C;
+    --yellow: #FFD166;
+    --red:    #C4452D;
 
-    /* ── Overlay caméra ── */
-    #camera-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 2700;
-      background: #000;
-      flex-direction: column;
-      max-width: 430px;
-      margin: 0 auto;
-    }
-    #camera-overlay.active { display: flex; }
+    --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --text:    'DM Sans', 'Manrope', system-ui, sans-serif;
+    --mono:    'DM Mono', ui-monospace, monospace;
 
-    #camera-viewfinder {
-      position: relative;
-      flex: 1;
-      overflow: hidden;
-    }
-    #camera-video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    #camera-crop-box {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 80%;
-      aspect-ratio: 1;
-      border: 2px solid white;
-      border-radius: 4px;
-      box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
-    }
-    #camera-crop-box::before, #camera-crop-box::after,
-    .cam-corner-br, .cam-corner-bl {
-      content: '';
-      position: absolute;
-      width: 20px; height: 20px;
-      border-color: white;
-      border-style: solid;
-    }
-    #camera-crop-box::before { top:-2px; left:-2px;  border-width:3px 0 0 3px; }
-    #camera-crop-box::after  { top:-2px; right:-2px; border-width:3px 3px 0 0; }
-    .cam-corner-br { bottom:-2px; right:-2px; border-width:0 3px 3px 0; }
-    .cam-corner-bl { bottom:-2px; left:-2px;  border-width:0 0 3px 3px; }
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2500;
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--text);
+    flex-direction: column;
+  }
+  #editor-overlay.active { display: flex; }
+  #editor-overlay * { box-sizing: border-box; }
+  #editor-overlay button { font-family: inherit; color: inherit; cursor: pointer; }
+  body.editor-open .header-global { display: none !important; }
 
-    #camera-controls {
-      padding: 24px 32px 48px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(0,0,0,0.6);
-    }
-    #btn-camera-cancel {
-      color: white; background: none; border: none;
-      font-family: var(--font-body); font-size: 16px; font-weight: 600;
-      cursor: pointer; padding: 12px; width: 70px;
-    }
-    #btn-camera-capture {
-      width: 70px; height: 70px;
-      border-radius: 50%;
-      background: white;
-      border: 5px solid rgba(255,255,255,0.4);
-      cursor: pointer;
-      transition: transform 0.1s;
-      outline: none;
-    }
-    #btn-camera-capture:active { transform: scale(0.92); }
+  /* Bouton rond de barre (retour, torche…) */
+  .ed-round {
+    width: 38px; height: 38px;
+    flex: none;
+    border: none;
+    border-radius: 13px;
+    background: var(--chip-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .12s ease, opacity .15s ease;
+  }
+  .ed-round:active { transform: scale(.92); }
+  .ed-round:disabled { opacity: .35; cursor: default; }
 
+  /* =========================================================
+     03 · Appareil photo
+     ========================================================= */
+  #ed-camera {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: #0E0D0B;
+    flex-direction: column;
+  }
+  #ed-camera.active { display: flex; }
+  .ed-cam-top { display: flex; align-items: center; gap: 10px; padding: 26px 20px 0; }
+  .ed-cam-pill {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--chip);
+    border-radius: 15px;
+    padding: 9px 12px;
+    font: 800 12px var(--display);
+    letter-spacing: .04em;
+  }
+  .ed-cam-view {
+    flex: 1;
+    margin: 12px 12px 0;
+    border-radius: 34px;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(120% 90% at 50% 20%, #3A342C 0%, #1A1815 70%);
+  }
+  .ed-cam-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(115deg, rgba(255,255,255,.03) 0 22px, rgba(255,255,255,0) 22px 44px);
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity .35s ease;
+  }
+  .ed-cam-view.cam-live::after { opacity: 0; }
+  #camera-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ed-cam-ctrl {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 34px calc(30px + env(safe-area-inset-bottom, 0px));
+  }
+  .ed-cam-side {
+    width: 50px; height: 50px;
+    border-radius: 17px;
+    border: none;
+    background: var(--chip);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #ed-pick-file {
+    background: repeating-linear-gradient(135deg, #3A342C 0 7px, #2A2620 7px 14px);
+    border: 2px solid var(--line);
+    overflow: hidden;
+    padding: 0;
+  }
+  #ed-pick-file img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ed-shutter {
+    width: 78px; height: 78px;
+    border-radius: 50%;
+    border: 4px solid rgba(255,255,255,.85);
+    background: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .1s ease;
+  }
+  .ed-shutter:active { transform: scale(.94); }
+  .ed-shutter span {
+    width: 62px; height: 62px;
+    border-radius: 50%;
+    background: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* =========================================================
+     En-tête commun (écrans 04 · 05 · 05b · 08)
+     ========================================================= */
+  #ed-head { display: flex; align-items: center; gap: 12px; padding: 26px 20px 0; flex: none; }
+  .ed-head-txt { flex: 1; min-width: 0; }
+  #ed-title { font: 800 17px var(--display); }
+  #ed-sub {
+    font: 500 10px var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-top: 3px;
+  }
+  #ed-sub.warn { color: var(--yellow); }
+  #ed-undo {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    border-radius: 14px;
+    background: var(--chip);
+    padding: 9px 12px;
+    font: 700 11px var(--text);
+    color: var(--muted);
+  }
+  #ed-undo:disabled { opacity: .35; cursor: default; }
+
+  /* Scène (photo + calques) */
+  #editor-stage {
+    flex: 1;
+    min-height: 0;
+    margin: 14px 20px 0;
+    border-radius: 30px;
+    background: #1B1814;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+  }
+  #edit-canvas { display: block; max-width: 100%; max-height: 100%; touch-action: none; }
+
+  /* Loupe de précision */
+  #loupe {
+    position: absolute;
+    width: 132px; height: 132px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--paper);
+    box-shadow: 0 10px 26px rgba(0,0,0,.5);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .12s ease;
+    z-index: 4;
+  }
+  #loupe.active { opacity: 1; }
+  #loupe canvas { width: 100%; height: 100%; display: block; }
+
+  /* Toast d'information */
+  #editor-toast {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%) translateY(8px);
+    background: rgba(20,18,15,.92);
+    border: 1px solid var(--line);
+    color: var(--paper);
+    border-radius: 16px;
+    padding: 11px 16px;
+    font: 400 12px/1.35 var(--text);
+    max-width: calc(100% - 32px);
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 5;
+  }
+  #editor-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Pied : panneaux propres à chaque étape */
+  #ed-foot { flex: none; padding: 16px 20px calc(28px + env(safe-area-inset-bottom, 0px)); }
+  .ed-panel { display: none; flex-direction: column; gap: 10px; }
+  .ed-panel.on { display: flex; }
+
+  .ed-note {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    background: var(--panel);
+    border-radius: 24px;
+    padding: 16px 18px;
+  }
+  .ed-note-ico {
+    width: 34px; height: 34px;
+    border-radius: 12px;
+    background: var(--chip-2);
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ed-note p { flex: 1; margin: 0; font: 400 12px/1.45 var(--text); color: var(--soft); }
+  .ed-note strong { display: block; font: 800 15px var(--display); color: var(--paper); margin-bottom: 4px; }
+  .ed-note.hero .ed-note-ico { background: var(--green); }
+  .ed-note.hero { align-items: flex-start; border-radius: 26px; padding: 18px 20px; }
+
+  .ed-cta {
+    display: block;
+    width: 100%;
+    border: none;
+    border-radius: 26px;
+    background: var(--green);
+    color: #fff;
+    padding: 19px 0;
+    font: 800 17px var(--display);
+    transition: transform .1s ease, opacity .15s ease;
+  }
+  .ed-cta:active { transform: scale(.985); }
+  .ed-cta:disabled { opacity: .4; cursor: default; }
+  .ed-ghost {
+    display: block;
+    width: 100%;
+    border: 1.5px solid var(--line);
+    border-radius: 26px;
+    background: none;
+    padding: 17px 0;
+    font: 800 15px var(--display);
+    color: var(--paper);
+  }
+  .ed-row { display: flex; gap: 10px; }
+  .ed-row .ed-ghost { padding: 15px 0; border-radius: 24px; font-size: 14px; }
+
+  /* ── 05 · outils de contour ── */
+  .ed-tools { display: flex; gap: 10px; }
+  .ed-tool {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    border: none;
+    border-radius: 20px;
+    background: var(--chip);
+    padding: 13px 0;
+    color: var(--muted);
+  }
+  .ed-tool span { font: 800 10px var(--display); letter-spacing: .04em; }
+  .ed-tool.active { background: var(--green); color: #fff; }
+
+  /* ── 05b · échelle ── */
+  .ed-scale-card { background: var(--panel); border-radius: 26px; padding: 18px 20px; }
+  .ed-scale-label {
+    font: 500 10px var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+  .ed-scale-input {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 12px;
+    border-bottom: 2px solid var(--yellow);
+    padding: 0 4px 10px;
+  }
+  #editor-calib-distance {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: none;
+    color: var(--paper);
+    font: 800 34px var(--display);
+    letter-spacing: -.02em;
+    padding: 0;
+    -moz-appearance: textfield;
+  }
+  #editor-calib-distance::-webkit-outer-spin-button,
+  #editor-calib-distance::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #editor-calib-distance:focus { outline: none; }
+  #editor-calib-distance::placeholder { color: #5C544A; }
+  .ed-scale-unit-txt { font: 500 14px var(--mono); color: var(--muted); flex: none; }
+  .ed-units { display: flex; gap: 8px; margin-top: 14px; }
+  .ed-unit {
+    flex: 1;
+    border: none;
+    border-radius: 16px;
+    background: var(--chip);
+    padding: 11px 0;
+    font: 800 12px var(--display);
+    color: var(--muted);
+  }
+  .ed-unit.active { background: var(--yellow); color: var(--ink); }
+
+  /* ── 08 · défauts ── */
+  .ed-types { display: flex; gap: 8px; }
+  .ed-type {
+    flex: 1;
+    border: none;
+    border-radius: 18px;
+    background: var(--chip);
+    padding: 12px 0;
+    font: 800 12px var(--display);
+    color: var(--muted);
+  }
+  .ed-type.active { color: #fff; background: var(--dtype, var(--green)); }
+
+  /* ── 09 · détail d'un défaut ── */
+  #ed-sheet {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: none;
+    flex-direction: column;
+    justify-content: flex-end;
+    background: rgba(20,18,15,.5);
+  }
+  #ed-sheet.on { display: flex; }
+  .ed-sheet-card {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 34px 34px 0 0;
+    padding: 22px 24px calc(26px + env(safe-area-inset-bottom, 0px));
+    animation: slideUp .26s ease;
+  }
+  .ed-sheet-grip { width: 44px; height: 5px; border-radius: 3px; background: #E7DED0; display: block; margin: 0 auto 18px; }
+  .ed-sheet-head { display: flex; align-items: center; gap: 12px; }
+  .ed-sheet-num {
+    width: 44px; height: 44px;
+    border-radius: 16px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 800 19px var(--display);
+    color: #fff;
+  }
+  .ed-sheet-title { font: 800 22px var(--display); letter-spacing: -.02em; }
+  .ed-sheet-sub { font: 400 12px var(--text); color: #7A7168; margin-top: 2px; }
+  #ed-sheet-del { border: none; background: none; padding: 0; font: 700 13px var(--text); color: var(--red); }
+  .ed-sheet-label {
+    font: 500 10px var(--mono);
+    color: #9C9184;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+  .ed-sheet-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .ed-chip {
+    border: 1.5px solid #E7DED0;
+    background: none;
+    border-radius: 14px;
+    padding: 10px 15px;
+    font: 700 13px var(--text);
+    color: #4A443C;
+  }
+  .ed-chip.active { border-color: transparent; background: var(--dtype, #FF6B3D); color: #fff; font: 800 13px var(--display); }
+  .ed-sheet-size { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; }
+  .ed-sheet-size b { font: 800 15px var(--display); }
+  #defect-radius {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 6px;
+    background: #F2EADD;
+    margin-top: 12px;
+    outline: none;
+  }
+  #defect-radius::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--dtype, #FF6B3D);
+    box-shadow: 0 4px 10px rgba(20,18,15,.2);
+    cursor: pointer;
+  }
+  #defect-radius::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--dtype, #FF6B3D);
+    cursor: pointer;
+  }
+  .ed-sheet-loss {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #F6F0E6;
+    border-radius: 24px;
+    padding: 15px 17px;
+    margin-top: 22px;
+  }
+  .ed-sheet-loss-val { font: 800 22px var(--display); margin-top: 3px; }
+  .ed-sheet-loss p { flex: 1; margin: 0; font: 400 11px/1.4 var(--text); color: #7A7168; }
+  .ed-sheet-foot { display: flex; gap: 10px; margin-top: 20px; }
+  .ed-sheet-foot .ed-chip { flex: 1; text-align: center; border-radius: 24px; padding: 16px 0; font: 800 15px var(--display); }
+  #ed-sheet-ok {
+    flex: 2;
+    border: none;
+    border-radius: 24px;
+    background: var(--green);
+    color: #fff;
+    padding: 16px 0;
+    font: 800 16px var(--display);
+  }
     /* ── Autre type modal ── */
     #other-type-modal {
       display: none;
@@ -802,294 +1132,6 @@
     }
     .btn-other-cancel:hover { background: #E0DDD1; }
 
-    /* ════════ Éditeur plein écran ════════ */
-    body.editor-open .header-global,
-    body.editor-open .bottom-nav { display: none !important; }
-
-    #editor-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 2500;
-      background: #14160F;
-      flex-direction: column;
-      max-width: 430px;
-      margin: 0 auto;
-    }
-    #editor-overlay.active { display: flex; }
-
-    #editor-topbar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      background: rgba(0,0,0,0.35);
-      color: white;
-      flex-shrink: 0;
-    }
-    #editor-topbar button {
-      background: rgba(255,255,255,0.12);
-      border: none;
-      color: white;
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: background 0.15s;
-    }
-    #editor-topbar button:hover { background: rgba(255,255,255,0.22); }
-    #editor-undo:disabled { opacity: 0.3; cursor: default; }
-    #editor-title-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; }
-    #editor-face-name {
-      font-family: var(--font-title);
-      font-size: 15px;
-      font-weight: 800;
-      letter-spacing: 0.3px;
-    }
-    #editor-steps { display: flex; gap: 6px; }
-    .ed-step {
-      width: 22px; height: 4px;
-      border-radius: 99px;
-      background: rgba(255,255,255,0.25);
-      transition: background 0.25s;
-    }
-    .ed-step.active { background: #6FCF73; }
-    .ed-step.done { background: var(--primary-green); }
-
-    #editor-stage {
-      position: relative;
-      flex: 1;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      touch-action: none;
-    }
-    #edit-canvas { max-width: 100%; max-height: 100%; display: block; cursor: crosshair; }
-
-    /* Sélecteur de source dans l'éditeur */
-    #editor-source {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: #14160F;
-    }
-    .editor-source-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      width: 100%;
-      max-width: 320px;
-    }
-    .editor-source-emoji { font-size: 44px; }
-    .editor-source-title {
-      color: rgba(255,255,255,0.85);
-      font-family: var(--font-title);
-      font-weight: 700;
-      font-size: 16px;
-      text-align: center;
-    }
-    .editor-source-btns { display: flex; gap: 12px; width: 100%; }
-
-    /* Loupe de précision */
-    #loupe {
-      position: absolute;
-      top: 0; left: 0;
-      width: 132px; height: 132px;
-      border-radius: 50%;
-      border: 3px solid rgba(255,255,255,0.9);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
-      overflow: hidden;
-      pointer-events: none;
-      display: none;
-      z-index: 10;
-      background: #000;
-    }
-    #loupe.active { display: block; }
-    #loupe-canvas { width: 100%; height: 100%; display: block; }
-
-    /* Panneau du bas */
-    #editor-panel {
-      background: var(--bg-page);
-      border-radius: 24px 24px 0 0;
-      padding: 18px 20px calc(20px + env(safe-area-inset-bottom));
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      flex-shrink: 0;
-    }
-    .editor-instruction {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-dark);
-      line-height: 1.4;
-      text-align: center;
-    }
-    .editor-instruction b { color: var(--primary-green); }
-
-    /* Toast info */
-    #editor-toast {
-      position: absolute;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-8px);
-      background: rgba(20,22,15,0.85);
-      color: #fff;
-      font-family: var(--font-body);
-      font-weight: 600;
-      font-size: 13px;
-      padding: 10px 16px;
-      border-radius: 99px;
-      max-width: 88%;
-      text-align: center;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s, transform 0.25s;
-      z-index: 12;
-      -webkit-backdrop-filter: blur(4px);
-      backdrop-filter: blur(4px);
-    }
-    #editor-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    /* Bouton détourage auto */
-    .editor-auto-row { display: flex; justify-content: center; }
-    .editor-auto-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
-      color: #fff;
-      border: none;
-      border-radius: 99px;
-      padding: 11px 22px;
-      font-family: var(--font-title);
-      font-weight: 800;
-      font-size: 14px;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(35,115,41,0.3);
-      transition: transform 0.08s, box-shadow 0.15s;
-    }
-    .editor-auto-btn:active { transform: translateY(1px); }
-    .editor-auto-btn:hover { box-shadow: 0 6px 18px rgba(35,115,41,0.4); }
-    .editor-auto-btn span { font-size: 15px; }
-
-    .editor-calib-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--bg-input);
-      border-radius: 99px;
-      padding: 8px 10px 8px 20px;
-    }
-    .editor-calib-label { font-size: 13px; font-weight: 700; color: var(--text-gray); }
-    .editor-calib-input-wrap {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: white;
-      border-radius: 99px;
-      padding: 8px 16px;
-    }
-    .editor-calib-input-wrap input {
-      width: 64px;
-      border: none;
-      background: none;
-      outline: none;
-      font-family: var(--font-title);
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--primary-green);
-      text-align: right;
-    }
-    .editor-calib-input-wrap input::-webkit-outer-spin-button,
-    .editor-calib-input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    .editor-calib-input-wrap span { font-weight: 700; color: var(--text-gray); font-size: 14px; }
-
-    /* Contrôles défauts */
-    .defect-empty {
-      font-size: 13px;
-      color: var(--text-gray);
-      text-align: center;
-      padding: 6px 0;
-    }
-    .defect-type-tags { display: flex; gap: 10px; margin-bottom: 12px; }
-    .defect-type-btn {
-      flex: 1;
-      display: flex;
-      gap: 6px;
-      justify-content: center;
-      align-items: center;
-      background: #EAE9DD;
-      padding: 11px 12px;
-      border-radius: 99px;
-      font-family: var(--font-body);
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-dark);
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .defect-type-btn img { filter: brightness(0) opacity(0.45); transition: filter 0.15s; }
-    .defect-type-btn.active { border-color: var(--primary-green); color: var(--primary-green); background: rgba(35,115,41,0.06); }
-    .defect-type-btn.active img { filter: brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(456%) hue-rotate(91deg) brightness(87%) contrast(91%); }
-    .defect-radius-row { display: flex; align-items: center; gap: 12px; }
-    .defect-radius-label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-gray); letter-spacing: 0.5px; }
-    .defect-radius-row input[type=range] { flex: 1; margin: 0; accent-color: var(--primary-green); }
-    .defect-delete-btn {
-      width: 40px; height: 40px;
-      flex-shrink: 0;
-      border-radius: 12px;
-      background: rgba(162,74,51,0.08);
-      border: 1.5px solid rgba(162,74,51,0.25);
-      color: #A24A33;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .defect-delete-btn:hover { background: rgba(162,74,51,0.16); }
-
-    .editor-nav { display: flex; gap: 12px; margin-top: 2px; }
-    .editor-btn-ghost {
-      background: var(--bg-input);
-      border: none;
-      border-radius: 99px;
-      padding: 16px;
-      flex: 1;
-      font-family: var(--font-body);
-      font-weight: 700;
-      font-size: 15px;
-      color: var(--text-gray);
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .editor-btn-ghost:hover { background: #E0DDD1; }
-    .editor-btn-main {
-      flex: 2;
-      background: var(--primary-green);
-      border: none;
-      border-radius: 99px;
-      padding: 16px;
-      color: white;
-      font-family: var(--font-title);
-      font-weight: 800;
-      font-size: 15px;
-      cursor: pointer;
-      box-shadow: 0 6px 16px rgba(35,115,41,0.3);
-      transition: transform 0.08s, box-shadow 0.15s, opacity 0.15s;
-    }
-    .editor-btn-main:active { transform: translateY(1px); }
-    .editor-btn-main:disabled { opacity: 0.45; box-shadow: none; cursor: default; }
   </style>
 {% endblock %}
 
@@ -1369,38 +1411,6 @@
     <input type="hidden" name="defects_arriere"        id="defects_arriere"        value="[]">
   </form>
 
-  <!-- ═══════════ Écran d'analyse (pendant l'envoi) ═══════════ -->
-  <div class="aj-analyse" id="aj-analyse">
-    <div class="aj-analyse-in">
-      <span class="aj-analyse-eyebrow">Rayon X en cours</span>
-      <h2 class="aj-analyse-title" id="aj-analyse-title">Ton vêtement</h2>
-
-      <div class="aj-analyse-card">
-        <div class="aj-analyse-head">
-          <div class="aj-analyse-thumb" id="aj-analyse-thumb"></div>
-          <div style="flex:1;">
-            <div class="aj-analyse-area" id="aj-analyse-area">—</div>
-            <div class="aj-analyse-sub" id="aj-analyse-sub">surface détourée</div>
-          </div>
-        </div>
-        <div class="aj-analyse-rule"></div>
-        <div class="aj-analyse-steps">
-          <div class="aj-analyse-step done"><span class="tick">✓</span>Contours vérifiés</div>
-          <div class="aj-analyse-step done"><span class="tick">✓</span>Défauts cartographiés</div>
-          <div class="aj-analyse-step" id="aj-analyse-step3"><span class="tick">✓</span>Recherche de patrons compatibles</div>
-        </div>
-      </div>
-
-      <div class="aj-analyse-progress">
-        <div class="aj-analyse-progress-head">
-          <span>Analyse</span>
-          <span class="aj-analyse-pct" id="aj-analyse-pct">4 %</span>
-        </div>
-        <div class="aj-analyse-track"><span class="aj-analyse-fill" id="aj-analyse-fill"></span></div>
-      </div>
-    </div>
-  </div>
-
   {% if error %}
   <div class="aj-result">
     <div class="aj-result-sheet">
@@ -1413,47 +1423,113 @@
   {% endif %}
 
   {% if result_ready %}
-  <div class="aj-result">
-    <div class="aj-result-sheet">
-      <div class="aj-result-handle"></div>
-      <div class="aj-result-label">Résultats de l'analyse</div>
-      <div class="aj-result-value">{{ usable_area }} m²</div>
+  <!-- ═══════════ t2 · Ticket de soustraction (fin du parcours) ═══════════ -->
+  <div class="aj-ticket">
+    <div class="aj-ticket-in">
+      <div class="aj-ticket-top">
+        <span class="aj-ticket-ref">Ticket {{ ticket.ref }}</span>
+        <span class="aj-ticket-date">{{ ticket.date }}</span>
+      </div>
 
-      <div class="aj-result-bar">
-        <div class="aj-result-bar-head">
-          <span>Zone réutilisable</span>
-          <span>{{ percentage }} %</span>
+      <h1 class="aj-ticket-nom">{{ ticket.nom }}</h1>
+      <p class="aj-ticket-meta">
+        {{ ticket.matieres }}{% if ticket.couleurs %} · {{ ticket.couleurs }}{% endif %}
+      </p>
+
+      <div class="aj-ticket-head">
+        <span class="aj-ticket-label">SURFACE DÉTOURÉE</span>
+        <span class="aj-ticket-total">{{ ticket.surface_totale|floatformat:2 }}</span>
+      </div>
+
+      <div class="aj-ticket-lines">
+        {% for l in ticket.lignes %}
+        <div class="aj-ticket-line">
+          <span class="aj-ticket-dot" data-dtype="{{ l.type }}"></span>
+          <div class="aj-ticket-line-txt">
+            <div class="aj-ticket-line-name">{{ l.libelle }} · {{ l.face|lower }}</div>
+            <div class="aj-ticket-line-sub">{{ l.taille_cm }} CM</div>
+          </div>
+          <span class="aj-ticket-minus">−{{ l.perte_m2|floatformat:2 }}</span>
         </div>
-        <div class="aj-result-track"><span class="aj-result-fill" style="width:{{ percentage }}%;"></span></div>
+        {% endfor %}
+        <div class="aj-ticket-line">
+          <span class="aj-ticket-dot" data-dtype="chutes"></span>
+          <div class="aj-ticket-line-txt">
+            <div class="aj-ticket-line-name">Chutes de bords</div>
+            <div class="aj-ticket-line-sub">COUTURES, OURLETS</div>
+          </div>
+          <span class="aj-ticket-minus">−{{ ticket.chutes|floatformat:2 }}</span>
+        </div>
       </div>
 
-      <div class="aj-result-coins">
-        <span><i class="ic fi-br-party-horn"></i></span>
-        +{{ coins_earned }} pièce{% if coins_earned > 1 %}s{% endif %}
+      <div class="aj-ticket-rule"></div>
+
+      <div class="aj-ticket-foot">
+        <div>
+          <div class="aj-ticket-label">EXPLOITABLE</div>
+          <div class="aj-ticket-big">{{ usable_area|floatformat:2 }}</div>
+          <div class="aj-ticket-unit">MÈTRES CARRÉS</div>
+        </div>
+        <span class="aj-ticket-badge">{{ percentage }} % SAUVÉ</span>
       </div>
 
-      <a href="{% url 'dashboard' %}" class="aj-cta aj-result-cta">Voir mon tableau de bord</a>
+      <a href="{% url 'patrons' %}" class="aj-cta" style="margin-top:auto;">Voir les patrons</a>
+      <a href="{% url 'mes_tissus' %}" class="aj-cta-ghost" style="margin-top:10px;">Voir mes tissus</a>
     </div>
   </div>
   {% endif %}
 
-  <!-- ═══════════ Éditeur plein écran (détourage · étalonnage · défauts) ═══════════
-       Conservé tel quel en attendant sa propre refonte. -->
+  <!-- ═══════════ Éditeur plein écran ═══════════
+       03 caméra · 04 détourage proposé · 05 ajuster les points ·
+       05b échelle · 08 défauts · 09 détail d'un défaut. -->
   <div id="editor-overlay">
-    <header id="editor-topbar">
-      <button type="button" id="editor-close" aria-label="Fermer">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-      <div id="editor-title-wrap">
-        <span id="editor-face-name">Face avant</span>
-        <div id="editor-steps">
-          <span class="ed-step" data-step="1"></span>
-          <span class="ed-step" data-step="2"></span>
-          <span class="ed-step" data-step="3"></span>
-        </div>
+
+    <!-- ── 03 · Appareil photo ── -->
+    <div id="ed-camera">
+      <div class="ed-cam-top">
+        <button type="button" class="ed-round" id="ed-cam-close" aria-label="Retour">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M14.5 5 8 12l6.5 7" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="ed-cam-pill">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 4l1.6 3.3 3.6.5-2.6 2.6.6 3.6L12 12.3 8.8 14l.6-3.6L6.8 7.8l3.6-.5L12 4Z" stroke="#1FA85C" stroke-width="1.9" stroke-linejoin="round"/></svg>
+          <span id="ed-cam-face">FACE AVANT</span>
+        </span>
+        <button type="button" class="ed-round" id="ed-cam-torch" aria-label="Lampe" disabled>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M13 3 6 13.5h4.5L10 21l7.5-11H13L13 3Z" stroke="#FFC93C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
-      <button type="button" id="editor-undo" aria-label="Annuler">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+
+      <div class="ed-cam-view" id="ed-cam-view">
+        <video id="camera-video" autoplay playsinline muted></video>
+      </div>
+
+      <div class="ed-cam-ctrl">
+        <button type="button" class="ed-cam-side" id="ed-pick-file" aria-label="Choisir une photo"></button>
+        <button type="button" class="ed-shutter" id="btn-camera-capture" aria-label="Photographier">
+          <span>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2L9 4.8h6L16.5 7h2A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9Z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" stroke="#fff" stroke-width="2"/></svg>
+          </span>
+        </button>
+        <button type="button" class="ed-cam-side" id="ed-cam-switch" aria-label="Changer de caméra">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4.5 12a7.5 7.5 0 1 0 2.6-5.7M4.5 5v4h4" stroke="#9C9184" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <input type="file" id="ed-file-input" accept="image/*" hidden>
+      <canvas id="camera-hidden-canvas" hidden></canvas>
+    </div>
+
+    <!-- ── En-tête commun aux écrans 04 / 05 / 05b / 08 ── -->
+    <header id="ed-head">
+      <button type="button" class="ed-round" id="ed-back" aria-label="Retour">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M14.5 5 8 12l6.5 7" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="ed-head-txt">
+        <div id="ed-title">Détourage automatique</div>
+        <div id="ed-sub">Face avant</div>
+      </div>
+      <button type="button" id="ed-undo">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4.5 12a7.5 7.5 0 1 0 2.6-5.7M4.5 5v4h4" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Annuler</span>
       </button>
     </header>
 
@@ -1461,87 +1537,118 @@
       <canvas id="edit-canvas"></canvas>
       <div id="loupe"><canvas id="loupe-canvas"></canvas></div>
       <div id="editor-toast"></div>
-      <div id="editor-source">
-        <div class="editor-source-inner">
-          <span class="editor-source-emoji"><i class="ic fi-br-camera"></i></span>
-          <p class="editor-source-title">Ajoute la photo de cette face</p>
-          <div class="editor-source-btns">
-            <button type="button" class="photo-source-btn" id="ed-pick-file">
-              <span class="src-icon"><i class="ic fi-br-picture"></i></span>
-              Mes fichiers
-            </button>
-            <button type="button" class="photo-source-btn" id="ed-open-camera">
-              <span class="src-icon"><i class="ic fi-br-camera"></i></span>
-              Caméra
-            </button>
-          </div>
-          <input type="file" id="ed-file-input" accept="image/*" style="display:none;">
+    </div>
+
+    <div id="ed-foot">
+      <!-- 04 · proposition automatique -->
+      <div class="ed-panel" id="ed-panel-auto">
+        <div class="ed-note hero">
+          <span class="ed-note-ico">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 4l1.6 3.3 3.6.5-2.6 2.6.6 3.6L12 12.3 8.8 14l.6-3.6L6.8 7.8l3.6-.5L12 4Z" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/></svg>
+          </span>
+          <p><strong>On a détouré pour toi</strong>Vérifie les bords. Tu peux valider tel quel, affiner au point près, ou tout refaire à la main.</p>
         </div>
+        <button type="button" class="ed-cta" id="ed-auto-accept">Valider ce détourage</button>
+        <div class="ed-row">
+          <button type="button" class="ed-ghost" id="ed-auto-refine">Affiner</button>
+          <button type="button" class="ed-ghost" id="ed-auto-reject">Refuser</button>
+        </div>
+      </div>
+
+      <!-- 05 · ajuster les points -->
+      <div class="ed-panel" id="ed-panel-poly">
+        <div class="ed-tools">
+          <button type="button" class="ed-tool active" data-tool="add">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><path d="M12 3v3.2M12 17.8V21M3 12h3.2M17.8 12H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>POSER</span>
+          </button>
+          <button type="button" class="ed-tool" data-tool="move">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2 3"/><circle cx="12" cy="12" r="3.4" stroke="currentColor" stroke-width="2"/><path d="M12 2.5 14 5h-4l2-2.5ZM12 21.5 10 19h4l-2 2.5ZM2.5 12 5 10v4l-2.5-2ZM21.5 12 19 14v-4l2.5 2Z" fill="currentColor"/></svg>
+            <span>DÉPLACER</span>
+          </button>
+          <button type="button" class="ed-tool" data-tool="del">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><path d="M17.5 6.5 6.5 17.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>SUPPRIMER</span>
+          </button>
+        </div>
+        <div class="ed-note">
+          <span class="ed-note-ico">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#9C9184" stroke-width="2"/><path d="M12 11v5.2" stroke="#9C9184" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="7.8" r="1.3" fill="#9C9184"/></svg>
+          </span>
+          <p id="ed-poly-hint">Touche un point pour le déplacer, appuie entre deux points pour en insérer un.</p>
+        </div>
+        <button type="button" class="ed-cta" id="ed-poly-next">Valider le contour</button>
+      </div>
+
+      <!-- 05b · échelle de référence -->
+      <div class="ed-panel" id="ed-panel-scale">
+        <div class="ed-scale-card">
+          <div class="ed-scale-label">Distance réelle entre les deux points</div>
+          <div class="ed-scale-input">
+            <input type="number" id="editor-calib-distance" min="0.1" step="0.1" inputmode="decimal" placeholder="30">
+            <span class="ed-scale-unit-txt" id="ed-unit-txt">cm</span>
+          </div>
+          <div class="ed-units">
+            <button type="button" class="ed-unit active" data-unit="cm" data-factor="1">CM</button>
+            <button type="button" class="ed-unit" data-unit="mm" data-factor="0.1">MM</button>
+            <button type="button" class="ed-unit" data-unit="pouce" data-factor="2.54">POUCE</button>
+          </div>
+        </div>
+        <div class="ed-note">
+          <span class="ed-note-ico">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#9C9184" stroke-width="2"/><path d="M12 11v5.2" stroke="#9C9184" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="7.8" r="1.3" fill="#9C9184"/></svg>
+          </span>
+          <p>Mesure une longueur bien visible sur la photo, par exemple la largeur de la taille.</p>
+        </div>
+        <button type="button" class="ed-cta" id="ed-scale-next">Valider l'échelle</button>
+        <button type="button" class="ed-ghost" id="ed-scale-reset">Replacer les points</button>
+      </div>
+
+      <!-- 08 · zones abîmées -->
+      <div class="ed-panel" id="ed-panel-defects">
+        <div class="ed-scale-label">Type du prochain repère</div>
+        <div class="ed-types" id="ed-defect-types"></div>
+        <button type="button" class="ed-cta" id="ed-defects-next">Terminer les défauts</button>
       </div>
     </div>
 
-    <div id="editor-panel">
-      <p class="editor-instruction" id="editor-instruction"></p>
-
-      <div class="editor-auto-row" id="editor-auto-row" style="display:none;">
-        <button type="button" class="editor-auto-btn" id="editor-auto">
-          <span><i class="ic fi-br-sparkles"></i></span> Détourage auto
-        </button>
-      </div>
-
-      <div class="editor-calib-row" id="editor-calib-row" style="display:none;">
-        <span class="editor-calib-label">Distance réelle</span>
-        <div class="editor-calib-input-wrap">
-          <input type="number" id="editor-calib-distance" min="1" step="0.1" placeholder="ex : 20">
-          <span>cm</span>
-        </div>
-      </div>
-
-      <div class="editor-defect-controls" id="editor-defect-controls" style="display:none;">
-        <div class="defect-empty" id="defect-empty">Touche le vêtement pour marquer une tache ou un trou.</div>
-        <div class="defect-editor" id="defect-editor" style="display:none;">
-          <div class="defect-type-tags">
-            <button type="button" class="defect-type-btn" data-dtype="tache">
-              <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-tache.svg' %}" alt=""> Tache
-            </button>
-            <button type="button" class="defect-type-btn" data-dtype="trou">
-              <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-trou.svg' %}" alt=""> Trou
-            </button>
+    <!-- ── 09 · détail d'un défaut ── -->
+    <div id="ed-sheet">
+      <div class="ed-sheet-card">
+        <span class="ed-sheet-grip"></span>
+        <div class="ed-sheet-head">
+          <span class="ed-sheet-num" id="ed-sheet-num">1</span>
+          <div style="flex:1;min-width:0;">
+            <div class="ed-sheet-title" id="ed-sheet-title">Tache</div>
+            <div class="ed-sheet-sub" id="ed-sheet-face">Face avant</div>
           </div>
-          <div class="defect-radius-row">
-            <span class="defect-radius-label">Rayon</span>
-            <input type="range" id="defect-radius" min="3" max="80" value="18">
-            <button type="button" class="defect-delete-btn" id="defect-delete" aria-label="Supprimer ce défaut">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
-          </div>
+          <button type="button" id="ed-sheet-del">Supprimer</button>
         </div>
-      </div>
 
-      <div class="editor-nav">
-        <button type="button" class="editor-btn-ghost" id="editor-back">Retour</button>
-        <button type="button" class="editor-btn-main" id="editor-next">Suivant</button>
+        <div class="ed-sheet-label" style="margin-top:22px;">Type</div>
+        <div class="ed-sheet-chips" id="ed-sheet-chips"></div>
+
+        <div class="ed-sheet-size">
+          <span class="ed-sheet-label">Taille de la zone</span>
+          <b id="ed-sheet-size">8 cm</b>
+        </div>
+        <input type="range" id="defect-radius" min="4" max="90" value="18">
+
+        <div class="ed-sheet-loss">
+          <div style="flex:1;">
+            <div class="ed-sheet-label">Perte estimée</div>
+            <div class="ed-sheet-loss-val" id="ed-sheet-loss">−0,00 m²</div>
+          </div>
+          <p>On contourne la zone au moment de la découpe.</p>
+        </div>
+
+        <div class="ed-sheet-foot">
+          <button type="button" class="ed-chip" id="ed-sheet-back">Retour</button>
+          <button type="button" id="ed-sheet-ok">Enregistrer</button>
+        </div>
       </div>
     </div>
   </div>
-
-  <!-- ── Overlay caméra ── -->
-  <div id="camera-overlay">
-    <div id="camera-viewfinder">
-      <video id="camera-video" autoplay playsinline muted></video>
-      <div id="camera-crop-box">
-        <span class="cam-corner-br"></span>
-        <span class="cam-corner-bl"></span>
-      </div>
-    </div>
-    <div id="camera-controls">
-      <button type="button" id="btn-camera-cancel">Annuler</button>
-      <button type="button" id="btn-camera-capture"></button>
-      <div style="width:70px;"></div>
-    </div>
-  </div>
-  <canvas id="camera-hidden-canvas" style="display:none;"></canvas>
-
   <!-- ── Popup « Autre type » ── -->
   <div id="other-type-modal">
     <div class="other-type-sheet">
@@ -1790,8 +1897,13 @@
       });
 
       // ==========================================
-      // 2. ÉDITEUR PLEIN ÉCRAN — détourage · étalonnage · défauts
+      // ÉDITEUR PLEIN ÉCRAN
       // ==========================================
+      // Enchaînement : caméra (03) → détourage proposé (04) → ajuster les
+      // points (05) → échelle (05b) → défauts (08), le détail d'un défaut
+      // (09) s'ouvrant en feuille par-dessus. Le détourage automatique
+      // (rembg côté serveur) et tout le calcul de surface sont inchangés :
+      // seule la présentation a été refaite.
       const FACE_LABELS = { avant: 'Face avant', arriere: 'Face arrière' };
 
       const facesState = {
@@ -1799,7 +1911,16 @@
         arriere: { photo: null, imgW: 0, imgH: 0, polygon: [], calib: [], calibDist: 0, defects: [], done: false },
       };
 
-      // DOM éditeur
+      const DEFECT_TYPES = [
+        { id: 'tache',  label: 'Tache',  color: '#FF6B3D' },
+        { id: 'trou',   label: 'Trou',   color: '#7C5CFF' },
+        { id: 'usure',  label: 'Usure',  color: '#FFC93C' },
+        { id: 'ourlet', label: 'Ourlet', color: '#2C6CA8' },
+        { id: 'autre',  label: 'Autre',  color: '#C4B9A8' },
+      ];
+      const defectType = id => DEFECT_TYPES.find(t => t.id === id) || DEFECT_TYPES[0];
+
+      // ── DOM ──
       const editorOverlay  = document.getElementById('editor-overlay');
       const editorStage    = document.getElementById('editor-stage');
       const edCanvas       = document.getElementById('edit-canvas');
@@ -1807,51 +1928,65 @@
       const loupeEl        = document.getElementById('loupe');
       const loupeCanvas    = document.getElementById('loupe-canvas');
       const loupeCtx       = loupeCanvas.getContext('2d');
-      const edSource       = document.getElementById('editor-source');
-      const edPickFile     = document.getElementById('ed-pick-file');
-      const edOpenCamera   = document.getElementById('ed-open-camera');
-      const edFileInput    = document.getElementById('ed-file-input');
-      const editorPanel    = document.getElementById('editor-panel');
-      const edInstruction  = document.getElementById('editor-instruction');
-      const autoRow        = document.getElementById('editor-auto-row');
-      const edAuto         = document.getElementById('editor-auto');
       const edToast        = document.getElementById('editor-toast');
-      const calibRow       = document.getElementById('editor-calib-row');
+
+      const edCamera       = document.getElementById('ed-camera');
+      const edCamFace      = document.getElementById('ed-cam-face');
+      const edCamClose     = document.getElementById('ed-cam-close');
+      const edCamSwitch    = document.getElementById('ed-cam-switch');
+      const edCamTorch     = document.getElementById('ed-cam-torch');
+      const cameraVideo    = document.getElementById('camera-video');
+      const edCamView      = document.getElementById('ed-cam-view');
+      const cameraCanvas   = document.getElementById('camera-hidden-canvas');
+      const btnCapture     = document.getElementById('btn-camera-capture');
+      const edPickFile     = document.getElementById('ed-pick-file');
+      const edFileInput    = document.getElementById('ed-file-input');
+
+      const edHead         = document.getElementById('ed-head');
+      const edFoot         = document.getElementById('ed-foot');
+      const edTitle        = document.getElementById('ed-title');
+      const edSub          = document.getElementById('ed-sub');
+      const edBack         = document.getElementById('ed-back');
+      const edUndo         = document.getElementById('ed-undo');
+      const edPanels       = {
+        auto:    document.getElementById('ed-panel-auto'),
+        poly:    document.getElementById('ed-panel-poly'),
+        scale:   document.getElementById('ed-panel-scale'),
+        defects: document.getElementById('ed-panel-defects'),
+      };
+      const edPolyNext     = document.getElementById('ed-poly-next');
+      const edScaleNext    = document.getElementById('ed-scale-next');
       const calibDistInput = document.getElementById('editor-calib-distance');
-      const defectControls = document.getElementById('editor-defect-controls');
-      const defectEmpty    = document.getElementById('defect-empty');
-      const defectEditor   = document.getElementById('defect-editor');
+      const edUnitTxt      = document.getElementById('ed-unit-txt');
+      const edTypesRow     = document.getElementById('ed-defect-types');
+
+      const edSheet        = document.getElementById('ed-sheet');
+      const edSheetCard    = edSheet.querySelector('.ed-sheet-card');
+      const edSheetNum     = document.getElementById('ed-sheet-num');
+      const edSheetTitle   = document.getElementById('ed-sheet-title');
+      const edSheetFace    = document.getElementById('ed-sheet-face');
+      const edSheetChips   = document.getElementById('ed-sheet-chips');
+      const edSheetSize    = document.getElementById('ed-sheet-size');
+      const edSheetLoss    = document.getElementById('ed-sheet-loss');
       const radiusSlider   = document.getElementById('defect-radius');
-      const defectDelete   = document.getElementById('defect-delete');
-      const defectTypeBtns = [...document.querySelectorAll('.defect-type-btn')];
-      const edNext         = document.getElementById('editor-next');
-      const edBack         = document.getElementById('editor-back');
-      const edUndo         = document.getElementById('editor-undo');
-      const editorClose    = document.getElementById('editor-close');
       const btnSubmit      = document.getElementById('btn-submit');
 
-      // DOM caméra (réutilisé)
-      const cameraOverlay      = document.getElementById('camera-overlay');
-      const cameraVideo        = document.getElementById('camera-video');
-      const cameraCropBox      = document.getElementById('camera-crop-box');
-      const btnCameraCancel    = document.getElementById('btn-camera-cancel');
-      const btnCameraCapture   = document.getElementById('btn-camera-capture');
-      const cameraHiddenCanvas = document.getElementById('camera-hidden-canvas');
+      // ── État ──
+      const LOUPE = 132, LOUPE_ZOOM = 2.6;
+      loupeCanvas.width = loupeCanvas.height = LOUPE;
 
-      // État de travail
       let activeFace = null;
-      let step = 1;
+      let edStep = 'camera';           // camera | auto | poly | scale | defects
       let img = new Image();
       let poly = [], calib = [], defects = [];
       let dragging = null;
       let selDefect = -1;
+      let polyTool = 'add';            // add | move | del
+      let unitFactor = 1;              // vers les cm
       let lastDefectType = 'tache';
       let lastRadiusPx = 18;
       let cameraStream = null;
-
-      const LOUPE = 132, LOUPE_ZOOM = 2.4;
-      loupeCanvas.width = LOUPE;
-      loupeCanvas.height = LOUPE;
+      let camFacing = 'environment';
 
       const clamp01 = v => Math.max(0, Math.min(1, v));
       function evtPos(e) {
@@ -1860,11 +1995,28 @@
       }
       function nearestPoint(arr, p) {
         const W = edCanvas.width, H = edCanvas.height;
-        let best = -1, bd = 20;
+        let best = -1, bd = 22;
         arr.forEach((q, i) => {
           const d = Math.hypot((q.x - p.x) * W, (q.y - p.y) * H);
           if (d < bd) { bd = d; best = i; }
         });
+        return best;
+      }
+      // Segment du contour le plus proche : « appuie entre deux points pour
+      // en insérer un » place le nouveau point au bon endroit du tracé.
+      function nearestSegment(p) {
+        const W = edCanvas.width, H = edCanvas.height;
+        let best = -1, bd = Infinity;
+        for (let i = 0; i < poly.length; i++) {
+          const a = poly[i], b = poly[(i + 1) % poly.length];
+          const ax = a.x * W, ay = a.y * H, bx = b.x * W, by = b.y * H;
+          const px = p.x * W, py = p.y * H;
+          const vx = bx - ax, vy = by - ay;
+          const len2 = vx * vx + vy * vy;
+          const t = len2 ? Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / len2)) : 0;
+          const d = Math.hypot(px - (ax + t * vx), py - (ay + t * vy));
+          if (d < bd) { bd = d; best = i; }
+        }
         return best;
       }
       function hitDefect(p) {
@@ -1877,7 +2029,7 @@
         return -1;
       }
 
-      // ── Dessin du canvas principal ──
+      // ── Dessin ──
       function fitCanvas() {
         const sw = editorStage.clientWidth, sh = editorStage.clientHeight;
         if (!img.width) return;
@@ -1890,10 +2042,10 @@
 
       function drawDot(c, x, y, color, r) {
         c.beginPath();
-        c.arc(x, y, r || 6, 0, 2 * Math.PI);
-        c.fillStyle = 'white';
+        c.arc(x, y, r || 7, 0, 2 * Math.PI);
+        c.fillStyle = '#FFFDF8';
         c.fill();
-        c.lineWidth = 2.5;
+        c.lineWidth = 3;
         c.strokeStyle = color;
         c.stroke();
       }
@@ -1903,7 +2055,6 @@
         edCtx.clearRect(0, 0, W, H);
         if (img.width) edCtx.drawImage(img, 0, 0, W, H);
 
-        // Polygone (visible à toutes les étapes)
         if (poly.length) {
           edCtx.beginPath();
           poly.forEach((pt, i) => {
@@ -1912,42 +2063,44 @@
           });
           if (poly.length > 2) {
             edCtx.closePath();
-            edCtx.fillStyle = step === 1 ? 'rgba(110, 207, 115, 0.22)' : 'rgba(110, 207, 115, 0.12)';
+            edCtx.fillStyle = edStep === 'defects' ? 'rgba(31,168,92,.10)' : 'rgba(31,168,92,.16)';
             edCtx.fill();
           }
-          edCtx.strokeStyle = '#6FCF73';
+          edCtx.strokeStyle = '#1FA85C';
           edCtx.lineWidth = 2.5;
           edCtx.stroke();
-          if (step === 1) poly.forEach(pt => drawDot(edCtx, pt.x * W, pt.y * H, '#237329'));
+          if (edStep === 'poly') poly.forEach(pt => drawDot(edCtx, pt.x * W, pt.y * H, '#1FA85C'));
         }
 
-        // Ligne d'étalonnage
         if (calib.length) {
           if (calib.length === 2) {
             edCtx.beginPath();
             edCtx.moveTo(calib[0].x * W, calib[0].y * H);
             edCtx.lineTo(calib[1].x * W, calib[1].y * H);
-            edCtx.strokeStyle = step === 2 ? '#FF9477' : 'rgba(255,148,119,0.5)';
-            edCtx.lineWidth = 4;
+            edCtx.strokeStyle = edStep === 'scale' ? '#FFD166' : 'rgba(255,209,102,.5)';
+            edCtx.lineWidth = 3;
             edCtx.stroke();
           }
-          if (step === 2) calib.forEach(pt => drawDot(edCtx, pt.x * W, pt.y * H, '#A24A33'));
+          if (edStep === 'scale') calib.forEach(pt => drawDot(edCtx, pt.x * W, pt.y * H, '#FFD166'));
         }
 
-        // Cercles de défaut
         defects.forEach((d, i) => {
           const x = d.x * W, y = d.y * H, r = d.r * W;
+          const col = defectType(d.type).color;
           edCtx.beginPath();
           edCtx.arc(x, y, r, 0, 2 * Math.PI);
-          const col = d.type === 'tache' ? '#A24A33' : '#3A4DB0';
-          edCtx.fillStyle = d.type === 'tache' ? 'rgba(162,74,51,0.28)' : 'rgba(58,77,176,0.28)';
+          edCtx.fillStyle = col + '47';
           edCtx.fill();
-          edCtx.lineWidth = (step === 3 && i === selDefect) ? 3.5 : 2;
+          edCtx.lineWidth = (edStep === 'defects' && i === selDefect) ? 4 : 3;
           edCtx.strokeStyle = col;
-          edCtx.setLineDash(step === 3 && i === selDefect ? [] : [5, 4]);
           edCtx.stroke();
-          edCtx.setLineDash([]);
-          if (step === 3) drawDot(edCtx, x, y, col, 4);
+          if (edStep === 'defects') {
+            edCtx.fillStyle = '#FFFDF8';
+            edCtx.font = '800 ' + Math.max(13, Math.min(20, r * 0.9)) + "px 'Bricolage Grotesque', sans-serif";
+            edCtx.textAlign = 'center';
+            edCtx.textBaseline = 'middle';
+            edCtx.fillText(String(i + 1), x, y + 1);
+          }
         });
       }
 
@@ -1966,40 +2119,36 @@
         loupeCtx.fillRect(0, 0, LOUPE, LOUPE);
         loupeCtx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, LOUPE, LOUPE);
 
-        // Géométrie projetée dans la loupe
         const lp = (px, py) => ({ x: (px - cx) * LOUPE_ZOOM + LOUPE / 2, y: (py - cy) * LOUPE_ZOOM + LOUPE / 2 });
-        if (step === 1 && poly.length) {
+        if (edStep === 'poly' && poly.length) {
           loupeCtx.beginPath();
           poly.forEach((pt, i) => { const q = lp(pt.x * W, pt.y * H); i === 0 ? loupeCtx.moveTo(q.x, q.y) : loupeCtx.lineTo(q.x, q.y); });
           if (poly.length > 2) loupeCtx.closePath();
-          loupeCtx.strokeStyle = '#6FCF73'; loupeCtx.lineWidth = 2; loupeCtx.stroke();
-          poly.forEach(pt => { const q = lp(pt.x * W, pt.y * H); drawDot(loupeCtx, q.x, q.y, '#237329', 4); });
+          loupeCtx.strokeStyle = '#1FA85C'; loupeCtx.lineWidth = 2; loupeCtx.stroke();
+          poly.forEach(pt => { const q = lp(pt.x * W, pt.y * H); drawDot(loupeCtx, q.x, q.y, '#1FA85C', 4); });
         }
-        if (step === 2 && calib.length === 2) {
+        if (edStep === 'scale' && calib.length === 2) {
           const a = lp(calib[0].x * W, calib[0].y * H), b = lp(calib[1].x * W, calib[1].y * H);
           loupeCtx.beginPath(); loupeCtx.moveTo(a.x, a.y); loupeCtx.lineTo(b.x, b.y);
-          loupeCtx.strokeStyle = '#FF9477'; loupeCtx.lineWidth = 3; loupeCtx.stroke();
+          loupeCtx.strokeStyle = '#FFD166'; loupeCtx.lineWidth = 3; loupeCtx.stroke();
         }
-        if (step === 3) {
+        if (edStep === 'defects') {
           defects.forEach(d => {
             const q = lp(d.x * W, d.y * H);
             loupeCtx.beginPath(); loupeCtx.arc(q.x, q.y, d.r * W * LOUPE_ZOOM, 0, 2 * Math.PI);
-            loupeCtx.strokeStyle = d.type === 'tache' ? '#A24A33' : '#3A4DB0'; loupeCtx.lineWidth = 2; loupeCtx.stroke();
+            loupeCtx.strokeStyle = defectType(d.type).color; loupeCtx.lineWidth = 2; loupeCtx.stroke();
           });
         }
 
-        // Réticule
-        loupeCtx.strokeStyle = 'rgba(255,255,255,0.9)'; loupeCtx.lineWidth = 1.5;
+        loupeCtx.strokeStyle = 'rgba(255,255,255,.9)'; loupeCtx.lineWidth = 1.5;
         loupeCtx.beginPath();
         loupeCtx.moveTo(LOUPE / 2 - 11, LOUPE / 2); loupeCtx.lineTo(LOUPE / 2 + 11, LOUPE / 2);
         loupeCtx.moveTo(LOUPE / 2, LOUPE / 2 - 11); loupeCtx.lineTo(LOUPE / 2, LOUPE / 2 + 11);
         loupeCtx.stroke();
-        loupeCtx.beginPath(); loupeCtx.arc(LOUPE / 2, LOUPE / 2, 7, 0, 2 * Math.PI);
-        loupeCtx.strokeStyle = '#237329'; loupeCtx.lineWidth = 2; loupeCtx.stroke();
 
-        // Positionnement (au-dessus du doigt, basculé si bord haut)
-        const offX = (editorStage.clientWidth - W) / 2;
-        const offY = (editorStage.clientHeight - H) / 2;
+        const stageRect = editorStage.getBoundingClientRect();
+        const canvRect = edCanvas.getBoundingClientRect();
+        const offX = canvRect.left - stageRect.left, offY = canvRect.top - stageRect.top;
         let lx = offX + cx - LOUPE / 2;
         let ly = offY + cy - LOUPE - 28;
         if (ly < 4) ly = offY + cy + 28;
@@ -2011,20 +2160,32 @@
 
       // ── Interaction pointeur ──
       edCanvas.addEventListener('pointerdown', (e) => {
-        if (edSource.style.display !== 'none') return;
-        edCanvas.setPointerCapture(e.pointerId);
+        if (!img.width || edStep === 'auto') return;
+        try { edCanvas.setPointerCapture(e.pointerId); } catch (err) { /* pointeur déjà relâché */ }
         const p = evtPos(e);
 
-        if (step === 1) {
+        if (edStep === 'poly') {
           const hit = nearestPoint(poly, p);
-          if (hit >= 0) dragging = { type: 'poly', index: hit };
-          else { poly.push(p); dragging = { type: 'poly', index: poly.length - 1 }; }
-        } else if (step === 2) {
+          if (polyTool === 'del') {
+            if (hit >= 0) poly.splice(hit, 1);
+          } else if (hit >= 0) {
+            dragging = { type: 'poly', index: hit };
+          } else if (polyTool === 'add') {
+            if (poly.length >= 2) {
+              const seg = nearestSegment(p);
+              poly.splice(seg + 1, 0, p);
+              dragging = { type: 'poly', index: seg + 1 };
+            } else {
+              poly.push(p);
+              dragging = { type: 'poly', index: poly.length - 1 };
+            }
+          }
+        } else if (edStep === 'scale') {
           const hit = nearestPoint(calib, p);
           if (hit >= 0) dragging = { type: 'calib', index: hit };
           else if (calib.length < 2) { calib.push(p); dragging = { type: 'calib', index: calib.length - 1 }; }
           else { calib[1] = p; dragging = { type: 'calib', index: 1 }; }
-        } else if (step === 3) {
+        } else if (edStep === 'defects') {
           const hit = hitDefect(p);
           if (hit >= 0) { selDefect = hit; dragging = { type: 'defect', index: hit }; }
           else {
@@ -2032,11 +2193,10 @@
             selDefect = defects.length - 1;
             dragging = { type: 'defect', index: selDefect };
           }
-          syncDefectUI();
         }
-        showLoupe(p);
+        if (dragging) showLoupe(p);
         draw();
-        updateButtons();
+        updateEdButtons();
       });
 
       edCanvas.addEventListener('pointermove', (e) => {
@@ -2049,106 +2209,213 @@
         draw();
       });
 
-      function endDrag() { dragging = null; hideLoupe(); updateButtons(); }
+      function endDrag(e) {
+        // Un simple tap sur un défaut existant en ouvre le détail (écran 09).
+        const wasDefect = dragging && dragging.type === 'defect';
+        dragging = null;
+        hideLoupe();
+        updateEdButtons();
+        if (wasDefect && edStep === 'defects') openDefectSheet();
+      }
       edCanvas.addEventListener('pointerup', endDrag);
       edCanvas.addEventListener('pointercancel', endDrag);
 
-      // ── Défauts : contrôles ──
-      function syncDefectUI() {
-        const has = selDefect >= 0 && defects[selDefect];
-        defectEmpty.style.display = has ? 'none' : 'block';
-        defectEditor.style.display = has ? 'block' : 'none';
-        if (has) {
-          const d = defects[selDefect];
-          defectTypeBtns.forEach(b => b.classList.toggle('active', b.dataset.dtype === d.type));
-          radiusSlider.value = Math.round(d.r * edCanvas.width);
-        }
+      // ── Outils de contour (05) ──
+      const POLY_HINTS = {
+        add:  'Touche un point pour le déplacer, appuie entre deux points pour en insérer un.',
+        move: 'Glisse un point existant pour le repositionner exactement sur le bord.',
+        del:  'Touche un point pour le retirer du contour.',
+      };
+      document.querySelectorAll('.ed-tool').forEach(btn => {
+        btn.addEventListener('click', () => {
+          polyTool = btn.dataset.tool;
+          document.querySelectorAll('.ed-tool').forEach(b => b.classList.toggle('active', b === btn));
+          document.getElementById('ed-poly-hint').textContent = POLY_HINTS[polyTool];
+        });
+      });
+
+      // ── Unités de l'échelle (05b) ──
+      document.querySelectorAll('.ed-unit').forEach(btn => {
+        btn.addEventListener('click', () => {
+          unitFactor = parseFloat(btn.dataset.factor);
+          edUnitTxt.textContent = btn.dataset.unit;
+          document.querySelectorAll('.ed-unit').forEach(b => b.classList.toggle('active', b === btn));
+          updateEdButtons();
+        });
+      });
+      calibDistInput.addEventListener('input', updateEdButtons);
+      // Distance saisie ramenée en centimètres, seule unité stockée.
+      const calibCm = () => (parseFloat(calibDistInput.value) || 0) * unitFactor;
+
+      // ── Types de défauts (08) ──
+      // L'ourlet n'apparaît que dans le détail : la barre du bas garde les
+      // quatre repères les plus fréquents.
+      DEFECT_TYPES.filter(t => t.id !== 'ourlet').forEach(t => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ed-type';
+        b.dataset.dtype = t.id;
+        b.style.setProperty('--dtype', t.color);
+        b.textContent = t.label.toUpperCase();
+        b.addEventListener('click', () => {
+          lastDefectType = t.id;
+          syncDefectTypeRow();
+        });
+        edTypesRow.appendChild(b);
+      });
+      function syncDefectTypeRow() {
+        edTypesRow.querySelectorAll('.ed-type').forEach(b =>
+          b.classList.toggle('active', b.dataset.dtype === lastDefectType));
       }
+      syncDefectTypeRow();
+
+      // ── Détail d'un défaut (09) ──
+      DEFECT_TYPES.forEach(t => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ed-chip';
+        b.dataset.dtype = t.id;
+        b.textContent = t.label;
+        b.addEventListener('click', () => {
+          if (selDefect < 0) return;
+          defects[selDefect].type = t.id;
+          lastDefectType = t.id;
+          syncDefectTypeRow();
+          syncDefectSheet();
+          draw();
+        });
+        edSheetChips.appendChild(b);
+      });
+
+      // Diamètre réel de la zone, en cm (null tant que l'échelle manque).
+      function defectSizeCm(d) {
+        const st = facesState[activeFace];
+        if (!st || calib.length !== 2 || !calibCm() || !st.imgW) return null;
+        const c1 = { x: calib[0].x * st.imgW, y: calib[0].y * st.imgH };
+        const c2 = { x: calib[1].x * st.imgW, y: calib[1].y * st.imgH };
+        const dpx = Math.hypot(c2.x - c1.x, c2.y - c1.y);
+        if (!dpx) return null;
+        const cmpp = calibCm() / dpx;
+        return d.r * st.imgW * cmpp * 2;
+      }
+
+      function openDefectSheet() {
+        if (selDefect < 0) return;
+        syncDefectSheet();
+        edSheet.classList.add('on');
+      }
+      function closeDefectSheet() { edSheet.classList.remove('on'); }
+
+      function syncDefectSheet() {
+        const d = defects[selDefect];
+        if (!d) return;
+        const t = defectType(d.type);
+        edSheetCard.style.setProperty('--dtype', t.color);
+        edSheetNum.style.background = t.color;
+        edSheetNum.textContent = String(selDefect + 1);
+        edSheetTitle.textContent = t.label;
+        edSheetFace.textContent = FACE_LABELS[activeFace];
+        edSheetChips.querySelectorAll('.ed-chip').forEach(b =>
+          b.classList.toggle('active', b.dataset.dtype === d.type));
+        radiusSlider.value = Math.round(d.r * edCanvas.width);
+        const cm = defectSizeCm(d);
+        edSheetSize.textContent = cm ? Math.round(cm) + ' cm' : '—';
+        const perte = cm ? Math.PI * (cm / 2) * (cm / 2) / 10000 : 0;
+        edSheetLoss.textContent = '−' + perte.toFixed(2).replace('.', ',') + ' m²';
+      }
+
       radiusSlider.addEventListener('input', () => {
-        lastRadiusPx = parseInt(radiusSlider.value);
+        lastRadiusPx = parseInt(radiusSlider.value, 10);
         if (selDefect >= 0 && defects[selDefect]) {
           defects[selDefect].r = lastRadiusPx / edCanvas.width;
+          syncDefectSheet();
           draw();
         }
       });
-      defectTypeBtns.forEach(b => b.addEventListener('click', () => {
-        lastDefectType = b.dataset.dtype;
-        if (selDefect >= 0 && defects[selDefect]) {
-          defects[selDefect].type = lastDefectType;
-          syncDefectUI();
-          draw();
-        }
-      }));
-      defectDelete.addEventListener('click', () => {
-        if (selDefect >= 0) {
-          defects.splice(selDefect, 1);
-          selDefect = -1;
-          syncDefectUI();
-          draw();
-          updateButtons();
-        }
+      document.getElementById('ed-sheet-del').addEventListener('click', () => {
+        if (selDefect < 0) return;
+        defects.splice(selDefect, 1);
+        selDefect = -1;
+        closeDefectSheet();
+        draw();
+        updateEdButtons();
       });
+      document.getElementById('ed-sheet-back').addEventListener('click', closeDefectSheet);
+      document.getElementById('ed-sheet-ok').addEventListener('click', closeDefectSheet);
 
       // ── Étapes ──
-      const INSTRUCTIONS = {
-        1: 'Place des points tout autour du vêtement pour le <b>détourer</b>. Glisse un point pour l’ajuster.',
-        2: 'Place <b>2 points</b> sur un repère dont tu connais la taille réelle (couture, col…), puis saisis sa longueur.',
-        3: 'Touche le vêtement pour marquer une <b>tache</b> ou un <b>trou</b>. Glisse pour déplacer, ajuste le rayon.',
+      const ED_STEPS = {
+        auto:    { title: 'Détourage automatique', sub: () => FACE_LABELS[activeFace] },
+        poly:    { title: 'Ajuste les points',     sub: () => FACE_LABELS[activeFace] + ' · ' + poly.length + ' points' },
+        scale:   { title: 'Donne-nous une échelle', sub: () => 'Obligatoire · 2 points', warn: true },
+        defects: { title: 'Touche les zones abîmées', sub: () => FACE_LABELS[activeFace] + ' · ' + defects.length + ' défaut' + (defects.length > 1 ? 's' : '') },
       };
-      function setStep(s) {
-        step = s;
-        document.querySelectorAll('.ed-step').forEach(el => {
-          const n = +el.dataset.step;
-          el.classList.toggle('active', n === s);
-          el.classList.toggle('done', n < s);
-        });
-        autoRow.style.display = s === 1 ? 'flex' : 'none';
-        calibRow.style.display = s === 2 ? 'flex' : 'none';
-        defectControls.style.display = s === 3 ? 'block' : 'none';
-        edInstruction.innerHTML = INSTRUCTIONS[s];
-        edNext.textContent = s === 3 ? 'Valider cette face' : 'Suivant';
-        edBack.textContent = s === 1 ? 'Annuler' : 'Retour';
+
+      function setEdStep(s) {
+        edStep = s;
+        const isCam = s === 'camera';
+        edCamera.classList.toggle('active', isCam);
+        edHead.style.display = isCam ? 'none' : 'flex';
+        editorStage.style.display = isCam ? 'none' : 'flex';
+        edFoot.style.display = isCam ? 'none' : 'block';
+        closeDefectSheet();
         selDefect = -1;
-        syncDefectUI();
+        if (isCam) return;
+
+        Object.entries(edPanels).forEach(([k, el]) => el.classList.toggle('on', k === s));
+        edSub.classList.toggle('warn', !!ED_STEPS[s].warn);
+        edUndo.style.display = (s === 'auto') ? 'none' : 'flex';
+        fitCanvas();
         draw();
-        updateButtons();
+        updateEdButtons();
       }
 
-      function updateButtons() {
-        let ok = true;
-        if (step === 1) ok = poly.length >= 3;
-        else if (step === 2) ok = calib.length === 2 && parseFloat(calibDistInput.value) > 0;
-        edNext.disabled = !ok;
+      function updateEdButtons() {
+        if (edStep === 'camera') return;
+        edTitle.textContent = ED_STEPS[edStep].title;
+        edSub.textContent = ED_STEPS[edStep].sub();
+        edPolyNext.disabled = poly.length < 3;
+        edScaleNext.disabled = !(calib.length === 2 && calibCm() > 0);
         let canUndo = false;
-        if (step === 1) canUndo = poly.length > 0;
-        else if (step === 2) canUndo = calib.length > 0;
-        else if (step === 3) canUndo = defects.length > 0;
+        if (edStep === 'poly') canUndo = poly.length > 0;
+        else if (edStep === 'scale') canUndo = calib.length > 0;
+        else if (edStep === 'defects') canUndo = defects.length > 0;
         edUndo.disabled = !canUndo;
       }
-      calibDistInput.addEventListener('input', updateButtons);
 
-      // ── Navigation ──
-      edNext.addEventListener('click', () => {
-        if (step === 1 && poly.length < 3) return;
-        if (step === 2) {
-          if (calib.length !== 2) return;
-          if (!(parseFloat(calibDistInput.value) > 0)) { alert('Saisis la distance réelle du repère (en cm).'); return; }
-        }
-        if (step < 3) setStep(step + 1);
-        else finalizeFace();
+      edUndo.addEventListener('click', () => {
+        if (edStep === 'poly') poly.pop();
+        else if (edStep === 'scale') calib.pop();
+        else if (edStep === 'defects') { defects.pop(); selDefect = -1; }
+        draw();
+        updateEdButtons();
       });
+
+      // Navigation entre écrans
+      document.getElementById('ed-auto-accept').addEventListener('click', () => setEdStep('scale'));
+      document.getElementById('ed-auto-refine').addEventListener('click', () => setEdStep('poly'));
+      document.getElementById('ed-auto-reject').addEventListener('click', () => {
+        poly = [];
+        polyTool = 'add';
+        setEdStep('poly');
+        showToast('Contour effacé — place tes points à la main');
+      });
+      edPolyNext.addEventListener('click', () => { if (poly.length >= 3) setEdStep('scale'); });
+      edScaleNext.addEventListener('click', () => { if (calib.length === 2 && calibCm() > 0) setEdStep('defects'); });
+      document.getElementById('ed-scale-reset').addEventListener('click', () => {
+        calib = [];
+        draw();
+        updateEdButtons();
+      });
+      document.getElementById('ed-defects-next').addEventListener('click', finalizeFace);
+
       edBack.addEventListener('click', () => {
-        if (step > 1) setStep(step - 1);
+        if (edStep === 'defects') setEdStep('scale');
+        else if (edStep === 'scale') setEdStep(poly.length ? 'poly' : 'camera');
+        else if (edStep === 'poly') setEdStep('camera');
         else closeEditor();
       });
-      editorClose.addEventListener('click', closeEditor);
-      edUndo.addEventListener('click', () => {
-        if (step === 1) poly.pop();
-        else if (step === 2) calib.pop();
-        else if (step === 3) { defects.pop(); selDefect = -1; syncDefectUI(); }
-        draw();
-        updateButtons();
-      });
+      edCamClose.addEventListener('click', closeEditor);
 
       // ── Surface (miroir du calcul backend, pour l'affichage) ──
       function faceArea(st) {
@@ -2167,6 +2434,7 @@
         st.defects.forEach(d => { const rcm = d.r * w * cmpp; def += Math.PI * rcm * rcm; });
         return { area: areaCm2 / 10000, usable: Math.max(0, (areaCm2 - def) / 10000) };
       }
+
       // ==========================================
       // 02 / 03 · CARTES DE FACE
       // ==========================================
@@ -2269,11 +2537,11 @@
       }
 
       function finalizeFace() {
-        if (poly.length < 3 || calib.length !== 2 || !(parseFloat(calibDistInput.value) > 0)) return;
+        if (poly.length < 3 || calib.length !== 2 || !(calibCm() > 0)) return;
         const st = facesState[activeFace];
         st.polygon   = poly.map(p => ({ x: p.x, y: p.y }));
         st.calib     = calib.map(p => ({ x: p.x, y: p.y }));
-        st.calibDist = parseFloat(calibDistInput.value);
+        st.calibDist = calibCm();
         st.defects   = defects.map(d => ({ x: d.x, y: d.y, r: d.r, type: d.type }));
         st.done      = true;
         writeFaceInputs(activeFace);
@@ -2291,27 +2559,29 @@
         toastTimer = setTimeout(() => edToast.classList.remove('show'), 2800);
       }
 
-      // Message affiché quand aucun contour automatique n'est disponible
-      // (détourage serveur désactivé, en échec, ou aucun contour exploitable).
-      function noAutoDetectAvailable(manual) {
-        if (manual) showToast('Détourage automatique indisponible — place les points à la main');
-      }
-
-      // Détourage serveur (IA, rembg). REMBG_ENABLED est piloté par le réglage
-      // Django REMBG_DETOURAGE_ENABLED.
+      // ── Détourage automatique (rembg côté serveur) ──
+      // REMBG_ENABLED est piloté par le réglage Django REMBG_DETOURAGE_ENABLED.
       const REMBG_ENABLED = {{ rembg_enabled|yesno:"true,false" }};
       const DETOURAGE_AUTO_URL = "{% url 'detourage_auto' %}";
 
-      function runAutoDetectServer(manual) {
-        const st = facesState[activeFace];
-        const photoData = st && st.photo;
-        if (!photoData) { noAutoDetectAvailable(manual); return; }
+      // Sans contour automatique exploitable, on bascule directement sur le
+      // tracé manuel : l'écran 04 n'aurait rien à proposer.
+      function noAutoDetect(msg) {
+        poly = [];
+        polyTool = 'add';
+        setEdStep('poly');
+        showToast(msg || 'Détourage automatique indisponible — place les points à la main');
+      }
 
-        if (edAuto) edAuto.disabled = true;
-        if (manual) showToast('<i class="ic fi-br-sparkles"></i> Analyse en cours…');
+      function runAutoDetect() {
+        const st = facesState[activeFace];
+        if (!REMBG_ENABLED || !st || !st.photo) { noAutoDetect(); return; }
+
+        setEdStep('poly');
+        showToast('<b>Analyse en cours…</b> on cherche les contours');
 
         const body = new URLSearchParams();
-        body.set('photo_data', photoData);
+        body.set('photo_data', st.photo);
 
         fetch(DETOURAGE_AUTO_URL, {
           method: 'POST',
@@ -2322,30 +2592,16 @@
           .then(data => {
             if (data && data.success && Array.isArray(data.polygon) && data.polygon.length >= 3) {
               poly = data.polygon;
-              selDefect = -1;
-              draw();
-              updateButtons();
-              showToast('<i class="ic fi-br-sparkles"></i> Contour détecté (IA) — ajuste les points si besoin');
+              edToast.classList.remove('show');
+              setEdStep('auto');
             } else {
-              // Pas de contour exploitable (fond ambigu, échec…).
-              noAutoDetectAvailable(manual);
+              noAutoDetect();
             }
           })
-          .catch(() => noAutoDetectAvailable(manual))
-          .finally(() => { if (edAuto) edAuto.disabled = false; });
+          .catch(() => noAutoDetect());
       }
 
-      function runAutoDetect(manual) {
-        if (!img.width) return;
-        if (REMBG_ENABLED) {
-          runAutoDetectServer(manual);
-        } else {
-          noAutoDetectAvailable(manual);
-        }
-      }
-      edAuto.addEventListener('click', () => runAutoDetect(true));
-
-      // ── Chargement photo / ouverture éditeur ──
+      // ── Chargement photo ──
       function loadPhoto(dataUrl, restore) {
         const st = facesState[activeFace];
         st.photo = dataUrl;
@@ -2353,16 +2609,20 @@
         img.onload = () => {
           st.imgW = img.width;
           st.imgH = img.height;
-          edSource.style.display = 'none';
-          edCanvas.style.visibility = 'visible';
-          editorPanel.style.display = 'flex';
-          fitCanvas();
           poly = restore ? st.polygon.map(p => ({ x: p.x, y: p.y })) : [];
           calib = restore ? st.calib.map(p => ({ x: p.x, y: p.y })) : [];
           defects = restore ? st.defects.map(d => ({ x: d.x, y: d.y, r: d.r, type: d.type })) : [];
-          calibDistInput.value = (restore && st.calibDist) ? st.calibDist : '';
-          setStep(1);
-          if (!restore) runAutoDetect(false);
+          if (restore && st.calibDist) {
+            calibDistInput.value = st.calibDist;
+            unitFactor = 1;
+            edUnitTxt.textContent = 'cm';
+            document.querySelectorAll('.ed-unit').forEach(b => b.classList.toggle('active', b.dataset.unit === 'cm'));
+          } else {
+            calibDistInput.value = '';
+          }
+          edPickFile.innerHTML = '<img src="' + dataUrl + '" alt="">';
+          if (restore) setEdStep('poly');
+          else runAutoDetect();
         };
         img.src = dataUrl;
       }
@@ -2386,30 +2646,32 @@
         downscale(rawDataUrl, 1280, (dataUrl) => {
           const st = facesState[activeFace];
           st.polygon = []; st.calib = []; st.calibDist = 0; st.defects = []; st.done = false;
+          stopCamera();
           loadPhoto(dataUrl, false);
         });
       }
 
+      // ── Ouverture / fermeture ──
       function openFace(face) {
         activeFace = face;
         const st = facesState[face];
-        document.getElementById('editor-face-name').textContent = FACE_LABELS[face];
+        edCamFace.textContent = FACE_LABELS[face].toUpperCase();
         editorOverlay.classList.add('active');
         document.body.classList.add('editor-open');
         if (st.photo) {
-          loadPhoto(st.photo, st.done);
+          loadPhoto(st.photo, st.done || st.polygon.length > 0);
         } else {
-          edSource.style.display = 'flex';
-          edCanvas.style.visibility = 'hidden';
-          editorPanel.style.display = 'none';
+          setEdStep('camera');
+          startCamera();
         }
       }
 
       function closeEditor() {
-        if (cameraStream) stopCamera();
+        stopCamera();
         editorOverlay.classList.remove('active');
         document.body.classList.remove('editor-open');
         hideLoupe();
+        closeDefectSheet();
         activeFace = null;
       }
 
@@ -2417,7 +2679,55 @@
         card.addEventListener('click', () => openFace(card.dataset.face));
       });
 
-      // ── Source : fichier / caméra ──
+      // ── Caméra ──
+      function startCamera() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+        navigator.mediaDevices.getUserMedia({
+          video: { facingMode: camFacing, width: { ideal: 1920 }, height: { ideal: 1080 } },
+          audio: false,
+        }).then(stream => {
+          cameraStream = stream;
+          cameraVideo.srcObject = stream;
+          cameraVideo.addEventListener('playing', () => edCamView.classList.add('cam-live'), { once: true });
+          // La torche n'existe que sur certains capteurs arrière.
+          const track = stream.getVideoTracks()[0];
+          const caps = track.getCapabilities ? track.getCapabilities() : {};
+          edCamTorch.disabled = !caps.torch;
+        }).catch(() => {
+          showToast('Caméra indisponible — utilise « mes photos »');
+        });
+      }
+
+      function stopCamera() {
+        if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+        cameraVideo.srcObject = null;
+        edCamView.classList.remove('cam-live');
+      }
+
+      edCamSwitch.addEventListener('click', () => {
+        camFacing = camFacing === 'environment' ? 'user' : 'environment';
+        stopCamera();
+        startCamera();
+      });
+
+      edCamTorch.addEventListener('click', () => {
+        if (!cameraStream) return;
+        const track = cameraStream.getVideoTracks()[0];
+        const on = !edCamTorch.classList.contains('on');
+        track.applyConstraints({ advanced: [{ torch: on }] })
+          .then(() => edCamTorch.classList.toggle('on', on))
+          .catch(() => { edCamTorch.disabled = true; });
+      });
+
+      btnCapture.addEventListener('click', () => {
+        if (!cameraStream || !cameraVideo.videoWidth) return;
+        cameraCanvas.width = cameraVideo.videoWidth;
+        cameraCanvas.height = cameraVideo.videoHeight;
+        cameraCanvas.getContext('2d').drawImage(cameraVideo, 0, 0);
+        onPhotoReady(cameraCanvas.toDataURL('image/jpeg', 0.85));
+      });
+
       edPickFile.addEventListener('click', () => edFileInput.click());
       edFileInput.addEventListener('change', () => {
         const file = edFileInput.files[0];
@@ -2428,93 +2738,23 @@
         edFileInput.value = '';
       });
 
-      function openCamera() {
-        navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-          audio: false
-        }).then(stream => {
-          cameraStream = stream;
-          cameraVideo.srcObject = stream;
-          cameraOverlay.classList.add('active');
-          document.body.classList.add('camera-open');
-        }).catch(err => {
-          alert('Impossible d\'accéder à la caméra : ' + err.message);
-        });
-      }
-      function stopCamera() {
-        if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
-        cameraStream = null;
-        cameraOverlay.classList.remove('active');
-        document.body.classList.remove('camera-open');
-      }
-      edOpenCamera.addEventListener('click', openCamera);
-      btnCameraCancel.addEventListener('click', stopCamera);
-      btnCameraCapture.addEventListener('click', () => {
-        const vfEl = document.getElementById('camera-viewfinder');
-        const vfRect = vfEl.getBoundingClientRect();
-        const boxRect = cameraCropBox.getBoundingClientRect();
-        const videoW = cameraVideo.videoWidth, videoH = cameraVideo.videoHeight;
-        const scale = Math.min(videoW / vfRect.width, videoH / vfRect.height);
-        const renderedW = videoW / scale, renderedH = videoH / scale;
-        const offsetX = (vfRect.width - renderedW) / 2, offsetY = (vfRect.height - renderedH) / 2;
-        const relX = boxRect.left - vfRect.left, relY = boxRect.top - vfRect.top;
-        const srcX = (relX - offsetX) * scale, srcY = (relY - offsetY) * scale;
-        const srcW = boxRect.width * scale, srcH = boxRect.height * scale;
-        cameraHiddenCanvas.width = srcW;
-        cameraHiddenCanvas.height = srcH;
-        cameraHiddenCanvas.getContext('2d').drawImage(cameraVideo, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
-        const dataUrl = cameraHiddenCanvas.toDataURL('image/jpeg', 0.85);
-        stopCamera();
-        onPhotoReady(dataUrl);
-      });
-
       window.addEventListener('resize', () => {
-        if (editorOverlay.classList.contains('active') && img.width && edCanvas.style.visibility !== 'hidden') {
+        if (editorOverlay.classList.contains('active') && img.width && edStep !== 'camera') {
           fitCanvas();
           draw();
         }
       });
 
       // ==========================================
-      // ENVOI · écran « analyse en cours »
+      // ENVOI
       // ==========================================
-      const form        = document.getElementById('aj-form');
-      const analyse     = document.getElementById('aj-analyse');
-      const analyseTtl  = document.getElementById('aj-analyse-title');
-      const analyseThmb = document.getElementById('aj-analyse-thumb');
-      const analyseArea = document.getElementById('aj-analyse-area');
-      const analyseSub  = document.getElementById('aj-analyse-sub');
-      const analysePct  = document.getElementById('aj-analyse-pct');
-      const analyseFill = document.getElementById('aj-analyse-fill');
-      const analyseStep3 = document.getElementById('aj-analyse-step3');
-
-      function showAnalyse() {
-        const st = facesState.avant;
-        analyseTtl.textContent = nomInput.value.trim() || 'Ton vêtement';
-        if (st.photo) analyseThmb.innerHTML = '<img src="' + st.photo + '" alt="">';
-        analyseArea.textContent = totalUsable().toFixed(2).replace('.', ',') + ' m²';
-        const nbDefauts = facesState.avant.defects.length + facesState.arriere.defects.length;
-        analyseSub.textContent = 'surface détourée, ' + nbDefauts + ' défaut' + (nbDefauts > 1 ? 's' : '') + ' déduit' + (nbDefauts > 1 ? 's' : '');
-        analyse.classList.add('on');
-
-        // Progression indicative : la vraie fin, c'est la réponse du serveur.
-        let pct = 4;
-        const timer = setInterval(() => {
-          pct = Math.min(96, pct + Math.random() * 9);
-          analyseFill.style.width = pct + '%';
-          analysePct.textContent = Math.round(pct) + ' %';
-          if (pct > 70) analyseStep3.classList.add('done');
-          if (pct >= 96) clearInterval(timer);
-        }, 380);
-      }
+      const form = document.getElementById('aj-form');
 
       form.addEventListener('submit', (e) => {
         if (!facesState.avant.done) {
           e.preventDefault();
           goTo(pages.indexOf(facesPage));
-          return;
         }
-        showAnalyse();
       });
 
       updateSubmit();
