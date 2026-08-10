@@ -6,7 +6,14 @@
   <title>La Fabrique</title>
 
   <link rel="icon" type="image/png" href="{% static 'core/images/favicon/favicon-logo.png' %}">
-  <link rel="apple-touch-icon" href="{% static 'core/images/favicon/favicon-logo.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'core/images/icons/pwa/icon-192.png' %}">
+
+  {# ── PWA : installation sur mobile ── #}
+  <link rel="manifest" href="{% static 'core/manifest.json' %}">
+  <meta name="theme-color" content="#237329">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="La Fabrique">
 
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" rel="stylesheet">
 
@@ -858,6 +865,20 @@
       })();
     }
   </script>
+  <script>
+    // Enregistrement du service worker (installation PWA). Gardé derrière un
+    // flag global : ce template se ré-exécute à chaque navigation htmx, mais
+    // l'enregistrement ne doit être tenté qu'une fois par session de page.
+    if (!window.__swInit) {
+      window.__swInit = true;
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/service-worker.js').catch(function () {});
+        });
+      }
+    }
+  </script>
+
   {% block extra_js %}{% endblock %}
 </body>
 </html>
