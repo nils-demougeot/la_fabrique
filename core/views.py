@@ -1208,6 +1208,20 @@ def patron_detail(request, pk):
     if prog_existante:
         selected_ids = set(prog_existante.vetements_projet.values_list('id', flat=True))
 
+    # Retour de l'outil de faisabilité (core.views.faisabilite_patron) : ids
+    # des tissus sur lesquels toutes les pièces ont été placées avec succès.
+    # Revalidés contre les tissus de l'utilisateur (le paramètre vient d'une
+    # simple query string) avant d'être affichés comme « vérifiés ».
+    verif_ids = set()
+    if request.GET.get('verifie') == '1':
+        for part in request.GET.get('vetements', '').split(','):
+            part = part.strip()
+            if part.isdigit():
+                verif_ids.add(int(part))
+    verif_vetements = [v for v in user_vetements if v.id in verif_ids] if verif_ids else []
+    if verif_vetements:
+        selected_ids |= {v.id for v in verif_vetements}
+
     vetements_compatibles = []
     for v in user_vetements:
         surface_ok = v.surfaceExploitable >= patron.surfaceMin
@@ -1241,23 +1255,44 @@ def patron_detail(request, pk):
         'email_verifie': request.user.email_verifie,
         'verif_requise': request.GET.get('verif_requise') == '1',
         'pieces_gagnees': _pieces_gagnees(patron.difficulte),
+        'faisabilite_ok': bool(verif_vetements),
+        'faisabilite_vetements': verif_vetements,
+        'faisabilite_ids_csv': ','.join(str(v.id) for v in verif_vetements),
     }
     return render(request, 'core/patron_detail.html', context)
 
 
+# Dimensions de repli (cm) d'une pièce dont le patron ne renseigne pas la
+# taille réelle : sans elles le placement à l'échelle 1:1 n'aurait aucun sens,
+# on préfère une pièce carrée « moyenne » signalée comme estimée côté client.
+PIECE_DIM_DEFAUT_CM = 20.0
+
+
 @login_required
 def faisabilite_patron(request, pk):
-    """Outil de vérification de faisabilité : placer les pièces (SVG, à l'échelle réelle)
-    sur la photo détourée d'un vêtement de l'utilisateur."""
+    """Outil de vérification de faisabilité : plan de coupe interactif.
+
+    L'utilisateur voit ses tissus détourés (photo rognée sur le polygone de
+    détourage, défauts compris) et y glisse les pièces du patron, à l'échelle
+    réelle. Toute la géométrie est exprimée en centimètres côté client : les
+    dimensions du tissu se déduisent de `echelle_cm_px` (cm par pixel de la
+    photo) et celles des pièces de `largeur_cm`/`hauteur_cm`.
+    """
     patron = get_object_or_404(Patron, pk=pk)
 
     pieces = []
+    total_pieces = 0
     for pc in patron.pieces.all():
+        quantite = max(1, pc.quantite or 1)
+        total_pieces += quantite
         pieces.append({
+            'id': pc.id,
             'nom': pc.nom,
-            'quantite': pc.quantite or 1,
-            'largeur_cm': pc.largeur_cm,
-            'hauteur_cm': pc.hauteur_cm,
+            'quantite': quantite,
+            'largeur_cm': pc.largeur_cm or PIECE_DIM_DEFAUT_CM,
+            'hauteur_cm': pc.hauteur_cm or PIECE_DIM_DEFAUT_CM,
+            # Dimensions manquantes : le client affiche un avertissement.
+            'estimee': not (pc.largeur_cm and pc.hauteur_cm),
             'svg_url': pc.svg_url,
         })
 
@@ -1303,6 +1338,7 @@ def faisabilite_patron(request, pk):
     return render(request, 'core/faisabilite_patron.html', {
         'patron': patron,
         'fz_data': {'pieces': pieces, 'garments': garments},
+        'total_pieces': total_pieces,
         'has_pieces': len(pieces) > 0,
         'has_garments': len(garments) > 0,
     })
