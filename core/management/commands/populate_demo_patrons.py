@@ -38,7 +38,6 @@ PATRONS_DATA = [
                     'Vérifiez le sens du droit fil (parallèle à la lisière) avant chaque découpe. '
                     'Découpez soigneusement avec des ciseaux de couture, en coupant d\'un seul geste continu pour un bord propre.'
                 ),
-                'video_url': 'https://www.youtube.com/watch?v=BaSmyabj9Hk',
                 'conseil': (
                     'Gardez toutes les chutes : un coin du sac, une petite poche intérieure ou un détail appliqué '
                     'peuvent transformer un sac basique en pièce unique.'
@@ -56,7 +55,6 @@ PATRONS_DATA = [
                     'Repassez bien à plat en centrant la couture au milieu de l\'anse. '
                     'Surpiquez à 3 mm de chaque bord sur toute la longueur pour rigidifier l\'anse.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Si le tissu est épais, glissez un peu de rembourrage mousse fin ou doublez le tissu '
                     'pour des anses confortables qui ne coupent pas les mains.'
@@ -75,7 +73,6 @@ PATRONS_DATA = [
                     'en formant un triangle, alignez la couture du flanc avec la couture du fond, '
                     'et cousez perpendiculairement à 5 cm de la pointe. Coupez l\'excédent à 1 cm.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'La profondeur des coins détermine la largeur du fond : 5 cm de couture = 10 cm de fond. '
                     'Adaptez cette valeur à la capacité souhaitée.'
@@ -92,7 +89,6 @@ PATRONS_DATA = [
                     'puis repliez à nouveau de 3 cm et épinglez en emprisonnant les extrémités des anses. '
                     'Cousez tout le tour à 0,3 cm du bord replié, puis ajoutez une deuxième rangée de couture à 2,7 cm.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Faites un carré renforcé en X sur chaque point d\'attache des anses : '
                     'c\'est la technique professionnelle pour les sacs destinés à supporter un poids quotidien.'
@@ -110,7 +106,6 @@ PATRONS_DATA = [
                     'Retournez à l\'endroit, repassez une dernière fois et remplissez le sac '
                     'd\'un peu de papier de soie pour lui donner sa forme pendant le séchage.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Pour imperméabiliser légèrement votre tote bag en coton, vaporisez un imperméabilisant '
                     'textile en spray (disponible en droguerie) à 20 cm de distance.'
@@ -165,7 +160,6 @@ PATRONS_DATA = [
                     'Repassez tous les rectangles pour les aplatir parfaitement. '
                     'Si vous faites une pochette bicolore, utilisez deux tissus différents pour l\'avant et l\'arrière.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Coupez les rectangles de doublure 1 cm plus petits en largeur pour éviter '
                     'que la doublure dépasse à l\'extérieur après retournement.'
@@ -183,7 +177,6 @@ PATRONS_DATA = [
                     'Ouvrez le tout à plat, repassez les tissus away du zip et surpiquez à 3 mm du zip. '
                     'Répétez l\'opération pour l\'autre côté de la fermeture éclair.'
                 ),
-                'video_url': 'https://www.youtube.com/watch?v=CfbVgG4JSJA',
                 'conseil': (
                     'La règle d\'or : ouvrez la fermeture éclair à moitié avant de coudre le tour. '
                     'Sinon, vous ne pourrez pas retourner la pochette !'
@@ -200,7 +193,6 @@ PATRONS_DATA = [
                     'Cousez le tour à 1 cm du bord, en renforçant les points d\'arrêt près du zip. '
                     'Coupez les coins en diagonale à 2 mm de la couture pour réduire le volume.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Ne cousez pas trop près des dents de la fermeture éclair. '
                     'Le pied zipper vous permet de coudre à exactement la bonne distance.'
@@ -217,7 +209,6 @@ PATRONS_DATA = [
                     'Refermez l\'ouverture de la doublure en cousant à la machine ou à la main au point glissé. '
                     'Repassez la pochette à froid pour l\'aplatir. Testez la fermeture éclair et c\'est prêt !'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Si la fermeture éclair tire en arrière une fois la pochette retournée, '
                     'cousez un crochet de décoration sur le curseur pour faciliter l\'ouverture.'
@@ -266,7 +257,6 @@ PATRONS_DATA = [
                     'L\'harmonie idéale repose sur une alternance de tissus imprimés et de tissus unis, '
                     'avec une progression de clair à foncé ou un contraste marqué.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Photographiez vos tests d\'agencement avec votre téléphone pour vous souvenir '
                     'des combinaisons qui vous plaisent avant de couper quoi que ce soit.'
@@ -283,7 +273,6 @@ PATRONS_DATA = [
                     'coupez tous les carrés dans le même sens. '
                     'Organisez vos carrés sur la table dans la disposition finale : 5 rangées de 5.'
                 ),
-                'video_url': 'https://www.youtube.com/watch?v=_mFd8FHIZM4',
                 'conseil': (
                     'Coupez des carrés légèrement plus grands (13 cm) si c\'est votre premier patchwork : '
                     'vous récupérerez les imperfections dans les marges de couture de 1,5 cm.'
@@ -300,7 +289,6 @@ PATRONS_DATA = [
                     'Repassez toutes les marges de couture d\'une rangée dans le même sens, '
                     'et en sens inverse pour la rangée suivante — les coutures s\'emboîteront parfaitement.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Numérotez vos rangées avec des petits papiers épinglés pour ne pas les mélanger '
                     'une fois assemblées. Le sens des marges repassées est CRUCIAL pour les intersections plates.'
@@ -318,7 +306,6 @@ PATRONS_DATA = [
                     'Cousez à 1 cm et vérifiez que les carrés sont bien alignés en ouvrant le tissu. '
                     'Continuez jusqu\'à assembler les 5 rangées. Repassez à plat.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Si une intersection est décalée, décousez uniquement les 3 cm autour du problème '
                     'et recousez. Inutile de défaire toute la couture !'
@@ -336,7 +323,6 @@ PATRONS_DATA = [
                     'Retournez à l\'endroit, remplissez de rembourrage ou glissez un coussin de 50 cm. '
                     'Fermez l\'ouverture au point glissé invisible.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Bourrez le coussin plus que vous ne le pensez nécessaire : '
                     'il perdra 10 à 15 % de son gonflant après quelques semaines.'
@@ -353,7 +339,6 @@ PATRONS_DATA = [
                     'Vous pouvez aussi ajouter des boutons, du ruban ou des pompons sur les coins '
                     'pour personnaliser votre création.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Un fil de quilting légèrement différent du fil d\'assemblage crée un joli contraste visuel '
                     'et met en valeur le travail du patchwork.'
@@ -409,7 +394,6 @@ PATRONS_DATA = [
                     'Découpez l\'échancrure du col (demi-cercle de 10 cm de rayon centré en haut). '
                     'Découpez ensuite un rectangle de 40 × 25 cm pour la grande poche avant.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Pliez votre tissu en deux pour découper le tablier : vous obtiendrez une symétrie parfaite '
                     'sans avoir à tracer les deux côtés séparément.'
@@ -427,7 +411,6 @@ PATRONS_DATA = [
                     'Optionnel : cousez une couture verticale au centre de la poche '
                     'pour créer deux compartiments séparés.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Renforcez les coins supérieurs de la poche avec un petit triangle cousu '
                     'ou un point en X : c\'est à ces endroits que les poches se déchirent en premier.'
@@ -444,7 +427,6 @@ PATRONS_DATA = [
                     'pour permettre au tissu de s\'arrondir sans faire de plis. '
                     'Repassez soigneusement après chaque rempli pour des bords bien plats.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Sur les tissus épais, utilisez un marteau de couture pour aplatir les ourlets '
                     'avant de piquer à la machine. Cela évite que la machine "saute" au-dessus du tissu épais.'
@@ -461,7 +443,6 @@ PATRONS_DATA = [
                     'et cousez un carré renforcé en X à chaque point d\'attache. '
                     'Testez le tablier sur vous avant de coudre définitivement pour ajuster la longueur des bretelles.'
                 ),
-                'video_url': 'https://www.youtube.com/watch?v=Qlbq5nOhBb0',
                 'conseil': (
                     'Pour un tablier à bretelles croisées dans le dos, attachez les liens de taille '
                     'à l\'avant après les avoir croisés dans le dos — très confortable et ajustable.'
@@ -520,7 +501,6 @@ PATRONS_DATA = [
                     'et deux bretelles (8 × 65 cm). '
                     'Découpez aussi l\'interface thermocollante pour le panneau arrière et les bretelles.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Organisez toutes vos pièces découpées sur une grande table et étiquetez-les. '
                     'Cette organisation initiale vous fera gagner du temps et évitera les erreurs d\'assemblage.'
@@ -537,7 +517,6 @@ PATRONS_DATA = [
                     'Assemblez l\'autre côté du zip avec la pièce de contrepoche. '
                     'Surpiquez les flancs de la poche à 2 mm du bord pour un aspect soigné.'
                 ),
-                'video_url': 'https://www.youtube.com/watch?v=CfbVgG4JSJA',
                 'conseil': (
                     'Utilisez une fermeture éclair de qualité (métal ou nylon épais) : '
                     'c\'est le premier point de fragilité d\'un sac à dos et cela se voit à l\'usage.'
@@ -554,7 +533,6 @@ PATRONS_DATA = [
                     'en surpiquant les bords pour fixer la mousse et créer un dos confortable. '
                     'Marquez les emplacements des bretelles à 8 cm des flancs.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Ajoutez un système de glissière de chargement de sac à dos si vous souhaitez '
                     'fixer votre sac à une valise : c\'est un détail pratique très apprécié.'
@@ -571,7 +549,6 @@ PATRONS_DATA = [
                     'Passez l\'extrémité inférieure de chaque bretelle dans un anneau de réglage, '
                     'pliez et cousez solidement. Fixez les réglettes coulissantes pour l\'ajustement de longueur.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Cousez les bretelles en X renforcé et passez plusieurs fois sur les points de fixation. '
                     'Un sac chargé génère une traction considérable sur ces points.'
@@ -588,7 +565,6 @@ PATRONS_DATA = [
                     'Cousez avec fil résistant et point de longueur réduite (2 mm) pour plus de solidité. '
                     'Repassez les marges ouvertes au fur et à mesure.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Pour les coutures sous tension, faites deux passes parallèles à 2 mm d\'écart '
                     'plutôt qu\'une seule couture centrale : la résistance est doublée.'
@@ -605,7 +581,6 @@ PATRONS_DATA = [
                     'puis renforcez avec des rivets métalliques aux quatre points de contrainte. '
                     'Fixez la sangle de poignée en haut du sac avec des rivets.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Pour poser les rivets, utilisez un marteau et une surface dure. '
                     'Percez le trou légèrement plus petit que le rivet pour un maintien parfait.'
@@ -623,7 +598,6 @@ PATRONS_DATA = [
                     'Testez le sac en le chargeant à 5 kg pour vérifier que tous les points d\'attache résistent. '
                     'Repassez et placez une forme gonflante à l\'intérieur pour lui donner sa structure.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Traitez l\'extérieur du sac avec une cire d\'imperméabilisation en spray '
                     'pour protéger le tissu de la pluie sans changer son aspect.'
@@ -684,7 +658,6 @@ PATRONS_DATA = [
                     'manches rectangulaires (45 cm de large × longueur bras). '
                     'Ajoutez 2 cm de marge partout.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Le kimono est un vêtement très indulgent : les tolérances sont larges '
                     'et le patron peut être adapté en quelques traits de craie. '
@@ -702,7 +675,6 @@ PATRONS_DATA = [
                     'Découpez les deux manches séparément. '
                     'Pour les tissus glissants, stabilisez-les avec des épingles serrées et des ciseaux bien aiguisés.'
                 ),
-                'video_url': 'https://www.youtube.com/watch?v=Qlbq5nOhBb0',
                 'conseil': (
                     'Évitez de tirer sur les tissus fluides lors de la découpe : '
                     'posez-les à plat et utilisez des poids de couture plutôt que des épingles '
@@ -720,7 +692,6 @@ PATRONS_DATA = [
                     'en laissant une fente de 15 cm en bas des côtés si souhaité. '
                     'Repassez toutes les marges vers le dos.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Sur les tissus fluides, utilisez une aiguille fine (70/10) et un fil de polyester léger. '
                     'Rallongez légèrement le point de couture pour éviter les fronces.'
@@ -737,7 +708,6 @@ PATRONS_DATA = [
                     'Épinglez régulièrement et cousez à 1,5 cm. '
                     'Pour le kimono, les manches n\'ont pas de courbe d\'emmanchure — c\'est une couture droite simple.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'La force du kimono est sa construction rectangulaire : '
                     'pas de courbes difficiles à assembler, juste des droites. '
@@ -755,7 +725,6 @@ PATRONS_DATA = [
                     'et en continuant dans le dos du col. Cousez à 1,5 cm. '
                     'Repliez vers l\'intérieur et cousez au point glissé ou surpiquez depuis l\'endroit.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Crantez les courbes du col au niveau du virage dos/devant tous les 5 mm '
                     'pour que le col se pose à plat sans faire de boursouflures.'
@@ -772,7 +741,6 @@ PATRONS_DATA = [
                     'de la broderie ou des impressions au tampon pour personnaliser votre kimono. '
                     'Repassez une dernière fois à l\'envers avec un chiffon humide pour laisser le tissu respirer.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Pour les ourlets de tissus très fins, l\'ourlet roulotté est le plus discret. '
                     'Faites-le à la machine avec un pied ourlet roulotté si vous en avez un.'
@@ -828,7 +796,6 @@ PATRONS_DATA = [
                     'Repassez tous les panneaux. '
                     'Pour une housse réversible : découpez les mêmes pièces dans un deuxième tissu.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Ajoutez toujours 2 cm aux dimensions du coussin pour la housse : '
                     'la housse doit être légèrement ajustée pour que le coussin soit bien plein et ferme.'
@@ -845,7 +812,6 @@ PATRONS_DATA = [
                     'Épinglez tout le tour. Cousez à 1,5 cm du bord tout autour. '
                     'Coupez les coins en biais à 2 mm de la couture.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Le chevauchement des panneaux arrière doit faire au moins 10 cm pour que le coussin '
                     'reste en place. Si votre tissu est glissant, cousez un point d\'arrêt au centre du chevauchement.'
@@ -862,7 +828,6 @@ PATRONS_DATA = [
                     'Glissez votre coussin de 50 × 50 cm à l\'intérieur. '
                     'La housse est prête — aucun point à faire à la main !'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Lavez la housse à froid à l\'envers pour préserver les couleurs. '
                     'Le système enveloppe permet de l\'enlever et la remettre en quelques secondes.'
@@ -914,7 +879,6 @@ PATRONS_DATA = [
                     'Thermocollez l\'interface sur l\'envers des pièces extérieures pour leur donner de la tenue. '
                     'Repassez toutes les pièces.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Choisissez une interface semi-rigide (type Pellon 809) pour les pièces extérieures '
                     'afin que le nécessaire garde sa forme même vide.'
@@ -932,7 +896,6 @@ PATRONS_DATA = [
                     '(le bord supérieur reste ouvert). '
                     'Ajoutez une cloison verticale cousue en faisant un trait du haut vers le bas.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'La poche intérieure peut être en filet pour voir les objets à l\'intérieur, '
                     'ou en tissu doublure coordonné pour un intérieur plus soigné.'
@@ -948,7 +911,6 @@ PATRONS_DATA = [
                     'Cousez à 0,7 cm avec le pied zipper. Repassez le tissu away du zip, surpiquez. '
                     'Répétez de l\'autre côté. Ouvrez le zip à mi-course avant de continuer.'
                 ),
-                'video_url': 'https://www.youtube.com/watch?v=_mFd8FHIZM4',
                 'conseil': (
                     'Choisissez un zip de longueur = largeur du panneau + 4 cm. '
                     'Il dépassera légèrement sur les côtés — c\'est normal et se cachera dans les soufflets.'
@@ -966,7 +928,6 @@ PATRONS_DATA = [
                     'Crantez les courbes et les angles tous les 1 cm pour que le soufflet s\'aplat bien. '
                     'Retournez par l\'ouverture du zip.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Faites des crans (petites entailles à 3 mm de la couture) dans les angles arrondis '
                     'pour permettre au soufflet de se courber sans faire de plis.'
@@ -983,7 +944,6 @@ PATRONS_DATA = [
                     'Fixez l\'anneau avec poignée sur le haut du soufflet par une couture en X solide. '
                     'Inspectez toutes les coutures, coupez les fils, repassez à froid sur l\'extérieur.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Ajoutez un anneau de porte-clé à l\'intérieur pour ne jamais perdre vos clés '
                     'au fond du sac de voyage !'
@@ -1040,7 +1000,6 @@ PATRONS_DATA = [
                     'Choisissez des tissus souples et confortables pour le bandeau '
                     '(jersey, velours côtelé, flanelle) et n\'importe quel tissu pour le sachet.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Le sens du tissu compte pour le bandeau : la direction extensible doit être '
                     'dans le sens de la longueur du bandeau pour qu\'il s\'adapte à la tête.'
@@ -1058,7 +1017,6 @@ PATRONS_DATA = [
                     'Cousez les extrémités à 1 cm en prenant l\'élastique dans la couture. '
                     'Tournez la jointure vers l\'intérieur du bandeau et cousez-la discrètement.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Si vous n\'avez pas d\'élastique, utilisez un lien de tissu plus long '
                     'pour faire un bandeau à nouer — encore plus personnalisable !'
@@ -1076,7 +1034,6 @@ PATRONS_DATA = [
                     'Repliez le bord supérieur de 1 cm vers l\'intérieur et cousez à la main au point glissé, '
                     'ou nouez avec un joli ruban.'
                 ),
-                'video_url': None,
                 'conseil': (
                     'Ajoutez quelques gouttes d\'huile essentielle de lavande sur les fleurs '
                     'avant de fermer pour une senteur plus intense et durable.'
@@ -1195,7 +1152,6 @@ class Command(BaseCommand):
                         numero=etape_data['numero'],
                         titre=etape_data['titre'],
                         description=etape_data['description'],
-                        video_url=etape_data.get('video_url') or None,
                         conseil=etape_data.get('conseil', ''),
                         materiaux_etape=etape_data.get('materiaux_etape', ''),
                     )

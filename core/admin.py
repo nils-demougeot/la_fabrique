@@ -1,15 +1,24 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import (Utilisateur, Vetement, Patron, EtapePatron, PiecePatron, Tutoriel, Projet, Recommandation,
-                     AchatPatron, ProgressionProjet, PatronLike,
+from .models import (Utilisateur, Vetement, Patron, EtapePatron, PiecePatron, GestePatron, PlanDeCoupe, Tutoriel,
+                     Projet, Recommandation, AchatPatron, ProgressionProjet, PatronLike,
                      PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag)
+
+
+class GestePatronInline(admin.StackedInline):
+    model = GestePatron
+    extra = 0
+    ordering = ['numero']
+    fields = ['numero', 'titre', 'description', 'video', 'pieces']
+    filter_horizontal = ['pieces']
 
 
 class EtapePatronInline(admin.StackedInline):
     model = EtapePatron
     extra = 0
     ordering = ['numero']
-    fields = ['numero', 'titre', 'description', 'image', 'conseil', 'materiaux_etape', 'video_url']
+    fields = ['numero', 'titre', 'description', 'image', 'conseil', 'materiaux_etape']
+    show_change_link = True
 
 
 class PiecePatronInline(admin.TabularInline):
@@ -55,14 +64,24 @@ class TutorielAdmin(admin.ModelAdmin):
     search_fields = ['titre', 'patron__titre']
 
 
+@admin.register(EtapePatron)
+class EtapePatronAdmin(admin.ModelAdmin):
+    list_display  = ['titre', 'patron', 'numero']
+    list_filter   = ['patron']
+    search_fields = ['titre', 'patron__titre']
+    inlines       = [GestePatronInline]
+
+
 admin.site.register(Utilisateur, UserAdmin)
 admin.site.register(Vetement)
 admin.site.register(Projet)
 admin.site.register(Recommandation)
 admin.site.register(AchatPatron)
 admin.site.register(ProgressionProjet)
+admin.site.register(PlanDeCoupe)
 admin.site.register(PatronLike)
 admin.site.register(PiecePatron)
+admin.site.register(GestePatron)
 
 
 class CommentairePostInline(admin.TabularInline):

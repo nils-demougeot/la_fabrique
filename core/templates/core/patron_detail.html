@@ -986,7 +986,7 @@
           <div class="pd-step-card">
             <div class="pd-step-title">{{ etape.titre }}</div>
             <p class="pd-step-desc">{{ etape.description|truncatechars:120 }}</p>
-            {% if etape.video_url %}
+            {% if etape.has_video %}
             <span class="pd-step-video">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
               Vidéo disponible

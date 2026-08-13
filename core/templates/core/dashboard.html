@@ -1132,7 +1132,7 @@
 
     <!-- ══════════════ Reprendre un projet ══════════════ -->
     {% if projet_en_cours %}
-    <a href="{% url 'etape_projet' patron_pk=projet_en_cours.patron_id etape_num=projet_en_cours.etape_actuelle %}"
+    <a href="{% url 'etape_projet_geste' patron_pk=projet_en_cours.patron_id etape_num=projet_en_cours.etape_actuelle geste_num=projet_en_cours.geste_actuelle %}"
        class="dash-resume dash-link">
       <div class="dash-resume-top">
         {% if projet_en_cours.image %}
