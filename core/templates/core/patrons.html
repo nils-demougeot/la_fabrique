@@ -749,7 +749,7 @@
       </div>
       <div class="pat-rail">
         {% for prog in projets_en_cours %}
-        <a href="{% url 'etape_projet' patron_pk=prog.patron_id etape_num=prog.etape_actuelle %}" class="pat-resume-card pat-link">
+        <a href="{% url 'etape_projet_geste' patron_pk=prog.patron_id etape_num=prog.etape_actuelle geste_num=prog.geste_actuelle %}" class="pat-resume-card pat-link">
           <div class="pat-resume-top">
             <div class="pat-resume-thumb">
               {% if prog.image %}<img src="{{ prog.image }}" alt="{{ prog.titre }}">{% endif %}

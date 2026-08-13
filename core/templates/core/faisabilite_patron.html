@@ -1315,7 +1315,30 @@
 
   // Filet de sécurité : pointer-events:none suffit en pratique, mais un lien
   // sans href réel garde son comportement par défaut au clavier (Entrée).
-  startBtn.addEventListener('click', (e) => { if (!startBtn.classList.contains('is-ready')) e.preventDefault(); });
+  // Le placement est sauvegardé (figé) avant de quitter la page, pour être
+  // réaffiché en lecture seule dans le plan de coupe de l'étape en cours.
+  const CSRF = '{{ csrf_token }}';
+  const planCoupeSaveUrl = '{% url "plan_coupe_save" pk=patron.pk %}';
+
+  function savePlacement() {
+    const payload = {
+      pieces: placed.map((inst) => ({
+        piece_id: PIECES[inst.pi].id, gid: inst.gid, x: inst.x, y: inst.y, rot: inst.rot,
+      })),
+    };
+    return fetch(planCoupeSaveUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  }
+
+  startBtn.addEventListener('click', (e) => {
+    if (!startBtn.classList.contains('is-ready')) { e.preventDefault(); return; }
+    e.preventDefault();
+    const dest = startBtn.href;
+    savePlacement().finally(() => { window.location.href = dest; });
+  });
 
   document.getElementById('fz-fit').addEventListener('click', () => { framed = false; fitView(true); });
   document.getElementById('fz-reset').addEventListener('click', () => {

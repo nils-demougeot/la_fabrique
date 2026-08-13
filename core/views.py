@@ -32,8 +32,10 @@ from datetime import timedelta
 import math
 
 from django.http import HttpResponse, JsonResponse
-from core.models import (Vetement, Utilisateur, Patron, EtapePatron, PiecePatron, ProgressionProjet, PatronLike,
-                         PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag, Badge)
+from django.views.decorators.http import require_POST
+from core.models import (Vetement, Utilisateur, Patron, EtapePatron, PiecePatron, GestePatron, PlanDeCoupe,
+                         ProgressionProjet, PatronLike, PostCommunaute, LikePost, SauvegardePost, CommentairePost,
+                         Suivi, Hashtag, Badge)
 
 logger = logging.getLogger('core')
 
@@ -322,6 +324,7 @@ def dashboard(request):
                 'titre': p.titre,
                 'image': p.photo_url,
                 'etape_actuelle': prog.etape_actuelle,
+                'geste_actuelle': prog.geste_actuelle,
                 'total_etapes': prog.nb_etapes,
                 'etape_titre': etape.titre if etape else 'Reprendre là où tu en étais',
                 'progression_pct': (
@@ -945,6 +948,7 @@ def patrons(request):
             'titre': p.titre,
             'image': p.photo_url,
             'etape_actuelle': prog.etape_actuelle,
+            'geste_actuelle': prog.geste_actuelle,
             'etape_titre': etape_courante.titre if etape_courante else '',
             'etapes_range': range(total_etapes),
             'total_etapes': total_etapes,
@@ -1087,28 +1091,10 @@ def creer_patron(request):
             createur=request.user,
         )
 
-        # ── Étapes ──
-        nb_etapes = _i('nb_etapes', 0)
-        numero = 1
-        for i in range(nb_etapes):
-            e_titre = request.POST.get(f'etape_{i}_titre', '').strip()
-            e_desc = request.POST.get(f'etape_{i}_description', '').strip()
-            if not e_titre and not e_desc:
-                continue
-            EtapePatron.objects.create(
-                patron=patron,
-                numero=numero,
-                titre=e_titre or f"Étape {numero}",
-                description=e_desc,
-                video_url=request.POST.get(f'etape_{i}_video', '').strip() or None,
-                conseil=request.POST.get(f'etape_{i}_conseil', '').strip() or None,
-                materiaux_etape=request.POST.get(f'etape_{i}_materiaux', '').strip() or None,
-                image=_compress_uploaded_image(request.FILES.get(f'etape_{i}_image'), f'etape_{i}'),
-            )
-            numero += 1
-
-        # ── Pièces à découper (SVG) ──
+        # ── Pièces à découper (SVG) — créées avant les étapes pour que les
+        #    gestes puissent référencer leurs pièces utilisées par index. ──
         nb_pieces = _i('nb_pieces', 0)
+        pieces_creees = {}  # index du bloc pièce (j) → instance PiecePatron
         ordre = 0
         for j in range(nb_pieces):
             p_nom = request.POST.get(f'piece_{j}_nom', '').strip()
@@ -1118,7 +1104,7 @@ def creer_patron(request):
             # On n'accepte que des fichiers .svg
             if svg_file and not svg_file.name.lower().endswith('.svg'):
                 svg_file = None
-            PiecePatron.objects.create(
+            pieces_creees[j] = PiecePatron.objects.create(
                 patron=patron,
                 nom=p_nom or f"Pièce {ordre + 1}",
                 quantite=max(1, _i(f'piece_{j}_quantite', 1)),
@@ -1128,6 +1114,50 @@ def creer_patron(request):
                 ordre=ordre,
             )
             ordre += 1
+
+        # ── Étapes, et leurs gestes ──
+        nb_etapes = _i('nb_etapes', 0)
+        numero = 1
+        for i in range(nb_etapes):
+            e_titre = request.POST.get(f'etape_{i}_titre', '').strip()
+            e_desc = request.POST.get(f'etape_{i}_description', '').strip()
+            if not e_titre and not e_desc:
+                continue
+            etape = EtapePatron.objects.create(
+                patron=patron,
+                numero=numero,
+                titre=e_titre or f"Étape {numero}",
+                description=e_desc,
+                conseil=request.POST.get(f'etape_{i}_conseil', '').strip() or None,
+                materiaux_etape=request.POST.get(f'etape_{i}_materiaux', '').strip() or None,
+                image=_compress_uploaded_image(request.FILES.get(f'etape_{i}_image'), f'etape_{i}'),
+            )
+            numero += 1
+
+            nb_gestes = _i(f'etape_{i}_nb_gestes', 0)
+            geste_numero = 1
+            for k in range(nb_gestes):
+                g_titre = request.POST.get(f'etape_{i}_geste_{k}_titre', '').strip()
+                g_desc = request.POST.get(f'etape_{i}_geste_{k}_description', '').strip()
+                g_video = request.FILES.get(f'etape_{i}_geste_{k}_video')
+                g_pieces_raw = request.POST.get(f'etape_{i}_geste_{k}_pieces', '').strip()
+                if not g_titre and not g_desc and not g_video and not g_pieces_raw:
+                    continue
+                geste = GestePatron.objects.create(
+                    etape=etape,
+                    numero=geste_numero,
+                    titre=g_titre,
+                    description=g_desc,
+                    video=g_video,
+                )
+                if g_pieces_raw:
+                    idxs = []
+                    for tok in g_pieces_raw.split(','):
+                        tok = tok.strip()
+                        if tok.isdigit():
+                            idxs.append(int(tok))
+                    geste.pieces.set([pieces_creees[idx] for idx in idxs if idx in pieces_creees])
+                geste_numero += 1
 
         return redirect('patron_detail', pk=patron.pk)
 
@@ -1268,23 +1298,12 @@ def patron_detail(request, pk):
 PIECE_DIM_DEFAUT_CM = 20.0
 
 
-@login_required
-def faisabilite_patron(request, pk):
-    """Outil de vérification de faisabilité : plan de coupe interactif.
-
-    L'utilisateur voit ses tissus détourés (photo rognée sur le polygone de
-    détourage, défauts compris) et y glisse les pièces du patron, à l'échelle
-    réelle. Toute la géométrie est exprimée en centimètres côté client : les
-    dimensions du tissu se déduisent de `echelle_cm_px` (cm par pixel de la
-    photo) et celles des pièces de `largeur_cm`/`hauteur_cm`.
-    """
-    patron = get_object_or_404(Patron, pk=pk)
-
+def _serialize_pieces_coupe(patron):
+    """Sérialise les pièces d'un patron pour un plan de coupe à l'échelle
+    (interactif ou figé) : mêmes clés dans les deux cas."""
     pieces = []
-    total_pieces = 0
     for pc in patron.pieces.all():
         quantite = max(1, pc.quantite or 1)
-        total_pieces += quantite
         pieces.append({
             'id': pc.id,
             'nom': pc.nom,
@@ -1295,24 +1314,15 @@ def faisabilite_patron(request, pk):
             'estimee': not (pc.largeur_cm and pc.hauteur_cm),
             'svg_url': pc.svg_url,
         })
+    return pieces
 
-    # Ne proposer que les tissus choisis sur la fiche (param ?vetements=1,2,3).
-    # Sans paramètre : on retombe sur tous les vêtements mesurés.
-    sel_ids = set()
-    sel_raw = request.GET.get('vetements', '').strip()
-    if sel_raw:
-        for part in sel_raw.split(','):
-            part = part.strip()
-            if part.isdigit():
-                sel_ids.add(int(part))
 
+def _serialize_garments_coupe(vetements_qs):
+    """Sérialise des tissus mesurés (détourage + échelle) pour un plan de
+    coupe à l'échelle : mêmes clés dans faisabilite_patron et le plan figé
+    de l'étape en cours, pour réutiliser exactement le même rendu client."""
     garments = []
-    qs = (Vetement.objects
-          .filter(utilisateur=request.user, echelle_cm_px__isnull=False)
-          .order_by('-surfaceExploitable'))
-    if sel_ids:
-        qs = qs.filter(id__in=sel_ids)
-    for v in qs:
+    for v in vetements_qs:
         if not v.photo_url or not v.echelle_cm_px:
             continue
         try:
@@ -1334,6 +1344,40 @@ def faisabilite_patron(request, pk):
             'defauts': defs,
             'surface': round(v.surfaceExploitable, 2),
         })
+    return garments
+
+
+@login_required
+def faisabilite_patron(request, pk):
+    """Outil de vérification de faisabilité : plan de coupe interactif.
+
+    L'utilisateur voit ses tissus détourés (photo rognée sur le polygone de
+    détourage, défauts compris) et y glisse les pièces du patron, à l'échelle
+    réelle. Toute la géométrie est exprimée en centimètres côté client : les
+    dimensions du tissu se déduisent de `echelle_cm_px` (cm par pixel de la
+    photo) et celles des pièces de `largeur_cm`/`hauteur_cm`.
+    """
+    patron = get_object_or_404(Patron, pk=pk)
+
+    pieces = _serialize_pieces_coupe(patron)
+    total_pieces = sum(p['quantite'] for p in pieces)
+
+    # Ne proposer que les tissus choisis sur la fiche (param ?vetements=1,2,3).
+    # Sans paramètre : on retombe sur tous les vêtements mesurés.
+    sel_ids = set()
+    sel_raw = request.GET.get('vetements', '').strip()
+    if sel_raw:
+        for part in sel_raw.split(','):
+            part = part.strip()
+            if part.isdigit():
+                sel_ids.add(int(part))
+
+    qs = (Vetement.objects
+          .filter(utilisateur=request.user, echelle_cm_px__isnull=False)
+          .order_by('-surfaceExploitable'))
+    if sel_ids:
+        qs = qs.filter(id__in=sel_ids)
+    garments = _serialize_garments_coupe(qs)
 
     return render(request, 'core/faisabilite_patron.html', {
         'patron': patron,
@@ -1342,6 +1386,54 @@ def faisabilite_patron(request, pk):
         'has_pieces': len(pieces) > 0,
         'has_garments': len(garments) > 0,
     })
+
+
+@login_required
+@require_POST
+def plan_coupe_save(request, pk):
+    """Sauvegarde le placement figé des pièces (appelé en AJAX depuis
+    faisabilite_patron au clic sur « Valider »), pour le réafficher en
+    lecture seule dans le plan de coupe de l'étape en cours."""
+    patron = get_object_or_404(Patron, pk=pk)
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({'ok': False}, status=400)
+
+    items = payload.get('pieces')
+    if not isinstance(items, list):
+        return JsonResponse({'ok': False}, status=400)
+
+    piece_ids = set(patron.pieces.values_list('id', flat=True))
+    cleaned = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        try:
+            piece_id = int(item.get('piece_id'))
+            gid = int(item.get('gid'))
+            x = float(item.get('x'))
+            y = float(item.get('y'))
+            rot = float(item.get('rot') or 0)
+        except (TypeError, ValueError):
+            continue
+        if piece_id not in piece_ids:
+            continue
+        cleaned.append({'piece_id': piece_id, 'gid': gid, 'x': x, 'y': y, 'rot': rot})
+
+    # Les tissus référencés doivent appartenir à l'utilisateur.
+    used_gids = set(item['gid'] for item in cleaned)
+    owned_gids = set(Vetement.objects.filter(
+        utilisateur=request.user, id__in=used_gids,
+    ).values_list('id', flat=True))
+    cleaned = [item for item in cleaned if item['gid'] in owned_gids]
+    garment_ids = sorted(set(item['gid'] for item in cleaned))
+
+    PlanDeCoupe.objects.update_or_create(
+        utilisateur=request.user, patron=patron,
+        defaults={'donnees': {'pieces': cleaned, 'garment_ids': garment_ids}},
+    )
+    return JsonResponse({'ok': True})
 
 
 @login_required
@@ -1427,9 +1519,12 @@ def patron_export(request, pk):
         except Exception:
             return None
 
+    pieces = list(patron.pieces.all())
+    piece_index = {p.id: idx for idx, p in enumerate(pieces)}
+
     data = {
         'format': 'la-fabrique/patron',
-        'version': 1,
+        'version': 2,
         'patron': {
             'titre': patron.titre,
             'description': patron.description or '',
@@ -1448,10 +1543,20 @@ def patron_export(request, pk):
                 'numero': e.numero,
                 'titre': e.titre,
                 'description': e.description or '',
-                'video_url': e.video_url or '',
                 'conseil': e.conseil or '',
                 'materiaux_etape': e.materiaux_etape or '',
                 'image_url': e.image_url,
+                'gestes': [
+                    {
+                        'numero': g.numero,
+                        'titre': g.titre or '',
+                        'description': g.description or '',
+                        'video_url': g.video_url,
+                        # Indices (dans la liste "pieces" ci-dessous) des pièces utilisées.
+                        'pieces': [piece_index[pid] for pid in g.pieces.values_list('id', flat=True) if pid in piece_index],
+                    }
+                    for g in e.gestes.order_by('numero')
+                ],
             }
             for e in patron.etapes.order_by('numero')
         ],
@@ -1463,7 +1568,7 @@ def patron_export(request, pk):
                 'hauteur_cm': p.hauteur_cm,
                 'svg': _read_svg(p),
             }
-            for p in patron.pieces.all()
+            for p in pieces
         ],
     }
 
@@ -1473,8 +1578,36 @@ def patron_export(request, pk):
     return resp
 
 
+class _VirtualGeste:
+    """Geste de repli pour les étapes historiques qui n'ont pas encore été
+    découpées en gestes : l'étape elle-même sert d'unique geste."""
+    def __init__(self, etape):
+        self.numero = 1
+        self.titre = etape.titre
+        self.description = etape.description
+        self.video_url = None
+        self.pieces = PiecePatron.objects.none()
+
+
+def _gestes_for_etape(etape):
+    gestes = list(etape.gestes.order_by('numero'))
+    return gestes if gestes else [_VirtualGeste(etape)]
+
+
+# Couleurs de surbrillance des pièces actives (fond, texte sur fond, texte du
+# badge blanc), dans l'ordre d'attribution — identiques à la palette utilisée
+# pour numéroter les pièces dans la fiche patron (patron_detail.html).
+_PIECE_PALETTE = [
+    ('#7C5CFF', '#fff', '#5B3BE0'),
+    ('#1FA85C', '#fff', '#0F7A3E'),
+    ('#FFC93C', '#5A3A0E', '#5A3A0E'),
+    ('#3B5FC0', '#fff', '#22407A'),
+    ('#A24A33', '#fff', '#7A3125'),
+]
+
+
 @login_required
-def etape_projet(request, patron_pk, etape_num):
+def etape_projet(request, patron_pk, etape_num, geste_num=1):
     patron = get_object_or_404(Patron, pk=patron_pk)
     etapes = list(patron.etapes.order_by('numero'))
 
@@ -1484,25 +1617,15 @@ def etape_projet(request, patron_pk, etape_num):
     if etape_num < 1 or etape_num > len(etapes):
         return redirect('patron_detail', pk=patron_pk)
 
+    total_etapes = len(etapes)
     etape_index = etape_num - 1
     etape_actuelle = etapes[etape_index]
-    total = len(etapes)
 
-    progression = round((etape_num / total) * 100)
-
-    etape_precedente = etapes[etape_index - 1] if etape_index > 0 else None
-    etape_suivante = etapes[etape_index + 1] if etape_index < total - 1 else None
-
-    materiaux_list = (
-        [m.strip() for m in etape_actuelle.materiaux_etape.split(',') if m.strip()]
-        if etape_actuelle.materiaux_etape else []
-    )
-
-    video_embed_id = None
-    if etape_actuelle.video_url:
-        match = re.search(r'(?:v=|youtu\.be/)([A-Za-z0-9_-]{11})', etape_actuelle.video_url)
-        if match:
-            video_embed_id = match.group(1)
+    gestes_actuels = _gestes_for_etape(etape_actuelle)
+    total_gestes = len(gestes_actuels)
+    if geste_num < 1 or geste_num > total_gestes:
+        return redirect('etape_projet_geste', patron_pk=patron_pk, etape_num=etape_num, geste_num=1)
+    geste_actuel = gestes_actuels[geste_num - 1]
 
     # Vérification souple : on ne peut pas démarrer un nouveau projet sans e-mail
     # vérifié. Un projet déjà commencé reste accessible.
@@ -1510,27 +1633,161 @@ def etape_projet(request, patron_pk, etape_num):
     if not projet_existant and not request.user.email_verifie:
         return redirect(reverse('patron_detail', kwargs={'pk': patron_pk}) + '?verif_requise=1')
 
-    # Sauvegarde / mise à jour de la progression
+    # Sauvegarde / mise à jour de la progression (ne recule jamais)
     prog, created = ProgressionProjet.objects.get_or_create(
         utilisateur=request.user,
         patron=patron,
-        defaults={'etape_actuelle': etape_num},
+        defaults={'etape_actuelle': etape_num, 'geste_actuelle': geste_num},
     )
-    if not created and etape_num > prog.etape_actuelle:
+    if not created and (etape_num, geste_num) > (prog.etape_actuelle, prog.geste_actuelle):
         prog.etape_actuelle = etape_num
+        prog.geste_actuelle = geste_num
         prog.save()
+
+    # ── Navigation : geste/étape précédent(e) ──
+    if geste_num > 1:
+        prev_url = reverse('etape_projet_geste', kwargs={
+            'patron_pk': patron_pk, 'etape_num': etape_num, 'geste_num': geste_num - 1,
+        })
+    elif etape_index > 0:
+        etape_prec = etapes[etape_index - 1]
+        nb_gestes_prec = len(_gestes_for_etape(etape_prec))
+        prev_url = reverse('etape_projet_geste', kwargs={
+            'patron_pk': patron_pk, 'etape_num': etape_num - 1, 'geste_num': nb_gestes_prec,
+        })
+    else:
+        prev_url = reverse('patron_detail', kwargs={'pk': patron_pk})
+
+    # ── Navigation : geste/étape suivant(e), ou fin du projet ──
+    est_dernier_geste_etape = geste_num >= total_gestes
+    est_derniere_etape = etape_num >= total_etapes
+    est_derniere = est_dernier_geste_etape and est_derniere_etape
+
+    if not est_dernier_geste_etape:
+        next_url = reverse('etape_projet_geste', kwargs={
+            'patron_pk': patron_pk, 'etape_num': etape_num, 'geste_num': geste_num + 1,
+        })
+        next_label = 'Geste suivant'
+    elif not est_derniere_etape:
+        next_url = reverse('etape_projet_geste', kwargs={
+            'patron_pk': patron_pk, 'etape_num': etape_num + 1, 'geste_num': 1,
+        })
+        next_label = 'Étape suivante'
+    else:
+        next_url = reverse('terminer_projet', kwargs={'pk': patron_pk})
+        next_label = 'Terminer le projet'
+
+    # ── Barre de progression segmentée : une pastille par étape, celle de
+    #    l'étape courante sous-divisée par ses gestes. ──
+    progress_segments = []
+    for e in etapes:
+        if e.numero < etape_actuelle.numero:
+            progress_segments.append({'state': 'done', 'sub': None})
+        elif e.numero > etape_actuelle.numero:
+            progress_segments.append({'state': 'upcoming', 'sub': None})
+        else:
+            sub = [g <= geste_num for g in range(1, total_gestes + 1)]
+            progress_segments.append({'state': 'current', 'sub': sub})
+
+    # ── Pièces du patron : toutes affichées, chacune avec une couleur stable
+    #    (attribuée par position, comme dans la fiche patron) pour rester
+    #    reconnaissable partout — y compris dans les jetons [[piece:i]] posés
+    #    dans le texte de la consigne. Seules celles utilisées dans ce geste
+    #    sont mises en avant (couleur pleine) ; les autres restent neutres. ──
+    pieces_actives_ids = set(geste_actuel.pieces.values_list('id', flat=True))
+    pieces_display = []
+    for idx, piece in enumerate(patron.pieces.all()):
+        bg, fg, badge_fg = _PIECE_PALETTE[idx % len(_PIECE_PALETTE)]
+        pieces_display.append({
+            'piece': piece, 'active': piece.id in pieces_actives_ids,
+            'bg': bg, 'fg': fg, 'badge_fg': badge_fg,
+        })
+
+    # ── Déroulement des étapes (pop-up « afficher les étapes ») : chaque
+    #    étape avec son statut (faite / en cours / à venir) ; l'étape en
+    #    cours est développée avec le détail de chacun de ses gestes. ──
+    piece_color_by_id = {}
+    piece_number_by_id = {}
+    for idx, pd in enumerate(pieces_display, start=1):
+        piece_color_by_id[pd['piece'].id] = (pd['bg'], pd['fg'])
+        piece_number_by_id[pd['piece'].id] = idx
+
+    overview_etapes = []
+    for e in etapes:
+        entry = {
+            'etape': e,
+            'is_done': e.numero < etape_actuelle.numero,
+            'is_current': e.numero == etape_actuelle.numero,
+        }
+        e_gestes = _gestes_for_etape(e)
+        entry['nb_gestes'] = len(e_gestes)
+        if entry['is_current']:
+            gestes_rows = []
+            for g in e_gestes:
+                first_piece = g.pieces.first()
+                badge_bg = badge_fg = badge_num = None
+                if first_piece and first_piece.id in piece_color_by_id:
+                    badge_bg, badge_fg = piece_color_by_id[first_piece.id]
+                    badge_num = piece_number_by_id[first_piece.id]
+                gestes_rows.append({
+                    'geste': g,
+                    'is_done': g.numero < geste_num,
+                    'is_current': g.numero == geste_num,
+                    'first_piece': first_piece,
+                    'badge_bg': badge_bg, 'badge_fg': badge_fg, 'badge_num': badge_num,
+                })
+            entry['gestes_rows'] = gestes_rows
+        overview_etapes.append(entry)
+
+    # ── Plan de coupe figé : placement validé lors de la vérification de
+    #    faisabilité (faisabilite_patron → « Valider »), réaffiché en lecture
+    #    seule dans la pop-up « Plan ». Même sérialisation que l'outil
+    #    interactif pour réutiliser exactement le même rendu client. ──
+    plan_row = PlanDeCoupe.objects.filter(utilisateur=request.user, patron=patron).first()
+    plan_donnees = (plan_row.donnees if plan_row else None) or {}
+    plan_placed = plan_donnees.get('pieces') or []
+    plan_garment_ids = plan_donnees.get('garment_ids') or []
+
+    if plan_garment_ids:
+        plan_vetements_qs = Vetement.objects.filter(utilisateur=request.user, id__in=plan_garment_ids)
+    else:
+        plan_vetements_qs = prog.vetements_projet.all()
+    plan_garments = _serialize_garments_coupe(plan_vetements_qs)
+
+    plan_data = {
+        'pieces': _serialize_pieces_coupe(patron),
+        'garments': plan_garments,
+        'placed': plan_placed,
+        'active_piece_ids': [pd['piece'].id for pd in pieces_display if pd['active']],
+    }
+    has_plan_coupe = bool(plan_placed) and bool(plan_garments)
+
+    # ── Mini-repère précédent/suivant pour la pop-up Plan ──
+    geste_precedent = gestes_actuels[geste_num - 2] if geste_num > 1 else None
+    geste_suivant = gestes_actuels[geste_num] if geste_num < total_gestes else None
+    progression_globale = round(((etape_num - 1) + geste_num / total_gestes) / total_etapes * 100)
 
     context = {
         'patron': patron,
         'etape': etape_actuelle,
         'etape_num': etape_num,
-        'total_etapes': total,
-        'progression': progression,
-        'etape_precedente_num': etape_num - 1 if etape_precedente else None,
-        'etape_suivante_num': etape_num + 1 if etape_suivante else None,
-        'materiaux_list': materiaux_list,
-        'video_embed_id': video_embed_id,
-        'est_derniere': etape_suivante is None,
+        'total_etapes': total_etapes,
+        'geste': geste_actuel,
+        'geste_num': geste_num,
+        'total_gestes': total_gestes,
+        'progress_segments': progress_segments,
+        'pieces_display': pieces_display,
+        'prev_url': prev_url,
+        'next_url': next_url,
+        'next_label': next_label,
+        'est_derniere': est_derniere,
+        'est_dernier_geste_etape': est_dernier_geste_etape,
+        'plan_data': plan_data,
+        'has_plan_coupe': has_plan_coupe,
+        'overview_etapes': overview_etapes,
+        'geste_precedent': geste_precedent,
+        'geste_suivant': geste_suivant,
+        'progression_globale': progression_globale,
     }
     return render(request, 'core/etape_projet.html', context)
 

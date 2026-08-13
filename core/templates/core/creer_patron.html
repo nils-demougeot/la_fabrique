@@ -170,6 +170,52 @@
     font-size: 13px; font-weight: 800; font-family: var(--font-title);
   }
   .block .piece-badge { background: var(--accent); }
+  .block .geste-badge { background: var(--dark-green); }
+
+  /* Gestes imbriqués dans une étape */
+  .geste-block { background: var(--bg-input2); border-color: rgba(78,108,80,0.3); }
+  .gp-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: white; border: 1.5px solid rgba(187,185,177,0.4); border-radius: 9999px;
+    padding: 7px 12px; margin: 0 6px 6px 0; font-size: 12px; font-weight: 700;
+    color: var(--text-gray); cursor: pointer; transition: all 0.15s;
+  }
+  .gp-chip.active { background: var(--dark-green); border-color: var(--dark-green); color: white; }
+  .geste-pieces-picker { display: flex; flex-wrap: wrap; }
+
+  /* Repère de pièce inséré dans le texte d'un geste */
+  .geste-piece-insert { position: relative; flex: none; }
+  .geste-insert-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: white; border: 1.5px solid rgba(187,185,177,0.4); border-radius: 9999px;
+    padding: 6px 11px; font-size: 11px; font-weight: 700; color: var(--dark-green); cursor: pointer;
+    white-space: nowrap;
+  }
+  .geste-insert-btn:hover { border-color: var(--dark-green); }
+  .geste-insert-menu {
+    display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 5;
+    background: white; border: 1.5px solid rgba(187,185,177,0.4); border-radius: 14px;
+    padding: 6px; box-shadow: 0 10px 28px rgba(0,0,0,0.14); min-width: 170px; max-height: 220px; overflow-y: auto;
+  }
+  .geste-insert-menu.is-open { display: block; }
+  .geste-insert-item {
+    display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; border-radius: 9px;
+    padding: 8px 9px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-dark); text-align: left;
+  }
+  .geste-insert-item:hover { background: var(--bg-input2); }
+  .geste-insert-num {
+    width: 18px; height: 18px; border-radius: 5px; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800; color: #fff; flex: none;
+  }
+  .geste-desc-preview {
+    display: none; background: var(--bg-input2); border-radius: 12px; padding: 10px 12px;
+    font-size: 13px; line-height: 1.5; color: var(--text-dark); white-space: pre-wrap;
+  }
+  .geste-desc-preview.has-content { display: block; }
+  .geste-desc-preview .gp-badge {
+    display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; padding: 1px 6px;
+    font-size: 11px; font-weight: 800; color: #fff; vertical-align: middle;
+  }
   .block-del {
     background: rgba(162,74,51,0.08); border: none; color: var(--accent);
     width: 32px; height: 32px; border-radius: 10px; cursor: pointer;
@@ -233,7 +279,7 @@
       <span><i class="ic fi-br-check-circle"></i></span><span id="import-name"></span><span class="fc-x" id="import-x">×</span>
     </div>
     <p class="empty-hint" id="import-note" style="display:none;">
-      Les photos (image de garde, photos d'étapes) ne sont pas réimportées : ajoute-les à nouveau si besoin.
+      Les photos (image de garde, photos d'étapes) et les vidéos de geste ne sont pas réimportées : ajoute-les à nouveau si besoin.
     </p>
   </section>
 
@@ -370,10 +416,6 @@
       <textarea class="ta" data-field="description" placeholder="Décris cette étape…"></textarea>
     </div>
     <div class="field">
-      <label>Lien vidéo YouTube <span class="hint">optionnel</span></label>
-      <input type="url" class="inp" data-field="video" placeholder="https://youtu.be/…">
-    </div>
-    <div class="field">
       <label>Conseil <span class="hint">optionnel</span></label>
       <input type="text" class="inp" data-field="conseil" placeholder="Une astuce utile…">
     </div>
@@ -384,6 +426,65 @@
       </button>
       <input type="file" class="file-img" data-field="image" accept="image/*" style="display:none;">
       <div class="step-img-prev"><img src="" alt=""></div>
+    </div>
+    <div class="field">
+      <label>Gestes de cette étape <span class="hint">optionnel — sous-étapes avec vidéo et pièces</span></label>
+      <p style="font-size:12px;color:var(--text-gray);line-height:1.4;margin:-2px 0 2px;">
+        Découpe l'étape en plusieurs gestes si besoin (ex : "plier", "repasser", "coudre"). Sans geste, l'étape est affichée telle quelle. À la fin du dernier geste, on passe à l'étape suivante.
+      </p>
+      <div class="gestes-container" style="display:flex;flex-direction:column;gap:10px;"></div>
+      <div class="empty-hint gestes-empty">Aucun geste pour l'instant.</div>
+      <button type="button" class="btn-add btn-add-geste">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Ajouter un geste
+      </button>
+      <input type="hidden" class="nb-gestes-input" value="0">
+    </div>
+  </div>
+</template>
+
+<!-- Template d'un geste (sous-étape) -->
+<template id="geste-template">
+  <div class="block geste-block">
+    <div class="block-head">
+      <div class="block-title"><span class="block-badge geste-badge geste-num">1</span> Geste</div>
+      <button type="button" class="block-del" data-del="geste" title="Supprimer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>
+    <div class="field">
+      <label>Titre du geste <span class="hint">optionnel</span></label>
+      <input type="text" class="inp" data-field="titre" placeholder="Ex : Repasser les plis">
+    </div>
+    <div class="field">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <label style="margin:0;">Instructions</label>
+        <div class="geste-piece-insert">
+          <button type="button" class="geste-insert-btn" title="Désigner une pièce précise à cet endroit du texte">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Repère de pièce
+          </button>
+          <div class="geste-insert-menu"></div>
+        </div>
+      </div>
+      <textarea class="ta geste-desc-ta" data-field="description" placeholder="Explique précisément ce geste… Place le curseur puis clique « Repère de pièce » pour désigner une pièce précise dans le texte."></textarea>
+      <div class="geste-desc-preview"></div>
+    </div>
+    <div class="field">
+      <label>Vidéo du geste <span class="hint">optionnel — jouée en fond d'écran</span></label>
+      <button type="button" class="upload-btn" data-trigger="video">
+        <span class="u-emoji"><i class="ic fi-br-video-camera"></i></span><span><span class="u-text">Ajouter une vidéo</span></span>
+      </button>
+      <input type="file" class="file-video" data-field="video" accept="video/*" style="display:none;">
+      <div class="file-chip geste-video-chip">
+        <span><i class="ic fi-br-check-circle"></i></span><span class="geste-video-name"></span><span class="fc-x" data-remove="video">×</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Pièces utilisées <span class="hint">optionnel</span></label>
+      <div class="geste-pieces-picker"></div>
+      <p class="empty-hint geste-pieces-empty" style="display:none;">Ajoute d'abord des pièces à découper ci-dessous.</p>
+      <input type="hidden" class="geste-pieces-input" data-field="pieces" value="">
     </div>
   </div>
 </template>
@@ -468,22 +569,29 @@
       const prefix = opts.prefix;
 
       function reindex() {
-        const blocks = container.querySelectorAll('.block');
+        const blocks = container.querySelectorAll(':scope > .block');
         blocks.forEach((b, idx) => {
           b.querySelector('.' + numClass).textContent = idx + 1;
-          b.querySelectorAll('[data-field]').forEach(el => { el.name = prefix + '_' + idx + '_' + el.dataset.field; });
+          b.querySelectorAll('[data-field]').forEach(el => {
+            if (opts.skipNested && el.closest(opts.skipNested)) return;
+            el.name = prefix + '_' + idx + '_' + el.dataset.field;
+          });
+          if (opts.onReindexBlock) opts.onReindexBlock(b, idx);
         });
         nbInput.value = blocks.length;
         empty.style.display = blocks.length ? 'none' : 'block';
+        if (opts.onAfterReindex) opts.onAfterReindex();
       }
 
       function add() {
         const node = template.content.firstElementChild.cloneNode(true);
         container.appendChild(node);
+        if (opts.onAdd) opts.onAdd(node);
         reindex();
+        return node;
       }
 
-      document.getElementById(opts.addBtn).addEventListener('click', add);
+      document.getElementById(opts.addBtn).addEventListener('click', () => add());
 
       // Délégation : suppression + déclencheurs upload + aperçus
       container.addEventListener('click', (e) => {
@@ -512,18 +620,248 @@
       });
 
       // Ajoute un bloc puis le renvoie (pour le pré-remplir à l'import)
-      function addAndGet() { add(); return container.lastElementChild; }
+      function addAndGet() { return add(); }
 
       return { add, addAndGet, container, reindex };
+    }
+
+    // ── Gestes : gérés à part car imbriqués dans chaque bloc étape. Les
+    //    pièces utilisées sont mémorisées par identifiant stable (pas par
+    //    position), pour rester valides si des pièces sont ajoutées /
+    //    supprimées / renommées après coup. ──
+    let pieceUidSeq = 0;
+    function nextPieceUid() { return 'p' + (++pieceUidSeq); }
+
+    function pieceBlocks() { return document.querySelectorAll('#pieces-container > .block'); }
+
+    // Même palette que l'affichage de l'étape (couleur stable par position de
+    // pièce), pour que l'aperçu du repère corresponde à ce qui sera affiché.
+    const PIECE_COLORS = ['#7C5CFF', '#1FA85C', '#FFC93C', '#3B5FC0', '#A24A33'];
+    const PIECE_COLORS_FG = ['#fff', '#fff', '#5A3A0E', '#fff', '#fff'];
+    // Reconnaît aussi bien un repère fraîchement posé (uid client, ex. "p3")
+    // qu'un repère déjà résolu venant d'un import (index numérique brut).
+    const PIECE_REF_RE = /\[\[piece:(p?\d+)\]\]/g;
+
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function uidToIndexMap() {
+      const map = {};
+      pieceBlocks().forEach((pb, idx) => { if (pb.dataset.uid) map[pb.dataset.uid] = idx; });
+      return map;
+    }
+
+    // Aperçu en direct : remplace les repères [[piece:uid]] par le même badge
+    // coloré numéroté que verra l'utilisateur sur l'écran de l'étape.
+    function renderDescPreview(block) {
+      const ta = block.querySelector('.geste-desc-ta');
+      const preview = block.querySelector('.geste-desc-preview');
+      if (!ta || !preview) return;
+      const text = ta.value || '';
+      if (!text.trim()) { preview.classList.remove('has-content'); preview.innerHTML = ''; return; }
+      const uidToIndex = uidToIndexMap();
+      let html = '';
+      let last = 0;
+      let m;
+      PIECE_REF_RE.lastIndex = 0;
+      while ((m = PIECE_REF_RE.exec(text))) {
+        html += escapeHtml(text.slice(last, m.index));
+        const ref = m[1];
+        const idx = ref.charAt(0) === 'p' ? uidToIndex[ref] : parseInt(ref, 10);
+        if (idx !== undefined && !isNaN(idx)) {
+          const c = idx % PIECE_COLORS.length;
+          html += '<span class="gp-badge" style="background:' + PIECE_COLORS[c] + ';color:' + PIECE_COLORS_FG[c] + ';">' + (idx + 1) + '</span>';
+        }
+        last = PIECE_REF_RE.lastIndex;
+      }
+      html += escapeHtml(text.slice(last));
+      preview.innerHTML = html.replace(/\n/g, '<br>');
+      preview.classList.add('has-content');
+    }
+
+    // Ferme tout menu « repère de pièce » ouvert au clic ailleurs.
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.geste-piece-insert')) return;
+      document.querySelectorAll('.geste-insert-menu.is-open').forEach(m => m.classList.remove('is-open'));
+    });
+
+    function initGesteManager(etapeBlock) {
+      const container = etapeBlock.querySelector('.gestes-container');
+      const empty = etapeBlock.querySelector('.gestes-empty');
+      const nbInput = etapeBlock.querySelector('.nb-gestes-input');
+      const addBtn = etapeBlock.querySelector('.btn-add-geste');
+      const template = document.getElementById('geste-template');
+      let etapeIdx = 0;
+
+      function reindex() {
+        const blocks = container.querySelectorAll(':scope > .geste-block');
+        blocks.forEach((b, k) => {
+          b.querySelector('.geste-num').textContent = k + 1;
+          b.querySelectorAll('[data-field]').forEach(el => {
+            el.name = 'etape_' + etapeIdx + '_geste_' + k + '_' + el.dataset.field;
+          });
+        });
+        nbInput.name = 'etape_' + etapeIdx + '_nb_gestes';
+        nbInput.value = blocks.length;
+        empty.style.display = blocks.length ? 'none' : 'block';
+      }
+
+      function refreshPiecePicker(block) {
+        const picker = block.querySelector('.geste-pieces-picker');
+        const hidden = block.querySelector('.geste-pieces-input');
+        const emptyNote = block.querySelector('.geste-pieces-empty');
+        const selected = new Set((hidden.dataset.uids || '').split(',').filter(Boolean));
+        const pblocks = pieceBlocks();
+        emptyNote.style.display = pblocks.length ? 'none' : 'block';
+        picker.innerHTML = '';
+        pblocks.forEach((pb, pIdx) => {
+          const uid = pb.dataset.uid;
+          const nameField = pb.querySelector('[data-field="nom"]');
+          const label = (nameField && nameField.value.trim()) || ('Pièce ' + (pIdx + 1));
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'gp-chip' + (selected.has(uid) ? ' active' : '');
+          chip.dataset.pieceUid = uid;
+          chip.textContent = (pIdx + 1) + ' · ' + label;
+          picker.appendChild(chip);
+        });
+        renderDescPreview(block);
+      }
+
+      function refreshAllPiecePickers() {
+        container.querySelectorAll(':scope > .geste-block').forEach(refreshPiecePicker);
+      }
+
+      function add() {
+        const node = template.content.firstElementChild.cloneNode(true);
+        container.appendChild(node);
+        refreshPiecePicker(node);
+        reindex();
+        return node;
+      }
+
+      function openInsertMenu(block) {
+        const menu = block.querySelector('.geste-insert-menu');
+        menu.innerHTML = '';
+        const pblocks = pieceBlocks();
+        if (!pblocks.length) {
+          const empty = document.createElement('div');
+          empty.className = 'hint';
+          empty.style.padding = '6px 4px';
+          empty.textContent = 'Ajoute d\'abord des pièces à découper.';
+          menu.appendChild(empty);
+        }
+        pblocks.forEach((pb, pIdx) => {
+          const nameField = pb.querySelector('[data-field="nom"]');
+          const label = (nameField && nameField.value.trim()) || ('Pièce ' + (pIdx + 1));
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'geste-insert-item';
+          item.dataset.pieceUid = pb.dataset.uid;
+          const c = pIdx % PIECE_COLORS.length;
+          item.innerHTML = '<span class="geste-insert-num" style="background:' + PIECE_COLORS[c] + ';">' + (pIdx + 1) + '</span>' + escapeHtml(label);
+          menu.appendChild(item);
+        });
+        menu.classList.add('is-open');
+      }
+
+      addBtn.addEventListener('click', (e) => { e.stopPropagation(); add(); });
+
+      container.addEventListener('click', (e) => {
+        const del = e.target.closest('.block-del');
+        if (del) { e.stopPropagation(); del.closest('.geste-block').remove(); reindex(); return; }
+        const trig = e.target.closest('[data-trigger="video"]');
+        if (trig) { e.stopPropagation(); trig.parentElement.querySelector('input[type=file]').click(); return; }
+        const rm = e.target.closest('[data-remove="video"]');
+        if (rm) {
+          e.stopPropagation();
+          const block = rm.closest('.geste-block');
+          block.querySelector('.file-video').value = '';
+          block.querySelector('.geste-video-chip').style.display = 'none';
+          block.querySelector('[data-trigger="video"] .u-text').textContent = 'Ajouter une vidéo';
+          return;
+        }
+        const chip = e.target.closest('.gp-chip');
+        if (chip) {
+          e.stopPropagation();
+          chip.classList.toggle('active');
+          const block = chip.closest('.geste-block');
+          const hidden = block.querySelector('.geste-pieces-input');
+          const uids = Array.from(block.querySelectorAll('.gp-chip.active')).map(c => c.dataset.pieceUid);
+          hidden.dataset.uids = uids.join(',');
+          return;
+        }
+        const insertBtn = e.target.closest('.geste-insert-btn');
+        if (insertBtn) {
+          e.stopPropagation();
+          const block = insertBtn.closest('.geste-block');
+          const menu = block.querySelector('.geste-insert-menu');
+          const willOpen = !menu.classList.contains('is-open');
+          document.querySelectorAll('.geste-insert-menu.is-open').forEach(m => m.classList.remove('is-open'));
+          if (willOpen) openInsertMenu(block);
+          return;
+        }
+        const insertItem = e.target.closest('.geste-insert-item');
+        if (insertItem) {
+          e.stopPropagation();
+          const block = insertItem.closest('.geste-block');
+          const ta = block.querySelector('.geste-desc-ta');
+          const token = '[[piece:' + insertItem.dataset.pieceUid + ']]';
+          const start = ta.selectionStart != null ? ta.selectionStart : ta.value.length;
+          const end = ta.selectionEnd != null ? ta.selectionEnd : ta.value.length;
+          ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
+          block.querySelector('.geste-insert-menu').classList.remove('is-open');
+          ta.focus();
+          const caret = start + token.length;
+          ta.setSelectionRange(caret, caret);
+          renderDescPreview(block);
+        }
+      });
+      container.addEventListener('input', (e) => {
+        if (!e.target.classList.contains('geste-desc-ta')) return;
+        renderDescPreview(e.target.closest('.geste-block'));
+      });
+      container.addEventListener('change', (e) => {
+        const inp = e.target;
+        if (inp.type !== 'file' || !inp.classList.contains('file-video')) return;
+        e.stopPropagation();
+        if (!inp.files[0]) return;
+        const block = inp.closest('.geste-block');
+        block.querySelector('.geste-video-name').textContent = inp.files[0].name;
+        block.querySelector('.geste-video-chip').style.display = 'flex';
+        block.querySelector('[data-trigger="video"] .u-text').textContent = 'Changer la vidéo';
+      });
+
+      etapeBlock.__gesteManager = {
+        setEtapeIdx(idx) { etapeIdx = idx; reindex(); },
+        addAndGet() { return add(); },
+        refreshAllPiecePickers,
+      };
+    }
+
+    function refreshAllGestePiecePickers() {
+      document.querySelectorAll('#steps-container > .step-block').forEach(b => {
+        if (b.__gesteManager) b.__gesteManager.refreshAllPiecePickers();
+      });
     }
 
     const stepsMgr = makeManager({
       container: 'steps-container', empty: 'steps-empty', nbInput: 'nb-etapes',
       template: 'step-template', addBtn: 'add-step', numClass: 'step-num', prefix: 'etape',
+      skipNested: '.geste-block',
+      onAdd: (block) => initGesteManager(block),
+      onReindexBlock: (block, idx) => { if (block.__gesteManager) block.__gesteManager.setEtapeIdx(idx); },
     });
     const piecesMgr = makeManager({
       container: 'pieces-container', empty: 'pieces-empty', nbInput: 'nb-pieces',
       template: 'piece-template', addBtn: 'add-piece', numClass: 'piece-num', prefix: 'piece',
+      onAdd: (block) => { block.dataset.uid = nextPieceUid(); },
+      onAfterReindex: () => refreshAllGestePiecePickers(),
+    });
+    // Renommer une pièce doit mettre à jour son libellé dans les sélecteurs de gestes.
+    document.getElementById('pieces-container').addEventListener('input', (e) => {
+      if (e.target.matches('[data-field="nom"]')) refreshAllGestePiecePickers();
     });
 
     // ── Import d'un patron (JSON) ──
@@ -579,26 +917,39 @@
       premiumCb.checked = !!p.est_premium;
       premiumInput.value = premiumCb.checked ? '1' : '0';
 
-      // Étapes : repartir d'une liste vierge
-      stepsMgr.container.innerHTML = ''; stepsMgr.reindex();
-      (data.etapes || []).forEach(e => {
-        const block = stepsMgr.addAndGet();
-        setBlockField(block, 'titre', e.titre);
-        setBlockField(block, 'description', e.description);
-        setBlockField(block, 'video', e.video_url);
-        setBlockField(block, 'conseil', e.conseil);
-        setBlockField(block, 'materiaux', e.materiaux_etape);
-      });
-
-      // Pièces
+      // Pièces d'abord : les gestes des étapes y font référence par index.
       piecesMgr.container.innerHTML = ''; piecesMgr.reindex();
+      const pieceUidByIndex = [];
       (data.pieces || []).forEach(pc => {
         const block = piecesMgr.addAndGet();
+        pieceUidByIndex.push(block.dataset.uid);
         setBlockField(block, 'nom', pc.nom);
         setBlockField(block, 'quantite', pc.quantite);
         setBlockField(block, 'largeur', pc.largeur_cm);
         setBlockField(block, 'hauteur', pc.hauteur_cm);
         if (pc.svg) setSvgFile(block, pc.svg, pc.nom);
+      });
+      refreshAllGestePiecePickers();
+
+      // Étapes et leurs gestes : repartir d'une liste vierge
+      stepsMgr.container.innerHTML = ''; stepsMgr.reindex();
+      (data.etapes || []).forEach(e => {
+        const block = stepsMgr.addAndGet();
+        setBlockField(block, 'titre', e.titre);
+        setBlockField(block, 'description', e.description);
+        setBlockField(block, 'conseil', e.conseil);
+        setBlockField(block, 'materiaux', e.materiaux_etape);
+        const gm = block.__gesteManager;
+        (e.gestes || []).forEach(g => {
+          const gblock = gm.addAndGet();
+          setBlockField(gblock, 'titre', g.titre);
+          setBlockField(gblock, 'description', g.description);
+          const uids = (g.pieces || []).map(idx => pieceUidByIndex[idx]).filter(Boolean);
+          if (uids.length) {
+            gblock.querySelector('.geste-pieces-input').dataset.uids = uids.join(',');
+          }
+          gm.refreshAllPiecePickers();
+        });
       });
     }
 
@@ -625,6 +976,26 @@
       importInput.value = '';
       importChip.style.display = 'none';
       importNote.style.display = 'none';
+    });
+
+    // ── Envoi du formulaire : convertir les identifiants stables de pièces
+    //    sélectionnées dans chaque geste en index de position (l'ordre dans
+    //    lequel le serveur recrée les pièces), juste avant la soumission. ──
+    document.getElementById('patron-form').addEventListener('submit', () => {
+      const uidToIndex = uidToIndexMap();
+      document.querySelectorAll('.geste-pieces-input').forEach(inp => {
+        const uids = (inp.dataset.uids || '').split(',').filter(Boolean);
+        inp.value = uids.map(u => uidToIndex[u]).filter(i => i !== undefined).join(',');
+      });
+      // Repères [[piece:uid]] posés dans le texte → [[piece:index]] côté serveur
+      // (les repères déjà résolus, ex. réimportés, sont laissés tels quels).
+      document.querySelectorAll('.geste-desc-ta').forEach(ta => {
+        ta.value = ta.value.replace(PIECE_REF_RE, (whole, ref) => {
+          if (ref.charAt(0) !== 'p') return whole;
+          const idx = uidToIndex[ref];
+          return idx !== undefined ? '[[piece:' + idx + ']]' : '';
+        });
+      });
     });
   })();
 </script>

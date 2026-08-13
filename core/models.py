@@ -12,6 +12,15 @@ def raw_media_storage():
         return RawMediaCloudinaryStorage()
     return default_storage
 
+
+def video_media_storage():
+    """Stockage pour les vidéos de geste : Cloudinary 'video' si configuré,
+    sinon le stockage par défaut (système de fichiers en local)."""
+    if getattr(settings, 'CLOUDINARY_URL', None):
+        from cloudinary_storage.storage import VideoMediaCloudinaryStorage
+        return VideoMediaCloudinaryStorage()
+    return default_storage
+
 class Utilisateur(AbstractUser):
     consentementRGPD = models.BooleanField(default=False)
     # Date à laquelle l'utilisateur a accepté la politique de confidentialité (preuve RGPD).
@@ -174,7 +183,6 @@ class EtapePatron(models.Model):
     numero = models.IntegerField()
     titre = models.CharField(max_length=200)
     description = models.TextField()
-    video_url = models.CharField(max_length=500, blank=True, null=True)
     conseil = models.TextField(blank=True, null=True)
     materiaux_etape = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to='patrons/etapes/', null=True, blank=True)
@@ -198,16 +206,8 @@ class EtapePatron(models.Model):
             return None
 
     @property
-    def youtube_embed_url(self):
-        """Transforme un lien YouTube en URL d'intégration (embed), ou None."""
-        url = (self.video_url or '').strip()
-        if not url:
-            return None
-        import re
-        m = re.search(r'(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([\w-]{11})', url)
-        if m:
-            return f'https://www.youtube.com/embed/{m.group(1)}'
-        return None
+    def has_video(self):
+        return self.gestes.exclude(video='').exists()
 
 
 class PiecePatron(models.Model):
@@ -244,10 +244,70 @@ class PiecePatron(models.Model):
             return None
 
 
+class GestePatron(models.Model):
+    """Un geste : sous-étape d'une EtapePatron. Une étape peut être découpée
+    en plusieurs gestes, chacun avec sa propre vidéo et ses propres pièces
+    utilisées. À la fin du dernier geste d'une étape, on passe à l'étape
+    suivante."""
+    etape = models.ForeignKey(EtapePatron, on_delete=models.CASCADE, related_name='gestes')
+    numero = models.IntegerField()
+    titre = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=True)
+    video = models.FileField(
+        upload_to='patrons/gestes/videos/', null=True, blank=True,
+        storage=video_media_storage,
+        help_text="Vidéo du geste, jouée en fond d'écran pendant l'étape."
+    )
+    pieces = models.ManyToManyField(PiecePatron, blank=True, related_name='gestes')
+
+    class Meta:
+        ordering = ['numero']
+
+    def __str__(self):
+        return f"Geste {self.numero} - {self.etape.titre} ({self.etape.patron.titre})"
+
+    @property
+    def video_url(self):
+        if not self.video:
+            return None
+        name = self.video.name or ''
+        if name.startswith('http'):
+            return name
+        try:
+            return self.video.url
+        except (ValueError, AttributeError):
+            return None
+
+
+class PlanDeCoupe(models.Model):
+    """Placement figé des pièces sur le(s) tissu(s), validé lors de la
+    vérification de faisabilité (faisabilite_patron). Sert à réafficher, en
+    lecture seule, le plan de coupe choisi par l'utilisateur (page « Plan »
+    de l'étape en cours) sans avoir à tout replacer.
+
+    donnees = {
+        "garment_ids": [id, ...],
+        "pieces": [{"piece_id": int, "gid": int, "x": float, "y": float, "rot": float}, ...],
+    }
+    x/y = centre de la pièce en cm, dans le repère du tissu (gid) ; rot en degrés.
+    """
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='plans_coupe')
+    patron = models.ForeignKey(Patron, on_delete=models.CASCADE, related_name='plans_coupe')
+    donnees = models.JSONField(default=dict, blank=True)
+    date_maj = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('utilisateur', 'patron')
+
+    def __str__(self):
+        return f"Plan de coupe – {self.utilisateur.username} – {self.patron.titre}"
+
+
 class ProgressionProjet(models.Model):
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='progressions')
     patron = models.ForeignKey(Patron, on_delete=models.CASCADE, related_name='progressions')
     etape_actuelle = models.IntegerField(default=1)
+    geste_actuelle = models.IntegerField(default=1)
     date_debut = models.DateTimeField(auto_now_add=True)
     date_derniere_activite = models.DateTimeField(auto_now=True)
     termine = models.BooleanField(default=False)
