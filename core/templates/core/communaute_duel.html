@@ -1,0 +1,194 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  45f — Duel en cours. S'ouvre en tapant la carte de duel actif (onglet Amis).
+  En-tête sombre avec le face-à-face, puis la liste des pièces comptées.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cd-entete {
+    background: radial-gradient(120% 80% at 50% 0%, #4A1E0C 0%, #1D1A14 58%, #14120F 100%);
+    border-radius: 0 0 34px 34px;
+    padding-bottom: 24px;
+    flex: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .cm .cd-entete-glow {
+    position: absolute; top: -70px; left: 50%;
+    transform: translateX(-50%);
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,107,61,.4) 0%, rgba(255,107,61,0) 70%);
+  }
+  .cd-entete > * { position: relative; }
+  .cd-chrono {
+    display: flex; align-items: center; gap: 7px;
+    background: rgba(255,107,61,.24);
+    border: 1px solid rgba(255,138,76,.4);
+    box-sizing: border-box;
+    border-radius: 999px;
+    padding: 6px 12px;
+    color: var(--orange-p);
+  }
+  .cd-chrono span { font: 500 9px var(--mono); letter-spacing: .1em; }
+
+  .cd-face { display: flex; align-items: flex-end; justify-content: center; gap: 16px; padding: 20px 22px 0; }
+  .cd-camp { flex: 1; text-align: center; min-width: 0; }
+  .cd-avatar {
+    width: 76px; height: 76px;
+    border-radius: 50%;
+    padding: 4px;
+    box-sizing: border-box;
+    display: flex;
+    margin: 0 auto;
+  }
+  .cd-avatar > span {
+    flex: 1;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font: 800 22px var(--display);
+  }
+  .cd-nom { font: 800 13px var(--display); color: #fff; margin-top: 10px; }
+  .cd-score { font: 800 34px var(--display); line-height: 1; margin-top: 6px; }
+  .cd-vs { flex: none; padding-bottom: 34px; font: 500 11px var(--mono); letter-spacing: .16em; color: var(--dim); }
+
+  .cd-barres { display: flex; gap: 5px; }
+  .cd-piste {
+    flex: 1; height: 12px;
+    border-radius: 7px;
+    background: rgba(255,255,255,.12);
+    overflow: hidden;
+  }
+  .cd-piste.is-moi { transform: scaleX(-1); }
+  .cd-jauge { height: 100%; border-radius: 7px; }
+  .cd-mise {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    background: rgba(255,201,60,.16);
+    border-radius: 12px;
+    padding: 7px 12px;
+    margin: 14px auto 0;
+    width: fit-content;
+  }
+  .cd-mise span { font: 800 11px var(--display); color: var(--gold-t); }
+
+  .cd-piece {
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 24px;
+    padding: 16px 18px;
+    display: flex; align-items: center; gap: 13px;
+  }
+  .cd-piece + .cd-piece { margin-top: 10px; }
+  .cd-piece-titre { font: 800 14px var(--display); }
+  .cd-piece-meta { font: 400 11.5px var(--text); color: var(--muted); margin-top: 3px; }
+  .cd-piece-point {
+    border-radius: 11px;
+    padding: 5px 9px;
+    font: 800 10px var(--display);
+    flex: none;
+  }
+  .cd-piece-point.est-moi { background: var(--green-l); color: var(--green-d); }
+  .cd-piece-point.est-elle { background: var(--orange-l); color: #B03A12; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm has-cta">
+
+  {# ══ Face-à-face ══ #}
+  <header class="cd-entete">
+    <span class="cd-entete-glow" aria-hidden="true"></span>
+
+    <div class="cm-topbar is-dark">
+      <a href="{% url 'communaute' %}?onglet=amis" class="cm-back" aria-label="Retour">
+        {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+      </a>
+      <span class="cd-chrono">
+        {% include 'core/communaute/_icones.html' with icone='eclair' taille=12 %}
+        <span>{{ heures_restantes }} H RESTANTES</span>
+      </span>
+      <span class="cm-back-ghost" aria-hidden="true"></span>
+    </div>
+
+    <div class="cd-face">
+      <div class="cd-camp">
+        <div class="cd-avatar" style="background:linear-gradient(150deg,#4FD08A,#12633A);box-shadow:0 0 24px rgba(31,168,92,.5)">
+          <span style="background:#123A28;color:#fff">{{ user|initiales }}</span>
+        </div>
+        <div class="cd-nom">Toi</div>
+        <div class="cd-score" style="color:var(--green-pale)">{{ mon_score }}</div>
+      </div>
+
+      <div class="cd-vs">VS</div>
+
+      <div class="cd-camp">
+        <div class="cd-avatar" style="background:linear-gradient(150deg,#FFE7DE,#F3A183)">
+          <span style="background:#3A1B0D;color:#FFE7DE">{{ adversaire|initiales }}</span>
+        </div>
+        <a href="{% url 'communaute_profil' adversaire.pk %}" class="cd-nom cm-nom-lien" style="display:block">{{ adversaire|prenom }}</a>
+        <div class="cd-score" style="color:var(--orange-p)">{{ son_score }}</div>
+      </div>
+    </div>
+
+    <div style="padding:16px 22px 0">
+      <div class="cd-barres">
+        <div class="cd-piste is-moi">
+          <div class="cd-jauge" style="width:{{ ma_barre }}%;background:linear-gradient(90deg,#12633A,#4FD08A)"></div>
+        </div>
+        <div class="cd-piste">
+          <div class="cd-jauge" style="width:{{ sa_barre }}%;background:linear-gradient(90deg,#FF6B3D,#FF9B4C)"></div>
+        </div>
+      </div>
+      <div class="cd-mise">
+        {% include 'core/communaute/_icones.html' with icone='piece-plate' taille=13 %}
+        <span>Mise : {{ duel.mise_pieces }} pièces · +{{ duel.xp_gain }} XP</span>
+      </div>
+    </div>
+  </header>
+
+  {# ══ Pièces comptées ══ #}
+  <section style="padding:20px 20px 0;flex:none">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;gap:10px">
+      <span style="font:800 18px var(--display)">Les pièces comptées</span>
+      <span class="cm-section-meta">DEPUIS {{ duel.date_debut|date:"l"|upper }}</span>
+    </div>
+
+    {% for piece in pieces_comptees %}
+      <div class="cd-piece">
+        <span class="cm-motif m-{{ piece.motif }}" style="width:44px;height:44px;border-radius:15px;flex:none"></span>
+        <div style="flex:1;min-width:0">
+          <div class="cd-piece-titre">{{ piece.titre }}</div>
+          <div class="cd-piece-meta">
+            {% if piece.utilisateur_id == user.pk %}Toi{% else %}<a href="{% url 'communaute_profil' piece.utilisateur.pk %}" class="cm-nom-lien">{{ piece.utilisateur|prenom }}</a>{% endif %}
+            · {{ piece.date_ajout|date:"l" }} · {{ piece.surface_m2 }} m²
+          </div>
+        </div>
+        <span class="cd-piece-point {% if piece.utilisateur_id == user.pk %}est-moi{% else %}est-elle{% endif %}">+1</span>
+      </div>
+    {% empty %}
+      <div class="cm-vide" style="margin:0">
+        Aucune pièce comptée pour l'instant. Le premier à coudre prend l'avantage.
+      </div>
+    {% endfor %}
+  </section>
+
+  {# ══ Action ══ #}
+  <div class="cm-cta">
+    <div style="display:flex;gap:10px">
+      <a href="{% url 'patrons' %}"
+         style="flex:1;background:linear-gradient(120deg,#FF8A4C,#E1552A);color:#fff;border-radius:26px;text-align:center;padding:19px 0;font:800 17px var(--display)">
+        Coudre maintenant
+      </a>
+      <a href="{% url 'communaute' %}?onglet=entraide"
+         style="width:58px;flex:none;background:var(--sand);border-radius:22px;display:flex;align-items:center;justify-content:center;color:var(--ink)">
+        {% include 'core/communaute/_icones.html' with icone='bulle' taille=21 %}
+      </a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

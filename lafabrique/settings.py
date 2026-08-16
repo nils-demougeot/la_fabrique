@@ -217,9 +217,11 @@ LOGOUT_REDIRECT_URL = 'home'
 LOGIN_URL = 'connexion'
 
 # ── Fonctionnalités (feature flags) ─────────────────────────────────────────
-# Communauté désactivée pendant la phase de bêta test. Pour la réactiver :
-# définir COMMUNAUTE_ACTIVE=True dans l'environnement (aucune autre modif requise).
-COMMUNAUTE_ACTIVE = _env_bool('COMMUNAUTE_ACTIVE', False)
+# Communauté « atelier » (onglet Partage). Ouverte par défaut depuis la
+# refonte des écrans 37a/46a/46b. Pour la refermer (bêta, incident…) :
+# définir COMMUNAUTE_ACTIVE=False dans l'environnement — les vues et les URL
+# restent en place, seul l'accès est bloqué.
+COMMUNAUTE_ACTIVE = _env_bool('COMMUNAUTE_ACTIVE', True)
 
 # Détourage automatique par segmentation IA (rembg) côté serveur.
 # À False : pas de détection automatique, l'utilisateur place les points à la

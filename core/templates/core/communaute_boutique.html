@@ -1,0 +1,449 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  45c — Boutique de pièces. S'ouvre en tapant le compteur de pièces de la
+  carte d'atelier. En-tête encre avec le solde, offre du jour, patrons,
+  bonus de série, écussons, achats récents.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cb-entete {
+    background: linear-gradient(150deg, #2A2110 0%, #14120F 70%);
+    border-radius: 0 0 34px 34px;
+    padding-bottom: 22px;
+    flex: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .cm .cb-entete-glow {
+    position: absolute; top: -70px; right: -50px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,201,60,.35) 0%, rgba(255,201,60,0) 70%);
+  }
+  .cb-entete > * { position: relative; }
+  .cb-solde {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 22px 0;
+  }
+  .cb-solde-icone { flex: none; display: flex; filter: drop-shadow(0 6px 14px rgba(184,120,0,.5)); }
+  .cb-solde-nombre {
+    font: 800 34px var(--display);
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -.02em;
+  }
+  .cb-solde-legende {
+    font: 500 9px var(--mono);
+    color: var(--gold-t);
+    letter-spacing: .12em;
+    margin-top: 6px;
+  }
+  .cb-gagner {
+    background: rgba(255,255,255,.1);
+    color: #fff;
+    border-radius: 14px;
+    padding: 10px 12px;
+    font: 800 11px var(--display);
+    flex: none;
+  }
+  .cb-semaine {
+    display: flex; align-items: center; gap: 6px;
+    padding: 14px 22px 0;
+    font: 500 9.5px var(--mono);
+    color: var(--dim);
+    letter-spacing: .04em;
+  }
+
+  /* ── Offre du jour ── */
+  .cb-offre {
+    background: linear-gradient(140deg, #FFEFC2, #FFFDF8 78%);
+    border: 1.5px solid var(--yellow);
+    box-sizing: border-box;
+    border-radius: 26px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cm .cb-offre-glow {
+    position: absolute; top: -50px; right: -30px;
+    width: 150px; height: 150px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,201,60,.4) 0%, rgba(255,201,60,0) 70%);
+  }
+  .cb-offre > * { position: relative; }
+  .cb-offre-marque {
+    background: var(--ink);
+    color: var(--yellow);
+    border-radius: 10px;
+    padding: 4px 9px;
+    font: 800 9.5px var(--display);
+  }
+  .cb-offre-chrono { font: 500 9px var(--mono); color: #8A6200; letter-spacing: .08em; }
+  .cb-offre-titre { font: 800 16px/1.25 var(--display); }
+  .cb-offre-prix { font: 800 15px var(--display); color: #8A6200; }
+  .cb-offre-barre { font: 500 11px var(--mono); color: var(--faint); text-decoration: line-through; }
+  .cb-offre-cta {
+    background: var(--ink);
+    color: #fff;
+    border: 0;
+    border-radius: 15px;
+    padding: 12px 14px;
+    font: 800 12px var(--display);
+    flex: none;
+    cursor: pointer;
+  }
+
+  /* ── Grille de patrons ── */
+  .cb-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cb-article {
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 22px;
+    padding: 14px;
+  }
+  .cb-article.is-verrouille { opacity: .7; }
+  .cb-article-visuel { width: 100%; height: 78px; border-radius: 15px; }
+  .cb-article-visuel.is-verrou {
+    background: var(--sand);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--stone);
+  }
+  .cb-article-nom { font: 800 13.5px/1.25 var(--display); margin-top: 11px; }
+  .cb-article-cond { font: 400 11px var(--text); color: var(--muted); margin-top: 8px; }
+  .cb-prix { display: flex; align-items: center; gap: 5px; }
+  .cb-prix span { font: 800 13px var(--display); }
+  .cb-prendre {
+    background: var(--ink);
+    color: #fff;
+    border: 0;
+    border-radius: 12px;
+    padding: 7px 10px;
+    font: 800 10.5px var(--display);
+    cursor: pointer;
+  }
+
+  /* ── Rails (gels, écussons) ── */
+  .cb-rail { gap: 10px; padding: 2px 20px 4px; }
+  .cb-carte {
+    width: 130px; flex: none;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 22px;
+    padding: 16px;
+    text-align: center;
+    position: relative;
+  }
+  .cb-carte.is-verrouille { opacity: .7; }
+  .cb-remise {
+    position: absolute; top: 10px; right: 10px;
+    background: var(--green-l);
+    color: var(--green-d);
+    border-radius: 8px;
+    padding: 3px 6px;
+    font: 800 8.5px var(--display);
+  }
+  .cb-carte-nom { font: 800 13px var(--display); margin-top: 10px; }
+  .cb-carte-cond { font: 400 10.5px var(--text); color: var(--muted); margin-top: 9px; }
+  .cb-carte-prix {
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    margin-top: 9px;
+  }
+  .cb-carte-prix span { font: 800 12px var(--display); }
+  .cb-carte-cta {
+    display: block;
+    width: 100%;
+    background: var(--ink);
+    color: #fff;
+    border: 0;
+    border-radius: 12px;
+    padding: 8px 0;
+    margin-top: 11px;
+    font: 800 10.5px var(--display);
+    cursor: pointer;
+  }
+  .cb-gel-pile { display: flex; justify-content: center; }
+  .cb-ecusson-rond {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    margin: 0 auto;
+  }
+
+  /* ── Achats récents ── */
+  .cb-achat {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 20px;
+    padding: 12px 14px;
+  }
+  .cb-achat + .cb-achat { margin-top: 8px; }
+  .cb-achat-icone {
+    width: 38px; height: 38px;
+    border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  .cb-achat-nom { font: 700 13px var(--text); }
+  .cb-achat-date { font: 400 11px var(--text); color: var(--muted); margin-top: 2px; }
+  .cb-achat-montant { font: 500 11px var(--mono); color: var(--faint); flex: none; }
+  .cb-achat-montant.est-gain { color: var(--green); }
+
+  /* ── Pied : gagner des pièces (→ 45i) ── */
+  .cb-gagner-carte {
+    background: var(--ink);
+    border-radius: 24px;
+    padding: 16px 18px;
+    display: flex; align-items: center; gap: 13px;
+  }
+  .cb-gagner-marque {
+    width: 40px; height: 40px;
+    border-radius: 14px;
+    background: rgba(255,201,60,.16);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--yellow);
+    flex: none;
+  }
+  .cb-gagner-titre { font: 800 14px var(--display); color: #fff; }
+  .cb-gagner-detail { font: 400 11.5px var(--text); color: var(--dim-2); margin-top: 4px; }
+  .cb-gagner-cta {
+    background: var(--yellow);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 10px 12px;
+    font: 800 11.5px var(--display);
+    flex: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm" style="padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px))">
+
+  {# ══ En-tête : solde ══ #}
+  <header class="cb-entete">
+    <span class="cb-entete-glow" aria-hidden="true"></span>
+
+    <div class="cm-topbar is-dark">
+      <a href="{% url 'communaute' %}" class="cm-back" aria-label="Retour">
+        {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+      </a>
+      <span class="cm-topbar-label">BOUTIQUE</span>
+      <span class="cm-back" aria-hidden="true">
+        {% include 'core/communaute/_icones.html' with icone='reglages' %}
+      </span>
+    </div>
+
+    <div class="cb-solde">
+      <span class="cb-solde-icone">
+        {% include 'core/communaute/_icones.html' with icone='piece' taille=56 uid='boutique' %}
+      </span>
+      <div style="flex:1;min-width:0">
+        <div class="cb-solde-nombre">{{ user.soldePieces|espace_millier }}</div>
+        <div class="cb-solde-legende">PIÈCES DISPONIBLES</div>
+      </div>
+      <a href="{% url 'communaute_quetes' %}" class="cb-gagner">Gagner +</a>
+    </div>
+
+    <div class="cb-semaine">
+      {% include 'core/communaute/_icones.html' with icone='eclair' taille=13 %}
+      <span style="color:var(--yellow);display:flex"></span>
+      +{{ pieces_gagnees_semaine }} pièces gagnées cette semaine
+    </div>
+  </header>
+
+  {# ══ Catégories ══ #}
+  <div class="cm-rail" style="gap:7px;padding:18px 20px 0;flex:none">
+    <a href="?cat=tout" class="cm-chip" {% if categorie == 'tout' %}aria-current="true"{% endif %}>Tout</a>
+    <a href="?cat=patron" class="cm-chip" {% if categorie == 'patron' %}aria-current="true"{% endif %}>Patrons</a>
+    <a href="?cat=gel" class="cm-chip" {% if categorie == 'gel' %}aria-current="true"{% endif %}>Bonus de série</a>
+    <a href="?cat=ecusson" class="cm-chip" {% if categorie == 'ecusson' %}aria-current="true"{% endif %}>Écussons</a>
+  </div>
+
+  {# ══ Offre du jour ══ #}
+  {% if offre_du_jour and categorie == 'tout' %}
+  <section style="padding:18px 20px 0;flex:none">
+    <div class="cb-offre">
+      <span class="cb-offre-glow" aria-hidden="true"></span>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <span class="cb-offre-marque">OFFRE DU JOUR</span>
+        {% if heures_restantes %}<span class="cb-offre-chrono">{{ heures_restantes }} H RESTANTES</span>{% endif %}
+      </div>
+      <form method="post" action="{% url 'communaute_acheter' offre_du_jour.pk %}"
+            style="display:flex;align-items:center;gap:14px;margin-top:14px">
+        {% csrf_token %}
+        <span class="cm-motif m-{{ offre_du_jour.motif }}"
+              style="width:66px;height:66px;border-radius:20px;flex:none;box-shadow:0 8px 18px rgba(20,18,15,.18)"></span>
+        <span style="flex:1;min-width:0">
+          <span class="cb-offre-titre" style="display:block">{{ offre_du_jour.nom }}</span>
+          <span style="display:flex;align-items:center;gap:8px;margin-top:8px">
+            <span class="cb-offre-prix">{{ offre_du_jour.prix_pieces }}</span>
+            {% if offre_du_jour.prix_barre %}<span class="cb-offre-barre">{{ offre_du_jour.prix_barre }}</span>{% endif %}
+          </span>
+        </span>
+        <button type="submit" class="cb-offre-cta">Acheter</button>
+      </form>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ══ Patrons ══ #}
+  {% if patrons %}
+  <section style="padding:26px 20px 0;flex:none">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:13px;gap:10px">
+      <span style="font:800 18px var(--display)">Patrons populaires</span>
+      <a href="{% url 'patrons' %}" class="cm-section-lien">Voir tout</a>
+    </div>
+    <div class="cb-grille">
+      {% for offre in patrons %}
+        <div class="cb-article {% if offre.verrouillee %}is-verrouille{% endif %}">
+          {% if offre.verrouillee %}
+            <span class="cb-article-visuel is-verrou">
+              {% include 'core/communaute/_icones.html' with icone='cadenas' taille=30 %}
+            </span>
+            <div class="cb-article-nom">{{ offre.nom }}</div>
+            <div class="cb-article-cond">Niveau {{ offre.niveau_requis }} requis</div>
+          {% else %}
+            <span class="cb-article-visuel cm-motif m-{{ offre.motif }}"></span>
+            <div class="cb-article-nom">{{ offre.nom }}</div>
+            <form method="post" action="{% url 'communaute_acheter' offre.pk %}"
+                  style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px">
+              {% csrf_token %}
+              <span class="cb-prix">
+                {% include 'core/communaute/_icones.html' with icone='piece-plate' taille=14 %}
+                <span>{{ offre.prix_pieces }}</span>
+              </span>
+              <button type="submit" class="cb-prendre">Prendre</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ══ Bonus de série ══ #}
+  {% if gels %}
+  <section style="padding:26px 0 0;flex:none">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 20px;margin-bottom:13px">
+      <span style="font:800 18px var(--display)">Bonus de série</span>
+      <span class="cm-section-meta">GELS</span>
+    </div>
+    <div class="cm-rail cb-rail">
+      {% for offre in gels %}
+        <div class="cb-carte">
+          {% if offre.remise %}<span class="cb-remise">{{ offre.remise }}</span>{% endif %}
+          <span class="cb-gel-pile">
+            {% for i in offre.quantite_gels|repeter %}
+              {% if forloop.counter <= 3 %}
+                <span style="display:flex;margin-right:-4px">
+                  {% include 'core/communaute/_icones.html' with icone='gel' taille=24 uid=offre.code %}
+                </span>
+              {% endif %}
+            {% endfor %}
+          </span>
+          <div class="cb-carte-nom">{{ offre.nom }}</div>
+          <div class="cb-carte-prix">
+            {% include 'core/communaute/_icones.html' with icone='piece-plate' taille=13 %}
+            <span>{{ offre.prix_pieces }}</span>
+          </div>
+          <form method="post" action="{% url 'communaute_acheter' offre.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="cb-carte-cta">Prendre</button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ══ Écussons ══ #}
+  {% if ecussons %}
+  <section style="padding:26px 0 0;flex:none">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 20px;margin-bottom:13px">
+      <span style="font:800 18px var(--display)">Écussons exclusifs</span>
+      <span class="cm-section-meta">BOUTIQUE</span>
+    </div>
+    <div class="cm-rail cb-rail">
+      {% for offre in ecussons %}
+        <div class="cb-carte {% if offre.verrouillee %}is-verrouille{% endif %}">
+          {% if offre.verrouillee %}
+            <span class="cb-ecusson-rond" style="background:var(--sand);color:var(--stone)">
+              {% include 'core/communaute/_icones.html' with icone='cadenas' taille=24 %}
+            </span>
+            <div class="cb-carte-nom">{{ offre.nom }}</div>
+            <div class="cb-carte-cond">Niveau {{ offre.niveau_requis }}</div>
+          {% else %}
+            <span class="cb-ecusson-rond"
+                  style="background:linear-gradient(150deg,{{ offre.ecusson.couleur_haut|default:'#C4B4FF' }},{{ offre.ecusson.couleur_bas|default:'#5B45B8' }})">
+              {% include 'core/communaute/_icones.html' with icone=offre.ecusson.icone|default:'etoile' taille=24 uid=offre.code %}
+            </span>
+            <div class="cb-carte-nom">{{ offre.nom }}</div>
+            <div class="cb-carte-prix">
+              {% include 'core/communaute/_icones.html' with icone='piece-plate' taille=13 %}
+              <span>{{ offre.prix_pieces }}</span>
+            </div>
+            <form method="post" action="{% url 'communaute_acheter' offre.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="cb-carte-cta">Prendre</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ══ Achats récents ══ #}
+  {% if transactions %}
+  <section style="padding:26px 20px 0;flex:none">
+    <div style="font:800 18px var(--display);margin-bottom:12px">Achats récents</div>
+    {% for transaction in transactions %}
+      <div class="cb-achat">
+        <span class="cb-achat-icone"
+              style="background:{% if transaction.icone == 'gel' %}#E7F1F7{% elif transaction.icone == 'coffre' %}#FFEFC2{% else %}#F6F0E6{% endif %}">
+          {% if transaction.icone == 'gel' %}
+            {% include 'core/communaute/_icones.html' with icone='gel' taille=18 uid=transaction.pk %}
+          {% elif transaction.icone == 'coffre' %}
+            {% include 'core/communaute/_icones.html' with icone='coffre' taille=20 uid=transaction.pk %}
+          {% elif transaction.icone == 'piece' %}
+            {% include 'core/communaute/_icones.html' with icone='piece-plate' taille=18 %}
+          {% else %}
+            <span style="font:800 12px var(--display);color:var(--muted)">{{ transaction.libelle|slice:":1" }}</span>
+          {% endif %}
+        </span>
+        <div style="flex:1;min-width:0">
+          <div class="cb-achat-nom">{{ transaction.libelle }}</div>
+          <div class="cb-achat-date">Il y a {{ transaction.date_transaction|depuis }}</div>
+        </div>
+        <span class="cb-achat-montant {% if transaction.montant > 0 %}est-gain{% endif %}">
+          {{ transaction.montant|stringformat:"+d" }}
+        </span>
+      </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {# ══ Gagner des pièces (→ 45i) ══ #}
+  <section style="padding:26px 20px 24px;flex:none">
+    <a href="{% url 'communaute_quetes' %}" class="cb-gagner-carte cm-tap">
+      <span class="cb-gagner-marque">
+        {% include 'core/communaute/_icones.html' with icone='eclair' taille=19 %}
+      </span>
+      <span style="flex:1;min-width:0">
+        <span class="cb-gagner-titre" style="display:block">Gagner des pièces</span>
+        <span class="cb-gagner-detail" style="display:block">Quêtes du jour, aides, duels</span>
+      </span>
+      <span class="cb-gagner-cta">Voir</span>
+    </a>
+  </section>
+
+</div>
+{% endblock %}

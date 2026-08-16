@@ -1,0 +1,172 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  Liste des salons. Ceux dont on fait partie remontent en tête ; les autres se
+  rejoignent d'un tap. Chaque ligne montre le dernier message, pour savoir
+  d'un coup d'œil où ça discute.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cs-salon {
+    display: flex; align-items: center; gap: 13px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 24px;
+    padding: 14px 16px;
+  }
+  .cs-salon + .cs-salon { margin-top: 10px; }
+  .cs-salon.est-sos {
+    background: linear-gradient(140deg, #1F5E3F 0%, #14120F 78%);
+    border-color: transparent;
+    color: #fff;
+  }
+  .cs-salon-vignette {
+    width: 48px; height: 48px;
+    border-radius: 17px;
+    flex: none;
+    display: block;
+  }
+  .cs-salon-nom { font: 800 15px var(--display); }
+  .cs-salon.est-sos .cs-salon-nom { color: #fff; }
+  .cs-salon-etat {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 4px;
+  }
+  .cs-salon-pouls {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    flex: none;
+  }
+  .cs-salon-meta { font: 500 9px var(--mono); color: var(--muted); letter-spacing: .06em; }
+  .cs-salon.est-sos .cs-salon-meta { color: var(--dim-2); }
+  .cs-salon-dernier {
+    font: 400 11.5px/1.4 var(--text);
+    color: var(--muted);
+    margin-top: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cs-salon.est-sos .cs-salon-dernier { color: var(--dim-2); }
+  .cs-salon-action {
+    border: 0;
+    border-radius: 15px;
+    padding: 11px 14px;
+    font: 800 11.5px var(--display);
+    flex: none;
+    cursor: pointer;
+  }
+  .cs-salon-action.b-entrer { background: var(--ink); color: #fff; }
+  .cs-salon.est-sos .cs-salon-action.b-entrer {
+    background: linear-gradient(120deg, #4FD08A, #12633A);
+  }
+  .cs-salon-action.b-rejoindre { background: var(--sand); color: var(--ink); }
+
+  .cs-defi-mini {
+    height: 5px;
+    border-radius: 3px;
+    background: var(--line);
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .cs-salon.est-sos .cs-defi-mini { background: rgba(255,255,255,.14); }
+  .cs-defi-mini-jauge { height: 100%; background: var(--green); border-radius: 3px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm has-nav">
+
+  <header class="cm-topbar">
+    <a href="{% url 'communaute' %}?onglet=entraide" class="cm-back" aria-label="Retour">
+      {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+    </a>
+    <span class="cm-topbar-label">LES SALONS</span>
+    <a href="{% url 'communaute_creer_salon' %}" class="cm-back" aria-label="Nouveau salon">
+      {% include 'core/communaute/_icones.html' with icone='plus' taille=18 %}
+    </a>
+  </header>
+
+  <section class="cm-section">
+    <div class="cm-section-head">
+      <span class="cm-section-titre">Où ça discute</span>
+      <span class="cm-section-meta">{{ nb_miens }} REJOINT{{ nb_miens|pluralize:"S" }}</span>
+    </div>
+
+    <div style="padding:0 16px">
+      {% for salon in salons %}
+        <div class="cs-salon {% if salon.type_salon == 'sos' %}est-sos{% endif %} cm-entree"
+             style="--rang:{{ forloop.counter0 }}">
+
+          {% if salon.type_salon == 'sos' %}
+            <span class="cs-salon-vignette" style="background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:var(--green-pale)">
+              {% include 'core/communaute/_icones.html' with icone='bulle' taille=22 %}
+            </span>
+          {% else %}
+            <span class="cs-salon-vignette cm-motif m-{{ salon.motif }}"></span>
+          {% endif %}
+
+          <div style="flex:1;min-width:0">
+            <div class="cs-salon-nom">{{ salon.nom }}</div>
+            <div class="cs-salon-etat">
+              {% if salon.type_salon == 'sos' %}<span class="cs-salon-pouls"></span>{% endif %}
+              <span class="cs-salon-meta">
+                {{ salon.nb_membres }} MEMBRE{{ salon.nb_membres|pluralize:"S" }}
+                {% if salon.defi_objectif_m2 %} · DÉFI {{ salon.defi_pourcentage }} %{% endif %}
+              </span>
+            </div>
+
+            {% if salon.dernier %}
+              <div class="cs-salon-dernier">
+                <a href="{% url 'communaute_profil' salon.dernier.auteur.pk %}" class="cm-nom-lien">{{ salon.dernier.auteur|prenom }}</a> :
+                {% if salon.dernier.type_message == 'photos' %}a partagé des photos
+                {% elif salon.dernier.type_message == 'troc' %}a proposé un troc
+                {% else %}{{ salon.dernier.contenu|truncatechars:42 }}{% endif %}
+              </div>
+            {% elif salon.description %}
+              <div class="cs-salon-dernier">{{ salon.description }}</div>
+            {% endif %}
+
+            {% if salon.defi_objectif_m2 %}
+              <div class="cs-defi-mini">
+                <div class="cs-defi-mini-jauge" data-jauge="{{ salon.defi_pourcentage }}"></div>
+              </div>
+            {% endif %}
+          </div>
+
+          {% if salon.est_membre %}
+            <a href="{% url 'communaute_salon' salon.pk %}" class="cs-salon-action b-entrer">Entrer</a>
+          {% else %}
+            <form method="post" action="{% url 'communaute_rejoindre_salon' salon.pk %}" style="flex:none">
+              {% csrf_token %}
+              <button type="submit" class="cs-salon-action b-rejoindre">Rejoindre</button>
+            </form>
+          {% endif %}
+        </div>
+      {% empty %}
+        <div class="cm-vide" style="margin:0">Aucun salon ouvert pour l'instant.</div>
+      {% endfor %}
+
+      <a href="{% url 'communaute_creer_salon' %}" class="cs-salon cm-tap"
+         style="margin-top:10px;border-style:dashed;background:none">
+        <span class="cs-salon-vignette" style="background:var(--sand);display:flex;align-items:center;justify-content:center;color:var(--ink)">
+          {% include 'core/communaute/_icones.html' with icone='plus' taille=20 %}
+        </span>
+        <span style="flex:1;min-width:0">
+          <span class="cs-salon-nom" style="display:block">Ouvrir un salon</span>
+          <span class="cs-salon-dernier" style="display:block">Entre amis, sur invitation</span>
+        </span>
+      </a>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+  {% include 'core/bottom_nav.html' %}
+{% endblock %}

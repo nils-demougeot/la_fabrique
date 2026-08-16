@@ -201,43 +201,19 @@ def service_worker(request):
 
 
 # Paliers de l'atelier affichés sur le tableau de bord : (points requis, nom).
-ATELIER_LEVELS = [
-    (0,    'Première aiguille'),
-    (120,  'Fil conducteur'),
-    (320,  'Main sûre'),
-    (620,  'Belle ouvrage'),
-    (1000, 'Artisan du textile'),
-    (1500, "Maître d'atelier"),
-]
-
-
 def _niveau_atelier(nb_vetements, nb_etapes, nb_projets):
     """Palier d'atelier calculé sur l'activité réelle : tissus scannés, étapes
-    de couture réalisées et projets menés à terme."""
-    points = nb_vetements * 20 + nb_etapes * 10 + nb_projets * 60
+    de couture réalisées et projets menés à terme.
 
-    index = 0
-    for i, (seuil, _) in enumerate(ATELIER_LEVELS):
-        if points >= seuil:
-            index = i
+    Le barème lui-même vit dans `core.gamification` : le tableau de bord et la
+    communauté doivent afficher exactement le même niveau, il ne peut donc pas
+    y en avoir deux définitions.
+    """
+    from . import gamification as jeu
 
-    seuil_courant, nom = ATELIER_LEVELS[index]
-    if index + 1 < len(ATELIER_LEVELS):
-        seuil_suivant = ATELIER_LEVELS[index + 1][0]
-        pourcentage = round((points - seuil_courant) / (seuil_suivant - seuil_courant) * 100)
-        restants = seuil_suivant - points
-        niveau_suivant = index + 2
-    else:
-        pourcentage, restants, niveau_suivant = 100, 0, None
-
-    return {
-        'numero': index + 1,
-        'nom': nom,
-        'points': points,
-        'pourcentage': pourcentage,
-        'points_restants': restants,
-        'niveau_suivant': niveau_suivant,
-    }
+    return jeu.niveau_depuis_points(
+        jeu.points_depuis_activite(nb_vetements, nb_etapes, nb_projets)
+    )
 
 
 # Couleurs de tissu saisies au scan → pastille affichée sur le tableau de bord.
@@ -2320,7 +2296,17 @@ def mes_tissus(request):
 
 @login_required
 def mon_profil(request):
+    """Page « Mon profil » : identité, personnalisation et carte de jeu.
+
+    Réunit deux mondes qui vivaient jusqu'ici séparément : les champs de
+    compte (pseudo, avatar, bio…) et le profil de jeu de la communauté
+    (ville, quartier, teinte du jeton) — tenu par `core.gamification`, pas
+    par ce module, pour ne jamais dupliquer la logique de niveau.
+    """
+    from . import gamification as jeu
+
     user = request.user
+    profil_jeu = jeu.profil_de(user)
     errors = {}
 
     if request.method == 'POST':
@@ -2332,6 +2318,9 @@ def mon_profil(request):
         avatar = request.POST.get('avatar', user.avatar)
         niveau_couture = request.POST.get('niveau_couture', user.niveau_couture)
         envies_list = request.POST.getlist('envies_creation')
+        ville = request.POST.get('ville', '').strip()
+        quartier = request.POST.get('quartier', '').strip()
+        teinte = request.POST.get('teinte', '').strip()
 
         if username and username != user.username:
             if Utilisateur.objects.filter(username=username).exclude(pk=user.pk).exists():
@@ -2356,6 +2345,15 @@ def mon_profil(request):
             user.niveau_couture = niveau_couture or None
             user.envies_creation = ', '.join(envies_list) if envies_list else None
             user.save()
+
+            if ville:
+                profil_jeu.ville = ville[:60]
+            if quartier:
+                profil_jeu.quartier = quartier[:60]
+            if teinte in dict(profil_jeu.TEINTES):
+                profil_jeu.teinte = teinte
+            profil_jeu.save(update_fields=['ville', 'quartier', 'teinte'])
+
             return redirect(reverse('mon_profil') + '?saved=1')
 
     ENVIES_CHOICES = [
@@ -2367,13 +2365,29 @@ def mon_profil(request):
         ('decorations', 'Décorations'),
     ]
     current_envies = [e.strip() for e in (user.envies_creation or '').split(',') if e.strip()]
+
+    niveau = jeu.niveau_de(user)
+    saison = jeu.saison_active()
+    participation = jeu.participation_de(user, saison)
+    lignes = jeu.classement(user, 'ligue') if saison else []
+    ma_ligne = jeu.mon_rang(user, lignes) if lignes else None
+
     return render(request, 'core/mon_profil.html', {
         'avatars': AVATAR_FILENAMES,
         'current_envies': current_envies,
         'envies_choices': ENVIES_CHOICES,
-        'level_info': _get_user_level(user),
         'errors': errors,
         'saved': request.GET.get('saved') == '1',
+        # Carte de jeu — mêmes chiffres que le tableau de bord et la
+        # communauté, jamais recalculés autrement.
+        'profil_jeu': profil_jeu,
+        'niveau': niveau,
+        'participation': participation,
+        'rang_ligue': ma_ligne['rang'] if ma_ligne else None,
+        'nb_joueurs_ligue': len(lignes),
+        'nb_ecussons': jeu.EcussonObtenu.objects.filter(utilisateur=user).count(),
+        'total_ecussons': jeu.Ecusson.objects.count(),
+        'teintes': profil_jeu.TEINTES,
     })
 
 
@@ -2412,9 +2426,9 @@ def inscription(request):
 AVATAR_FILENAMES = [f'image {i}.png' for i in range(11, 27)]
 
 NIVEAUX_COUTURE = {
-    'debutant': 'Débutant·e',
+    'debutant': 'Débutant',
     'intermediaire': 'Intermédiaire',
-    'avance': 'Confirmé·e',
+    'avance': 'Confirmé',
 }
 
 

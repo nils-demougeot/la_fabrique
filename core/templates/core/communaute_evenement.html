@@ -1,0 +1,285 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  45h — Fiche d'événement. S'ouvre en tapant un événement de l'agenda
+  (onglet Atelier). Héros photo, trois chiffres clés, description, qui vient,
+  réglages (agenda, carte), inscription en barre fixe.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cv-hero { height: 230px; flex: none; position: relative; }
+  /* Le titre est en blanc sur la photo : le bas du voile doit être assez
+     dense pour le porter, même sur un tissu clair. */
+  .cm .cv-hero-scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg,
+                rgba(20,18,15,.5) 0%,
+                rgba(20,18,15,0) 38%,
+                rgba(20,18,15,.45) 68%,
+                rgba(20,18,15,.82) 100%);
+  }
+  .cv-hero-top {
+    position: relative;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px 0;
+  }
+  .cv-hero-btn {
+    width: 38px; height: 38px;
+    border-radius: 13px;
+    background: rgba(20,18,15,.5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    flex: none;
+  }
+  .cv-hero-pied {
+    position: absolute; left: 20px; right: 20px; bottom: 16px;
+    display: flex; align-items: flex-end; gap: 12px;
+  }
+  .cv-date {
+    background: var(--yellow);
+    color: var(--ink);
+    border-radius: 16px;
+    padding: 9px 12px;
+    text-align: center;
+    flex: none;
+  }
+  .cv-date-jour { display: block; font: 800 20px var(--display); line-height: 1; }
+  .cv-date-mois { display: block; font: 500 9px var(--mono); letter-spacing: .08em; margin-top: 2px; }
+  .cv-distance {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,253,248,.9);
+    border-radius: 10px;
+    padding: 4px 8px;
+    font: 500 8.5px var(--mono);
+    letter-spacing: .08em;
+    color: var(--ink);
+  }
+  .cv-titre {
+    font: 800 22px/1.15 var(--display);
+    color: #fff;
+    letter-spacing: -.02em;
+    margin-top: 8px;
+  }
+
+  .cv-chiffres { display: flex; gap: 9px; }
+  .cv-chiffre { flex: 1; background: var(--sand); border-radius: 20px; padding: 13px 14px; min-width: 0; }
+  .cv-chiffre.est-gain { background: var(--green-l); }
+  .cv-chiffre-label { font: 500 8.5px var(--mono); color: var(--faint); letter-spacing: .1em; }
+  .cv-chiffre.est-gain .cv-chiffre-label { color: var(--green-d); }
+  .cv-chiffre-valeur { font: 800 14px var(--display); margin-top: 7px; }
+  .cv-chiffre.est-gain .cv-chiffre-valeur { color: var(--green-d); }
+
+  .cv-texte { font: 400 13.5px/1.6 var(--text); color: #3F3A33; }
+
+  .cv-qui { background: var(--sand); border-radius: 26px; padding: 18px; }
+  .cv-qui-titre { font: 800 16px var(--display); }
+  .cv-qui-pile { display: flex; flex: none; }
+  .cv-qui-pile span {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--sand);
+    display: flex; align-items: center; justify-content: center;
+    font: 800 12px var(--display);
+  }
+  .cv-qui-pile span + span { margin-left: -10px; }
+  .cv-qui-reste { background: var(--paper); color: var(--muted); font-size: 11px; }
+  .cv-qui-phrase { flex: 1; font: 400 12px var(--text); color: var(--muted); }
+
+  .cv-reglages {
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 26px;
+    padding: 18px;
+  }
+  .cv-reglage { display: flex; align-items: center; gap: 12px; }
+  .cv-reglage-marque {
+    width: 40px; height: 40px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  .cv-reglage-titre { font: 800 14px var(--display); }
+  .cv-reglage-detail { font: 400 11.5px var(--text); color: var(--muted); margin-top: 3px; }
+  .cv-bascule {
+    width: 46px; height: 28px;
+    border-radius: 999px;
+    display: flex; align-items: center;
+    padding: 3px;
+    box-sizing: border-box;
+    flex: none;
+    border: 0;
+    cursor: pointer;
+    transition: background .16s ease;
+  }
+  .cv-bascule.est-actif { background: var(--green); justify-content: flex-end; }
+  .cv-bascule.est-inactif { background: var(--line); justify-content: flex-start; }
+  .cv-bascule span { width: 22px; height: 22px; border-radius: 50%; background: #fff; display: block; }
+  .cv-separateur { height: 1px; background: var(--line); margin: 14px 0; }
+  .cv-carte-btn {
+    background: var(--sand);
+    border-radius: 13px;
+    padding: 9px 11px;
+    font: 700 11px var(--text);
+    flex: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm has-cta">
+
+  {# ══ Héros ══ #}
+  <header class="cv-hero cm-motif m-{{ evenement.motif }}">
+    <span class="cv-hero-scrim" aria-hidden="true"></span>
+
+    <div class="cv-hero-top">
+      <a href="{% url 'communaute' %}" class="cv-hero-btn" aria-label="Retour">
+        {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+      </a>
+      <span class="cv-hero-btn" aria-hidden="true">
+        {% include 'core/communaute/_icones.html' with icone='partager' %}
+      </span>
+    </div>
+
+    <div class="cv-hero-pied">
+      <span class="cv-date">
+        <span class="cv-date-jour">{{ evenement.jour }}</span>
+        <span class="cv-date-mois">{{ evenement.mois_court }}</span>
+      </span>
+      <div style="flex:1;min-width:0">
+        {% if evenement.distance_km %}
+          <span class="cv-distance">
+            {% include 'core/communaute/_icones.html' with icone='epingle' taille=11 %}
+            {{ evenement.distance_km }} KM
+          </span>
+        {% elif evenement.format_evenement == 'en_ligne' %}
+          <span class="cv-distance">EN LIGNE</span>
+        {% endif %}
+        <div class="cv-titre">{{ evenement.titre }}</div>
+      </div>
+    </div>
+  </header>
+
+  {# ══ Chiffres clés ══ #}
+  <section style="padding:18px 20px 0;flex:none">
+    <div class="cv-chiffres">
+      <div class="cv-chiffre">
+        <div class="cv-chiffre-label">HORAIRE</div>
+        <div class="cv-chiffre-valeur">{{ evenement.horaire|default:"À venir" }}</div>
+      </div>
+      <div class="cv-chiffre">
+        <div class="cv-chiffre-label">MACHINES</div>
+        <div class="cv-chiffre-valeur">
+          {% if evenement.machines_dispo %}{{ evenement.machines_dispo }} dispo{% else %}—{% endif %}
+        </div>
+      </div>
+      <div class="cv-chiffre est-gain">
+        <div class="cv-chiffre-label">GAIN</div>
+        <div class="cv-chiffre-valeur">+{{ evenement.xp_gain }} XP</div>
+      </div>
+    </div>
+  </section>
+
+  {# ══ Description ══ #}
+  {% if evenement.description %}
+  <section style="padding:16px 20px 0;flex:none">
+    <div class="cv-texte">{{ evenement.description }}</div>
+  </section>
+  {% endif %}
+
+  {# ══ Qui vient ══ #}
+  <section style="padding:20px 20px 0;flex:none">
+    <div class="cv-qui">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px">
+        <span class="cv-qui-titre">Qui vient</span>
+        <span class="cm-section-meta">
+          {{ nb_inscrites }} INSCRIT{{ nb_inscrites|pluralize:"S" }} · {{ amies_presentes|length }} AMI{{ amies_presentes|length|pluralize:"S" }}
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;gap:11px">
+        <span class="cv-qui-pile">
+          {% for participante in inscrites %}
+            {% if forloop.counter <= 3 %}
+              <span class="cm-jeton {{ participante|teinte }}">{{ participante|initiales }}</span>
+            {% endif %}
+          {% endfor %}
+          {% if reste_inscrites %}
+            <span class="cm-jeton cv-qui-reste">+{{ reste_inscrites }}</span>
+          {% endif %}
+        </span>
+        <span class="cv-qui-phrase">
+          {% if amies_presentes %}
+            {% for amie in amies_presentes %}{% if forloop.counter <= 3 %}<a href="{% url 'communaute_profil' amie.pk %}" class="cm-nom-lien">{{ amie|prenom }}</a>{% if not forloop.last and forloop.counter < 3 %}, {% endif %}{% endif %}{% endfor %}
+            y ser{{ amies_presentes|length|pluralize:"a,ont" }}
+          {% elif nb_inscrites %}
+            {{ nb_inscrites }} couturier{{ nb_inscrites|pluralize }} déjà inscrit{{ nb_inscrites|pluralize }}
+          {% else %}
+            Sois le premier à t'inscrire
+          {% endif %}
+        </span>
+      </div>
+    </div>
+  </section>
+
+  {# ══ Agenda et lieu ══ #}
+  <section style="padding:16px 20px 0;flex:none">
+    <div class="cv-reglages">
+      <div class="cv-reglage">
+        <span class="cv-reglage-marque" style="background:var(--yellow-l);color:#B98600">
+          {% include 'core/communaute/_icones.html' with icone='calendrier' taille=19 %}
+        </span>
+        <div style="flex:1;min-width:0">
+          <div class="cv-reglage-titre">Ajouter à mon agenda</div>
+          <div class="cv-reglage-detail">Rappel la veille à 19h</div>
+        </div>
+        <form method="post" action="{% url 'communaute_inscription' evenement.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="cv-bascule {% if est_inscrite %}est-actif{% else %}est-inactif{% endif %}"
+                  aria-label="{% if est_inscrite %}Retirer de mon agenda{% else %}Ajouter à mon agenda{% endif %}">
+            <span></span>
+          </button>
+        </form>
+      </div>
+
+      {% if evenement.lieu %}
+        <div class="cv-separateur"></div>
+        <div class="cv-reglage">
+          <span class="cv-reglage-marque" style="background:#E7F1F7;color:var(--blue-d)">
+            {% include 'core/communaute/_icones.html' with icone='epingle' taille=19 %}
+          </span>
+          <div style="flex:1;min-width:0">
+            <div class="cv-reglage-titre">{{ evenement.lieu }}</div>
+            {% if evenement.adresse %}<div class="cv-reglage-detail">{{ evenement.adresse }}</div>{% endif %}
+          </div>
+          <span class="cv-carte-btn">Carte</span>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  {# ══ Inscription ══ #}
+  <div class="cm-cta">
+    <form method="post" action="{% url 'communaute_inscription' evenement.pk %}" style="display:flex;gap:10px">
+      {% csrf_token %}
+      <button type="submit"
+              style="flex:1;background:{% if est_inscrite %}var(--green-l){% else %}var(--green){% endif %};
+                     color:{% if est_inscrite %}var(--green-d){% else %}#fff{% endif %};
+                     border:0;border-radius:20px;text-align:center;padding:15px 0;
+                     font:800 14.5px var(--display);cursor:pointer;
+                     box-shadow:0 12px 26px rgba(31,168,92,.3)">
+        {% if est_inscrite %}Je suis inscrit{% else %}Je viens{% endif %}
+      </button>
+      <a href="{% url 'communaute' %}?onglet=entraide"
+         style="width:56px;flex:none;background:var(--sand);border-radius:20px;display:flex;align-items:center;justify-content:center;color:var(--ink)">
+        {% include 'core/communaute/_icones.html' with icone='bulle' taille=20 %}
+      </a>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

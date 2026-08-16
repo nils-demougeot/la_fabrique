@@ -1,0 +1,243 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  Fiche communautaire d'une couturière : ce qu'on a besoin de savoir avant de
+  l'inviter, la défier ou lui demander un coup de main. Volontairement sobre
+  côté données personnelles — niveau, rythme, écussons, rien de plus.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cf-entete {
+    background: linear-gradient(150deg, #1F5E3F 0%, #221E19 70%);
+    border-radius: 0 0 34px 34px;
+    padding-bottom: 24px;
+    flex: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .cm .cf-entete-glow {
+    position: absolute; top: -70px; right: -50px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(31,168,92,.4) 0%, rgba(31,168,92,0) 70%);
+  }
+  .cf-entete > * { position: relative; }
+
+  .cf-identite { text-align: center; padding: 6px 24px 0; }
+  .cf-avatar {
+    width: 84px; height: 84px;
+    border-radius: 30px;
+    display: flex; align-items: center; justify-content: center;
+    font: 800 30px var(--display);
+    margin: 0 auto;
+    box-shadow: 0 10px 26px rgba(0,0,0,.34);
+  }
+  .cf-nom { font: 800 24px var(--display); color: #fff; letter-spacing: -.02em; margin-top: 14px; }
+  .cf-role { font: 400 12.5px var(--text); color: var(--dim-2); margin-top: 5px; }
+
+  .cf-chiffres { display: flex; gap: 9px; padding: 20px 22px 0; }
+  .cf-chiffre {
+    flex: 1;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.1);
+    box-sizing: border-box;
+    border-radius: 20px;
+    padding: 13px 0;
+    text-align: center;
+    min-width: 0;
+  }
+  .cf-chiffre-valeur { font: 800 18px var(--display); color: #fff; line-height: 1; }
+  .cf-chiffre-label {
+    font: 500 7.5px var(--mono);
+    color: var(--dim);
+    letter-spacing: .1em;
+    margin-top: 5px;
+  }
+
+  .cf-actions { display: flex; gap: 9px; padding: 18px 22px 0; }
+  .cf-action {
+    flex: 1;
+    border: 0;
+    border-radius: 18px;
+    padding: 14px 0;
+    text-align: center;
+    font: 800 13.5px var(--display);
+    cursor: pointer;
+  }
+  .cf-action.b-inviter { background: var(--paper); color: var(--ink); }
+  .cf-action.b-defier { background: linear-gradient(120deg, #FF8A4C, #E1552A); color: #fff; }
+  .cf-action.b-etat {
+    background: rgba(255,255,255,.1);
+    color: var(--dim-2);
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .cf-action.b-ghost {
+    flex: none; width: 54px;
+    background: rgba(255,255,255,.1);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .cf-ecusson-grille {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    row-gap: 14px;
+    column-gap: 8px;
+  }
+  .cf-vide {
+    background: var(--sand);
+    border-radius: 22px;
+    padding: 20px;
+    text-align: center;
+    font: 400 12.5px/1.5 var(--text);
+    color: var(--muted);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm has-nav">
+
+  {# ══ En-tête ══ #}
+  <header class="cf-entete">
+    <span class="cf-entete-glow" aria-hidden="true"></span>
+
+    <div class="cm-topbar is-dark">
+      <a href="{% url 'communaute_amies' %}" class="cm-back" aria-label="Retour">
+        {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+      </a>
+      <span class="cm-topbar-label">COUTURIÈRE</span>
+      <span class="cm-back-ghost" aria-hidden="true"></span>
+    </div>
+
+    <div class="cf-identite">
+      <span class="cf-avatar {{ personne|teinte }}">{{ personne|initiales }}</span>
+      <div class="cf-nom">{{ personne|nom_court }}</div>
+      <div class="cf-role">
+        {{ niveau.nom }}{% if profil.arrondissement %} · {{ profil.arrondissement }}{% endif %}
+      </div>
+    </div>
+
+    <div class="cf-chiffres">
+      <div class="cf-chiffre">
+        <div class="cf-chiffre-valeur">{{ niveau.numero }}</div>
+        <div class="cf-chiffre-label">NIVEAU</div>
+      </div>
+      <div class="cf-chiffre">
+        <div class="cf-chiffre-valeur">{{ profil.serie_actuelle }}</div>
+        <div class="cf-chiffre-label">JOURS DE SÉRIE</div>
+      </div>
+      <div class="cf-chiffre">
+        <div class="cf-chiffre-valeur">{{ nb_ecussons }}<small style="font-size:11px;color:var(--dim-2)">/{{ total_ecussons }}</small></div>
+        <div class="cf-chiffre-label">ÉCUSSONS</div>
+      </div>
+      {% if rang %}
+      <div class="cf-chiffre">
+        <div class="cf-chiffre-valeur">{{ rang }}<sup>e</sup></div>
+        <div class="cf-chiffre-label">EN LIGUE</div>
+      </div>
+      {% endif %}
+    </div>
+
+    {# ── Ce qu'on peut faire d'ici ── #}
+    <div class="cf-actions">
+      {% if etat_lien == 'aucune' %}
+        <form method="post" action="{% url 'communaute_inviter' personne.pk %}" style="flex:1">
+          {% csrf_token %}
+          <input type="hidden" name="retour" value="{{ request.get_full_path }}">
+          <button type="submit" class="cf-action b-inviter">Inviter</button>
+        </form>
+      {% elif etat_lien == 'envoyee' %}
+        <span class="cf-action b-etat">Invitation envoyée</span>
+      {% elif etat_lien == 'recue' %}
+        <form method="post" action="{% url 'communaute_repondre_amitie' lien.pk %}" style="flex:1">
+          {% csrf_token %}
+          <input type="hidden" name="reponse" value="accepter">
+          <input type="hidden" name="retour" value="{{ request.get_full_path }}">
+          <button type="submit" class="cf-action b-inviter">Accepter son invitation</button>
+        </form>
+      {% else %}
+        {% if duel %}
+          <a href="{% url 'communaute_duel' duel.pk %}" class="cf-action b-defier">Voir le duel</a>
+        {% else %}
+          <form method="post" action="{% url 'communaute_defier' personne.pk %}" style="flex:1">
+            {% csrf_token %}
+            <button type="submit" class="cf-action b-defier">Défier</button>
+          </form>
+        {% endif %}
+      {% endif %}
+
+      <a href="{% url 'communaute' %}?onglet=entraide" class="cf-action b-ghost" aria-label="Lui écrire">
+        {% include 'core/communaute/_icones.html' with icone='bulle' taille=20 %}
+      </a>
+    </div>
+  </header>
+
+  {# ══ Écussons ══ #}
+  <section class="cm-section cm-entree">
+    <div class="cm-section-head">
+      <span class="cm-section-titre">Ses écussons</span>
+      <span class="cm-section-meta">{{ nb_ecussons }} / {{ total_ecussons }}</span>
+    </div>
+
+    <div style="padding:0 20px">
+      {% if ecussons %}
+        <div class="cf-ecusson-grille">
+          {% for obtenu in ecussons %}
+            <div style="text-align:center">
+              <div class="cm-hex">
+                <svg viewBox="0 0 100 114">
+                  <defs>
+                    <linearGradient id="pf{{ obtenu.pk }}" x1="15" y1="5" x2="90" y2="110" gradientUnits="userSpaceOnUse">
+                      <stop offset="0" stop-color="{{ obtenu.ecusson.couleur_haut }}"/>
+                      <stop offset="1" stop-color="{{ obtenu.ecusson.couleur_bas }}"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M41 7 Q50 2 59 7 L86 22 Q95 27 95 39 L95 75 Q95 87 86 92 L59 107 Q50 112 41 107 L14 92 Q5 87 5 75 L5 39 Q5 27 14 22 Z"
+                        fill="url(#pf{{ obtenu.pk }})"/>
+                </svg>
+                <span class="cm-hex-icone">
+                  {% include 'core/communaute/_icones.html' with icone=obtenu.ecusson.icone taille=26 uid=obtenu.pk %}
+                </span>
+              </div>
+              <div class="cm-hex-nom">{{ obtenu.ecusson.nom }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="cf-vide">Pas encore d'écusson cousu.</div>
+      {% endif %}
+    </div>
+  </section>
+
+  {# ══ Rythme ══ #}
+  <section class="cm-section cm-entree" style="--rang:1">
+    <div class="cm-section-head">
+      <span class="cm-section-titre">Son rythme</span>
+    </div>
+    <div style="padding:0 20px">
+      <div class="cm-panneau" style="display:flex;gap:9px;padding:16px">
+        <div style="flex:1;text-align:center">
+          <div style="font:800 20px var(--display)">{{ profil.serie_record }}</div>
+          <div style="font:500 8px var(--mono);color:var(--faint);letter-spacing:.1em;margin-top:4px">RECORD DE SÉRIE</div>
+        </div>
+        <div style="flex:1;text-align:center">
+          <div style="font:800 20px var(--display)">{{ participation.pieces_finies|default:"0" }}</div>
+          <div style="font:500 8px var(--mono);color:var(--faint);letter-spacing:.1em;margin-top:4px">PIÈCES FINIES</div>
+        </div>
+        <div style="flex:1;text-align:center">
+          <div style="font:800 20px var(--display);color:var(--green)">{{ participation.m2_sauves|floatformat:1|default:"0" }}</div>
+          <div style="font:500 8px var(--mono);color:var(--green);letter-spacing:.1em;margin-top:4px">M² SAUVÉS</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+  {% include 'core/bottom_nav.html' %}
+{% endblock %}

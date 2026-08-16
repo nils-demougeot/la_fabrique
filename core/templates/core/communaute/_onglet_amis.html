@@ -1,0 +1,313 @@
+{% load communaute_extras %}
+{% comment %}
+  Onglet Amis (design 46a) : recherche, code d'atelier, duel de la semaine,
+  classement entre amies, rail des amies, troc de chutes.
+  Portes vers 45f (duel en cours) et 45g (salon, via une annonce de troc).
+{% endcomment %}
+
+{# ══ Code d'atelier (parrainage) ══ #}
+<section class="ca-code">
+  <div class="ca-code-cadre">
+    <div style="flex:1;min-width:0">
+      <div class="ca-code-kicker">TON CODE D'ATELIER</div>
+      <div class="ca-code-valeur">{{ code_atelier }}</div>
+      <div class="ca-code-detail">+50 pièces dès qu'un filleul finit sa première pièce.</div>
+    </div>
+    <div class="ca-code-actions">
+      <a href="{% url 'communaute_partager_code' %}" class="ca-code-btn b-ink">Partager</a>
+      <button type="button" class="ca-code-btn b-clair" id="ca-copier" data-code="{{ code_atelier }}">Copier</button>
+    </div>
+  </div>
+</section>
+
+{# ══ Mes messages ══ #}
+<a href="{% url 'communaute_messages' %}" class="ca-toutes cm-tap" style="margin-top:16px">
+  <span class="ca-toutes-marque">
+    {% include 'core/communaute/_icones.html' with icone='bulle' taille=18 %}
+  </span>
+  <span style="flex:1;min-width:0">
+    <span class="ca-toutes-titre" style="display:block">Mes messages</span>
+    <span class="ca-toutes-detail" style="display:block">
+      {% if nb_mp_non_lus %}{{ nb_mp_non_lus }} nouveau{{ nb_mp_non_lus|pluralize }}{% else %}Discuter en privé avec un ami{% endif %}
+    </span>
+  </span>
+  {% if nb_mp_non_lus %}<span class="ca-toutes-pastille">{{ nb_mp_non_lus }}</span>{% endif %}
+  {% include 'core/communaute/_icones.html' with icone='chevron' taille=14 %}
+</a>
+
+{# ══ Duel de la semaine (→ 45f) ══ #}
+{% if contexte_duel %}
+<section class="ca-duel">
+  <span class="ca-duel-glow" aria-hidden="true"></span>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <span class="ca-duel-kicker">
+      {% include 'core/communaute/_icones.html' with icone='eclair' taille=16 %}
+      <span>DUEL DE LA SEMAINE</span>
+    </span>
+    <span class="ca-duel-chrono">{{ contexte_duel.heures_restantes }} H</span>
+  </div>
+
+  <a href="{% url 'communaute_duel' contexte_duel.duel.pk %}"
+     style="display:flex;align-items:center;gap:14px;margin-top:18px">
+    <div class="ca-duel-camp">
+      <div class="ca-duel-avatar" style="background:linear-gradient(150deg,#4FD08A,#12633A);box-shadow:0 0 20px rgba(31,168,92,.5)">
+        <span style="background:#123A28;color:#fff">{{ user|initiales }}</span>
+      </div>
+      <div class="ca-duel-nom">Toi</div>
+      <div class="ca-duel-score" style="color:var(--green-pale)">{{ contexte_duel.mon_score }}</div>
+    </div>
+
+    <div style="flex:1">
+      <div class="ca-duel-barres">
+        <div class="ca-duel-piste is-moi">
+          <div class="ca-duel-jauge" style="width:{{ contexte_duel.ma_barre }}%;background:linear-gradient(90deg,#12633A,#4FD08A)"></div>
+        </div>
+        <div class="ca-duel-piste">
+          <div class="ca-duel-jauge" style="width:{{ contexte_duel.sa_barre }}%;background:linear-gradient(90deg,#FF6B3D,#FF9B4C)"></div>
+        </div>
+      </div>
+      <div class="ca-duel-mise">
+        {% include 'core/communaute/_icones.html' with icone='piece-plate' taille=13 %}
+        <span>Mise {{ contexte_duel.duel.mise_pieces }} · +{{ contexte_duel.duel.xp_gain }} XP</span>
+      </div>
+    </div>
+
+    <div class="ca-duel-camp">
+      <div class="ca-duel-avatar" style="background:linear-gradient(150deg,#FFE7DE,#F3A183)">
+        <span style="background:#3A1B0D;color:#FFE7DE">{{ contexte_duel.adversaire|initiales }}</span>
+      </div>
+      <div class="ca-duel-nom">{{ contexte_duel.adversaire|prenom }}</div>
+      <div class="ca-duel-score" style="color:var(--orange-p)">{{ contexte_duel.son_score }}</div>
+    </div>
+  </a>
+
+  <div style="display:flex;gap:9px;margin-top:18px">
+    <a href="{% url 'patrons' %}"
+       style="flex:1;background:linear-gradient(120deg,#FF8A4C,#E1552A);color:#fff;border-radius:18px;text-align:center;padding:14px 0;font:800 14px var(--display);box-shadow:0 10px 24px rgba(225,85,42,.4)">
+      Coudre maintenant
+    </a>
+    <a href="{% url 'communaute_duel' contexte_duel.duel.pk %}"
+       style="width:52px;flex:none;background:rgba(255,255,255,.1);border-radius:18px;display:flex;align-items:center;justify-content:center;color:#fff">
+      {% include 'core/communaute/_icones.html' with icone='bulle' taille=19 %}
+    </a>
+  </div>
+
+  {% if amies_defiables %}
+  <div style="height:1px;background:rgba(255,255,255,.12);margin:18px 0 14px"></div>
+  <div style="font:500 9px var(--mono);letter-spacing:.14em;color:var(--dim);margin-bottom:11px">DÉFI EXPRESS · 24 H</div>
+  <div class="cm-rail" style="gap:9px;padding-bottom:2px">
+    {% for amie in amies_defiables %}
+      <form method="post" action="{% url 'communaute_defier' amie.pk %}" style="flex:none">
+        {% csrf_token %}
+        <button type="submit" class="ca-duel-defier">
+          <span class="cm-jeton {{ amie|teinte }}">{{ amie|initiales }}</span>
+          <span class="ca-prenom">{{ amie|prenom }}</span>
+          <span class="ca-action">Défier</span>
+        </button>
+      </form>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+{% else %}
+{# Aucun duel : on propose d'en lancer un plutôt que de laisser un trou. #}
+<section class="ca-duel">
+  <span class="ca-duel-glow" aria-hidden="true"></span>
+  <span class="ca-duel-kicker">
+    {% include 'core/communaute/_icones.html' with icone='eclair' taille=16 %}
+    <span>DÉFI EXPRESS · 24 H</span>
+  </span>
+  <div style="font:800 18px/1.3 var(--display);color:#fff;margin-top:12px">Personne à battre cette semaine</div>
+  {% if amies_defiables %}
+    <div class="cm-rail" style="gap:9px;margin-top:16px;padding-bottom:2px">
+      {% for amie in amies_defiables %}
+        <form method="post" action="{% url 'communaute_defier' amie.pk %}" style="flex:none">
+          {% csrf_token %}
+          <button type="submit" class="ca-duel-defier">
+            <span class="cm-jeton {{ amie|teinte }}">{{ amie|initiales }}</span>
+            <span class="ca-prenom">{{ amie|prenom }}</span>
+            <span class="ca-action">Défier</span>
+          </button>
+        </form>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="font:400 12px var(--text);color:var(--dim-2);margin-top:8px">
+      Ajoute un ami avec ton code d'atelier pour lancer un duel.
+    </div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ══ Classement entre amies ══ #}
+<section class="ca-classement cm-panneau">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px">
+    <span style="font:800 18px var(--display)">Entre amis</span>
+    <span class="cm-section-meta">{{ nb_amies }} AMIE{{ nb_amies|pluralize:"S" }}</span>
+  </div>
+
+  <div style="display:flex;gap:7px;margin-bottom:14px">
+    <a href="{% url 'communaute' %}?onglet=amis&periode=semaine" class="cm-chip" style="border-radius:13px;padding:7px 12px"
+       {% if periode == 'semaine' %}aria-current="true"{% endif %}>Semaine</a>
+    <a href="{% url 'communaute' %}?onglet=amis&periode=mois" class="cm-chip" style="border-radius:13px;padding:7px 12px"
+       {% if periode == 'mois' %}aria-current="true"{% endif %}>Mois</a>
+    <a href="{% url 'communaute' %}?onglet=amis&periode=toujours" class="cm-chip" style="border-radius:13px;padding:7px 12px"
+       {% if periode == 'toujours' %}aria-current="true"{% endif %}>Toujours</a>
+  </div>
+
+  {% for ligne in classement_amies %}
+    {% if forloop.counter <= 5 %}
+      <div class="ca-classement-ligne {% if ligne.est_moi %}is-moi{% endif %}">
+        <span class="ca-classement-rang">{{ ligne.rang }}</span>
+        {% if ligne.est_moi %}
+          <span class="cm-jeton" style="width:36px;height:36px;font-size:12px;background:var(--ink);border:2px solid var(--paper);box-sizing:border-box;color:#fff">{{ ligne.utilisateur|initiales }}</span>
+        {% else %}
+          <span class="cm-jeton {{ ligne.utilisateur|teinte }}" style="width:34px;height:34px;font-size:12px">{{ ligne.utilisateur|initiales }}</span>
+        {% endif %}
+        <div style="flex:1;min-width:0">
+          <a href="{% url 'communaute_profil' ligne.utilisateur.pk %}" class="ca-classement-nom cm-nom-lien" style="display:block">{% if ligne.est_moi %}Toi{% else %}{{ ligne.utilisateur|nom_court }}{% endif %}</a>
+          {% if ligne.serie %}<div class="ca-classement-serie">SÉRIE {{ ligne.serie }} J</div>{% endif %}
+        </div>
+        <div style="text-align:right;flex:none">
+          <div class="ca-classement-xp">{{ ligne.xp|espace_millier }}</div>
+          <div class="ca-classement-unite">XP</div>
+        </div>
+      </div>
+    {% endif %}
+  {% empty %}
+    <div style="font:400 13px/1.5 var(--text);color:var(--muted);text-align:center;padding:12px 0">
+      Ajoute des amis pour comparer vos semaines.
+    </div>
+  {% endfor %}
+
+  {% if nb_amies > 4 %}
+    <a href="{% url 'communaute_amies' %}"
+       style="display:block;font:700 12px var(--text);color:var(--green);text-align:center;margin-top:14px">
+      Voir les {{ nb_amies }} amis
+    </a>
+  {% endif %}
+</section>
+
+{# ══ Rail des amies ══ #}
+<section class="cm-section">
+  <div class="cm-section-head">
+    <span class="cm-section-titre">Tes amis</span>
+    <span class="cm-section-meta">{{ nb_amies_en_ligne }} EN LIGNE</span>
+  </div>
+
+  {# Porte principale vers la gestion des amies : liste, invitations, ajout. #}
+  <a href="{% url 'communaute_amies' %}" class="ca-toutes cm-tap">
+    <span class="ca-toutes-marque">
+      {% include 'core/communaute/_icones.html' with icone='amis' taille=18 %}
+    </span>
+    <span style="flex:1;min-width:0">
+      <span class="ca-toutes-titre" style="display:block">Tous mes amis</span>
+      <span class="ca-toutes-detail" style="display:block">
+        {{ nb_amies }} ami{{ nb_amies|pluralize }}{% if nb_demandes %} · {{ nb_demandes }} invitation{{ nb_demandes|pluralize }} en attente{% else %} · en ajouter{% endif %}
+      </span>
+    </span>
+    {% if nb_demandes %}<span class="ca-toutes-pastille">{{ nb_demandes }}</span>{% endif %}
+    {% include 'core/communaute/_icones.html' with icone='chevron' taille=14 %}
+  </a>
+
+  <div class="cm-rail ca-amies-rail">
+    {% for amie in amies %}
+      <a href="{% url 'communaute_profil' amie.pk %}" class="ca-amie cm-tap">
+        <div class="ca-amie-cadre">
+          {# L'anneau porte la teinte, le disque intérieur les initiales. #}
+          <div class="ca-amie-cercle {% if amie.profil_jeu.serie_actuelle %}{{ amie|teinte }}{% else %}t-eteint{% endif %}">
+            <span>{{ amie|initiales }}</span>
+          </div>
+
+          {% if amie.est_en_ligne %}
+            <span class="ca-amie-enligne"></span>
+          {% endif %}
+
+          {% if amie.profil_jeu.serie_actuelle %}
+            <span class="ca-amie-serie">
+              <svg width="9" height="9" viewBox="0 0 24 24">
+                <path d="M12.7 1.5c.5 3 2.2 5 4.1 6.8 2.1 2 3.4 4 3.4 6.4A8.2 8.2 0 0 1 3.8 15c0-1.9.7-3.3 1.9-4.7.1 1.9 1 2.9 2.4 3.2-.8-3.4.5-6.3 4.6-12Z" fill="#FFC93C"/>
+              </svg>
+              <span>{{ amie.profil_jeu.serie_actuelle }}</span>
+            </span>
+          {% else %}
+            <span class="ca-amie-serie is-zero"><span>série 0</span></span>
+          {% endif %}
+        </div>
+        <div class="ca-amie-nom">{{ amie|prenom }}</div>
+      </a>
+    {% endfor %}
+
+    <a href="{% url 'communaute_amies' %}" class="ca-amie cm-tap">
+      <span class="ca-amie-ajouter">
+        {% include 'core/communaute/_icones.html' with icone='plus' taille=20 %}
+      </span>
+      <span class="ca-amie-nom" style="color:var(--muted);display:block">Ajouter</span>
+    </a>
+  </div>
+</section>
+
+{# ══ Troc de chutes ══ #}
+<section style="margin:22px 16px 0;flex:none">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;gap:10px">
+    <span class="cm-section-titre">Troc de chutes</span>
+    <span style="display:flex;align-items:center;gap:8px;flex:none">
+      <span style="background:var(--sand);color:var(--muted);border-radius:12px;padding:6px 10px;font:700 11px var(--text)">Mes annonces · {{ mes_annonces }}</span>
+      <span style="font:700 12px var(--text);color:var(--green)">Proposer</span>
+    </span>
+  </div>
+
+  {% for annonce in annonces %}
+    {% if forloop.first %}
+      <div class="ca-troc">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span style="display:flex;align-items:center;gap:9px;min-width:0">
+            <span style="width:32px;height:32px;border-radius:11px;background:linear-gradient(150deg,#4FD08A,#12633A);display:flex;align-items:center;justify-content:center;color:#fff;flex:none">
+              {% include 'core/communaute/_icones.html' with icone='troc' taille=16 %}
+            </span>
+            <span class="ca-troc-kicker"><a href="{% url 'communaute_profil' annonce.auteur.pk %}" class="cm-nom-lien">{{ annonce.auteur|prenom|upper }}</a> · {{ annonce.depuis|upper }}</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:4px;font:500 9.5px var(--mono);color:var(--green-d);flex:none">
+            {% include 'core/communaute/_icones.html' with icone='epingle' taille=12 %}
+            {{ annonce.distance_libelle }}
+          </span>
+        </div>
+
+        <div class="ca-troc-titre">
+          {% if annonce.sens == 'cherche' %}{{ annonce.auteur|prenom }} cherche {{ annonce.titre|lower }}{% else %}{{ annonce.titre }}{% endif %}
+        </div>
+
+        <form method="post" action="{% url 'communaute_prendre_annonce' annonce.pk %}"
+              style="display:flex;gap:8px;margin-top:13px">
+          {% csrf_token %}
+          <span class="cm-motif m-{{ annonce.motif }}" style="width:54px;height:54px;border-radius:16px;flex:none"></span>
+          <span class="cm-motif m-vert" style="width:54px;height:54px;border-radius:16px;flex:none"></span>
+          <button type="submit" class="ca-troc-echanger">
+            {% if annonce.sens == 'cherche' %}J'en ai{% else %}Échanger{% endif %}
+          </button>
+        </form>
+      </div>
+
+    {% elif forloop.counter <= 3 %}
+      <form method="post" action="{% url 'communaute_prendre_annonce' annonce.pk %}" class="ca-troc-secondaire">
+        {% csrf_token %}
+        <span class="cm-motif m-{{ annonce.motif }}" style="width:46px;height:46px;border-radius:16px;flex:none"></span>
+        <span style="flex:1;min-width:0">
+          <span style="display:block;font:800 14px var(--display)">
+            {% if annonce.sens == 'cherche' %}{{ annonce.auteur|prenom }} cherche {{ annonce.titre|lower }}{% else %}{{ annonce.titre }}{% endif %}
+          </span>
+          <span style="display:block;font:400 12px var(--text);color:var(--muted);margin-top:3px">
+            {% if annonce.sens == 'cherche' %}Il lui manque {{ annonce.surface_m2 }} m²{% else %}{{ annonce.surface_m2 }} m² à prendre{% endif %}
+            · {{ annonce.distance_libelle|lower }}
+          </span>
+        </span>
+        <button type="submit" class="ca-troc-jai">{% if annonce.sens == 'cherche' %}J'en ai{% else %}Je prends{% endif %}</button>
+      </form>
+    {% endif %}
+  {% empty %}
+    <div class="cm-vide" style="margin:0">Aucune chute à troquer pour l'instant.</div>
+  {% endfor %}
+</section>
+

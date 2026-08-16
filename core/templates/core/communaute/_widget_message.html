@@ -1,0 +1,208 @@
+{% load communaute_extras %}
+{% comment %}
+  Carte interactive d'une pièce jointe. Un seul type est rendu à la fois,
+  selon `w_type`.
+
+  Ce gabarit est appelé de deux endroits, et c'est pour cela qu'il ne lit pas
+  directement un message :
+
+    · le fil du salon, avec les champs du message ;
+    · la galerie du sélecteur de partage, avec un objet d'exemple.
+
+  La galerie doit montrer **exactement** la carte qui sera postée : une seule
+  définition de chaque widget évite que l'aperçu et le résultat divergent.
+
+  Chaque carte mène à l'écran correspondant de l'application : partager un
+  patron dans un salon doit permettre de l'ouvrir, pas seulement d'en parler.
+{% endcomment %}
+
+{% if w_type == 'patron' and w_patron %}
+  <a href="{% url 'patron_detail' w_patron.pk %}" class="cg-widget w-patron cm-tap">
+    <span class="cg-widget-kicker">
+      {% include 'core/communaute/_icones.html' with icone='ruban' taille=13 %}
+      PATRON
+    </span>
+    <span class="cg-widget-corps">
+      {% if w_patron.photo_url %}
+        <img src="{{ w_patron.photo_url }}" alt="" class="cg-widget-photo">
+      {% else %}
+        <span class="cg-widget-photo cm-motif m-denim"></span>
+      {% endif %}
+      <span style="flex:1;min-width:0">
+        <span class="cg-widget-titre">{{ w_patron.titre }}</span>
+        <span class="cg-widget-detail">
+          {{ w_patron.typeObjet|capfirst }}
+          {% if w_patron.duree %} · {{ w_patron.duree }}{% endif %}
+          · {{ w_patron.surfaceMin }} m² mini
+        </span>
+      </span>
+    </span>
+    <span class="cg-widget-cta">Voir le patron</span>
+  </a>
+
+{% elif w_type == 'etape' and w_etape %}
+  <a href="{% url 'etape_projet' w_etape.patron.pk w_etape.numero %}"
+     class="cg-widget w-etape cm-tap">
+    <span class="cg-widget-kicker">
+      {% include 'core/communaute/_icones.html' with icone='aiguille' taille=13 %}
+      ÉTAPE {{ w_etape.numero }}
+    </span>
+    <span class="cg-widget-corps">
+      <span class="cg-widget-numero">{{ w_etape.numero }}</span>
+      <span style="flex:1;min-width:0">
+        <span class="cg-widget-titre">{{ w_etape.titre }}</span>
+        <span class="cg-widget-detail">{{ w_etape.patron.titre }}</span>
+      </span>
+    </span>
+    <span class="cg-widget-cta">Ouvrir l'étape</span>
+  </a>
+
+{% elif w_type == 'tissu' and w_tissu %}
+  <a href="{% url 'detail_vetement' w_tissu.pk %}" class="cg-widget w-tissu cm-tap">
+    <span class="cg-widget-kicker">
+      {% include 'core/communaute/_icones.html' with icone='toile' taille=13 %}
+      TISSU
+    </span>
+    <span class="cg-widget-corps">
+      {% if w_tissu.photo_url %}
+        <img src="{{ w_tissu.photo_url }}" alt="" class="cg-widget-photo">
+      {% else %}
+        <span class="cg-widget-photo cm-motif m-toile"></span>
+      {% endif %}
+      <span style="flex:1;min-width:0">
+        <span class="cg-widget-titre">{{ w_tissu.nomVetement }}</span>
+        <span class="cg-widget-detail">
+          {{ w_tissu.surfaceExploitable|floatformat:2 }} m² exploitables
+          {% if w_tissu.matiere %} · {{ w_tissu.matiere|truncatechars:18 }}{% endif %}
+        </span>
+      </span>
+    </span>
+    <span class="cg-widget-cta">Voir le tissu</span>
+  </a>
+
+{% elif w_type == 'defi_ville' and w_defi %}
+  <a href="{% url 'communaute_defi_ville' %}" class="cg-widget w-defi cm-tap">
+    <span class="cg-widget-kicker">
+      {% include 'core/communaute/_icones.html' with icone='epingle' taille=13 %}
+      DÉFI DE VILLE · {{ w_defi.ville|upper }}
+    </span>
+    <span class="cg-widget-corps" style="display:block">
+      <span class="cg-widget-titre" style="display:block">{{ w_defi.titre }}</span>
+      <span style="display:flex;align-items:baseline;gap:7px;margin-top:8px">
+        <span class="cg-widget-gros">{{ w_defi.total_m2 }} m²</span>
+        <span class="cg-widget-detail">/ {{ w_defi.objectif_m2|floatformat:0 }} m² · {{ w_defi.pourcentage }} %</span>
+      </span>
+      <span class="cg-widget-piste">
+        <span class="cg-widget-jauge" style="width:{{ w_defi.pourcentage }}%"></span>
+      </span>
+    </span>
+    <span class="cg-widget-cta">Déclarer mes m²</span>
+  </a>
+
+{% elif w_type == 'duel' and w_duel %}
+  <a href="{% url 'communaute_duel' w_duel.pk %}" class="cg-widget w-duel cm-tap">
+    <span class="cg-widget-kicker">
+      {% include 'core/communaute/_icones.html' with icone='eclair' taille=13 %}
+      DUEL
+    </span>
+    <span class="cg-widget-corps">
+      <span class="cm-jeton {{ w_duel.joueuse_a|teinte }}" style="width:36px;height:36px;font-size:12px">
+        {{ w_duel.joueuse_a|initiales }}
+      </span>
+      <span class="cg-widget-vs">VS</span>
+      <span class="cm-jeton {{ w_duel.joueuse_b|teinte }}" style="width:36px;height:36px;font-size:12px">
+        {{ w_duel.joueuse_b|initiales }}
+      </span>
+      <span style="flex:1;min-width:0;margin-left:4px">
+        <span class="cg-widget-titre">{{ w_duel.joueuse_a|prenom }} · {{ w_duel.joueuse_b|prenom }}</span>
+        <span class="cg-widget-detail">
+          Mise {{ w_duel.mise_pieces }} pièces · +{{ w_duel.xp_gain }} XP
+        </span>
+      </span>
+    </span>
+    <span class="cg-widget-cta">Suivre le duel</span>
+  </a>
+
+{% elif w_type == 'evenement' and w_evenement %}
+  <a href="{% url 'communaute_evenement' w_evenement.pk %}" class="cg-widget w-evenement cm-tap">
+    <span class="cg-widget-kicker">
+      {% include 'core/communaute/_icones.html' with icone='calendrier' taille=13 %}
+      RENDEZ-VOUS
+      {% if w_evenement.format_evenement == 'en_ligne' %} · EN LIGNE{% endif %}
+    </span>
+    <span class="cg-widget-corps">
+      <span class="cg-widget-date">
+        <span class="cg-widget-jour">{{ w_evenement.jour }}</span>
+        <span class="cg-widget-mois">{{ w_evenement.mois_court }}</span>
+      </span>
+      <span style="flex:1;min-width:0">
+        <span class="cg-widget-titre">{{ w_evenement.titre }}</span>
+        <span class="cg-widget-detail">
+          {{ w_evenement.horaire }}{% if w_evenement.lieu %} · {{ w_evenement.lieu|truncatechars:22 }}{% endif %}
+        </span>
+      </span>
+    </span>
+    <span class="cg-widget-cta">Je regarde</span>
+  </a>
+
+{% elif w_type == 'ecusson' and w_ecusson %}
+  <a href="{% url 'communaute_ecussons' %}" class="cg-widget w-ecusson cm-tap">
+    <span class="cg-widget-kicker">
+      {% include 'core/communaute/_icones.html' with icone='etoile' taille=13 %}
+      ÉCUSSON · {{ w_ecusson.get_rang_display|upper }}
+    </span>
+    <span class="cg-widget-corps">
+      <span class="cg-widget-hex">
+        <span class="cm-hex">
+          <svg viewBox="0 0 100 114">
+            <defs>
+              <linearGradient id="wx{{ w_ecusson.code }}{{ w_uid|default:'' }}" x1="15" y1="5" x2="90" y2="110" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="{{ w_ecusson.couleur_haut }}"/>
+                <stop offset="1" stop-color="{{ w_ecusson.couleur_bas }}"/>
+              </linearGradient>
+            </defs>
+            <path d="M41 7 Q50 2 59 7 L86 22 Q95 27 95 39 L95 75 Q95 87 86 92 L59 107 Q50 112 41 107 L14 92 Q5 87 5 75 L5 39 Q5 27 14 22 Z"
+                  fill="url(#wx{{ w_ecusson.code }}{{ w_uid|default:'' }})"/>
+          </svg>
+          <span class="cm-hex-icone">
+            {% include 'core/communaute/_icones.html' with icone=w_ecusson.icone taille=20 uid=w_ecusson.code %}
+          </span>
+        </span>
+      </span>
+      <span style="flex:1;min-width:0">
+        <span class="cg-widget-titre">{{ w_ecusson.nom }}</span>
+        <span class="cg-widget-detail">
+          {{ w_ecusson.condition|default:w_ecusson.description|truncatechars:44 }}
+        </span>
+      </span>
+    </span>
+    <span class="cg-widget-cta">Voir la collection</span>
+  </a>
+
+{% elif w_type == 'troc' and w_annonce %}
+  <span class="cg-widget w-troc">
+    <span class="cg-widget-kicker">
+      {% include 'core/communaute/_icones.html' with icone='troc' taille=13 %}
+      ANNONCE DE TROC
+    </span>
+    <span class="cg-widget-corps">
+      <span class="cg-widget-photo cm-motif m-{{ w_annonce.motif }}"></span>
+      <span style="flex:1;min-width:0">
+        <span class="cg-widget-titre">{{ w_annonce.titre }}</span>
+        <span class="cg-widget-detail">
+          {{ w_annonce.surface_m2 }} m² · {{ w_annonce.distance_libelle|lower }}
+        </span>
+      </span>
+    </span>
+    {% if w_annonce.statut == 'ouverte' and w_annonce.auteur != user %}
+      <form method="post" action="{% url 'communaute_prendre_annonce' w_annonce.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="cg-widget-cta est-bouton">Je prends</button>
+      </form>
+    {% else %}
+      <span class="cg-widget-cta est-eteint">
+        {% if w_annonce.statut == 'ouverte' %}Ton annonce{% else %}Déjà réservée{% endif %}
+      </span>
+    {% endif %}
+  </span>
+{% endif %}

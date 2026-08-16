@@ -472,7 +472,7 @@ PATRONS_DATA = [
         'titre': 'Sac à dos urbain structuré',
         'description': (
             'Sac à dos fonctionnel et robuste avec poche frontale zippée, dos rembourré et bretelles réglables. '
-            'Ce projet ambitieux convient aux couturières expérimentées et nécessite des tissus résistants '
+            'Ce projet ambitieux convient aux couturiers expérimentés et nécessite des tissus résistants '
             'comme le jean, la toile canvas ou le cuir synthétique. '
             'Le résultat est un sac durable, réparable et vraiment personnel.'
         ),
