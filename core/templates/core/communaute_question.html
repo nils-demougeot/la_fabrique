@@ -1,0 +1,322 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  Fil d'une question d'entraide.
+
+  La réponse retenue passe devant : c'est celle qui a résolu le problème, et
+  c'est elle qu'on vient lire. Les autres suivent dans l'ordre chronologique.
+  L'autrice de la question est la seule à pouvoir en retenir une.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cq-entete {
+    background: var(--paper);
+    border-bottom: 1.5px solid var(--line);
+    flex: none;
+    padding-bottom: 20px;
+  }
+  .cq-etat {
+    display: flex; align-items: center; gap: 9px;
+    padding: 0 20px;
+  }
+  .cq-etat-marque {
+    width: 32px; height: 32px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    flex: none;
+  }
+  .cq-etat-marque.est-ouvert { background: var(--orange-d); }
+  .cq-etat-marque.est-resolu { background: var(--green); }
+  .cq-etat-texte { font: 500 9.5px var(--mono); letter-spacing: .1em; }
+  .cq-etat-texte.est-ouvert { color: var(--orange-d); }
+  .cq-etat-texte.est-resolu { color: var(--green-d); }
+  .cq-xp {
+    background: var(--ink);
+    color: var(--yellow);
+    border-radius: 11px;
+    padding: 5px 9px;
+    font: 800 10px var(--display);
+    flex: none;
+  }
+
+  .cq-titre { font: 800 20px/1.35 var(--display); padding: 0 20px; margin-top: 14px; }
+  .cq-tags { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 20px; margin-top: 12px; }
+  .cq-tag {
+    background: var(--sand);
+    border-radius: 11px;
+    padding: 5px 9px;
+    font: 700 10.5px var(--text);
+    color: var(--muted);
+  }
+  .cq-autrice {
+    display: flex; align-items: center; gap: 11px;
+    padding: 0 20px;
+    margin-top: 16px;
+  }
+  .cq-autrice-nom { font: 700 13px var(--text); }
+  .cq-autrice-meta { font: 500 9px var(--mono); color: var(--faint); margin-top: 2px; }
+
+  /* ── Réponses ── */
+  .cq-reponse {
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 26px;
+    padding: 18px;
+  }
+  .cq-reponse + .cq-reponse { margin-top: 12px; }
+  .cq-reponse.est-retenue {
+    background: linear-gradient(140deg, #DFF5E8 0%, #FFFDF8 78%);
+    border-color: #BFE6D2;
+  }
+  .cq-reponse-tete { display: flex; align-items: center; gap: 10px; }
+  .cq-reponse-nom { font: 800 13px var(--display); }
+  .cq-reponse-meta { font: 500 9px var(--mono); color: var(--faint); margin-top: 2px; }
+  .cq-retenue-marque {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--green);
+    color: #fff;
+    border-radius: 11px;
+    padding: 5px 9px;
+    font: 800 9.5px var(--display);
+    flex: none;
+  }
+  .cq-reponse-texte { font: 400 13.5px/1.6 var(--text); color: #3F3A33; margin-top: 13px; }
+  .cq-reponse-pied {
+    display: flex; align-items: center; gap: 14px;
+    margin-top: 14px;
+  }
+  /* `.ce-compteur` vit dans le gabarit de l'onglet Entraide, qui n'est pas
+     chargé ici : cet écran redéclare ce dont il a besoin. */
+  .cq-reponse-pied .ce-compteur { display: flex; align-items: center; gap: 6px; }
+  .cq-reponse-pied .ce-compteur span { font: 700 12px var(--text); color: var(--ink); }
+  .cq-retenir {
+    border: 0;
+    background: var(--sand);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 9px 13px;
+    font: 800 11.5px var(--display);
+    cursor: pointer;
+    margin-left: auto;
+  }
+  .cq-retenir:hover { background: var(--green-l); color: var(--green-d); }
+
+  /* ── Répondre ── */
+  .cq-repondre {
+    background: var(--ink);
+    border-radius: 28px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cm .cq-repondre-glow {
+    position: absolute; top: -60px; right: -40px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(31,168,92,.32) 0%, rgba(31,168,92,0) 70%);
+  }
+  .cq-repondre > * { position: relative; }
+  .cq-repondre-kicker { font: 500 9px var(--mono); letter-spacing: .14em; color: var(--dim); }
+  .cq-repondre-titre { font: 800 17px/1.3 var(--display); color: #fff; margin-top: 8px; }
+  .cq-repondre-champ {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(255,255,255,.08);
+    border: 0;
+    border-radius: 18px;
+    padding: 14px 16px;
+    margin-top: 14px;
+    font: 400 13px/1.5 var(--text);
+    color: #fff;
+    outline: none;
+    resize: vertical;
+    min-height: 84px;
+  }
+  .cq-repondre-champ::placeholder { color: var(--dim); }
+  .cq-repondre-envoyer {
+    display: block;
+    width: 100%;
+    border: 0;
+    background: var(--green);
+    color: #fff;
+    border-radius: 18px;
+    padding: 14px 0;
+    margin-top: 12px;
+    font: 800 13.5px var(--display);
+    cursor: pointer;
+  }
+  .cq-deja {
+    display: flex; align-items: center; gap: 9px;
+    background: rgba(255,255,255,.08);
+    border-radius: 18px;
+    padding: 14px 16px;
+    margin-top: 14px;
+    font: 400 12.5px var(--text);
+    color: var(--dim-2);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm has-nav">
+
+  {# ══ La question ══ #}
+  <header class="cq-entete">
+    <div class="cm-topbar">
+      <a href="{% url 'communaute' %}?onglet=entraide" class="cm-back" aria-label="Retour">
+        {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+      </a>
+      <span class="cm-topbar-label">FIL D'ENTRAIDE</span>
+      <span class="cm-back-ghost" aria-hidden="true"></span>
+    </div>
+
+    <div class="cq-etat" style="margin-top:16px">
+      {% if question.resolue %}
+        <span class="cq-etat-marque est-resolu">
+          {% include 'core/communaute/_icones.html' with icone='coche' taille=15 %}
+        </span>
+        <span class="cq-etat-texte est-resolu">RÉSOLU · {{ reponses|length }} RÉPONSE{{ reponses|length|pluralize:"S" }}</span>
+      {% elif reponses %}
+        <span class="cq-etat-marque" style="background:var(--blue-d)">
+          {% include 'core/communaute/_icones.html' with icone='bulle' taille=15 %}
+        </span>
+        <span class="cq-etat-texte" style="color:var(--blue-d)">{{ reponses|length }} RÉPONSE{{ reponses|length|pluralize:"S" }}</span>
+      {% else %}
+        <span class="cq-etat-marque est-ouvert">
+          {% include 'core/communaute/_icones.html' with icone='alerte' taille=15 %}
+        </span>
+        <span class="cq-etat-texte est-ouvert">SANS RÉPONSE · {{ minutes }} MIN</span>
+      {% endif %}
+      <span style="flex:1"></span>
+      {% if not question.resolue %}<span class="cq-xp">+{{ question.xp_gain }} XP</span>{% endif %}
+    </div>
+
+    <h1 class="cq-titre">{{ question.contenu }}</h1>
+
+    {% if question.liste_tags %}
+      <div class="cq-tags">
+        {% for tag in question.liste_tags %}<span class="cq-tag">{{ tag|capfirst }}</span>{% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="cq-autrice">
+      {% if question.motif %}
+        <span class="cm-motif m-{{ question.motif }}"
+              style="width:52px;height:52px;border-radius:18px;flex:none"></span>
+      {% endif %}
+      <a href="{% url 'communaute_profil' question.auteur.pk %}"
+         class="cm-jeton {{ question.auteur|teinte }}"
+         style="width:38px;height:38px;font-size:13px">{{ question.auteur|initiales }}</a>
+      <div style="flex:1;min-width:0">
+        <a href="{% url 'communaute_profil' question.auteur.pk %}" class="cq-autrice-nom cm-nom-lien"
+           style="display:block">
+          {% if est_autrice %}Toi{% else %}{{ question.auteur|nom_court }}{% endif %}
+        </a>
+        <div class="cq-autrice-meta">
+          {% if question.auteur.profil_jeu %}{{ question.auteur.profil_jeu.arrondissement|upper }} · {% endif %}
+          IL Y A {{ question.date_creation|depuis|upper }}
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {# ══ Les réponses ══ #}
+  <section class="cm-section">
+    <div class="cm-section-head">
+      <span class="cm-section-titre">
+        {% if reponses %}Les réponses{% else %}Pas encore de réponse{% endif %}
+      </span>
+    </div>
+
+    <div style="padding:0 16px">
+      {% for reponse in reponses %}
+        <article class="cq-reponse {% if reponse.validee %}est-retenue{% endif %} cm-entree"
+                 style="--rang:{{ forloop.counter0 }}">
+          <div class="cq-reponse-tete">
+            <a href="{% url 'communaute_profil' reponse.auteur.pk %}"
+               class="cm-jeton {{ reponse.auteur|teinte }}"
+               style="width:36px;height:36px;font-size:12px">{{ reponse.auteur|initiales }}</a>
+            <div style="flex:1;min-width:0">
+              <a href="{% url 'communaute_profil' reponse.auteur.pk %}" class="cq-reponse-nom cm-nom-lien"
+                 style="display:block">
+                {% if reponse.auteur == user %}Toi{% else %}{{ reponse.auteur|nom_court }}{% endif %}
+              </a>
+              <div class="cq-reponse-meta">
+                NIV. {{ reponse.niveau }} · IL Y A {{ reponse.date_creation|depuis|upper }}
+              </div>
+            </div>
+            {% if reponse.validee %}
+              <span class="cq-retenue-marque">
+                {% include 'core/communaute/_icones.html' with icone='coche' taille=11 %}
+                RETENUE
+              </span>
+            {% endif %}
+          </div>
+
+          <div class="cq-reponse-texte">{{ reponse.contenu|linebreaksbr }}</div>
+
+          <div class="cq-reponse-pied">
+            <span class="ce-compteur" style="color:var(--orange)">
+              {% include 'core/communaute/_icones.html' with icone='coeur' taille=17 %}
+              <span>{{ reponse.coeurs }}</span>
+            </span>
+            {% if est_autrice and not reponse.validee %}
+              <form method="post" action="{% url 'communaute_valider_reponse' reponse.pk %}"
+                    style="margin-left:auto">
+                {% csrf_token %}
+                <button type="submit" class="cq-retenir">Retenir cette réponse</button>
+              </form>
+            {% endif %}
+          </div>
+        </article>
+      {% empty %}
+        <div class="cm-vide" style="margin:0">
+          Personne n'a encore répondu. Une réponse retenue rapporte 15 pièces.
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ══ Répondre ══ #}
+  {% if not est_autrice %}
+  <section style="margin:22px 16px 0;flex:none">
+    <div class="cq-repondre">
+      <span class="cq-repondre-glow" aria-hidden="true"></span>
+      <div class="cq-repondre-kicker">TU SAIS FAIRE ?</div>
+      <div class="cq-repondre-titre">Donne-lui un coup de main</div>
+
+      {% if a_repondu %}
+        <div class="cq-deja">
+          {% include 'core/communaute/_icones.html' with icone='coche' taille=16 %}
+          Tu as déjà répondu. Merci pour elle.
+        </div>
+      {% else %}
+        <form method="post" action="{% url 'communaute_repondre' question.pk %}">
+          {% csrf_token %}
+          <textarea name="contenu" class="cq-repondre-champ" required
+                    placeholder="Explique ton geste, la machine, le réglage…"></textarea>
+          <button type="submit" class="cq-repondre-envoyer">
+            Répondre · +{{ question.xp_gain }} XP
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+  {% elif not question.resolue and reponses %}
+  <section style="margin:22px 16px 0;flex:none">
+    <div class="cm-vide" style="margin:0">
+      Une de ces réponses t'a dépanné ? Retiens-la : son auteur gagne 15 pièces.
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+  {% include 'core/bottom_nav.html' %}
+{% endblock %}

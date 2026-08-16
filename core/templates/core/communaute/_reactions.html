@@ -1,0 +1,39 @@
+{% comment %}
+  Réactions d'un message : les pastilles déjà posées, puis le bouton qui
+  ouvre la palette.
+
+  Chaque réaction est un formulaire POST — reposer la même la retire. Le
+  script du salon intercepte l'envoi pour mettre la pastille à jour sur place
+  quand il le peut ; sans JavaScript, le POST recharge le fil à l'ancre du
+  message.
+{% endcomment %}
+<div class="cg-reactions" data-reactions="{{ message.pk }}">
+  {% for reaction in message.reactions_groupees %}
+    <form method="post" action="{% url 'communaute_reagir' message.pk %}" class="cg-reaction-form">
+      {% csrf_token %}
+      <input type="hidden" name="emoji" value="{{ reaction.emoji }}">
+      <button type="submit" class="cg-reaction {% if reaction.par_moi %}est-mienne{% endif %}"
+              title="{{ reaction.noms|join:', ' }}">
+        <span class="cg-reaction-emoji">{{ reaction.emoji }}</span>
+        <span class="cg-reaction-nombre">{{ reaction.nombre }}</span>
+      </button>
+    </form>
+  {% endfor %}
+
+  <span class="cg-palette-ancre">
+    <button type="button" class="cg-reagir" aria-expanded="false"
+            data-palette="palette-{{ message.pk }}" aria-label="Réagir à ce message">
+      {% include 'core/communaute/_icones.html' with icone='smiley-plus' taille=15 %}
+    </button>
+
+    <div class="cg-palette" id="palette-{{ message.pk }}" hidden>
+      {% for emoji in emojis %}
+        <form method="post" action="{% url 'communaute_reagir' message.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="emoji" value="{{ emoji }}">
+          <button type="submit" class="cg-palette-bouton" aria-label="Réagir {{ emoji }}">{{ emoji }}</button>
+        </form>
+      {% endfor %}
+    </div>
+  </span>
+</div>

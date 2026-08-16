@@ -1,0 +1,14 @@
+{% comment %}
+  En-tête d'un panneau du sélecteur de partage : la flèche revient d'un cran
+  (`retour`, la galerie par défaut), le titre dit ce qu'on choisit ici.
+{% endcomment %}
+<header class="cg-vue-tete">
+  <button type="button" class="cg-vue-retour" data-vue-ouvre="{{ retour|default:'galerie' }}"
+          aria-label="Revenir">
+    {% include 'core/communaute/_icones.html' with icone='fleche-gauche' taille=17 %}
+  </button>
+  <span style="flex:1;min-width:0">
+    <span class="cg-vue-titre">{{ titre }}</span>
+    {% if sous %}<span class="cg-vue-sous">{{ sous }}</span>{% endif %}
+  </span>
+</header>

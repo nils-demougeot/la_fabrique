@@ -244,7 +244,13 @@
     padding: 17px 19px;
     box-shadow: 0 18px 38px rgba(20,18,15,.1);
   }
-  .dash-level-top { display: flex; align-items: center; gap: 12px; }
+  .dash-level-top {
+    display: flex; align-items: center; gap: 12px;
+    color: inherit; text-decoration: none;
+    transition: opacity .12s ease;
+  }
+  .dash-level-top:active { opacity: .78; }
+  .dash-level-chevron { color: var(--muted); display: flex; flex: none; }
   .dash-ring {
     width: 44px; height: 44px;
     border-radius: 50%;
@@ -1070,9 +1076,11 @@
 
   <div class="dash-body">
 
-    <!-- ══════════════ Niveau d'atelier ══════════════ -->
+    <!-- ══════════════ Niveau d'atelier ══════════════
+         Le bloc entier ouvre l'échelle des niveaux (rubrique Partage) : c'est
+         là qu'on voit d'où viennent les points et ce que chaque palier ouvre. -->
     <section class="dash-level">
-      <div class="dash-level-top">
+      <a href="{% url 'communaute_progression' %}" class="dash-level-top">
         <span class="dash-ring" style="background: conic-gradient(var(--green) 0 {{ niveau.pourcentage }}%, var(--line) {{ niveau.pourcentage }}% 100%);">
           <span>{{ niveau.numero }}</span>
         </span>
@@ -1087,18 +1095,21 @@
           </p>
         </div>
         <span class="dash-level-pct">{{ niveau.pourcentage }} %</span>
-      </div>
+        <span class="dash-level-chevron" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="m9 5 7 7-7 7" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </a>
 
       <div class="dash-bar"><i data-fill="{{ niveau.pourcentage }}"></i></div>
 
       <div class="dash-stats">
-        <div class="dash-stat">
+        <a href="{% url 'communaute_serie' %}" class="dash-stat dash-link">
           <span class="dash-stat-icon is-flame">
             <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.8 2.4c.5 3 2 3.9 3.6 5.6 1.5 1.6 2.4 3.3 2.4 5.4 0 4-3.1 6.9-6.8 6.9S5.2 17.4 5.2 13.4c0-2.3 1.1-3.9 2.5-5.3.4 1.1 1.1 1.8 2 2.1.5-3.4 1.4-6 3.1-7.8Z" fill="#fff"/></svg>
           </span>
           <p class="dash-stat-value">{{ nb_projets_termines }}</p>
           <p class="dash-stat-label">projet{{ nb_projets_termines|pluralize }} fini{{ nb_projets_termines|pluralize }}</p>
-        </div>
+        </a>
 
         <a href="{% url 'mes_tissus' %}" class="dash-stat dash-link">
           <span class="dash-stat-icon is-layers">
@@ -1527,6 +1538,10 @@
         <span class="dash-hero-unit">/ {{ nb_badges_total }}</span>
       </div>
       <p class="dash-hero-note">badges décrochés dans ton atelier</p>
+      <a href="{% url 'communaute_ecussons' %}" class="dash-hero-link" hx-boost="false"
+         style="display:inline-block;margin-top:10px;color:#fff;font:800 12px var(--display,inherit);text-decoration:underline;text-underline-offset:3px;">
+        Voir mes écussons dans la communauté
+      </a>
     </div>
 
     <div class="dash-quest-list">

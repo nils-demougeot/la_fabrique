@@ -24,6 +24,7 @@ Les images atterrissent dans shots/.
 import base64
 import json
 import os
+import re
 import sys
 import time
 
@@ -111,7 +112,11 @@ def main(paths):
 
     for path in paths:
         goto(tab, BASE_URL + path, wait=2.2)
-        name = (path.strip('/') or 'home').replace('/', '_')
+        # Le nom de fichier vient du chemin : tout ce que Windows refuse dans
+        # un nom (?, =, &, :) devient un souligné, sinon une URL à paramètres
+        # (« /communaute/?onglet=amis ») ferait échouer l'écriture.
+        name = (path.strip('/') or 'home')
+        name = re.sub(r'[^A-Za-z0-9._-]+', '_', name).strip('_')
         if pre_js:
             evaluate(tab, pre_js)
             time.sleep(1.0)

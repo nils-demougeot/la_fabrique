@@ -1,0 +1,467 @@
+{% load communaute_extras %}
+{% comment %}
+  Onglet Atelier (design 37a) : sentier de la saison, ligue, défi de ville,
+  agenda. Portes vers 45d (ouvrir mon cadeau), 45a (tout le classement),
+  45j (fin de saison) et 45h (fiche d'événement).
+{% endcomment %}
+
+{# ══ Sentier de la saison ══ #}
+<section class="cs-sentier">
+  <span class="cs-sentier-glow" aria-hidden="true"></span>
+
+  <div class="cs-sentier-head">
+    <div>
+      <div class="cs-sentier-titre">Sentier de la saison</div>
+      <div class="cs-sentier-kicker">
+        {% if saison %}{{ saison.libelle }} · J-{{ saison_jours_restants }}{% else %}AUCUNE SAISON EN COURS{% endif %}
+      </div>
+    </div>
+    {% if saison %}
+    <a href="{% url 'communaute_fin_saison' %}" class="cs-saison-pastille cm-tap">
+      <svg width="12" height="12" viewBox="0 0 24 24">
+        <path d="M12 2v20M3.3 7l17.4 10M20.7 7 3.3 17" stroke="#FFC93C" stroke-width="2.6" stroke-linecap="round"/>
+      </svg>
+      <span>Saison {{ saison.numero|stringformat:"02d" }}</span>
+    </a>
+    {% endif %}
+  </div>
+
+  {# Tout le sentier est là : la zone défile, et s'ouvre sur le cran courant. #}
+  <div class="cs-rail" id="cs-rail">
+    {% for ligne in sentier %}
+      {% if ligne.etat == 'reclame' %}
+        <div class="cs-etape is-passe {% if forloop.last %}is-dernier{% endif %}"
+             {% if ligne.courant %}data-cran-courant{% endif %}>
+          <div class="cs-etape-rail">
+            <span class="cs-pastille-fait">
+              {% include 'core/communaute/_icones.html' with icone='coche' taille=15 %}
+            </span>
+            {% if not forloop.last %}<span class="cs-fil is-fait"></span>{% endif %}
+          </div>
+          <div class="cs-etape-corps">
+            <div class="cs-etape-titre is-fait">Palier {{ ligne.palier.numero }} · {{ ligne.palier.points_requis|espace_millier }} CP</div>
+            <div class="cs-etape-detail">{{ ligne.palier.detail|default:ligne.palier.titre }}</div>
+          </div>
+        </div>
+
+      {% elif ligne.etat == 'pret' %}
+        <div class="cs-etape" style="align-items:stretch" data-cran-courant>
+          <div class="cs-etape-rail">
+            <span class="cs-pastille-prete">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M4 8h16l-1.4 11a2 2 0 0 1-2 1.8H7.4a2 2 0 0 1-2-1.8L4 8Z" fill="#7A5303"/>
+                <path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="#7A5303" stroke-width="2.2" stroke-linecap="round"/>
+              </svg>
+            </span>
+            {% if not forloop.last %}<span class="cs-fil"></span>{% endif %}
+          </div>
+          <div class="cs-etape-corps" style="padding-bottom:26px">
+            <div class="cs-coffre-carte">
+              {% comment %}
+                Étincelles : elles débordent volontairement de la carte, et
+                flottent chacune à son rythme (--flot / --retard).
+              {% endcomment %}
+              <span class="cs-etincelle" style="top:-10px;left:20px;width:5px;height:5px;box-shadow:0 0 10px #FFC93C;--flot:3.6s;--retard:0s"></span>
+              <span class="cs-etincelle" style="top:6px;right:34px;width:4px;height:4px;border-radius:1px;box-shadow:0 0 8px #FF9B4C;--flot:4.2s;--retard:.7s"></span>
+              <span class="cs-etincelle" style="bottom:14px;left:-6px;width:6px;height:6px;background:#FF9B4C;box-shadow:0 0 10px #FF9B4C;--flot:3.1s;--retard:1.3s"></span>
+
+              <div class="cs-coffre-entete">
+                <span class="cs-coffre-kicker">PALIER {{ ligne.palier.numero }} · DÉBLOQUÉ</span>
+                <span class="cs-coffre-pret">
+                  {% include 'core/communaute/_icones.html' with icone='eclair' taille=11 %}
+                  <span>PRÊT</span>
+                </span>
+              </div>
+
+              <div class="cs-coffre-corps">
+                <span class="cs-coffre-icone">
+                  {% include 'core/communaute/_icones.html' with icone='coffre' taille=52 uid='sentier' %}
+                </span>
+                <div style="flex:1;min-width:0">
+                  <div class="cs-coffre-titre">{{ ligne.palier.titre }}</div>
+                  {% if ligne.palier.detail %}
+                    <div class="cs-coffre-detail">{{ ligne.palier.detail }}</div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="cs-cadeau-zone">
+                {% comment %}
+                  La rotation d'origine tombait sous l'animation, qui pose sa
+                  propre `transform` : les grains carrés sont laissés droits.
+                {% endcomment %}
+                <span class="cs-etincelle" style="top:2px;left:14px;width:6px;height:6px;border-radius:1px;background:#14120F;box-shadow:0 0 10px #FFC93C;--flot:3.3s;--retard:.2s"></span>
+                <span class="cs-etincelle" style="top:-2px;right:22px;width:5px;height:5px;background:#14120F;box-shadow:0 0 10px #FF9B4C;--flot:4.1s;--retard:.9s"></span>
+                <span class="cs-etincelle" style="bottom:0;right:50px;width:4px;height:4px;background:#14120F;box-shadow:0 0 8px #FFE9A8;--flot:3.7s;--retard:1.6s"></span>
+                <span class="cs-etincelle" style="bottom:4px;left:34px;width:5px;height:5px;border-radius:1px;background:#14120F;box-shadow:0 0 8px #FF9B4C;--flot:4.6s;--retard:.5s"></span>
+                <span class="cs-etincelle" style="top:8px;left:60%;width:4px;height:4px;background:#14120F;box-shadow:0 0 8px #FFC93C;--flot:3.9s;--retard:2.1s"></span>
+
+                <form method="post" action="{% url 'communaute_coffre' ligne.palier.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="cs-cadeau">
+                    <span class="cs-cadeau-reflet" aria-hidden="true"></span>
+                    <span class="cs-cadeau-eclair">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M13 3 5 14h6.2l-1.4 7L19 10h-6.2L13 3Z" fill="currentColor"/>
+                      </svg>
+                    </span>
+                    <span class="cs-cadeau-texte">Ouvrir mon cadeau</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      {% else %}
+        <div class="cs-etape is-verrouille {% if forloop.last %}is-dernier{% endif %}"
+             {% if ligne.courant %}data-cran-courant{% endif %}>
+          <div class="cs-etape-rail">
+            <span class="cs-pastille-verrou">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              </svg>
+            </span>
+            {% if not forloop.last %}<span class="cs-fil"></span>{% endif %}
+          </div>
+          <div class="cs-etape-corps">
+            <div class="cs-etape-titre is-verrouille">Palier {{ ligne.palier.numero }} · {{ ligne.palier.points_requis|espace_millier }} CP</div>
+            <div class="cs-etape-detail">{{ ligne.palier.detail|default:ligne.palier.titre }}</div>
+            {% if ligne.points_manquants %}
+              <div class="cs-etape-manque">Encore {{ ligne.points_manquants }} CP</div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    {% empty %}
+      <div class="cm-vide" style="margin:0">Le sentier de la saison ouvrira bientôt.</div>
+    {% endfor %}
+  </div>
+
+  {% if nb_paliers %}
+    <div class="cs-rail-pied">
+      <span class="cs-rail-piste">
+        <span class="cs-rail-jauge" data-jauge="{{ pourcentage_paliers }}" style="width:0"></span>
+      </span>
+      <span class="cs-rail-compte">{{ nb_paliers_reclames }}/{{ nb_paliers }} PALIERS</span>
+    </div>
+  {% endif %}
+</section>
+
+{# ══ Ligue ══ #}
+{% if classement %}
+<section class="cs-ligue">
+  <span class="cs-ligue-faisceau g" aria-hidden="true"></span>
+  <span class="cs-ligue-faisceau d" aria-hidden="true"></span>
+
+  <div class="cs-ligue-head">
+    <div style="display:flex;align-items:center;gap:11px">
+      <span class="cs-ligue-marque">
+        {% include 'core/communaute/_icones.html' with icone='trophee' taille=20 uid='ligue' %}
+      </span>
+      <div>
+        <div class="cs-ligue-nom">{{ participation.get_ligue_display|default:"Ligue Or" }}</div>
+        {# Le compte à rebours ouvre le bilan de fin de saison (45j). #}
+        <a href="{% url 'communaute_fin_saison' %}" class="cs-ligue-meta cm-tap" style="display:flex;align-items:center;gap:6px">
+          <span>{{ nb_joueuses }} JOUEUR{{ nb_joueuses|pluralize:"S" }}</span>
+          <span class="cs-ligue-boost-mini">
+            {% include 'core/communaute/_icones.html' with icone='eclair' taille=9 %}
+            <span>XP×2</span>
+          </span>
+        </a>
+      </div>
+    </div>
+    <span class="cs-ligue-boost">
+      <span>{{ fin_ligue_jours }} J RESTANT{{ fin_ligue_jours|pluralize:"S" }}</span>
+    </span>
+  </div>
+
+  {# Podium : 2ᵉ, 1ʳᵉ, 3ᵉ — les hauteurs de socle disent le rang d'un coup d'œil. #}
+  <div class="cs-podium">
+    {% for ligne in podium %}
+      {% if ligne.rang == 1 %}
+        <div class="cs-podium-place is-premiere">
+          <div class="cs-podium-jeton">
+            <div class="cs-podium-cercle" style="background:linear-gradient(150deg,#FFF3C4,#E0A20C)">
+              <span style="background:#2A2110;color:#FFE9A8">{{ ligne.utilisateur|initiales }}</span>
+            </div>
+            <span class="cs-podium-couronne">
+              {% include 'core/communaute/_icones.html' with icone='couronne' taille=26 uid='podium' %}
+            </span>
+            <span class="cs-podium-medaille" style="background:linear-gradient(150deg,#FFF3C4,#E0A20C);color:#5A3C02">1</span>
+          </div>
+          <div class="cs-podium-nom {% if ligne.est_moi %}is-moi{% endif %}">
+            <a href="{% url 'communaute_profil' ligne.utilisateur.pk %}" class="cm-nom-lien">
+              {% if ligne.est_moi %}Toi{% else %}{{ ligne.utilisateur|prenom }}{% endif %}
+            </a>
+          </div>
+          <div class="cs-podium-xp" style="color:#F3D68A">{{ ligne.xp|espace_millier }}</div>
+          <div class="cs-podium-socle" style="height:84px;background:linear-gradient(180deg,#FFC93C,rgba(255,201,60,.35));box-shadow:0 -6px 30px rgba(255,201,60,.35)"></div>
+        </div>
+      {% else %}
+        <div class="cs-podium-place">
+          <div class="cs-podium-jeton">
+            {% if ligne.est_moi %}
+              <div class="cs-podium-cercle" style="background:linear-gradient(150deg,#4FD08A,#12633A);box-shadow:0 0 20px rgba(31,168,92,.45)">
+                <span style="background:#123A28;color:#fff">{{ ligne.utilisateur|initiales }}</span>
+              </div>
+            {% elif ligne.rang == 2 %}
+              <div class="cs-podium-cercle" style="background:linear-gradient(150deg,#DFF5E8,#8FD9AF)">
+                <span style="background:#123A28;color:#DFF5E8">{{ ligne.utilisateur|initiales }}</span>
+              </div>
+            {% else %}
+              <div class="cs-podium-cercle" style="background:linear-gradient(150deg,#E3DBFF,#9C87F0)">
+                <span style="background:#2A2440;color:#E3DBFF">{{ ligne.utilisateur|initiales }}</span>
+              </div>
+            {% endif %}
+            {% if ligne.rang == 2 %}
+              <span class="cs-podium-medaille" style="background:linear-gradient(150deg,#EDEDED,#A9A9A9);color:#40403E">2</span>
+            {% else %}
+              <span class="cs-podium-medaille" style="background:linear-gradient(150deg,#E8B98A,#A9663A);color:#4A2712">3</span>
+            {% endif %}
+          </div>
+          <div class="cs-podium-nom {% if ligne.est_moi %}is-moi{% endif %}">
+            <a href="{% url 'communaute_profil' ligne.utilisateur.pk %}" class="cm-nom-lien">
+              {% if ligne.est_moi %}Toi{% else %}{{ ligne.utilisateur|prenom }}{% endif %}
+            </a>
+          </div>
+          <div class="cs-podium-xp" {% if ligne.est_moi %}style="color:#8FD9AF"{% endif %}>{{ ligne.xp|espace_millier }}</div>
+          {% if ligne.est_moi %}
+            <div class="cs-podium-socle" style="height:42px;background:linear-gradient(180deg,rgba(31,168,92,.6),rgba(31,168,92,.15));border:1px solid rgba(143,217,175,.3);border-bottom:0;box-sizing:border-box"></div>
+          {% else %}
+            <div class="cs-podium-socle" style="height:{% if ligne.rang == 2 %}56{% else %}42{% endif %}px;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.12);border-bottom:0;box-sizing:border-box"></div>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="cs-filet-podium"></div>
+
+  <div class="cm-separateur is-promo" style="margin:14px 0 12px">
+    <span class="cm-separateur-filet"></span>
+    <span class="cm-separateur-pastille">
+      {% include 'core/communaute/_icones.html' with icone='fleche-haut' taille=12 %}
+      <span>TOP 5 MONTE EN {{ participation.ligue_suivante_nom|default:"PLATINE"|upper|cut:"LIGUE "|cut:"Ligue " }}</span>
+    </span>
+    <span class="cm-separateur-filet"></span>
+  </div>
+
+  {% for ligne in classement %}
+    {% if ligne.rang <= 5 %}
+      <div class="cs-rang {% if ligne.est_moi %}is-moi{% endif %}">
+        <span class="cs-rang-num" {% if ligne.rang == 1 %}style="color:#F3D68A"{% elif ligne.est_moi %}style="color:#8FD9AF"{% endif %}>{{ ligne.rang }}</span>
+        <div class="cs-rang-barre">
+          {% if ligne.rang == 1 %}
+            <div class="cs-rang-remplissage" style="inset:0;background:linear-gradient(90deg,rgba(255,201,60,.1),rgba(255,201,60,.4))"></div>
+            <span class="cs-rang-jeton" style="right:5px;background:linear-gradient(150deg,#FFF3C4,#E0A20C);color:#5A3C02;box-shadow:0 0 14px rgba(255,201,60,.6)">{{ ligne.utilisateur|initiales }}</span>
+          {% elif ligne.est_moi %}
+            <div class="cs-rang-remplissage" style="width:{{ ligne.largeur }}%;background:linear-gradient(90deg,rgba(31,168,92,.35),#1FA85C)"></div>
+            <span class="cs-rang-jeton" style="left:calc({{ ligne.largeur }}% - 40px);background:linear-gradient(150deg,#4FD08A,#12633A);color:#fff">{{ ligne.utilisateur|initiales }}</span>
+          {% else %}
+            <div class="cs-rang-remplissage" style="width:{{ ligne.largeur }}%;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.28))"></div>
+            <span class="cs-rang-jeton cm-jeton {{ ligne.utilisateur|teinte }}" style="left:calc({{ ligne.largeur }}% - 33px)">{{ ligne.utilisateur|initiales }}</span>
+          {% endif %}
+          <a href="{% url 'communaute_profil' ligne.utilisateur.pk %}" class="cs-rang-nom cm-nom-lien">
+            {% if ligne.est_moi %}Toi{% else %}{{ ligne.utilisateur|nom_court }}{% endif %}
+          </a>
+        </div>
+        <span class="cs-rang-xp" {% if ligne.rang == 1 %}style="color:#F3D68A"{% endif %}>{{ ligne.xp|espace_millier }}</span>
+      </div>
+    {% endif %}
+  {% endfor %}
+
+  {% if nb_joueuses > 5 %}
+    <div class="cm-separateur is-maintien">
+      <span class="cm-separateur-filet"></span>
+      <span class="cm-separateur-texte">ZONE DE MAINTIEN</span>
+      <span class="cm-separateur-filet"></span>
+    </div>
+
+    {% for ligne in classement %}
+      {% if ligne.rang == 6 %}
+        <div class="cs-rang is-hors">
+          <span class="cs-rang-num">{{ ligne.rang }}</span>
+          <div class="cs-rang-barre" style="background:rgba(255,255,255,.05)">
+            <div class="cs-rang-remplissage" style="width:{{ ligne.largeur }}%;background:rgba(255,255,255,.1)"></div>
+            <span class="cs-rang-jeton" style="left:calc({{ ligne.largeur }}% - 33px);background:rgba(255,255,255,.16);color:#B7AFA4">{{ ligne.utilisateur|initiales }}</span>
+            <a href="{% url 'communaute_profil' ligne.utilisateur.pk %}" class="cs-rang-nom cm-nom-lien">{{ ligne.utilisateur|nom_court }}</a>
+          </div>
+          <span class="cs-rang-xp">{{ ligne.xp|espace_millier }}</span>
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  {# Porte vers le classement complet (45a). #}
+  <a href="{% url 'communaute_classement' %}" class="cs-tout-classement cm-tap">
+    <span class="cs-mini-pile">
+      <span style="background:linear-gradient(150deg,#FFF3C4,#E0A20C)"></span>
+      <span style="background:linear-gradient(150deg,#DFF5E8,#8FD9AF)"></span>
+      <span style="background:linear-gradient(150deg,#E3DBFF,#9C87F0)"></span>
+      <span style="background:rgba(255,255,255,.14)">+{{ nb_joueuses }}</span>
+    </span>
+    <span class="cs-libelle">Tout le classement</span>
+    <span class="cs-tout-fleche">
+      {% include 'core/communaute/_icones.html' with icone='chevron' taille=16 %}
+    </span>
+  </a>
+</section>
+{% endif %}
+
+{# ══ Défi de ville ══ #}
+{% if defi_ville %}
+<section class="cs-defi">
+  <span class="cs-defi-glow" aria-hidden="true"></span>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <span class="cs-defi-kicker">DÉFI DE VILLE · {{ defi_ville.ville|upper }}</span>
+    <span class="cs-defi-jours">J-{{ defi_jours }}</span>
+  </div>
+
+  <div class="cs-defi-titre">{{ defi_ville.titre }}</div>
+
+  <div style="display:flex;align-items:baseline;gap:8px;margin-top:14px">
+    <span class="cs-defi-chiffre">{{ defi_ville.total_m2 }} m²</span>
+    <span class="cs-defi-pourcent">{{ defi_ville.pourcentage }} %</span>
+  </div>
+  <div class="cs-defi-piste">
+    <div class="cs-defi-jauge" style="width:{{ defi_ville.pourcentage }}%"></div>
+  </div>
+
+  {% if quartiers %}
+  <div style="display:flex;gap:8px;margin-top:16px">
+    {% for quartier in quartiers %}
+      <div class="cs-quartier">
+        <div class="cs-quartier-nom">{{ quartier.quartier|upper }}</div>
+        <div class="cs-quartier-m2">{{ quartier.m2 }} m²</div>
+        <div class="cs-quartier-piste">
+          <div class="cs-quartier-jauge" style="width:{{ quartier.pourcentage }}%"></div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <a href="{% url 'communaute_defi_ville' %}"
+     style="display:flex;align-items:center;gap:11px;margin-top:16px" class="cm-tap">
+    <span class="cs-mini-pile" style="flex:none">
+      <span style="background:#FFEFC2;border-color:#2A2440"></span>
+      <span style="background:#DFF5E8;border-color:#2A2440"></span>
+      <span style="background:#FFE7DE;border-color:#2A2440"></span>
+    </span>
+    <span style="flex:1;font:400 12px var(--text);color:var(--dim-2)">Ta part : {{ ma_part_m2 }} m²</span>
+    <span class="cs-defi-declarer">Déclarer mes m²</span>
+  </a>
+</section>
+{% endif %}
+
+{# ══ Agenda ══ #}
+<section class="cm-section" style="padding-bottom:0">
+  <div class="cm-section-head">
+    {% comment %}
+      Passer par une variable : « {% now "F"|capfirst %} » appliquerait le
+      filtre au FORMAT, pas au mois rendu.
+    {% endcomment %}
+    {% now "F" as mois_courant %}
+    <span class="cm-section-titre">{{ mois_courant|capfirst }} à l'atelier</span>
+    <span class="cm-section-meta">{{ nb_evenements }} ÉVÉNEMENT{{ nb_evenements|pluralize:"S" }}</span>
+  </div>
+
+  <div class="cm-rail cm-chips">
+    <a href="{% url 'communaute' %}?onglet=atelier&agenda=tout" class="cm-chip"
+       {% if filtre_agenda == 'tout' %}aria-current="true"{% endif %}>Tout · {{ nb_evenements }}</a>
+    <a href="{% url 'communaute' %}?onglet=atelier&agenda=en_ligne" class="cm-chip"
+       {% if filtre_agenda == 'en_ligne' %}aria-current="true"{% endif %}>En ligne</a>
+    <a href="{% url 'communaute' %}?onglet=atelier&agenda=pres" class="cm-chip"
+       {% if filtre_agenda == 'pres' %}aria-current="true"{% endif %}>Près de moi</a>
+    <a href="{% url 'communaute' %}?onglet=atelier&agenda=mes" class="cm-chip"
+       {% if filtre_agenda == 'mes' %}aria-current="true"{% endif %}>Mes inscriptions · {{ nb_mes_evenements }}</a>
+  </div>
+
+  <div class="cm-rail cs-agenda-rail">
+    {% for evenement in evenements %}
+      {% if evenement.format_evenement == 'en_ligne' %}
+        <a href="{% url 'communaute_evenement' evenement.pk %}" class="cs-event is-live cm-tap">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="cs-event-date t-or">
+              <span class="cs-event-jour">{{ evenement.jour }}</span>
+              <span class="cs-event-mois">{{ evenement.mois_court }}</span>
+            </span>
+            <span class="cs-event-icone" style="background:rgba(255,255,255,.1);color:#fff">
+              {% include 'core/communaute/_icones.html' with icone='calendrier-plus' taille=16 %}
+            </span>
+          </div>
+          <div class="cs-event-kicker" style="color:#8FD9AF">EN LIGNE · {{ evenement.heure_debut|upper }}</div>
+          <div class="cs-event-titre">{{ evenement.titre }}</div>
+          <div class="cs-event-detail" style="color:#B7AFA4">
+            {{ evenement.duree }}{% if evenement.animatrice %} · avec {{ evenement.animatrice|prenom }}{% endif %} · +{{ evenement.xp_gain }} XP
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:14px">
+            <span class="cs-event-pile">
+              <span style="background:#E3DBFF;border:2px solid #14120F"></span>
+              <span style="background:#DFF5E8;border:2px solid #14120F"></span>
+              <span style="background:#FFE7DE;border:2px solid #14120F"></span>
+            </span>
+            <span style="font:400 11px var(--text);color:#B7AFA4">{{ evenement.nb_inscrites }} inscrit{{ evenement.nb_inscrites|pluralize }}</span>
+          </div>
+          <span class="cs-event-cta {% if evenement.est_inscrite %}b-faite{% else %}b-vert{% endif %}" style="display:block">
+            {% if evenement.est_inscrite %}Je suis inscrit{% else %}Je m'inscris{% endif %}
+          </span>
+        </a>
+
+      {% elif evenement.format_evenement == 'marathon' %}
+        <a href="{% url 'communaute_evenement' evenement.pk %}" class="cs-event is-local cm-tap">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="cs-event-date t-clair">
+              <span class="cs-event-jour">{{ evenement.jour }}</span>
+              <span class="cs-event-mois">{{ evenement.mois_court }}</span>
+            </span>
+            <span class="cs-event-marathon">MARATHON</span>
+          </div>
+          <div class="cs-event-titre" style="margin-top:14px">{{ evenement.titre }}</div>
+          <div class="cs-event-detail" style="color:var(--muted)">{{ evenement.accroche }}</div>
+          <div style="font:400 11px/1.4 var(--text);color:var(--muted);margin-top:12px">{{ evenement.description|truncatechars:70 }}</div>
+          <span class="cs-event-cta b-clair" style="display:block">Monter une équipe</span>
+        </a>
+
+      {% else %}
+        <a href="{% url 'communaute_evenement' evenement.pk %}" class="cs-event is-local cm-tap">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="cs-event-date t-clair">
+              <span class="cs-event-jour">{{ evenement.jour }}</span>
+              <span class="cs-event-mois">{{ evenement.mois_court }}</span>
+            </span>
+            <span class="cs-event-icone" style="background:var(--paper);color:var(--ink)">
+              {% include 'core/communaute/_icones.html' with icone='calendrier-plus' taille=16 %}
+            </span>
+          </div>
+          <div class="cs-event-kicker" style="display:flex;align-items:center;gap:4px;color:var(--muted)">
+            {% include 'core/communaute/_icones.html' with icone='epingle' taille=12 %}
+            {% if evenement.distance_km %}{{ evenement.distance_km }} KM · {% endif %}{{ evenement.heure_debut|upper }}
+          </div>
+          <div class="cs-event-titre">{{ evenement.titre }}</div>
+          <div class="cs-event-detail" style="color:var(--muted)">{{ evenement.accroche }}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:14px">
+            <span class="cs-event-pile">
+              <span style="background:#FFEFC2;border:2px solid #F4EDE1"></span>
+              <span style="background:#DFF5E8;border:2px solid #F4EDE1"></span>
+            </span>
+            <span style="font:400 11px var(--text);color:var(--muted)">{{ evenement.nb_inscrites }} inscrit{{ evenement.nb_inscrites|pluralize }}</span>
+          </div>
+          <span class="cs-event-cta {% if evenement.est_inscrite %}b-faite{% else %}b-clair{% endif %}" style="display:block">
+            {% if evenement.est_inscrite %}J'y serai{% else %}Je viens{% endif %}
+          </span>
+        </a>
+      {% endif %}
+    {% endfor %}
+
+    <div class="cs-event-proposer">
+      <span style="width:44px;height:44px;border-radius:50%;background:var(--sand);display:flex;align-items:center;justify-content:center;color:var(--ink)">
+        {% include 'core/communaute/_icones.html' with icone='plus' taille=20 %}
+      </span>
+      <span style="font:800 14px/1.25 var(--display);text-align:center">Proposer un atelier</span>
+      <span style="font:400 11px/1.4 var(--text);color:var(--muted);text-align:center">Chez toi ou dans un tiers-lieu</span>
+    </div>
+  </div>
+</section>

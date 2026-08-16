@@ -1,0 +1,1119 @@
+{% extends 'core/header.html' %}
+{% load static %}
+
+{% comment %}
+  ─────────────────────────────────────────────────────────────────────────
+  Socle commun de l'onglet Partage — designs 37a / 46a / 46b et sous-pages
+  45a → 45j.
+
+  Ce gabarit ne dessine rien : il pose les jetons de design de la rubrique et
+  les composants partagés (en-tête de saison, carte d'atelier, barre
+  d'onglets, pastilles, panneaux sombres, hexagones d'écusson). Chaque écran
+  l'étend et complète `communaute_css` avec ce qui lui est propre.
+
+  Toutes les valeurs (couleurs, rayons, tailles, graisses) sont reprises
+  telles quelles des maquettes : ne les ajuster qu'en changeant la maquette.
+  ─────────────────────────────────────────────────────────────────────────
+{% endcomment %}
+
+{% block app_header %}{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================
+     Jetons de design de la rubrique Partage
+     ========================================================= */
+  .cm {
+    --ink:        #14120F;
+    --ink-2:      #1A1712;
+    --paper:      #FFFDF8;
+    --sand:       #F4EDE1;
+    --sand-2:     #F6F0E6;
+    --sand-3:     #EFE7D9;
+    --line:       #EDE4D6;
+    --line-2:     #E7DED0;
+    --muted:      #7A7168;
+    --faint:      #9C9184;
+    --dim:        #8E877E;
+    --dim-2:      #B7AFA4;
+    --stone:      #B0A493;
+
+    --green:      #1FA85C;
+    --green-l:    #DFF5E8;
+    --green-d:    #12633A;
+    --green-mid:  #4FD08A;
+    --green-pale: #8FD9AF;
+    --forest:     #1F5E3F;
+
+    --yellow:     #FFC93C;
+    --yellow-l:   #FFEFC2;
+    --yellow-p:   #FFF3C4;
+    --gold:       #E0A20C;
+    --gold-d:     #8A5B03;
+    --gold-t:     #F3D68A;
+
+    --orange:     #FF6B3D;
+    --orange-l:   #FFE7DE;
+    --orange-d:   #E1552A;
+    --orange-p:   #FF9B77;
+
+    --violet:     #7C5CFF;
+    --violet-l:   #E3DBFF;
+    --violet-d:   #5B45B8;
+    --violet-p:   #C4B4FF;
+
+    --blue:       #7FC9E8;
+    --blue-d:     #2E7EA3;
+    --blue-l:     #BFE6F5;
+
+    --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --text:    'DM Sans', 'Manrope', system-ui, sans-serif;
+    --mono:    'DM Mono', ui-monospace, monospace;
+
+    background: var(--paper);
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--text);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* :where() pour que les composants qui SONT des liens gardent la main. */
+  .cm :where(a) { text-decoration: none; color: inherit; }
+  .cm svg { display: block; }
+  .cm sup { font-size: .62em; }
+
+  /* Réserve pour la barre de navigation flottante. */
+  .cm.has-nav { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
+  /* Réserve pour une barre d'action fixe propre à l'écran. */
+  .cm.has-cta { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
+
+  /* Rails horizontaux : la barre de défilement n'apparaît jamais. */
+  .cm-rail {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cm-rail::-webkit-scrollbar { display: none; height: 0; }
+
+  /* =========================================================
+     En-tête de rubrique (« SAISON 03 · TOILE · J-18 » + actions)
+     ========================================================= */
+  .cm-head {
+    flex: none;
+    padding: 12px 22px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .cm-head-kicker {
+    font: 500 10px var(--mono);
+    letter-spacing: .14em;
+    color: var(--faint);
+  }
+  .cm-head-title {
+    font: 800 26px var(--display);
+    letter-spacing: -.02em;
+    margin-top: 4px;
+  }
+  .cm-head-actions { display: flex; gap: 8px; flex: none; }
+  .cm-icon-btn {
+    width: 40px; height: 40px;
+    border-radius: 14px;
+    background: var(--sand);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink);
+    position: relative;
+    flex: none;
+    border: 0;
+    cursor: pointer;
+    transition: transform .12s ease, background .12s ease;
+  }
+  .cm-icon-btn:active { transform: scale(.92); background: var(--line); }
+  .cm-icon-btn svg { width: 19px; height: 19px; }
+  .cm-icon-btn .cm-dot {
+    position: absolute; top: 7px; right: 8px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--orange);
+    border: 2px solid var(--paper);
+    box-sizing: content-box;
+  }
+  /* Compteur de quêtes greffé sur le bouton dédié. */
+  .cm-icon-btn .cm-badge-num {
+    position: absolute; top: -4px; right: -4px;
+    min-width: 17px; height: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--yellow);
+    color: var(--ink);
+    font: 800 9.5px var(--display);
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--paper);
+    box-sizing: content-box;
+  }
+
+  /* Bandeau de retour des sous-pages claires. */
+  .cm-topbar {
+    flex: none;
+    padding: 10px 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .cm-back {
+    width: 38px; height: 38px;
+    border-radius: 13px;
+    background: var(--sand);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink);
+    flex: none;
+    transition: transform .12s ease;
+  }
+  .cm-back:active { transform: scale(.92); }
+  .cm-back svg { width: 18px; height: 18px; }
+  .cm-topbar-label {
+    font: 500 10px var(--mono);
+    letter-spacing: .16em;
+    color: var(--faint);
+  }
+  /* Déclinaison sombre (écrans sur fond encre). */
+  .cm-topbar.is-dark .cm-back {
+    background: rgba(255,255,255,.09);
+    color: #fff;
+  }
+  .cm-topbar.is-dark .cm-topbar-label { color: var(--dim); }
+  /* Contrepoids invisible : il équilibre le bandeau quand il n'y a pas de
+     second bouton, et ne doit donc jamais recevoir de fond. */
+  .cm-back-ghost { width: 38px; height: 38px; flex: none; display: block; }
+
+  /* =========================================================
+     Carte d'atelier — identique dans les trois onglets
+     ========================================================= */
+  .cm-card {
+    margin: 18px 16px 0;
+    background: linear-gradient(150deg, #1F5E3F 0%, #221E19 70%);
+    border-radius: 32px;
+    padding: 20px 22px 22px;
+    flex: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .cm .cm-card-glow {
+    position: absolute; top: -60px; right: -40px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(31,168,92,.42) 0%, rgba(31,168,92,0) 70%);
+  }
+  .cm-card > * { position: relative; }
+
+  .cm-card-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .cm-card-top-label {
+    font: 500 9.5px var(--mono);
+    letter-spacing: .14em;
+    color: var(--paper);
+  }
+  .cm-card-profil {
+    display: flex; align-items: center; gap: 5px;
+    color: var(--green-pale);
+  }
+  .cm-card-profil span { font: 800 11px var(--display); }
+  .cm-card-profil svg { width: 12px; height: 12px; }
+
+  .cm-identite { display: flex; align-items: center; gap: 14px; }
+  .cm-avatar {
+    width: 62px; height: 62px;
+    border-radius: 22px;
+    background: linear-gradient(150deg, #E3DBFF, #B7A6F5);
+    display: flex; align-items: center; justify-content: center;
+    font: 800 21px var(--display);
+    color: #3B2F6B;
+    flex: none;
+    box-shadow: 0 8px 20px rgba(0,0,0,.3);
+  }
+  .cm-identite-nom {
+    font: 800 21px var(--display);
+    color: #fff;
+    letter-spacing: -.02em;
+  }
+  .cm-identite-role {
+    font: 400 12.5px var(--text);
+    color: var(--dim-2);
+    margin-top: 4px;
+  }
+
+  /* Bloc niveau : anneau conique + barre d'XP. */
+  .cm-niveau {
+    border-radius: 26px;
+    padding: 16px 18px;
+    margin-top: 16px;
+    background: linear-gradient(140deg, rgba(47,191,109,.32) 0%, rgba(31,168,92,.08) 55%, rgba(255,201,60,.1) 100%);
+    border: 1px solid rgba(143,217,175,.3);
+    box-sizing: border-box;
+    overflow: hidden;
+    position: relative;
+    display: block;
+  }
+  .cm .cm-niveau-glow {
+    position: absolute; top: -60px; right: -40px;
+    width: 170px; height: 170px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,201,60,.22) 0%, rgba(255,201,60,0) 70%);
+  }
+  .cm-niveau-corps {
+    position: relative;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .cm-anneau {
+    width: 74px; height: 74px;
+    flex: none;
+    position: relative;
+    filter: drop-shadow(0 6px 16px rgba(0,0,0,.35));
+  }
+  /* Le dégradé se replie sur l'arc parcouru : la teinte intermédiaire est
+     placée à une fraction de --pct, jamais à une position fixe. Sinon, sous
+     ~52 %, les arrêts se retrouvaient dans le désordre et le navigateur les
+     recalait — l'anneau montrait plus de progression qu'il n'y en avait. */
+  .cm-anneau-piste {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 210deg,
+                #2FBF6D 0%,
+                #8FD9AF calc(var(--pct, 74%) * .62),
+                #FFC93C var(--pct, 74%),
+                rgba(255,255,255,.12) var(--pct, 74%));
+  }
+  .cm-anneau-coeur {
+    position: absolute; inset: 6px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 26%, #2B2620, #14120F);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cm-anneau-coeur span {
+    font: 800 30px var(--display);
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -.02em;
+  }
+  .cm-anneau-pastille {
+    position: absolute; top: -2px; right: -2px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--yellow);
+    border: 3px solid #1B2620;
+    box-sizing: content-box;
+    box-shadow: 0 0 12px rgba(255,201,60,.7);
+  }
+  .cm-niveau-infos { flex: 1; min-width: 0; }
+  .cm-niveau-ligne { display: flex; align-items: center; gap: 8px; }
+  .cm-niveau-kicker {
+    font: 500 9px var(--mono);
+    letter-spacing: .18em;
+    color: var(--green-pale);
+  }
+  .cm-niveau-filet {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, rgba(143,217,175,.45), rgba(143,217,175,0));
+  }
+  /* Signale que le bloc de niveau ouvre l'écran de progression. */
+  .cm-niveau-chevron { color: var(--green-pale); display: flex; flex: none; }
+  .cm-niveau-titre {
+    font: 800 19px var(--display);
+    color: #fff;
+    letter-spacing: -.01em;
+    margin-top: 6px;
+  }
+  .cm-xp-piste {
+    height: 9px;
+    border-radius: 6px;
+    background: rgba(0,0,0,.3);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.45);
+    overflow: hidden;
+    margin-top: 11px;
+  }
+  .cm-xp-jauge {
+    height: 100%;
+    background: linear-gradient(90deg, #1FA85C, #8FD9AF 50%, #FFC93C);
+    border-radius: 6px;
+    box-shadow: 0 0 14px rgba(255,201,60,.5);
+  }
+  .cm-xp-legende {
+    font: 500 9px var(--mono);
+    color: var(--green-pale);
+    letter-spacing: .06em;
+    margin-top: 7px;
+  }
+
+  /* Tuiles série / gels / pièces / écussons. */
+  .cm-tuiles { display: flex; gap: 10px; margin-top: 11px; }
+
+  .cm-tuile-serie {
+    flex: 1; min-width: 0;
+    border-radius: 26px;
+    padding: 14px 16px;
+    background: radial-gradient(130% 150% at 14% 0%, rgba(255,140,40,.34) 0%, rgba(255,201,60,.07) 55%, rgba(255,255,255,.03) 100%);
+    border: 1px solid rgba(255,170,70,.28);
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+    display: block;
+  }
+  .cm .cm-tuile-serie-glow {
+    position: absolute; bottom: -50px; left: -30px;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,107,61,.3) 0%, rgba(255,107,61,0) 70%);
+  }
+  /* Contenu calé à gauche : la flamme sert d'ancre, le compte se lit à sa
+     suite comme une ligne de texte, avec la même respiration à droite. */
+  .cm-tuile-serie-corps {
+    position: relative;
+    display: flex; align-items: center; justify-content: flex-start;
+    height: 100%;
+    gap: 12px;
+    padding-right: 8px;
+  }
+  .cm-flamme { flex: none; display: flex; filter: drop-shadow(0 5px 12px rgba(255,120,30,.55)); }
+  .cm-tuile-nombre {
+    font: 800 24px var(--display);
+    color: #fff;
+    line-height: 1;
+    text-align: left;
+  }
+  .cm-tuile-legende {
+    font: 500 8.5px var(--mono);
+    color: var(--gold-t);
+    letter-spacing: .1em;
+    margin-top: 5px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .cm-tuile-gels {
+    width: 104px; flex: none;
+    border-radius: 26px;
+    padding: 14px 0;
+    background: linear-gradient(160deg, rgba(127,201,232,.24), rgba(127,201,232,.05));
+    border: 1px solid rgba(127,201,232,.3);
+    box-sizing: border-box;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 9px;
+  }
+  .cm-gel-icone { display: flex; filter: drop-shadow(0 3px 8px rgba(94,178,216,.5)); }
+  .cm-gel-cubes { display: flex; justify-content: center; gap: 5px; }
+  .cm-gel-cube {
+    width: 15px; height: 15px;
+    border-radius: 6px;
+    background: linear-gradient(150deg, #EAF8FF, #5EB2D8);
+    box-shadow: 0 3px 8px rgba(94,178,216,.4);
+  }
+  .cm-gel-cube.is-vide {
+    background: none;
+    border: 1.5px dashed rgba(191,230,245,.45);
+    box-shadow: none;
+    box-sizing: border-box;
+  }
+  .cm-gel-legende {
+    font: 500 8px var(--mono);
+    color: var(--blue-l);
+    letter-spacing: .12em;
+  }
+
+  .cm-tuile-pieces {
+    width: 118px; flex: none;
+    display: flex; align-items: center; gap: 9px;
+    border-radius: 26px;
+    padding: 13px 12px;
+    background: linear-gradient(160deg, rgba(255,201,60,.26), rgba(255,201,60,.06));
+    border: 1px solid rgba(255,201,60,.32);
+    box-sizing: border-box;
+  }
+  .cm-piece-icone { flex: none; display: flex; filter: drop-shadow(0 3px 8px rgba(184,120,0,.45)); }
+  .cm-tuile-valeur {
+    font: 800 20px var(--display);
+    color: #fff;
+    line-height: 1;
+  }
+  .cm-tuile-sous {
+    font: 500 8px var(--mono);
+    letter-spacing: .12em;
+    margin-top: 5px;
+  }
+  .cm-tuile-sous.is-or { color: var(--gold-t); }
+  .cm-tuile-sous.is-violet { color: var(--violet-p); }
+
+  .cm-tuile-ecussons {
+    flex: 1; min-width: 0;
+    display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(160deg, rgba(196,180,255,.2), rgba(196,180,255,.05));
+    border: 1px solid rgba(196,180,255,.26);
+    box-sizing: border-box;
+    border-radius: 26px;
+    padding: 13px 14px;
+  }
+  .cm-tuile-ecussons .cm-tuile-valeur { white-space: nowrap; }
+  .cm-tuile-ecussons .cm-tuile-valeur small {
+    font: 800 12px var(--display);
+    color: var(--dim-2);
+  }
+  .cm-pile { display: flex; flex: 1; justify-content: flex-end; }
+  .cm-pile-item {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid #1E2A22;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    flex: none;
+  }
+  .cm-pile-item + .cm-pile-item { margin-left: -10px; }
+  .cm-pile-item svg { width: 13px; height: 13px; }
+
+  /* Retour tactile commun aux blocs cliquables de la carte. */
+  .cm-tap { transition: transform .12s ease, opacity .12s ease; }
+  .cm-tap:active { transform: scale(.975); opacity: .9; }
+
+  /* Nom de couturière cliquable — il mène toujours à son profil.
+     Volontairement sans décoration : le nom garde la typographie de son
+     contexte (podium, classement, fil de salon), seul le retour au tap
+     signale qu'il s'ouvre. */
+  .cm-nom-lien { transition: opacity .12s ease; }
+  .cm-nom-lien:active { opacity: .55; }
+
+  /* =========================================================
+     Barre d'onglets Atelier / Amis / Entraide
+     ========================================================= */
+  .cm-tabs {
+    margin: 18px 16px 0;
+    background: var(--sand-3);
+    border-radius: 22px;
+    padding: 5px;
+    display: flex;
+    gap: 4px;
+    flex: none;
+  }
+  .cm-tab {
+    flex: 1;
+    border-radius: 18px;
+    padding: 11px 0;
+    text-align: center;
+    display: flex; align-items: center; justify-content: center;
+    gap: 7px;
+    color: var(--muted);
+    font: 700 12.5px var(--text);
+    transition: background .16s ease, color .16s ease;
+  }
+  .cm-tab svg { width: 15px; height: 15px; }
+  .cm-tab[aria-current="page"] {
+    background: var(--ink);
+    color: #fff;
+    font: 800 12.5px var(--display);
+  }
+  .cm-tab .cm-tab-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--orange);
+    flex: none;
+  }
+
+  /* =========================================================
+     Blocs de section réutilisés
+     ========================================================= */
+  .cm-section { padding: 22px 0 0; flex: none; }
+  .cm-section-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 0 20px;
+    margin-bottom: 12px;
+    gap: 12px;
+  }
+  .cm-section-titre { font: 800 19px var(--display); }
+  .cm-section-meta {
+    font: 500 10px var(--mono);
+    color: var(--muted);
+    letter-spacing: .06em;
+    flex: none;
+  }
+  .cm-section-lien { font: 700 12px var(--text); color: var(--green); flex: none; }
+
+  /* Pastilles de filtre. */
+  .cm-chips { gap: 7px; padding: 0 20px 14px; }
+  .cm-chip {
+    background: var(--sand);
+    color: var(--muted);
+    border-radius: 14px;
+    padding: 8px 13px;
+    font: 700 11.5px var(--text);
+    flex: none;
+    white-space: nowrap;
+  }
+  .cm-chip[aria-current="true"] {
+    background: var(--ink);
+    color: #fff;
+    font: 800 11.5px var(--display);
+  }
+  .cm-chip.is-alerte { background: var(--orange-d); color: #fff; font: 800 11.5px var(--display); }
+  .cm-chip.is-or { background: var(--yellow); color: var(--ink); font: 800 11.5px var(--display); }
+  /* Sur fond sombre. */
+  .cm-chip.on-dark { background: rgba(255,255,255,.08); color: var(--dim-2); }
+  .cm-chip.on-dark[aria-current="true"] { background: var(--yellow); color: var(--ink); }
+
+  /* Carte claire à filet. */
+  .cm-panneau {
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 30px;
+    padding: 20px;
+  }
+
+  /* Séparateur à libellé centré (« TOP 5 · PLATINE », « ZONE DE MAINTIEN »). */
+  .cm-separateur {
+    display: flex; align-items: center; justify-content: center;
+    gap: 7px;
+    margin: 12px 0;
+  }
+  .cm-separateur-filet { height: 1px; flex: 1; }
+  .cm-separateur.is-promo .cm-separateur-filet:first-child {
+    background: linear-gradient(90deg, rgba(143,217,175,0), rgba(143,217,175,.55));
+  }
+  .cm-separateur.is-promo .cm-separateur-filet:last-child {
+    background: linear-gradient(90deg, rgba(143,217,175,.55), rgba(143,217,175,0));
+  }
+  .cm-separateur.is-maintien .cm-separateur-filet:first-child {
+    background: linear-gradient(90deg, rgba(255,138,76,0), rgba(255,138,76,.5));
+  }
+  .cm-separateur.is-maintien .cm-separateur-filet:last-child {
+    background: linear-gradient(90deg, rgba(255,138,76,.5), rgba(255,138,76,0));
+  }
+  .cm-separateur-pastille {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(31,168,92,.16);
+    border: 1px solid rgba(143,217,175,.32);
+    box-sizing: border-box;
+    border-radius: 999px;
+    padding: 5px 11px;
+    color: var(--green-pale);
+    flex: none;
+  }
+  .cm-separateur-pastille svg { width: 12px; height: 12px; }
+  .cm-separateur-pastille span { font: 500 9px var(--mono); letter-spacing: .1em; }
+  .cm-separateur-texte {
+    font: 500 9px var(--mono);
+    letter-spacing: .1em;
+    color: var(--orange-p);
+    flex: none;
+  }
+
+  /* ── Teintes de couturière ──────────────────────────────────────────
+     Séparées de la mise en forme du jeton : la même teinte sert aussi de
+     fond à un anneau (rail des amies) ou à une vignette, sans lui imposer
+     le centrage flex du jeton — qui écraserait son contenu en ellipse. */
+  .cm .t-or     { background: linear-gradient(150deg, #FFF3C4, #E0A20C); color: #5A3C02; }
+  .cm .t-vert   { background: linear-gradient(150deg, #DFF5E8, #8FD9AF); color: #12633A; }
+  .cm .t-violet { background: linear-gradient(150deg, #E3DBFF, #9C87F0); color: #2E2454; }
+  .cm .t-corail { background: linear-gradient(150deg, #FFE7DE, #F3A183); color: #7A2E0E; }
+  .cm .t-moi    { background: linear-gradient(150deg, #4FD08A, #12633A); color: #fff; }
+  .cm .t-gris   { background: rgba(255,255,255,.1); color: var(--dim-2); }
+  .cm .t-sable  { background: var(--sand); color: var(--muted); }
+  .cm .t-eteint { background: #EDE4D6; color: var(--faint); }
+
+  /* Jeton d'avatar (initiales) réutilisé partout. */
+  .cm-jeton {
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--display);
+    font-weight: 800;
+    flex: none;
+  }
+
+  /* Vignettes tissu : la trame remplace la photo tant qu'il n'y en a pas. */
+  .cm-motif { display: block; background-repeat: repeat; }
+  .cm-motif.m-denim { background: repeating-linear-gradient(135deg, #B9CBE8 0 8px, #A0B6D8 8px 16px); }
+  .cm-motif.m-toile { background: repeating-linear-gradient(135deg, #DCE8DB 0 8px, #C6DAC5 8px 16px); }
+  .cm-motif.m-lin   { background: repeating-linear-gradient(135deg, #F3C9BC 0 8px, #E8B4A2 8px 16px); }
+  .cm-motif.m-laine { background: repeating-linear-gradient(135deg, #D8CBB4 0 8px, #C6B79C 8px 16px); }
+  .cm-motif.m-vert  { background: repeating-linear-gradient(135deg, #C9DCC8 0 8px, #B0C9AF 8px 16px); }
+
+  /* Barre d'action fixe des sous-pages.
+     Sélecteur volontairement doublé (`.cm .cm-cta`) : sur les écrans à fond
+     décoré, la barre est un enfant direct de la racine, où une règle
+     « .racine > * { position: relative } » de même spécificité la
+     décrocherait du bas de l'écran. */
+  .cm .cm-cta {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    z-index: 12;
+    padding: 14px 20px calc(26px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+    background: linear-gradient(rgba(255,253,248,0), var(--paper) 38%);
+  }
+  .cm .cm-cta.on-dark { background: linear-gradient(rgba(20,18,15,0), var(--ink) 40%); }
+  .cm-cta-secondaire {
+    text-align: center;
+    font: 700 12px var(--text);
+    color: var(--dim-2);
+    margin-top: 12px;
+    display: block;
+  }
+
+  .cm-bouton {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-radius: 22px;
+    text-align: center;
+    padding: 16px 0;
+    font: 800 15px var(--display);
+    cursor: pointer;
+    font-family: var(--display);
+    transition: transform .12s ease, filter .12s ease;
+  }
+  .cm-bouton:active { transform: scale(.98); filter: brightness(.96); }
+  .cm-bouton.b-clair  { background: var(--paper); color: var(--ink); box-shadow: 0 12px 28px rgba(0,0,0,.35); }
+  .cm-bouton.b-ink    { background: var(--ink); color: #fff; }
+  .cm-bouton.b-vert   { background: var(--green); color: #fff; box-shadow: 0 12px 26px rgba(31,168,92,.3); }
+  .cm-bouton.b-feu    { background: linear-gradient(120deg, #FF9B4C, #E1552A); color: #fff; box-shadow: 0 12px 28px rgba(225,85,42,.4); }
+
+  /* Les actions POST sont des <form>, pas des liens : leurs boutons doivent
+     hériter de la typographie de la rubrique.
+     Pas de « .cm form { margin: 0 } » ici — le reset global de header.html
+     s'en charge déjà, et cette règle, plus spécifique qu'une classe de
+     composant, écrasait la marge des blocs qui SONT des formulaires
+     (la barre de recherche des amies, notamment). */
+  .cm button { font-family: inherit; }
+
+  /* =========================================================
+     Hexagone d'écusson (45e, et vignettes ailleurs)
+     ========================================================= */
+  .cm-hex { position: relative; width: 100%; aspect-ratio: 100/114; }
+  .cm-hex svg { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 3px 5px rgba(0,0,0,.16)); }
+  .cm-hex-icone {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 42%; height: 42%;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cm-hex-icone svg { position: static; width: 100%; height: 100%; filter: none; }
+  .cm-hex-nom { font: 800 10.5px var(--display); margin-top: 6px; }
+  .cm-hex-cond { font: 500 8px var(--mono); color: var(--faint); margin-top: 1px; }
+
+  /* =========================================================
+     Feuille modale — remonte du bas, comme les popups natives
+     ========================================================= */
+  .cm-feuille {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .cm-feuille[hidden] { display: none; }
+  .cm-feuille-voile {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 18, 15, .5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    animation: cmVoile 220ms ease both;
+  }
+  @keyframes cmVoile { from { opacity: 0; } to { opacity: 1; } }
+
+  .cm-feuille-corps {
+    position: relative;
+    width: 100%;
+    max-width: 430px;
+    max-height: 82vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+    background: var(--paper);
+    border-radius: 32px 32px 0 0;
+    padding: 10px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -18px 48px rgba(20, 18, 15, .28);
+    animation: cmFeuilleMonte 300ms cubic-bezier(.2, .9, .25, 1.02) both;
+  }
+  @keyframes cmFeuilleMonte {
+    from { transform: translateY(14%); opacity: .6; }
+    to   { transform: translateY(0);   opacity: 1; }
+  }
+  .cm-feuille.is-dark .cm-feuille-corps { background: var(--ink-2); color: #fff; }
+  .cm-feuille-poignee {
+    display: block;
+    width: 40px; height: 4px;
+    border-radius: 999px;
+    background: var(--line);
+    margin: 0 auto 14px;
+  }
+  .cm-feuille.is-dark .cm-feuille-poignee { background: rgba(255, 255, 255, .2); }
+  .cm-feuille-titre {
+    font: 800 19px var(--display);
+    margin-bottom: 4px;
+  }
+  .cm-feuille-sous {
+    font: 400 12.5px/1.5 var(--text);
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .cm-feuille.is-dark .cm-feuille-sous { color: var(--dim-2); }
+
+  /* =========================================================
+     Menu flottant ancré sous son bouton (cloche, options…)
+     ========================================================= */
+  .cm-menu-ancre { position: relative; display: inline-flex; }
+
+  .cm-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 30;
+    width: 300px;
+    max-width: calc(100vw - 32px);
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 22px;
+    box-shadow: 0 18px 44px rgba(20, 18, 15, .22), 0 3px 10px rgba(20, 18, 15, .1);
+    transform-origin: top right;
+    animation: cmMenuOuvre 180ms cubic-bezier(.2, .9, .3, 1.02) both;
+  }
+  .cm-menu[hidden] { display: none; }
+  @keyframes cmMenuOuvre {
+    from { transform: scale(.94) translateY(-6px); opacity: 0; }
+    to   { transform: scale(1) translateY(0);      opacity: 1; }
+  }
+
+  /* Pointe qui rattache le menu à son bouton. */
+  .cm-menu-fleche {
+    position: absolute;
+    top: -7px; right: 14px;
+    width: 12px; height: 12px;
+    background: var(--paper);
+    border-left: 1.5px solid var(--line);
+    border-top: 1.5px solid var(--line);
+    transform: rotate(45deg);
+    border-radius: 3px 0 0 0;
+  }
+  .cm-menu-corps {
+    position: relative;
+    max-height: 58vh;
+    overflow-y: auto;
+    padding: 6px;
+    border-radius: 22px;
+  }
+
+  @media (prefers-reduced-motion: reduce) { .cm-menu { animation: none; } }
+
+  /* =========================================================
+     Feuille des notifications (contenu servi par htmx)
+     ========================================================= */
+  .cn-entete {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 10px 4px;
+  }
+  .cn-entete-titre { font: 800 15px var(--display); flex: 1; }
+  .cn-entete-compte {
+    background: var(--sand);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 3px 9px;
+    font: 500 9.5px var(--mono);
+  }
+  .cn-jour {
+    font: 500 8.5px var(--mono);
+    letter-spacing: .14em;
+    color: var(--faint);
+    margin: 10px 0 5px;
+    padding: 0 10px;
+  }
+  .cn-ligne {
+    display: flex; align-items: flex-start; gap: 11px;
+    padding: 10px;
+    border-radius: 16px;
+    transition: background .12s ease;
+  }
+  a.cn-ligne:hover, a.cn-ligne:active { background: var(--sand); }
+  .cn-marque {
+    width: 34px; height: 34px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+    color: #fff;
+    margin-top: 1px;
+  }
+  .cn-marque.t-duel     { background: linear-gradient(150deg, #FF9B4C, #E1552A); }
+  .cn-marque.t-coffre   { background: var(--yellow-l); }
+  .cn-marque.t-niveau   { background: linear-gradient(150deg, #4FD08A, #12633A); }
+  .cn-marque.t-amitie_demande,
+  .cn-marque.t-amitie_acceptee { background: linear-gradient(150deg, #C4B4FF, #5B45B8); }
+  .cn-marque.t-reponse,
+  .cn-marque.t-salon    { background: linear-gradient(150deg, #7FC9E8, #2E7EA3); }
+  .cn-marque.t-troc     { background: linear-gradient(150deg, #8FD9AF, #12633A); }
+  .cn-marque.t-defi     { background: var(--violet); }
+  .cn-marque.t-evenement { background: linear-gradient(150deg, #F3A183, #B03A12); }
+  .cn-marque.t-saison   { background: linear-gradient(150deg, #FFF3C4, #E0A20C); }
+  .cn-titre { font: 800 12.5px/1.3 var(--display); }
+  .cn-detail { font: 400 11px/1.4 var(--text); color: var(--muted); margin-top: 2px; }
+  .cn-temps { font: 500 9px var(--mono); color: var(--faint); margin-top: 4px; }
+  .cn-point {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--orange);
+    flex: none;
+    margin-top: 12px;
+  }
+  .cn-vide { text-align: center; padding: 22px 16px 18px; }
+  .cn-vide-marque {
+    width: 48px; height: 48px;
+    border-radius: 18px;
+    background: var(--sand);
+    color: var(--faint);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+  }
+  .cn-vide-titre { font: 800 14px var(--display); }
+  .cn-vide-texte { font: 400 11.5px/1.5 var(--text); color: var(--muted); margin-top: 4px; }
+
+  /* =========================================================
+     Entrées échelonnées — les blocs se posent l'un après l'autre
+     ========================================================= */
+  .cm-entree {
+    animation: cmEntree 420ms cubic-bezier(.2, .8, .3, 1) both;
+    animation-delay: calc(var(--rang, 0) * 70ms);
+  }
+  @keyframes cmEntree {
+    from { transform: translateY(12px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  /* Jauges animées : la largeur finale vit dans `data-jauge`, le CSS part de
+     zéro. Sans JS (ou en mouvement réduit), la largeur est posée d'emblée. */
+  .cm-jauge-anim { width: 0; transition: width 900ms cubic-bezier(.2, .8, .3, 1); }
+
+  /* Pastille de célébration : deux battements, puis repos. */
+  .cm-eclat { animation: cmEclat 1.6s ease-out 2; }
+  @keyframes cmEclat {
+    0%, 100% { transform: scale(1); }
+    12%      { transform: scale(1.08); }
+    24%      { transform: scale(1); }
+  }
+
+  /* Confettis d'une célébration — semés par le contrôleur. */
+  .cm-confettis {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .cm-confetti {
+    position: absolute;
+    top: -12px;
+    width: 9px; height: 14px;
+    border-radius: 2px;
+    animation: cmConfetti var(--duree, 2.4s) linear var(--retard, 0s) forwards;
+  }
+  @keyframes cmConfetti {
+    from { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+    to   { transform: translateY(105vh) rotate(var(--tour, 540deg)); opacity: .15; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cm-tap, .cm-bouton, .cm-icon-btn, .cm-back { transition: none; }
+    .cm-feuille-voile, .cm-feuille-corps, .cm-entree, .cm-eclat { animation: none; }
+    .cm-jauge-anim { transition: none; }
+    .cm-confettis { display: none; }
+  }
+</style>
+{% block communaute_css %}{% endblock %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  /* ═══════════════════════════════════════════════════════════════════
+     Boîte à outils de la rubrique Partage.
+
+     Quatre comportements partagés, posés une fois pour toute la rubrique :
+       · feuilles modales      [data-feuille-ouvre] / [data-feuille-ferme]
+       · jauges animées        [data-jauge="72"]  → largeur 0 → 72 %
+       · compteurs             [data-compteur="248"] → décompte animé
+       · confettis             cmConfettis(n)
+
+     Tout est ré-appliqué après chaque échange htmx : le corps de page est
+     remplacé, les éléments neufs doivent être équipés à leur tour.
+     ═══════════════════════════════════════════════════════════════════ */
+  (function () {
+    var reduit = window.matchMedia
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false;
+
+    // Ce script est ré-exécuté à chaque navigation htmx. Les écouteurs posés
+    // sur `document` survivent au remplacement du corps : sans ce drapeau ils
+    // s'empileraient, et une feuille s'ouvrirait autant de fois qu'on a navigué.
+    if (window.__cmOutilsInit) { window.__cmEquiper(document); return; }
+    window.__cmOutilsInit = true;
+
+    // ── Feuilles modales ────────────────────────────────────────────
+    function ouvrir(feuille) {
+      if (!feuille) return;
+      feuille.hidden = false;
+      // Le focus part sur la feuille : la lecture d'écran y entre aussi.
+      // Les éléments sortis du parcours (`tabindex="-1"`, typiquement les
+      // liens d'un aperçu décoratif) ne sont pas des points d'entrée.
+      var cible = feuille.querySelector(
+        '[autofocus], input, [role="button"][tabindex="0"], ' +
+        'button:not([tabindex="-1"]), a:not([tabindex="-1"])');
+      if (cible && !reduit) { setTimeout(function () { cible.focus(); }, 60); }
+      equiper(feuille);
+    }
+
+    function fermer(feuille) {
+      if (feuille) feuille.hidden = true;
+    }
+
+    document.addEventListener('click', function (e) {
+      var declencheur = e.target.closest && e.target.closest('[data-feuille-ouvre]');
+      if (declencheur) {
+        e.preventDefault();
+        ouvrir(document.getElementById(declencheur.getAttribute('data-feuille-ouvre')));
+        return;
+      }
+      // Fermeture : bouton dédié, ou clic sur le voile hors du corps.
+      if (e.target.closest && e.target.closest('[data-feuille-ferme]')) {
+        fermer(e.target.closest('.cm-feuille'));
+        return;
+      }
+      if (e.target.classList && e.target.classList.contains('cm-feuille-voile')) {
+        fermer(e.target.closest('.cm-feuille'));
+      }
+    });
+
+    // ── Menus flottants ─────────────────────────────────────────────
+    function fermerMenus(sauf) {
+      document.querySelectorAll('.cm-menu:not([hidden])').forEach(function (menu) {
+        if (menu === sauf) return;
+        menu.hidden = true;
+        var bouton = document.querySelector('[data-menu-ouvre="' + menu.id + '"]');
+        if (bouton) bouton.setAttribute('aria-expanded', 'false');
+      });
+    }
+
+    document.addEventListener('click', function (e) {
+      var bouton = e.target.closest && e.target.closest('[data-menu-ouvre]');
+
+      if (bouton) {
+        var menu = document.getElementById(bouton.getAttribute('data-menu-ouvre'));
+        if (!menu) return;
+        var ouvert = !menu.hidden;
+        fermerMenus(menu);
+        menu.hidden = ouvert;
+        bouton.setAttribute('aria-expanded', String(!ouvert));
+        if (!menu.hidden) equiper(menu);
+        return;
+      }
+
+      // Clic hors du menu : il se referme. Un clic DANS le menu le laisse
+      // ouvert, sauf s'il s'agit d'un lien — on part alors ailleurs.
+      var dedans = e.target.closest && e.target.closest('.cm-menu');
+      if (!dedans || e.target.closest('a[href]')) fermerMenus();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var ouverte = document.querySelector('.cm-feuille:not([hidden])');
+      if (ouverte) { fermer(ouverte); return; }
+      fermerMenus();
+    });
+
+    // ── Jauges et compteurs ─────────────────────────────────────────
+    function equiper(racine) {
+      (racine || document).querySelectorAll('[data-jauge]').forEach(function (el) {
+        var cible = el.getAttribute('data-jauge') + '%';
+        if (reduit) { el.style.width = cible; return; }
+        el.classList.add('cm-jauge-anim');
+        el.style.width = '0';
+        // Deux trames d'attente : la transition ne part pas si la largeur
+        // initiale et la largeur finale sont posées dans la même image.
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () { el.style.width = cible; });
+        });
+      });
+
+      // Anneaux de progression des écussons « en cours » (45e) : le contour
+      // de l'hexagone sert de piste, dessiné en trait plein depuis sa pointe
+      // du haut (où le tracé SVG commence) puis effacé au-delà du pourcentage
+      // atteint. La longueur du tracé n'est connue qu'à l'exécution.
+      (racine || document).querySelectorAll('path[data-hex-progres]').forEach(function (path) {
+        if (path.__ceMesure) return;
+        path.__ceMesure = true;
+        var longueur = path.getTotalLength();
+        var pct = Math.max(0, Math.min(100, parseFloat(path.getAttribute('data-hex-progres')) || 0));
+        path.style.strokeDasharray = longueur + 'px';
+        path.style.strokeDashoffset = (longueur * (1 - pct / 100)) + 'px';
+        path.style.opacity = '.9';
+      });
+
+      (racine || document).querySelectorAll('[data-compteur]').forEach(function (el) {
+        var fin = parseInt(el.getAttribute('data-compteur'), 10);
+        if (isNaN(fin)) return;
+        if (reduit) { el.textContent = format(fin); return; }
+        var debut = performance.now();
+        var duree = Math.min(1100, 380 + fin * 2);
+        (function pas(maintenant) {
+          var avance = Math.min(1, (maintenant - debut) / duree);
+          // Décélération : le compteur ralentit en arrivant sur sa valeur.
+          var douceur = 1 - Math.pow(1 - avance, 3);
+          el.textContent = format(Math.round(fin * douceur));
+          if (avance < 1) requestAnimationFrame(pas);
+        })(debut);
+      });
+    }
+
+    // Espace insécable comme séparateur de milliers, cf. filtre espace_millier.
+    function format(n) {
+      return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+
+    // ── Confettis ───────────────────────────────────────────────────
+    var TEINTES = ['#FFC93C', '#1FA85C', '#FF9B4C', '#7C5CFF', '#8FD9AF', '#FFF3C4'];
+
+    window.cmConfettis = function (nombre) {
+      if (reduit) return;
+      var pluie = document.createElement('div');
+      pluie.className = 'cm-confettis';
+      for (var i = 0; i < (nombre || 40); i++) {
+        var grain = document.createElement('span');
+        grain.className = 'cm-confetti';
+        grain.style.left = Math.random() * 100 + '%';
+        grain.style.background = TEINTES[i % TEINTES.length];
+        grain.style.setProperty('--duree', (1.8 + Math.random() * 1.4).toFixed(2) + 's');
+        grain.style.setProperty('--retard', (Math.random() * 0.5).toFixed(2) + 's');
+        grain.style.setProperty('--tour', Math.round(360 + Math.random() * 720) + 'deg');
+        pluie.appendChild(grain);
+      }
+      document.body.appendChild(pluie);
+      setTimeout(function () { pluie.remove(); }, 3600);
+    };
+
+    // Exposé pour les ré-exécutions du script (voir le drapeau plus haut) et
+    // pour les écrans qui injectent du contenu après coup.
+    window.__cmEquiper = equiper;
+
+    equiper(document);
+    document.addEventListener('htmx:afterSwap', function () { equiper(document); });
+  })();
+</script>
+{% block communaute_js %}{% endblock %}
+{% endblock %}

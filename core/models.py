@@ -458,3 +458,11 @@ class Badge(models.Model):
 
     def __str__(self):
         return f"{self.emoji} {self.nom} – {self.utilisateur.username}"
+
+
+# ── Communauté « atelier » (onglet Partage) ─────────────────────────────────
+# Les modèles du jeu (profil, saisons, ligues, écussons, duels, salons,
+# événements, quêtes, troc, entraide) vivent dans un module dédié pour ne pas
+# alourdir celui-ci. L'import en fin de fichier suffit à ce que Django les
+# rattache à l'application `core`.
+from .models_communaute import *  # noqa: E402,F401,F403

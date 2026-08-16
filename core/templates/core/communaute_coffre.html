@@ -1,0 +1,205 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  45d — Ouverture de coffre. Atterrissage après « Ouvrir mon cadeau » (palier
+  du sentier) ou après le coffre du jour des quêtes. Le coffre est déjà ouvert
+  quand l'écran s'affiche : la vue a versé les récompenses, on les annonce.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cc {
+    background: radial-gradient(110% 62% at 50% 22%, #4A3410 0%, #1D1A14 55%, #14120F 100%);
+    color: #fff;
+    position: relative;
+  }
+  .cm .cc-halo {
+    position: absolute; top: 120px; left: 50%;
+    transform: translateX(-50%);
+    width: 360px; height: 360px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,201,60,.4) 0%, rgba(255,201,60,0) 68%);
+    pointer-events: none;
+  }
+  .cm .cc-poussiere { position: absolute; border-radius: 50%; pointer-events: none; }
+  .cc > * { position: relative; }
+
+  .cc-kicker { font: 500 10px var(--mono); letter-spacing: .2em; color: var(--gold-t); }
+  .cc-titre {
+    font: 800 30px/1.15 var(--display);
+    color: #fff;
+    letter-spacing: -.02em;
+    margin-top: 10px;
+  }
+
+  .cc-visuel {
+    display: flex; justify-content: center;
+    margin-top: 12px;
+    flex: none;
+    animation: ccSurgit 620ms cubic-bezier(.2, .9, .25, 1.15) both;
+  }
+  @keyframes ccSurgit {
+    from { transform: scale(.72) translateY(18px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  .cc-lot {
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+    box-sizing: border-box;
+    border-radius: 24px;
+    padding: 16px 18px;
+    display: flex; align-items: center; gap: 13px;
+    animation: ccMonte 460ms ease-out both;
+  }
+  .cc-lot + .cc-lot { margin-top: 10px; }
+  /* Les lots arrivent l'un après l'autre, comme sortis du coffre. */
+  .cc-lot:nth-child(1) { animation-delay: 380ms; }
+  .cc-lot:nth-child(2) { animation-delay: 500ms; }
+  .cc-lot:nth-child(3) { animation-delay: 620ms; }
+  .cc-lot:nth-child(4) { animation-delay: 740ms; }
+  @keyframes ccMonte {
+    from { transform: translateY(14px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .cc-lot.t-patron { background: rgba(196,180,255,.14); border-color: rgba(196,180,255,.3); }
+  .cc-lot.t-gel { background: rgba(127,201,232,.14); border-color: rgba(127,201,232,.28); }
+  .cc-lot.t-ecusson { background: rgba(255,201,60,.14); border-color: rgba(255,201,60,.3); }
+
+  .cc-lot-marque {
+    width: 44px; height: 44px;
+    border-radius: 15px;
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  .cc-lot-titre { font: 800 18px var(--display); color: #fff; line-height: 1; }
+  .cc-lot.t-patron .cc-lot-titre, .cc-lot.t-ecusson .cc-lot-titre { font-size: 16px; line-height: 1.15; }
+  .cc-lot-detail { font: 400 11.5px var(--text); color: var(--dim-2); margin-top: 5px; }
+  .cc-lot.t-patron .cc-lot-detail { color: var(--violet-p); }
+  .cc-lot.t-ecusson .cc-lot-detail { color: var(--gold-t); }
+  .cc-lot.t-gel .cc-lot-detail { color: var(--blue-l); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cc-visuel, .cc-lot { animation: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm cc has-cta">
+  <span class="cc-halo" aria-hidden="true"></span>
+  <span class="cc-poussiere" style="top:40px;left:26px;width:6px;height:6px;background:#FFE9A8;box-shadow:0 0 12px #FFC93C"></span>
+  <span class="cc-poussiere" style="top:96px;right:44px;width:8px;height:8px;background:#FFC93C;box-shadow:0 0 14px #FFC93C"></span>
+  <span class="cc-poussiere" style="top:200px;left:52px;width:5px;height:5px;background:#FFF3C4;box-shadow:0 0 10px #FFE9A8"></span>
+  <span class="cc-poussiere" style="top:250px;right:30px;width:6px;height:6px;background:#FFE9A8;box-shadow:0 0 12px #FFC93C"></span>
+
+  <section style="text-align:center;padding:28px 24px 0;flex:none">
+    <div class="cc-kicker">
+      {{ titre_palier }}{% if saison %} · SAISON {{ saison.numero|stringformat:"02d" }}{% endif %}
+    </div>
+    <div class="cc-titre">Coffre ouvert !</div>
+  </section>
+
+  {# ══ Le coffre, couvercle relevé ══ #}
+  <div class="cc-visuel">
+    <svg width="220" height="200" viewBox="0 0 220 200" style="filter:drop-shadow(0 22px 34px rgba(122,83,3,.45))">
+      <defs>
+        <linearGradient id="ccLid" x1="50" y1="26" x2="170" y2="72" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#FFF9DC"/><stop offset=".5" stop-color="#FFD25C"/><stop offset="1" stop-color="#D9930F"/>
+        </linearGradient>
+        <linearGradient id="ccFront" x1="46" y1="110" x2="176" y2="182" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#FFC93C"/><stop offset=".55" stop-color="#E8A417"/><stop offset="1" stop-color="#A96D06"/>
+        </linearGradient>
+        <linearGradient id="ccGlow" x1="110" y1="70" x2="110" y2="130" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#FFFBE8"/><stop offset="1" stop-color="#FFC93C" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="110" cy="186" rx="66" ry="11" fill="#8A5B03" opacity=".28"/>
+      <path d="M56 96h108l-10 76a8 8 0 0 1-8 7H74a8 8 0 0 1-8-7L56 96Z" fill="url(#ccFront)"/>
+      <path d="M62 118h96" stroke="#8A5B03" stroke-width="3" opacity=".35"/>
+      <rect x="96" y="120" width="28" height="24" rx="6" fill="#FFFDF2"/>
+      <circle cx="110" cy="130" r="5" fill="#A96D06"/>
+      <path d="M110 133v6" stroke="#A96D06" stroke-width="4" stroke-linecap="round"/>
+      <path d="M56 96c0-2 2-4 4-4h100c2 0 4 2 4 4l-4 8H60l-4-8Z" fill="#C98A0E"/>
+      {# Charnière : elle rattache le couvercle relevé au coffre. #}
+      <path d="M52 76c0-24 20-42 46-46 6-1 8 4 4 7-18 12-26 26-26 42 0 4-6 5-9 2l-15-5Z"
+            fill="url(#ccLid)" transform="rotate(-24 60 60)"/>
+      <path d="M60 60c8-22 30-34 54-32 22 2 40 16 46 34l-8 6c-6-14-20-24-38-25-20-1-38 8-46 24l-8-7Z" fill="url(#ccLid)"/>
+      <ellipse cx="110" cy="96" rx="52" ry="32" fill="url(#ccGlow)" opacity=".85"/>
+      <path d="M110 34l3.4 9.6L123 47l-9.6 3.4L110 60l-3.4-9.6L97 47l9.6-3.4L110 34Z" fill="#FFF9DC"/>
+      <path d="M172 60l2.4 6.8 6.8 2.4-6.8 2.4L172 78l-2.4-6.4-6.8-2.4 6.8-2.4L172 60Z" fill="#FFE9A8" opacity=".9"/>
+      <path d="M44 44l2 5.6 5.6 2-5.6 2L44 59l-2-5.4-5.6-2 5.6-2L44 44Z" fill="#FFD25C" opacity=".85"/>
+    </svg>
+  </div>
+
+  {# ══ Récompenses ══ #}
+  <section style="padding:6px 22px 0;flex:none">
+    {% for lot in recompenses %}
+      {% if lot.type == 'pieces' %}
+        <div class="cc-lot">
+          <span class="cc-lot-marque"
+                style="background:linear-gradient(150deg,#FFF3C4,#E0A20C);box-shadow:0 6px 16px rgba(224,162,12,.4)">
+            <svg width="22" height="22" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="8.5" fill="#8A5B03"/>
+              <path d="M12 7.8v8.4M9.8 9.8h3.4a1.8 1.8 0 0 1 0 3.6H9.8h3.6" stroke="#FFF3C4" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+            </svg>
+          </span>
+          <div style="flex:1;min-width:0">
+            <div class="cc-lot-titre">{{ lot.titre }}</div>
+            <div class="cc-lot-detail">{{ lot.detail }}</div>
+          </div>
+        </div>
+
+      {% elif lot.type == 'patron' %}
+        <div class="cc-lot t-patron">
+          <span class="cc-lot-marque"
+                style="background:linear-gradient(150deg,#C4B4FF,#5B45B8);color:#fff;box-shadow:0 6px 16px rgba(91,69,184,.35)">
+            {% include 'core/communaute/_icones.html' with icone='ruban' taille=22 %}
+          </span>
+          <div style="flex:1;min-width:0">
+            <div class="cc-lot-titre">{{ lot.titre }}</div>
+            <div class="cc-lot-detail">{{ lot.detail }}</div>
+          </div>
+        </div>
+
+      {% elif lot.type == 'gel' %}
+        <div class="cc-lot t-gel">
+          <span class="cc-lot-marque" style="background:rgba(127,201,232,.2)">
+            {% include 'core/communaute/_icones.html' with icone='gel' taille=22 uid='coffre' %}
+          </span>
+          <div style="flex:1;min-width:0">
+            <div class="cc-lot-titre">{{ lot.titre }}</div>
+            <div class="cc-lot-detail">{{ lot.detail }}</div>
+          </div>
+        </div>
+
+      {% else %}
+        <div class="cc-lot t-ecusson">
+          <span class="cc-lot-marque"
+                style="background:linear-gradient(150deg,{{ lot.couleur_haut }},{{ lot.couleur_bas }});color:#fff">
+            {% include 'core/communaute/_icones.html' with icone=lot.icone taille=22 uid='coffreEc' %}
+          </span>
+          <div style="flex:1;min-width:0">
+            <div class="cc-lot-titre">{{ lot.titre }}</div>
+            <div class="cc-lot-detail">{{ lot.detail }}</div>
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </section>
+
+  {# ══ Sortie ══ #}
+  <div class="cm-cta on-dark">
+    <a href="{% url 'communaute' %}" class="cm-bouton b-clair">Super !</a>
+    {% if prochain %}
+      <a href="{% url 'communaute' %}" class="cm-cta-secondaire">
+        Prochain palier · {{ prochain.palier.points_requis|espace_millier }} CP
+      </a>
+    {% else %}
+      <a href="{% url 'communaute_ecussons' %}" class="cm-cta-secondaire">Voir ma collection</a>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

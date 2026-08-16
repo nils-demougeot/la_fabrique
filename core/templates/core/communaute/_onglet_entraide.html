@@ -1,0 +1,264 @@
+{% load communaute_extras %}
+{% comment %}
+  Onglet Entraide (design 46b) : composeur de question, filtres, fil des
+  questions (sans réponse / résolues), couturières disponibles, salon SOS.
+  Porte vers 45g (salon de discussion) par « Entrer ».
+{% endcomment %}
+
+{# ══ Poser une question ══ #}
+<section class="ce-poser">
+  <span class="ce-poser-glow" aria-hidden="true"></span>
+  <div class="ce-poser-kicker">BESOIN D'UN COUP DE MAIN ?</div>
+  <div class="ce-poser-titre">Pose ta question à l'atelier</div>
+
+  {% comment %}
+    La zone de saisie s'agrandit à la mise au point : une question tient
+    rarement sur une ligne, mais la boîte au repos doit rester discrète.
+  {% endcomment %}
+  <form method="post" action="{% url 'communaute_poser_question' %}" class="ce-poser-form">
+    {% csrf_token %}
+    <div class="ce-poser-ligne">
+      <textarea name="contenu" class="ce-poser-champ" rows="1" required
+                placeholder="Mon fil casse quand…"></textarea>
+      <span class="ce-poser-bouton b-ghost" aria-hidden="true">
+        {% include 'core/communaute/_icones.html' with icone='appareil' taille=19 %}
+      </span>
+      <button type="submit" class="ce-poser-bouton b-vert" aria-label="Envoyer ma question">
+        {% include 'core/communaute/_icones.html' with icone='envoyer' taille=19 %}
+      </button>
+    </div>
+    <div class="ce-poser-aide">
+      Décris le tissu, la machine et le réglage : les réponses seront plus précises.
+    </div>
+  </form>
+</section>
+
+{# ══ Mes questions ══ #}
+{% if mes_questions %}
+<section class="cm-section" style="padding-top:22px;padding-bottom:0">
+  <div class="cm-section-head">
+    <span class="cm-section-titre">Mes questions</span>
+    <span class="cm-section-meta">{{ nb_mes_questions }} POSÉE{{ nb_mes_questions|pluralize:"S" }}</span>
+  </div>
+
+  <div class="cm-rail ce-miennes-rail">
+    {% for question in mes_questions %}
+      <a href="{% url 'communaute_question' question.pk %}" class="ce-mienne cm-tap">
+        <span class="ce-mienne-etat {% if question.resolue %}est-resolu{% elif question.nb_rep %}est-repondu{% else %}est-attente{% endif %}">
+          {% if question.resolue %}
+            {% include 'core/communaute/_icones.html' with icone='coche' taille=11 %}
+            RÉSOLU
+          {% elif question.nb_rep %}
+            {{ question.nb_rep }} RÉPONSE{{ question.nb_rep|pluralize:"S" }}
+          {% else %}
+            EN ATTENTE
+          {% endif %}
+        </span>
+        <span class="ce-mienne-texte">{{ question.contenu|truncatechars:64 }}</span>
+        <span class="ce-mienne-date">IL Y A {{ question.date_creation|depuis|upper }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{# ══ Les questions des autres ══ #}
+<section class="cm-section" style="padding-top:22px;padding-bottom:0">
+  <div class="cm-section-head">
+    <span class="cm-section-titre">Les questions de l'atelier</span>
+    <span class="cm-section-meta">{{ nb_questions }} AU TOTAL</span>
+  </div>
+</section>
+
+{# ══ Filtres ══ #}
+<div class="cm-rail cm-chips" style="padding:12px 20px 0">
+  <a href="{% url 'communaute' %}?onglet=entraide&filtre=tout" class="cm-chip"
+     {% if filtre_entraide == 'tout' %}aria-current="true"{% endif %}>Tout · {{ nb_questions }}</a>
+  <a href="{% url 'communaute' %}?onglet=entraide&filtre=sans_reponse"
+     class="cm-chip {% if filtre_entraide == 'sans_reponse' %}is-alerte{% endif %}">Sans réponse · {{ nb_sans_reponse }}</a>
+  <a href="{% url 'communaute' %}?onglet=entraide&filtre=denim" class="cm-chip"
+     {% if filtre_entraide == 'denim' %}aria-current="true"{% endif %}>Denim</a>
+  <a href="{% url 'communaute' %}?onglet=entraide&filtre=machine" class="cm-chip"
+     {% if filtre_entraide == 'machine' %}aria-current="true"{% endif %}>Machine</a>
+  <a href="{% url 'communaute' %}?onglet=entraide&filtre=pres" class="cm-chip"
+     {% if filtre_entraide == 'pres' %}aria-current="true"{% endif %}>Près de moi</a>
+</div>
+
+{# ══ Fil des questions ══ #}
+{% for question in questions %}
+  {% if question.resolue or question.reponse_top %}
+    {# Question avec réponse : la meilleure réponse est montrée dans le fil. #}
+    <article class="ce-question cm-panneau">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <span class="ce-question-etat is-neutre">
+          IL Y A {{ question.date_creation|depuis|upper }} · {{ question.nb_reponses }} RÉPONSE{{ question.nb_reponses|pluralize:"S" }}
+        </span>
+        {% if question.resolue %}
+          <span class="ce-question-resolu">
+            {% include 'core/communaute/_icones.html' with icone='coche' taille=12 %}
+            <span>RÉSOLU</span>
+          </span>
+        {% endif %}
+      </div>
+
+      <div class="ce-question-titre is-petit">{{ question.contenu }}</div>
+
+      <div style="display:flex;gap:12px;margin-top:14px">
+        {% if question.motif %}
+          <span class="cm-motif m-{{ question.motif }}" style="width:66px;height:66px;border-radius:18px;flex:none"></span>
+        {% endif %}
+        {% if question.reponse_top %}
+        <div class="ce-reponse">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="cm-jeton {{ question.reponse_top.auteur|teinte }}" style="width:26px;height:26px;font-size:10px">
+              {{ question.reponse_top.auteur|initiales }}
+            </span>
+            <span class="ce-reponse-auteur">Réponse de <a href="{% url 'communaute_profil' question.reponse_top.auteur.pk %}" class="cm-nom-lien">{{ question.reponse_top.auteur|prenom }}</a></span>
+            {% if question.reponse_top.validee %}
+              <span class="ce-reponse-valide">
+                {% include 'core/communaute/_icones.html' with icone='coche' taille=9 %}
+              </span>
+            {% endif %}
+          </div>
+          <div class="ce-reponse-texte">{{ question.reponse_top.contenu }}</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div style="display:flex;align-items:center;gap:16px;margin-top:15px">
+        <span class="ce-compteur" style="color:var(--orange)">
+          {% include 'core/communaute/_icones.html' with icone='coeur' taille=18 %}
+          <span>{{ question.reponse_top.coeurs|default:0 }}</span>
+        </span>
+        <span class="ce-compteur" style="color:var(--muted)">
+          {% include 'core/communaute/_icones.html' with icone='bulle' taille=18 %}
+          <span>{{ question.nb_reponses }}</span>
+        </span>
+        <span style="flex:1"></span>
+        <a href="{% url 'communaute_question' question.pk %}" style="font:700 12px var(--text);color:var(--green)">Lire le fil</a>
+      </div>
+    </article>
+
+  {% elif forloop.first %}
+    {# Première question sans réponse : traitée en alerte, c'est l'appel du fil. #}
+    <article class="ce-question cm-panneau" style="position:relative;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <span class="ce-question-kicker">
+          <span class="ce-question-marque">
+            {% include 'core/communaute/_icones.html' with icone='alerte' taille=17 %}
+          </span>
+          <span class="ce-question-etat">SANS RÉPONSE · {{ question.minutes }} MIN</span>
+        </span>
+        <span class="ce-question-xp">+{{ question.xp_gain }} XP</span>
+      </div>
+
+      <div class="ce-question-titre">{{ question.contenu }}</div>
+
+      {% if question.liste_tags %}
+      <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
+        {% for tag in question.liste_tags %}<span class="ce-tag">{{ tag|capfirst }}</span>{% endfor %}
+      </div>
+      {% endif %}
+
+      <div style="display:flex;align-items:center;gap:11px;margin-top:16px">
+        <a href="{% url 'communaute_profil' question.auteur.pk %}"
+           class="cm-jeton t-sable" style="width:36px;height:36px;font-size:12px;color:#B03A12">
+          {{ question.auteur|initiales }}
+        </a>
+        <span class="ce-question-auteur" style="flex:1;min-width:0">
+          <a href="{% url 'communaute_profil' question.auteur.pk %}" class="cm-nom-lien">{{ question.auteur|prenom }}</a>{% if question.auteur.profil_jeu %}, {{ question.auteur.profil_jeu.arrondissement }}{% endif %}
+        </span>
+        <a href="{% url 'communaute_question' question.pk %}" class="ce-question-aider b-feu">Aider</a>
+      </div>
+    </article>
+
+  {% else %}
+    {# Autres questions sans réponse : forme compacte. #}
+    {# Carte entièrement cliquable : un seul lien, pas de lien imbriqué. #}
+    <a href="{% url 'communaute_question' question.pk %}"
+       class="ce-question cm-panneau cm-tap"
+       style="padding:18px;display:flex;align-items:center;gap:13px">
+      {% if question.motif %}
+        <span class="cm-motif m-{{ question.motif }}" style="width:50px;height:50px;border-radius:17px;flex:none"></span>
+      {% else %}
+        <span class="cm-jeton t-sable" style="width:50px;height:50px;border-radius:17px;font-size:15px">
+          {{ question.auteur|initiales }}
+        </span>
+      {% endif %}
+      <span style="flex:1;min-width:0">
+        <span class="ce-question-etat" style="display:block">SANS RÉPONSE · {{ question.minutes }} MIN</span>
+        <span style="display:block;font:800 15px/1.3 var(--display);margin-top:6px">{{ question.contenu|truncatechars:60 }}</span>
+      </span>
+      <span class="ce-question-aider b-sable">Aider</span>
+    </a>
+  {% endif %}
+{% empty %}
+  <div class="cm-vide">Aucune question pour le moment. Lance la première !</div>
+{% endfor %}
+
+{# « Voir + » agrandit la liste sans quitter la page. #}
+{% if reste_questions %}
+  <a href="{% url 'communaute' %}?onglet=entraide&filtre={{ filtre_entraide }}&questions={{ prochaine_limite }}#questions"
+     class="ce-voir-plus cm-tap">
+    Voir {{ reste_questions }} question{{ reste_questions|pluralize }} de plus
+    {% include 'core/communaute/_icones.html' with icone='chevron-bas' taille=14 %}
+  </a>
+{% endif %}
+
+{# ══ Dispo maintenant ══ #}
+{% if dispos %}
+<section class="cm-section" style="padding-top:24px">
+  <div class="cm-section-head">
+    <span class="cm-section-titre">Dispo maintenant</span>
+    <span class="cm-section-meta">RÉPONSE ~5 MIN</span>
+  </div>
+
+  <div class="cm-rail ce-dispo-rail">
+    {% for item in dispos %}
+      <div class="ce-dispo {{ item.dispo.utilisateur|teinte }}">
+        <div class="ce-dispo-cadre">
+          <div class="ce-dispo-cercle {{ item.dispo.utilisateur|teinte }}">
+            <span>{{ item.dispo.utilisateur|initiales }}</span>
+          </div>
+          {% if item.dispo.en_ligne %}<span class="ce-dispo-pastille"></span>{% endif %}
+        </div>
+        <div class="ce-dispo-nom"><a href="{% url 'communaute_profil' item.dispo.utilisateur.pk %}" class="cm-nom-lien">{{ item.dispo.utilisateur|prenom }}</a> · niv. {{ item.niveau }}</div>
+        <div class="ce-dispo-spec" style="color:var(--muted)">{{ item.dispo.specialites }}</div>
+        {# « Demander » ouvre directement les messages privés avec elle. #}
+        <form method="post" action="{% url 'communaute_ouvrir_mp' item.dispo.utilisateur.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="ce-dispo-demander">Demander</button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{# ══ Salons ══ #}
+<section class="cm-section" style="padding-top:22px;padding-bottom:0">
+  <div class="cm-section-head">
+    <span class="cm-section-titre">Les salons</span>
+    <a href="{% url 'communaute_salons' %}" class="cm-section-lien">Tous les salons</a>
+  </div>
+</section>
+
+{% if salon_sos %}
+<a href="{% url 'communaute_salon' salon_sos.pk %}" class="ce-sos cm-tap">
+  <span class="ce-sos-glow" aria-hidden="true"></span>
+  <span class="ce-sos-marque">
+    {% include 'core/communaute/_icones.html' with icone='bulle' taille=21 %}
+  </span>
+  <span style="flex:1;min-width:0">
+    <span style="display:flex;align-items:center;gap:7px">
+      <span class="ce-sos-nom">{{ salon_sos.nom }}</span>
+      <span class="ce-sos-pouls"></span>
+    </span>
+    <span class="ce-sos-detail" style="display:block">
+      {{ nb_sos_en_ligne }} couturier{{ nb_sos_en_ligne|pluralize }} en ligne · réponses immédiates
+    </span>
+  </span>
+  <span class="ce-sos-entrer">Entrer</span>
+</a>
+{% endif %}
+
