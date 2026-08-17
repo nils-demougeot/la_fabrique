@@ -259,8 +259,24 @@ def dashboard(request):
 
     surface_pourcentage = min(100, round((surface_totale / OBJECTIF_M2) * 100))
     surface_restante = round(max(0, OBJECTIF_M2 - surface_totale), 1)
-    # Défi « banque de tissus » : 5 segments de 20 % chacun.
+    # Défi « banque de tissus » : 5 segments de 20 % chacun. Il sert de repli
+    # à la carte des quêtes quand la communauté est fermée.
     defi_segments = [surface_pourcentage >= (i + 1) * 20 for i in range(5)]
+
+    # ── Quêtes du jour ──────────────────────────────────────────────────
+    # La carte orange du tableau de bord montre l'avancement du jour : c'est
+    # le même état que l'écran des quêtes, lu au même endroit — il ne peut
+    # donc pas y avoir deux comptes différents à l'écran.
+    quetes_jour, quetes_faites, coffre_quetes, heures_avant_reset = [], 0, None, None
+    if getattr(dj_settings, 'COMMUNAUTE_ACTIVE', True):
+        from . import gamification as jeu
+
+        quetes_jour = jeu.quetes_du_jour(user)
+        quetes_faites = sum(1 for q in quetes_jour if q.terminee)
+        coffre_quetes = jeu.coffre_du_jour(user)
+        minuit = (timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+                  + timedelta(days=1))
+        heures_avant_reset = max(0, int((minuit - timezone.localtime()).total_seconds() // 3600))
 
     apercu_tissus = [
         {'photo': v.photo_url, 'hex': _couleur_hex(v.couleur)}
@@ -400,6 +416,12 @@ def dashboard(request):
         'surface_pourcentage': surface_pourcentage,
         'surface_restante': surface_restante,
         'defi_segments': defi_segments,
+        'quetes_jour': quetes_jour,
+        'quetes_faites': quetes_faites,
+        'quetes_total': len(quetes_jour),
+        'quetes_pourcentage': round(quetes_faites / len(quetes_jour) * 100) if quetes_jour else 0,
+        'coffre_quetes': coffre_quetes,
+        'heures_avant_reset': heures_avant_reset,
         'nb_vetements': nb_vetements,
         'apercu_tissus': apercu_tissus,
         'reste_tissus': reste_tissus,

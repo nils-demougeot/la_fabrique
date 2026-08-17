@@ -1196,8 +1196,14 @@
       <h1 class="cm-head-title">Communauté</h1>
     </div>
     <div class="cm-head-actions">
-      <a href="{% url 'communaute' %}?onglet=amis" class="cm-icon-btn" aria-label="Chercher un couturier">
-        {% include 'core/communaute/_icones.html' with icone='loupe' %}
+      {% comment %}
+        Accès direct aux conversations. La pastille compte les messages de
+        salon signalés et non lus : c'est le seul « non lu » que l'application
+        sache mesurer, et c'est celui qui justifie d'ouvrir la rubrique.
+      {% endcomment %}
+      <a href="{% url 'communaute_salons' %}" class="cm-icon-btn" aria-label="Mes conversations">
+        {% include 'core/communaute/_icones.html' with icone='messages' %}
+        {% if nb_messages %}<span class="cm-badge-num">{{ nb_messages }}</span>{% endif %}
       </a>
       {# Accès aux quêtes du jour (45i) — le compteur montre ce qui reste à faire. #}
       <a href="{% url 'communaute_quetes' %}" class="cm-icon-btn" aria-label="Quêtes du jour">
