@@ -49,6 +49,10 @@ def _socle(request, onglet):
         'coffre_jour': jeu.coffre_du_jour(request.user),
         'nb_notifications': jeu.nb_notifications_non_lues(request.user),
         'nb_demandes': jeu.demandes_recues(request.user).count(),
+        # Pastille du bouton « conversations » : les messages de salon
+        # signalés et pas encore lus.
+        'nb_messages': request.user.notifications.filter(
+            type_notif='salon', lue=False).count(),
     })
     return contexte
 

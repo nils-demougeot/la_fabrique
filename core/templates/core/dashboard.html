@@ -496,6 +496,68 @@
   }
   .dash-defi-segments > span.is-on { background: var(--yellow); }
 
+  /* ── Quêtes du jour ───────────────────────────────────────
+     Même carte orange que le défi : seule la liste des quêtes s'ajoute
+     sous les segments, un segment par quête. */
+  .dash-defi-liste { margin-top: 14px; display: flex; flex-direction: column; gap: 2px; }
+  .dash-quete {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+  }
+  .dash-quete + .dash-quete { border-top: 1px solid rgba(255,255,255,.16); }
+  .dash-quete-coche {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,.5);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    color: var(--orange);
+  }
+  .dash-quete.est-faite .dash-quete-coche {
+    background: var(--yellow);
+    border-color: var(--yellow);
+    color: var(--ink);
+  }
+  .dash-quete-coche svg { display: block; opacity: 0; }
+  .dash-quete.est-faite .dash-quete-coche svg { opacity: 1; }
+  .dash-quete-nom {
+    flex: 1;
+    min-width: 0;
+    font: 700 12.5px var(--text);
+    color: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dash-quete.est-faite .dash-quete-nom { opacity: .62; text-decoration: line-through; }
+  .dash-quete-gain {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: .06em;
+    color: rgba(255,255,255,.82);
+    flex: none;
+  }
+  .dash-quete.est-faite .dash-quete-gain { color: var(--yellow); }
+  /* Coffre débloqué : le pied de carte devient l'appel à l'action. */
+  .dash-defi-coffre {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--ink);
+    border-radius: 16px;
+    padding: 11px 0;
+    margin-top: 12px;
+    font: 800 13px var(--display);
+    color: var(--yellow);
+  }
+
   /* ── Rails horizontaux ────────────────────────────────── */
   .dash-rail {
     display: flex;
@@ -1207,7 +1269,58 @@
       </a>
     </div>
 
-    <!-- ══════════════ Défi banque de tissus ══════════════ -->
+    <!-- ══════════════ Quêtes du jour ══════════════
+         Quand la communauté est fermée, la carte reprend le défi « banque de
+         tissus » : elle ne doit jamais renvoyer vers un écran inaccessible. -->
+    {% if quetes_jour %}
+    <a href="{% url 'communaute_quetes' %}" class="dash-defi dash-link">
+      <div class="dash-defi-head">
+        <div>
+          <p class="dash-kicker">
+            Quêtes du jour{% if heures_avant_reset %} · encore {{ heures_avant_reset }} h{% endif %}
+          </p>
+          <p class="dash-defi-title">
+            {% if quetes_faites == quetes_total %}Journée bouclée{% else %}À faire aujourd'hui{% endif %}
+          </p>
+        </div>
+        <span class="dash-defi-pill">{{ quetes_faites }}/{{ quetes_total }}</span>
+      </div>
+
+      <div class="dash-defi-segments">
+        {% for quete in quetes_jour %}
+        <span {% if quete.terminee %}class="is-on"{% endif %}></span>
+        {% endfor %}
+      </div>
+
+      <div class="dash-defi-liste">
+        {% for quete in quetes_jour %}
+        <div class="dash-quete {% if quete.terminee %}est-faite{% endif %}">
+          <span class="dash-quete-coche">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 12.5 10 17.5 19 7.5" stroke="currentColor" stroke-width="3.2"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="dash-quete-nom">{{ quete.quete.libelle }}</span>
+          <span class="dash-quete-gain">
+            {% if quete.quete.xp %}+{{ quete.quete.xp }} XP{% else %}+{{ quete.quete.pieces }} ⛁{% endif %}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if coffre_quetes and not coffre_quetes.ouvert %}
+      <span class="dash-defi-coffre">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 8h16l-1.4 11a2 2 0 0 1-2 1.8H7.4a2 2 0 0 1-2-1.8L4 8Z" fill="currentColor"/>
+          <path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+        Coffre du jour à ouvrir
+      </span>
+      {% endif %}
+    </a>
+
+    {% else %}
     <a href="{% url 'ajout_textile' %}" class="dash-defi dash-link">
       <div class="dash-defi-head">
         <div>
@@ -1224,6 +1337,7 @@
         {% endfor %}
       </div>
     </a>
+    {% endif %}
 
     <!-- ══════════════ À coudre avec tes tissus ══════════════ -->
     <section>
