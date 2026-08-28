@@ -224,7 +224,10 @@ COMMUNAUTE_ACTIVE = _env_bool('COMMUNAUTE_ACTIVE', False)
 # Détourage automatique par segmentation IA (rembg) côté serveur.
 # À False : pas de détection automatique, l'utilisateur place les points à la
 # main (l'ancien algorithme par seuillage colorimétrique a été supprimé).
-REMBG_DETOURAGE_ENABLED = _env_bool('REMBG_DETOURAGE_ENABLED', True)
+# Désactivé par défaut : rembg (onnxruntime + modèle) fait dépasser les 512 Mo
+# de l'instance Render et provoque des crashs mémoire (voir aussi le login,
+# qui échoue par ricochet quand l'instance est tuée pour OOM).
+REMBG_DETOURAGE_ENABLED = _env_bool('REMBG_DETOURAGE_ENABLED', False)
 
 # ── E-mail (réinitialisation de mot de passe) ───────────────────────────────
 # En dev : les e-mails s'affichent dans la console (aucune config requise).
