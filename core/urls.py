@@ -1,21 +1,26 @@
 from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
 from . import views
+from . import views_communaute as vc
 
 # Alias court pour le blocage de la communauté pendant la bêta.
 _bloc_communaute = views.communaute_active_requise
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('service-worker.js', views.service_worker, name='service_worker'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('cours/', views.cours, name='cours'),
     path('patrons/', views.patrons, name='patrons'),
     path('patrons/creer/', views.creer_patron, name='creer_patron'),
     path('patrons/<int:pk>/', views.patron_detail, name='patron_detail'),
     path('patrons/<int:pk>/faisabilite/', views.faisabilite_patron, name='faisabilite_patron'),
+    path('patrons/<int:pk>/plan-coupe/sauvegarder/', views.plan_coupe_save, name='plan_coupe_save'),
     path('patrons/<int:pk>/patron.pdf', views.patron_pdf, name='patron_pdf'),
     path('patrons/<int:pk>/instructions.pdf', views.patron_instructions_pdf, name='patron_instructions_pdf'),
     path('patrons/<int:pk>/export.json', views.patron_export, name='patron_export'),
     path('patrons/<int:patron_pk>/etape/<int:etape_num>/', views.etape_projet, name='etape_projet'),
+    path('patrons/<int:patron_pk>/etape/<int:etape_num>/geste/<int:geste_num>/', views.etape_projet, name='etape_projet_geste'),
     path('patrons/<int:pk>/like/', views.toggle_like, name='toggle_like'),
     path('patrons/<int:pk>/terminer/', views.terminer_projet, name='terminer_projet'),
     path('patrons/<int:pk>/passeport/', views.passeport_circulaire, name='passeport_circulaire'),
@@ -23,9 +28,53 @@ urlpatterns = [
     path('qrcode/', views.qrcode_view, name='qrcode_view'),
     path('ajout_textile/', views.ajout_textile, name='ajout_textile'),
     path('ajout_textile/detourage-auto/', views.detourage_auto, name='detourage_auto'),
-    # Communauté — désactivée pendant la bêta via le décorateur communaute_active_requise.
-    # Réactivation : COMMUNAUTE_ACTIVE=True (les vues restent inchangées).
-    path('communaute/', _bloc_communaute(views.communaute), name='communaute'),
+    # ── Communauté « atelier » (onglet Partage) ────────────────────────────
+    # Page à trois onglets (Atelier / Amis / Entraide) + les dix écrans qui en
+    # découlent. Le décorateur communaute_active_requise gouverne toujours
+    # l'ouverture de la rubrique (réglage COMMUNAUTE_ACTIVE).
+    path('communaute/', _bloc_communaute(vc.communaute), name='communaute'),
+    path('communaute/progression/', _bloc_communaute(vc.progression), name='communaute_progression'),
+    path('communaute/progression/vue/', _bloc_communaute(vc.progression_vue), name='communaute_progression_vue'),
+    path('communaute/notifications/', _bloc_communaute(vc.notifications), name='communaute_notifications'),
+    path('communaute/amies/', _bloc_communaute(vc.amies), name='communaute_amies'),
+    path('communaute/amies/partager/', _bloc_communaute(vc.partager_code), name='communaute_partager_code'),
+    path('communaute/messages/', _bloc_communaute(vc.messages_prives), name='communaute_messages'),
+    path('communaute/messages/<int:pk>/ouvrir/', _bloc_communaute(vc.ouvrir_message_prive), name='communaute_ouvrir_mp'),
+    path('communaute/amies/<int:pk>/inviter/', _bloc_communaute(vc.inviter_amie), name='communaute_inviter'),
+    path('communaute/amies/demande/<int:pk>/', _bloc_communaute(vc.repondre_amitie), name='communaute_repondre_amitie'),
+    path('communaute/couturiere/<int:pk>/', _bloc_communaute(vc.profil_couturiere), name='communaute_profil'),
+    path('communaute/classement/', _bloc_communaute(vc.classement_complet), name='communaute_classement'),
+    path('communaute/serie/', _bloc_communaute(vc.serie), name='communaute_serie'),
+    path('communaute/serie/entretenir/', _bloc_communaute(vc.entretenir_serie), name='communaute_entretenir_serie'),
+    path('communaute/boutique/', _bloc_communaute(vc.boutique), name='communaute_boutique'),
+    path('communaute/boutique/<int:pk>/acheter/', _bloc_communaute(vc.acheter_offre), name='communaute_acheter'),
+    path('communaute/coffre/', _bloc_communaute(vc.ouvrir_coffre), name='communaute_coffre_jour'),
+    path('communaute/coffre/resultat/', _bloc_communaute(vc.coffre_resultat), name='communaute_coffre_resultat'),
+    path('communaute/coffre/<int:pk>/', _bloc_communaute(vc.ouvrir_coffre), name='communaute_coffre'),
+    path('communaute/ecussons/', _bloc_communaute(vc.ecussons), name='communaute_ecussons'),
+    path('communaute/duel/<int:pk>/', _bloc_communaute(vc.duel), name='communaute_duel'),
+    path('communaute/defier/<int:pk>/', _bloc_communaute(vc.defier), name='communaute_defier'),
+    path('communaute/salon/<int:pk>/', _bloc_communaute(vc.salon), name='communaute_salon'),
+    path('communaute/salon/<int:pk>/envoyer/', _bloc_communaute(vc.envoyer_message), name='communaute_envoyer_message'),
+    path('communaute/message/<int:pk>/reagir/', _bloc_communaute(vc.reagir_message), name='communaute_reagir'),
+    path('communaute/evenement/<int:pk>/', _bloc_communaute(vc.evenement), name='communaute_evenement'),
+    path('communaute/evenement/<int:pk>/inscription/', _bloc_communaute(vc.basculer_inscription), name='communaute_inscription'),
+    path('communaute/quetes/', _bloc_communaute(vc.quetes), name='communaute_quetes'),
+    path('communaute/fin-de-saison/', _bloc_communaute(vc.fin_saison), name='communaute_fin_saison'),
+    path('communaute/fin-de-saison/reclamer/', _bloc_communaute(vc.reclamer_fin_saison), name='communaute_reclamer_saison'),
+    path('communaute/defi-ville/', _bloc_communaute(vc.defi_ville), name='communaute_defi_ville'),
+    path('communaute/declarer-m2/', _bloc_communaute(vc.declarer_m2), name='communaute_declarer_m2'),
+    path('communaute/salons/', _bloc_communaute(vc.salons), name='communaute_salons'),
+    path('communaute/salons/creer/', _bloc_communaute(vc.creer_salon), name='communaute_creer_salon'),
+    path('communaute/salon/<int:pk>/rejoindre/', _bloc_communaute(vc.rejoindre_salon), name='communaute_rejoindre_salon'),
+    path('communaute/question/', _bloc_communaute(vc.poser_question), name='communaute_poser_question'),
+    path('communaute/question/<int:pk>/', _bloc_communaute(vc.question), name='communaute_question'),
+    path('communaute/question/<int:pk>/repondre/', _bloc_communaute(vc.repondre_question), name='communaute_repondre'),
+    path('communaute/reponse/<int:pk>/valider/', _bloc_communaute(vc.valider_reponse), name='communaute_valider_reponse'),
+    path('communaute/troc/<int:pk>/prendre/', _bloc_communaute(vc.prendre_annonce), name='communaute_prendre_annonce'),
+    path('communaute/amies/ajouter/', _bloc_communaute(vc.ajouter_amie), name='communaute_ajouter_amie'),
+
+    # Journal de créations (ancienne communauté photo) — toujours accessible.
     path('communaute/creer/', _bloc_communaute(views.creer_post), name='creer_post'),
     path('communaute/mes-posts/', _bloc_communaute(views.mes_posts), name='mes_posts'),
     path('communaute/post/<int:pk>/', _bloc_communaute(views.detail_post), name='detail_post'),
@@ -77,4 +126,5 @@ urlpatterns = [
     path('inscription/etape1/', views.inscription_etape1, name='inscription_etape1'),
     path('inscription/etape2/', views.inscription_etape2, name='inscription_etape2'),
     path('inscription/etape3/', views.inscription_etape3, name='inscription_etape3'),
+    path('inscription/bienvenue/', views.inscription_bienvenue, name='inscription_bienvenue'),
 ]

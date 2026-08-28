@@ -1,0 +1,95 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  Liste des messages privés (fils à deux, `Salon.est_mp`). Accessible depuis
+  l'onglet Amis ; chaque ligne ouvre le fil réutilisant `communaute_salon.html`.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cmg-fil {
+    display: flex; align-items: center; gap: 13px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 24px;
+    padding: 13px 15px;
+  }
+  .cmg-fil + .cmg-fil { margin-top: 10px; }
+  .cmg-avatar { position: relative; flex: none; }
+  .cmg-pouls {
+    position: absolute; bottom: -1px; right: -1px;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--green);
+    border: 2px solid var(--paper);
+    box-sizing: content-box;
+  }
+  .cmg-nom { font: 800 14.5px var(--display); }
+  .cmg-dernier {
+    font: 400 12px/1.4 var(--text);
+    color: var(--muted);
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cmg-heure { font: 500 9px var(--mono); color: var(--faint); flex: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm has-nav">
+
+  <header class="cm-topbar">
+    <a href="{% url 'communaute' %}?onglet=amis" class="cm-back" aria-label="Retour">
+      {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+    </a>
+    <span class="cm-topbar-label">MES MESSAGES</span>
+    <span class="cm-back-ghost" aria-hidden="true"></span>
+  </header>
+
+  <section class="cm-section">
+    <div class="cm-section-head">
+      <span class="cm-section-titre">Conversations</span>
+      <span class="cm-section-meta">{{ salons|length }} FIL{{ salons|length|pluralize:"S" }}</span>
+    </div>
+
+    <div style="padding:0 16px">
+      {% for salon in salons %}
+        <a href="{% url 'communaute_salon' salon.pk %}" class="cmg-fil cm-tap cm-entree" style="--rang:{{ forloop.counter0 }}">
+          <span class="cmg-avatar">
+            <span class="cm-jeton {{ salon.autre|teinte }}" style="width:46px;height:46px;font-size:15px">
+              {{ salon.autre|initiales }}
+            </span>
+            {% if salon.autre.est_en_ligne %}<span class="cmg-pouls"></span>{% endif %}
+          </span>
+          <span style="flex:1;min-width:0">
+            <span class="cmg-nom" style="display:block">{{ salon.autre|nom_court }}</span>
+            <span class="cmg-dernier" style="display:block">
+              {% if salon.dernier %}
+                {% if salon.dernier.auteur_id == user.pk %}Toi : {% endif %}{{ salon.dernier.contenu|default:"A partagé quelque chose"|truncatechars:46 }}
+              {% else %}
+                Dites bonjour !
+              {% endif %}
+            </span>
+          </span>
+          {% if salon.dernier %}
+            <span class="cmg-heure">{{ salon.dernier.date_envoi|depuis|upper }}</span>
+          {% endif %}
+        </a>
+      {% empty %}
+        <div class="cm-vide" style="margin:0">
+          Aucun message pour l'instant. Ouvre une conversation depuis le profil d'un ami.
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+  {% include 'core/bottom_nav.html' %}
+{% endblock %}

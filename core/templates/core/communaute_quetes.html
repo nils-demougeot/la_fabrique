@@ -1,0 +1,311 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  45i — Quêtes du jour. S'ouvre par le bouton « Quêtes du jour » de l'en-tête
+  de la communauté (et depuis la boutique). Anneau d'avancement, quêtes faites
+  barrées, quête en cours mise en avant, bonus de la semaine, coffre en socle.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cq-reset {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--sand);
+    border-radius: 14px;
+    padding: 9px 12px;
+    flex: none;
+  }
+  .cq-reset-label { font: 500 9px var(--mono); color: var(--muted); letter-spacing: .06em; }
+  .cq-reset-valeur { font: 800 12px var(--display); }
+
+  .cq-progres {
+    background: linear-gradient(140deg, #1F5E3F 0%, #221E19 74%);
+    border-radius: 28px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cm .cq-progres-glow {
+    position: absolute; top: -60px; right: -40px;
+    width: 190px; height: 190px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,201,60,.26) 0%, rgba(255,201,60,0) 70%);
+  }
+  .cq-progres > * { position: relative; }
+  .cq-anneau { width: 70px; height: 70px; flex: none; position: relative; }
+  .cq-anneau-piste {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(#FFC93C 0 var(--pct, 66%), rgba(255,255,255,.14) var(--pct, 66%));
+  }
+  .cq-anneau-coeur {
+    position: absolute; inset: 7px;
+    border-radius: 50%;
+    background: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font: 800 17px var(--display);
+    color: #fff;
+  }
+  .cq-progres-titre { font: 800 18px var(--display); color: #fff; }
+  .cq-progres-phrase { font: 400 12px/1.45 var(--text); color: var(--dim-2); margin-top: 5px; }
+
+  /* Quête accomplie : barrée, en retrait. */
+  .cq-faite {
+    background: var(--sand);
+    border-radius: 26px;
+    padding: 16px 18px;
+    display: flex; align-items: center; gap: 13px;
+    opacity: .72;
+  }
+  .cq-faite + .cq-faite, .cq-encours + .cq-faite, .cq-faite + .cq-encours { margin-top: 10px; }
+  .cq-coche {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--green);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    flex: none;
+  }
+  .cq-faite-nom { font: 700 14px var(--text); color: var(--muted); text-decoration: line-through; }
+  .cq-faite-gain { font: 800 12px var(--display); color: var(--green); flex: none; }
+
+  /* Quête en cours : encadrée, avec sa barre et son bouton. */
+  .cq-encours {
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    box-sizing: border-box;
+    border-radius: 26px;
+    padding: 18px;
+  }
+  .cq-encours-puce {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 2px solid var(--line-2);
+    box-sizing: border-box;
+    flex: none;
+  }
+  .cq-encours-nom { font: 800 15px var(--display); }
+  .cq-encours-detail { font: 400 11.5px var(--text); color: var(--muted); margin-top: 4px; }
+  .cq-encours-gain { font: 800 12px var(--display); flex: none; }
+  .cq-encours-piste {
+    height: 9px;
+    border-radius: 6px;
+    background: var(--sand);
+    overflow: hidden;
+    margin-top: 14px;
+  }
+  .cq-encours-jauge {
+    height: 100%;
+    background: linear-gradient(90deg, #1FA85C, #8FD9AF);
+    border-radius: 6px;
+  }
+  .cq-encours-cta {
+    display: block;
+    background: var(--ink);
+    color: #fff;
+    border-radius: 18px;
+    text-align: center;
+    padding: 13px 0;
+    margin-top: 14px;
+    font: 800 13.5px var(--display);
+  }
+
+  /* Bonus hebdomadaire. */
+  .cq-bonus { background: var(--violet-l); border-radius: 26px; padding: 18px; }
+  .cq-bonus-marque {
+    width: 40px; height: 40px;
+    border-radius: 14px;
+    background: var(--violet);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    flex: none;
+  }
+  .cq-bonus-nom { font: 800 15px var(--display); }
+  .cq-bonus-detail { font: 400 11.5px var(--text); color: #4A4262; margin-top: 4px; }
+  .cq-bonus-segments { display: flex; gap: 6px; margin-top: 14px; }
+  .cq-bonus-segment { flex: 1; height: 9px; border-radius: 6px; background: rgba(124,92,255,.22); }
+  .cq-bonus-segment.est-fait { background: var(--violet); }
+
+  /* Coffre du jour en socle. */
+  .cq-coffre {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--yellow-l);
+    border-radius: 22px;
+    padding: 14px 16px;
+  }
+  .cq-coffre-icone { flex: none; display: flex; filter: drop-shadow(0 4px 10px rgba(184,120,0,.35)); }
+  .cq-coffre-texte { flex: 1; font: 800 13.5px var(--display); }
+  .cq-coffre-cta {
+    background: var(--ink);
+    color: #fff;
+    border: 0;
+    border-radius: 14px;
+    padding: 11px 13px;
+    font: 800 11.5px var(--display);
+    flex: none;
+    cursor: pointer;
+  }
+  .cq-coffre-cta.est-pret { background: var(--green); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm has-cta">
+
+  {# ══ En-tête ══ #}
+  <header style="padding:12px 20px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex:none">
+    <div>
+      {# `{% now "l j F"|upper %}` mettrait en capitales le FORMAT, pas la date. #}
+      {% now "l j F" as aujourdhui %}
+      <div class="cm-head-kicker">{{ aujourdhui|upper }}</div>
+      <div style="font:800 26px var(--display);letter-spacing:-.02em;margin-top:5px">Quêtes du jour</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex:none">
+      <span class="cq-reset">
+        <span class="cq-reset-label">RESET</span>
+        <span class="cq-reset-valeur">{{ heures_avant_reset|stringformat:"02d" }} H</span>
+      </span>
+      <a href="{% url 'communaute' %}" class="cm-back" aria-label="Fermer">
+        {% include 'core/communaute/_icones.html' with icone='croix' %}
+      </a>
+    </div>
+  </header>
+
+  {# ══ Avancement ══ #}
+  <section style="padding:20px 20px 0;flex:none">
+    <div class="cq-progres">
+      <span class="cq-progres-glow" aria-hidden="true"></span>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div class="cq-anneau">
+          <div class="cq-anneau-piste" style="--pct:{{ pourcentage }}%"></div>
+          <div class="cq-anneau-coeur">{{ nb_faites }}/{{ nb_total }}</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          {% if restantes == 0 %}
+            <div class="cq-progres-titre">Journée bouclée</div>
+            <div class="cq-progres-phrase">
+              {% if coffre and not coffre.ouvert %}Ton coffre t'attend juste en dessous.
+              {% else %}Tout est fait. Reviens demain pour de nouvelles quêtes.{% endif %}
+            </div>
+          {% elif restantes == 1 %}
+            <div class="cq-progres-titre">Presque le coffre</div>
+            <div class="cq-progres-phrase">Une quête de plus et tu ouvres 30 pièces.</div>
+          {% else %}
+            <div class="cq-progres-titre">{{ restantes }} quêtes à faire</div>
+            <div class="cq-progres-phrase">Termine-les toutes pour débloquer le coffre du jour.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ══ Quêtes du jour ══ #}
+  <section style="padding:16px 20px 0;flex:none">
+    {% for avancement in quetes_jour %}
+      {% if avancement.terminee %}
+        <div class="cq-faite">
+          <span class="cq-coche">
+            {% include 'core/communaute/_icones.html' with icone='coche' taille=18 %}
+          </span>
+          <div style="flex:1;min-width:0">
+            <div class="cq-faite-nom">{{ avancement.quete.libelle }}</div>
+          </div>
+          <span class="cq-faite-gain">
+            {% if avancement.quete.xp %}+{{ avancement.quete.xp }} XP{% else %}+{{ avancement.quete.pieces }} pièces{% endif %}
+          </span>
+        </div>
+
+      {% elif avancement.pk == quete_en_cours.pk %}
+        <div class="cq-encours">
+          <div style="display:flex;align-items:center;gap:13px">
+            <span class="cq-encours-puce"></span>
+            <div style="flex:1;min-width:0">
+              <div class="cq-encours-nom">{{ avancement.quete.libelle }}</div>
+              {% if avancement.quete.detail %}
+                <div class="cq-encours-detail">{{ avancement.quete.detail }}</div>
+              {% endif %}
+            </div>
+            <span class="cq-encours-gain">
+              {% if avancement.quete.xp %}+{{ avancement.quete.xp }} XP{% else %}+{{ avancement.quete.pieces }} pièces{% endif %}
+            </span>
+          </div>
+          <div class="cq-encours-piste">
+            <div class="cq-encours-jauge" style="width:{{ avancement.pourcentage }}%"></div>
+          </div>
+          <a href="{% url avancement.quete.cta_route %}" class="cq-encours-cta">{{ avancement.quete.cta_libelle }}</a>
+        </div>
+
+      {% else %}
+        <div class="cq-faite" style="opacity:1;background:var(--paper);border:1.5px solid var(--line);box-sizing:border-box">
+          <span class="cq-encours-puce"></span>
+          <div style="flex:1;min-width:0">
+            <div style="font:700 14px var(--text)">{{ avancement.quete.libelle }}</div>
+          </div>
+          <span class="cq-faite-gain" style="color:var(--ink)">
+            {% if avancement.quete.xp %}+{{ avancement.quete.xp }} XP{% else %}+{{ avancement.quete.pieces }} pièces{% endif %}
+          </span>
+        </div>
+      {% endif %}
+    {% empty %}
+      <div class="cm-vide" style="margin:0">Aucune quête active aujourd'hui.</div>
+    {% endfor %}
+  </section>
+
+  {# ══ Bonus de la semaine ══ #}
+  {% if quetes_semaine %}
+  <section style="padding:18px 20px 0;flex:none">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;gap:10px">
+      <span style="font:800 18px var(--display)">Bonus de la semaine</span>
+      <span class="cm-section-meta">3 J RESTANTS</span>
+    </div>
+
+    {% for avancement in quetes_semaine %}
+      <div class="cq-bonus" {% if not forloop.first %}style="margin-top:10px"{% endif %}>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="cq-bonus-marque">
+            {% include 'core/communaute/_icones.html' with icone='mentor' taille=19 %}
+          </span>
+          <div style="flex:1;min-width:0">
+            <div class="cq-bonus-nom">{{ avancement.quete.libelle }}</div>
+            <div class="cq-bonus-detail">
+              {{ avancement.avancement }} sur {{ avancement.quete.objectif }}
+              {% if avancement.quete.pieces %} · +{{ avancement.quete.pieces }} pièces à la clé{% endif %}
+              {% if avancement.quete.xp %} · +{{ avancement.quete.xp }} XP à la clé{% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="cq-bonus-segments">
+          {% for i in avancement.quete.objectif|repeter %}
+            <span class="cq-bonus-segment {% if i < avancement.avancement %}est-fait{% endif %}"></span>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {# ══ Coffre du jour ══ #}
+  <div class="cm-cta">
+    <div class="cq-coffre">
+      <span class="cq-coffre-icone">
+        {% include 'core/communaute/_icones.html' with icone='coffre' taille=34 uid='quetes' %}
+      </span>
+      <span class="cq-coffre-texte">
+        Coffre du jour · {{ coffre.pieces|default:30 }} pièces
+      </span>
+      {% if coffre and not coffre.ouvert %}
+        <form method="post" action="{% url 'communaute_coffre_jour' %}">
+          {% csrf_token %}
+          <button type="submit" class="cq-coffre-cta est-pret">Ouvrir</button>
+        </form>
+      {% elif coffre and coffre.ouvert %}
+        <span class="cq-coffre-cta" style="background:var(--green-l);color:var(--green-d)">Ouvert</span>
+      {% else %}
+        <span class="cq-coffre-cta">{{ restantes }} quête{{ restantes|pluralize }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,425 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  Progression — l'échelle des six niveaux d'atelier en grand.
+
+  Trois questions, dans cet ordre : où j'en suis, d'où viennent mes points,
+  ce qu'il reste à gravir. Le barème est celui de `gamification.NIVEAUX_ATELIER`,
+  partagé avec le tableau de bord : les chiffres d'ici et ceux de l'accueil ne
+  peuvent pas diverger.
+
+  Une montée de niveau jamais fêtée ouvre la célébration à l'arrivée.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cp {
+    background: radial-gradient(120% 55% at 50% 0%, #1F5E3F 0%, #1A1712 48%, #14120F 100%);
+    color: #fff;
+  }
+  .cm .cp-halo {
+    position: absolute; top: -40px; left: 50%;
+    transform: translateX(-50%);
+    width: 320px; height: 320px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,201,60,.22) 0%, rgba(255,201,60,0) 68%);
+    pointer-events: none;
+  }
+  .cp > * { position: relative; }
+
+  /* ── Anneau de niveau ── */
+  .cp-anneau {
+    width: 156px; height: 156px;
+    position: relative;
+    margin: 0 auto;
+    filter: drop-shadow(0 12px 28px rgba(0,0,0,.4));
+  }
+  /* Arrêts proportionnels à --pct : voir la note sur .cm-anneau-piste. */
+  .cp-anneau-piste {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 210deg,
+                #2FBF6D 0%,
+                #8FD9AF calc(var(--pct, 0%) * .62),
+                #FFC93C var(--pct, 0%),
+                rgba(255,255,255,.12) var(--pct, 0%));
+  }
+  .cp-anneau-coeur {
+    position: absolute; inset: 11px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 26%, #2B2620, #14120F);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .cp-anneau-numero {
+    font: 800 56px var(--display);
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -.03em;
+  }
+  .cp-anneau-label {
+    font: 500 8.5px var(--mono);
+    letter-spacing: .18em;
+    color: var(--green-pale);
+    margin-top: 6px;
+  }
+  .cp-anneau-pastille {
+    position: absolute; top: 4px; right: 4px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--yellow);
+    border: 4px solid #14120F;
+    box-sizing: content-box;
+    box-shadow: 0 0 16px rgba(255,201,60,.75);
+  }
+
+  .cp-nom { font: 800 30px var(--display); letter-spacing: -.02em; margin-top: 18px; }
+  .cp-cp { font: 500 10px var(--mono); letter-spacing: .14em; color: var(--gold-t); margin-top: 8px; }
+
+  .cp-barre {
+    height: 12px;
+    border-radius: 8px;
+    background: rgba(0,0,0,.34);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.5);
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  .cp-barre-jauge {
+    height: 100%;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #1FA85C, #8FD9AF 50%, #FFC93C);
+    box-shadow: 0 0 16px rgba(255,201,60,.5);
+  }
+  .cp-restants { font: 400 12.5px/1.5 var(--text); color: var(--dim-2); margin-top: 12px; }
+  .cp-restants b { color: #fff; font-weight: 800; font-family: var(--display); }
+
+  /* ── D'où viennent les points ── */
+  .cp-bloc {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 32px 32px 0 0;
+    margin-top: 28px;
+    padding: 24px 20px calc(28px + env(safe-area-inset-bottom, 0px));
+    flex: 1;
+  }
+  .cp-titre { font: 800 19px var(--display); margin-bottom: 4px; }
+  .cp-sous { font: 400 12.5px/1.5 var(--text); color: var(--muted); margin-bottom: 16px; }
+
+  .cp-source {
+    display: flex; align-items: center; gap: 13px;
+    background: var(--sand);
+    border-radius: 22px;
+    padding: 14px 16px;
+  }
+  .cp-source + .cp-source { margin-top: 9px; }
+  .cp-source-marque {
+    width: 42px; height: 42px;
+    border-radius: 15px;
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+    color: #fff;
+  }
+  .cp-source-marque.s-tissus  { background: linear-gradient(150deg, #7FC9E8, #2E7EA3); }
+  .cp-source-marque.s-etapes  { background: linear-gradient(150deg, #C4B4FF, #5B45B8); }
+  .cp-source-marque.s-projets { background: linear-gradient(150deg, #4FD08A, #12633A); }
+  .cp-source-nom { font: 800 14px var(--display); }
+  .cp-source-calcul { font: 500 9.5px var(--mono); color: var(--muted); margin-top: 3px; }
+  .cp-source-points { font: 800 17px var(--display); flex: none; }
+  .cp-source-points small { font: 500 8px var(--mono); color: var(--faint); display: block; text-align: right; margin-top: 2px; }
+
+  .cp-total {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--ink);
+    color: #fff;
+    border-radius: 22px;
+    padding: 15px 18px;
+    margin-top: 12px;
+  }
+  .cp-total-label { font: 500 9.5px var(--mono); letter-spacing: .12em; color: var(--dim-2); }
+  .cp-total-valeur { font: 800 22px var(--display); }
+
+  /* ── Échelle des niveaux ── */
+  .cp-echelon { display: flex; gap: 13px; }
+  .cp-echelon-rail {
+    width: 46px; flex: none;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .cp-fil {
+    width: 0;
+    border-left: 2px dashed var(--line);
+    flex: 1;
+    min-height: 22px;
+  }
+  .cp-fil.est-acquis { border-left-color: var(--green); }
+  .cp-pastille {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font: 800 17px var(--display);
+    flex: none;
+    box-sizing: border-box;
+  }
+  .cp-pastille.est-acquis { background: var(--green); color: #fff; }
+  .cp-pastille.est-courant {
+    background: linear-gradient(150deg, #FFF3C4, #E0A20C);
+    color: #5A3C02;
+    box-shadow: 0 0 0 5px rgba(255,201,60,.22), 0 8px 20px rgba(224,162,12,.4);
+  }
+  .cp-pastille.est-avenir {
+    background: var(--sand);
+    border: 2px dashed #D8CBB4;
+    color: var(--stone);
+  }
+  .cp-echelon-corps { flex: 1; min-width: 0; padding-bottom: 22px; }
+  .cp-echelon.est-dernier .cp-echelon-corps { padding-bottom: 0; }
+  .cp-echelon-nom { font: 800 15px var(--display); }
+  .cp-echelon.est-avenir .cp-echelon-nom { color: var(--muted); }
+  .cp-echelon-seuil { font: 500 9px var(--mono); color: var(--faint); letter-spacing: .06em; margin-top: 3px; }
+  .cp-echelon-manque { font: 500 9px var(--mono); color: #B98600; letter-spacing: .06em; margin-top: 3px; }
+  .cp-avantages { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+  .cp-avantage {
+    background: var(--sand);
+    color: var(--muted);
+    border-radius: 10px;
+    padding: 4px 9px;
+    font: 700 10.5px var(--text);
+  }
+  .cp-echelon.est-courant .cp-avantage { background: var(--yellow-l); color: #8A6200; }
+  .cp-echelon.est-acquis .cp-avantage { background: var(--green-l); color: var(--green-d); }
+
+  /* ── Célébration ── */
+  .cp-fete { text-align: center; padding: 8px 4px 0; }
+  .cp-fete-kicker { font: 500 10px var(--mono); letter-spacing: .2em; color: var(--yellow); }
+  .cp-fete-titre { font: 800 30px/1.1 var(--display); color: #fff; margin-top: 10px; letter-spacing: -.02em; }
+  .cp-fete-anneau {
+    width: 120px; height: 120px;
+    position: relative;
+    margin: 20px auto 0;
+  }
+  .cp-fete-anneau-piste {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 200deg, #FFF3C4, #FFC93C 45%, #E0A20C 80%, #FFF3C4);
+  }
+  .cp-fete-anneau-coeur {
+    position: absolute; inset: 9px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 26%, #2B2620, #14120F);
+    display: flex; align-items: center; justify-content: center;
+    font: 800 44px var(--display);
+    color: #fff;
+  }
+  .cp-fete-phrase { font: 400 13px/1.55 var(--text); color: var(--dim-2); margin: 18px 0 4px; }
+  .cp-fete-lots { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; margin-top: 14px; }
+  .cp-fete-lot {
+    background: rgba(255,201,60,.16);
+    color: var(--gold-t);
+    border-radius: 12px;
+    padding: 7px 11px;
+    font: 800 11.5px var(--display);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm cp">
+  <span class="cp-halo" aria-hidden="true"></span>
+
+  <header class="cm-topbar is-dark">
+    <a href="{% url 'communaute' %}" class="cm-back" aria-label="Retour">
+      {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+    </a>
+    <span class="cm-topbar-label">MA PROGRESSION</span>
+    <span class="cm-back-ghost" aria-hidden="true"></span>
+  </header>
+
+  {# ══ Où j'en suis ══ #}
+  <section style="text-align:center;padding:18px 24px 0;flex:none" class="cm-entree">
+    <div class="cp-anneau">
+      <div class="cp-anneau-piste" style="--pct:{{ niveau.pourcentage }}%"></div>
+      <div class="cp-anneau-coeur">
+        <span class="cp-anneau-numero">{{ niveau.numero }}</span>
+        <span class="cp-anneau-label">NIVEAU</span>
+      </div>
+      {% if niveau.pourcentage >= 100 %}<span class="cp-anneau-pastille"></span>{% endif %}
+    </div>
+
+    <div class="cp-nom">{{ niveau.nom }}</div>
+    <div class="cp-cp"><span data-compteur="{{ niveau.points }}">0</span> CP D'ATELIER</div>
+
+    <div class="cp-barre">
+      <div class="cp-barre-jauge" data-jauge="{{ niveau.pourcentage }}"></div>
+    </div>
+    <div class="cp-restants">
+      {% if niveau.niveau_suivant %}
+        Encore <b>{{ niveau.points_restants }} CP</b> pour devenir
+        <b>{{ niveau.nom_suivant }}</b>.
+      {% else %}
+        Tu es au sommet de l'échelle. Rien ne t'empêche de continuer à coudre.
+      {% endif %}
+    </div>
+  </section>
+
+  {# ══ Le reste de la page, sur papier ══ #}
+  <div class="cp-bloc">
+
+    {# ── D'où viennent les points ── #}
+    <section class="cm-entree" style="--rang:1">
+      <div class="cp-titre">D'où viennent tes CP</div>
+      <div class="cp-sous">Chaque geste d'atelier compte. Rien ne s'achète ici.</div>
+
+      {% for source in detail %}
+        <a href="{% url source.route %}" class="cp-source cm-tap">
+          <span class="cp-source-marque s-{{ source.cle }}">
+            {% if source.cle == 'tissus' %}
+              {% include 'core/communaute/_icones.html' with icone='toile' taille=20 %}
+            {% elif source.cle == 'etapes' %}
+              {% include 'core/communaute/_icones.html' with icone='aiguille' taille=20 %}
+            {% else %}
+              {% include 'core/communaute/_icones.html' with icone='coche' taille=20 %}
+            {% endif %}
+          </span>
+          <span style="flex:1;min-width:0">
+            <span class="cp-source-nom" style="display:block">{{ source.libelle }}</span>
+            <span class="cp-source-calcul" style="display:block">
+              {{ source.nombre }} × {{ source.unite }} CP
+              {% if not source.nombre %} · {{ source.action }}{% endif %}
+            </span>
+          </span>
+          <span class="cp-source-points">
+            {{ source.points }}<small>CP</small>
+          </span>
+        </a>
+      {% endfor %}
+
+      <div class="cp-total">
+        <span class="cp-total-label">TOTAL</span>
+        <span class="cp-total-valeur"><span data-compteur="{{ niveau.points }}">0</span> CP</span>
+      </div>
+    </section>
+
+    {# ── L'échelle ── #}
+    <section class="cm-entree" style="--rang:2;margin-top:30px">
+      <div class="cp-titre">L'échelle de l'atelier</div>
+      <div class="cp-sous">Six niveaux, et ce que chacun ouvre.</div>
+
+      {% for echelon in echelle %}
+        <div class="cp-echelon est-{{ echelon.etat }} {% if forloop.last %}est-dernier{% endif %}">
+          <div class="cp-echelon-rail">
+            <span class="cp-pastille est-{{ echelon.etat }}">
+              {% if echelon.etat == 'acquis' %}
+                {% include 'core/communaute/_icones.html' with icone='coche' taille=20 %}
+              {% else %}
+                {{ echelon.numero }}
+              {% endif %}
+            </span>
+            {% if not forloop.last %}
+              <span class="cp-fil {% if echelon.etat == 'acquis' %}est-acquis{% endif %}"></span>
+            {% endif %}
+          </div>
+          <div class="cp-echelon-corps">
+            <div class="cp-echelon-nom">{{ echelon.nom }}</div>
+            {% if echelon.etat == 'courant' %}
+              <div class="cp-echelon-seuil">TU Y ES · DEPUIS {{ echelon.seuil }} CP</div>
+            {% elif echelon.etat == 'acquis' %}
+              <div class="cp-echelon-seuil">ATTEINT À {{ echelon.seuil }} CP</div>
+            {% else %}
+              <div class="cp-echelon-manque">ENCORE {{ echelon.points_manquants }} CP</div>
+            {% endif %}
+            {% if echelon.avantages %}
+              <div class="cp-avantages">
+                {% for avantage in echelon.avantages %}
+                  <span class="cp-avantage">{{ avantage }}</span>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </section>
+
+    {# ── Coffres liés aux niveaux ── #}
+    {% if palier_pret or palier_suivant %}
+    <section class="cm-entree" style="--rang:3;margin-top:30px">
+      <div class="cp-titre">Ce que ça débloque</div>
+      <div class="cp-sous">Chaque montée de niveau ouvre un coffre du sentier.</div>
+      <a href="{% url 'communaute' %}" class="cp-source cm-tap" style="background:var(--yellow-l)">
+        <span class="cp-source-marque" style="background:linear-gradient(150deg,#FFF3C4,#E0A20C)">
+          {% include 'core/communaute/_icones.html' with icone='coffre' taille=24 uid='progression' %}
+        </span>
+        <span style="flex:1;min-width:0">
+          <span class="cp-source-nom" style="display:block">Sentier de la saison</span>
+          <span class="cp-source-calcul" style="display:block;color:#8A6200">
+            {% if palier_pret %}
+              Un coffre t'attend au palier {{ palier_pret.palier.numero }}
+            {% else %}
+              Prochain coffre à {{ palier_suivant.palier.points_requis }} CP
+            {% endif %}
+          </span>
+        </span>
+        {% include 'core/communaute/_icones.html' with icone='chevron' taille=16 %}
+      </a>
+    </section>
+    {% endif %}
+
+  </div>
+
+  {# ══ Célébration de montée de niveau ══ #}
+  {% if celebrer %}
+  <div class="cm-feuille is-dark" id="feuille-niveau">
+    <span class="cm-feuille-voile"></span>
+    <div class="cm-feuille-corps">
+      <span class="cm-feuille-poignee"></span>
+      <div class="cp-fete">
+        <div class="cp-fete-kicker">NIVEAU SUPÉRIEUR</div>
+        <div class="cp-fete-titre">{{ niveau.nom }}</div>
+
+        <div class="cp-fete-anneau cm-eclat">
+          <div class="cp-fete-anneau-piste"></div>
+          <div class="cp-fete-anneau-coeur">{{ niveau.numero }}</div>
+        </div>
+
+        <div class="cp-fete-phrase">
+          {{ niveau.points }} CP d'atelier. Tu passes
+          {% if niveau.nom_suivant %}la barre des {{ niveau.seuil_courant }} CP{% else %}au sommet de l'échelle{% endif %}.
+        </div>
+
+        {% for echelon in echelle %}
+          {% if echelon.etat == 'courant' and echelon.avantages %}
+            <div class="cp-fete-lots">
+              {% for avantage in echelon.avantages %}
+                <span class="cp-fete-lot">{{ avantage }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+
+        <form method="post" action="{% url 'communaute_progression_vue' %}" style="margin-top:22px">
+          {% csrf_token %}
+          <button type="submit" class="cm-bouton b-clair" autofocus>Continuer</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block communaute_js %}
+{% if celebrer %}
+<script>
+  /* La célébration s'ouvre d'elle-même : c'est une nouvelle, pas une action
+     que la joueuse aurait demandée. Les confettis suivent d'un souffle. */
+  (function () {
+    var feuille = document.getElementById('feuille-niveau');
+    if (!feuille) return;
+    feuille.hidden = false;
+    setTimeout(function () {
+      if (window.cmConfettis) window.cmConfettis(56);
+    }, 240);
+  })();
+</script>
+{% endif %}
+{% endblock %}

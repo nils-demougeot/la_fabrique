@@ -1,0 +1,1085 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  45g — Salon de discussion. S'ouvre depuis un salon (onglets Amis/Entraide).
+  En-tête avec la pile des membres, fil de messages (texte, galerie photo,
+  annonce de troc), défi coopératif, et champ de saisie fixé en bas.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cg-entete {
+    background: var(--paper);
+    border-bottom: 1.5px solid var(--line);
+    flex: none;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .cg-entete-corps { display: flex; align-items: center; gap: 12px; padding: 10px 18px 16px; }
+  .cg-retour {
+    width: 36px; height: 36px;
+    border-radius: 12px;
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink);
+    flex: none;
+  }
+  .cg-vignette { position: relative; flex: none; }
+  .cg-vignette-fond { width: 42px; height: 42px; border-radius: 14px; display: block; }
+  .cg-vignette-pile {
+    position: absolute; bottom: -8px; left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+  }
+  .cg-vignette-pile span {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--paper);
+    display: block;
+  }
+  .cg-vignette-pile span + span { margin-left: -5px; }
+  .cg-nom { font: 800 15px var(--display); }
+  .cg-etat { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+  .cg-pouls { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex: none; }
+  .cg-etat-texte { font: 500 9.5px var(--mono); color: var(--muted); letter-spacing: .06em; }
+
+  .cg-fil { flex: 1; padding: 16px 18px 0; box-sizing: border-box; }
+  .cg-jour {
+    text-align: center;
+    font: 500 9px var(--mono);
+    color: var(--faint);
+    letter-spacing: .14em;
+    margin-bottom: 14px;
+  }
+
+  .cg-message { display: flex; gap: 10px; align-items: flex-end; }
+  .cg-message + .cg-message { margin-top: 14px; }
+  .cg-message.est-moi { justify-content: flex-end; }
+  .cg-message-jeton { width: 32px; height: 32px; font-size: 11px; flex: none; }
+  .cg-message-vide { width: 32px; height: 32px; flex: none; }
+  .cg-message-corps { max-width: 250px; }
+  .cg-auteur {
+    font: 500 9px var(--mono);
+    color: var(--faint);
+    letter-spacing: .06em;
+    margin-bottom: 5px;
+  }
+  .cg-message.est-moi .cg-auteur { text-align: right; }
+  .cg-bulle {
+    background: var(--sand);
+    border-radius: 20px 20px 20px 6px;
+    padding: 12px 14px;
+    font: 400 13px/1.45 var(--text);
+  }
+  .cg-message.est-moi .cg-bulle {
+    background: var(--ink);
+    color: #fff;
+    border-radius: 20px 20px 6px 20px;
+  }
+  /* ── Réactions ──────────────────────────────────────────────────────
+     Les pastilles se posent sous la bulle, du côté de son auteur ; la
+     palette s'ouvre par-dessus, ancrée sur le message. */
+  .cg-reactions {
+    display: flex; align-items: center; gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+  .cg-message.est-moi .cg-reactions { justify-content: flex-end; }
+  .cg-reaction {
+    display: flex; align-items: center; gap: 5px;
+    border: 1.5px solid var(--line);
+    background: var(--paper);
+    border-radius: 999px;
+    padding: 3px 9px 3px 7px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform .12s ease, background .12s ease;
+  }
+  .cg-reaction:active { transform: scale(.92); }
+  .cg-reaction.est-mienne { background: var(--green-l); border-color: #BFE6D2; }
+  .cg-reaction-emoji { font-size: 13px; line-height: 1; }
+  .cg-reaction-nombre { font: 800 10.5px var(--display); color: var(--muted); }
+  .cg-reaction.est-mienne .cg-reaction-nombre { color: var(--green-d); }
+
+  /* Bouton « réagir » : discret au repos, il se révèle au survol du message. */
+  .cg-reagir {
+    width: 26px; height: 26px;
+    border: 1.5px solid var(--line);
+    background: var(--paper);
+    border-radius: 50%;
+    color: var(--faint);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex: none;
+    opacity: .55;
+    transition: opacity .14s ease, transform .12s ease;
+  }
+  .cg-reagir:hover, .cg-reagir[aria-expanded="true"] { opacity: 1; }
+  .cg-reagir:active { transform: scale(.9); }
+
+  /* La palette flotte au-dessus du fil, sans pousser les messages. Elle
+     s'ouvre du côté où il y a de la place : vers la droite pour les messages
+     reçus (dont le bouton colle au bord gauche), vers la gauche pour les
+     miens. Centrée, elle sortait de l'écran. */
+  .cg-palette-ancre { position: relative; display: inline-flex; }
+  .cg-palette {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: -4px;
+    transform-origin: bottom left;
+    z-index: 14;
+    display: flex;
+    gap: 2px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    padding: 5px;
+    box-shadow: 0 12px 28px rgba(20,18,15,.2);
+    animation: cgPalette 180ms cubic-bezier(.2,.9,.3,1.06) both;
+  }
+  .cg-palette[hidden] { display: none; }
+  .cg-message.est-moi .cg-palette {
+    left: auto; right: -4px;
+    transform-origin: bottom right;
+  }
+  @keyframes cgPalette {
+    from { transform: scale(.8); opacity: 0; }
+    to   { transform: scale(1);  opacity: 1; }
+  }
+  .cg-palette-bouton {
+    width: 32px; height: 32px;
+    border: 0;
+    background: none;
+    border-radius: 50%;
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform .12s ease, background .12s ease;
+  }
+  .cg-palette-bouton:hover { background: var(--sand); transform: scale(1.18); }
+  .cg-palette-bouton.est-mienne { background: var(--green-l); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cg-palette, .cg-vue.est-active { animation: none; }
+  }
+
+  .cg-galerie {
+    background: var(--sand);
+    border-radius: 20px;
+    padding: 10px;
+    display: flex;
+    gap: 8px;
+  }
+  .cg-galerie span { width: 78px; height: 78px; border-radius: 14px; display: block; }
+
+  /* Annonce de troc : bulle violette avec appel à l'action. */
+  .cg-troc {
+    background: var(--violet-l);
+    border-radius: 20px 20px 20px 6px;
+    padding: 14px;
+  }
+  .cg-troc-marque {
+    width: 28px; height: 28px;
+    border-radius: 10px;
+    background: var(--violet);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    flex: none;
+  }
+  .cg-troc-kicker { font: 500 9px var(--mono); letter-spacing: .1em; color: #3B2F6B; }
+  .cg-troc-titre { font: 800 14px var(--display); margin-top: 9px; }
+  .cg-troc-cta {
+    display: block;
+    width: 100%;
+    border: 0;
+    background: var(--violet);
+    color: #fff;
+    border-radius: 14px;
+    text-align: center;
+    padding: 10px 0;
+    margin-top: 11px;
+    font: 800 12px var(--display);
+    cursor: pointer;
+  }
+  .cg-troc-cta.est-prise { background: var(--violet-d); opacity: .7; }
+
+  /* Défi coopératif du salon. */
+  .cg-defi {
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 22px;
+    padding: 15px 16px;
+    margin-top: 18px;
+  }
+  .cg-defi-marque {
+    width: 28px; height: 28px;
+    border-radius: 10px;
+    background: var(--green-l);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--green-d);
+    flex: none;
+  }
+  .cg-defi-titre { font: 800 12.5px var(--display); }
+  .cg-defi-score { font: 800 11px var(--display); color: var(--green); }
+  .cg-defi-piste {
+    height: 8px;
+    border-radius: 5px;
+    background: var(--line);
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .cg-defi-jauge { height: 100%; background: var(--green); border-radius: 5px; }
+  .cg-defi-reste { font: 400 11.5px var(--text); color: var(--muted); margin-top: 8px; }
+
+  /* ── Mention d'une couturière dans un message ── */
+  .cg-mention {
+    background: rgba(124, 92, 255, .16);
+    color: var(--violet-d);
+    border-radius: 6px;
+    padding: 1px 4px;
+    font-weight: 700;
+  }
+  .cg-message.est-moi .cg-mention {
+    background: rgba(196, 180, 255, .26);
+    color: var(--violet-p);
+  }
+
+  /* ── Widgets partagés dans le fil ── */
+  .cg-widget {
+    display: block;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 20px;
+    padding: 13px;
+    margin-top: 8px;
+    color: var(--ink);
+  }
+  .cg-widget.w-patron { background: linear-gradient(150deg, #E7F1F7, #FFFDF8 78%); border-color: #C9DFEC; }
+  .cg-widget.w-etape  { background: linear-gradient(150deg, #E3DBFF, #FFFDF8 78%); border-color: #CFC2F5; }
+  .cg-widget.w-tissu  { background: linear-gradient(150deg, #DFF5E8, #FFFDF8 78%); border-color: #BFE6D2; }
+  .cg-widget.w-defi   { background: linear-gradient(150deg, #E3DBFF, #FFFDF8 82%); border-color: #CFC2F5; }
+  .cg-widget.w-duel   { background: linear-gradient(150deg, #FFE7DE, #FFFDF8 78%); border-color: #F5C9B8; }
+  .cg-widget.w-troc   { background: var(--violet-l); border-color: #CFC2F5; }
+  .cg-widget.w-evenement { background: linear-gradient(150deg, #FFE7DE, #FFFDF8 74%); border-color: #F0C4B0; }
+  .cg-widget.w-ecusson   { background: linear-gradient(150deg, #FFEFC2, #FFFDF8 76%); border-color: #F0DDA8; }
+
+  /* Pastille de date d'un rendez-vous partagé. */
+  .cg-widget-date {
+    width: 46px;
+    border-radius: 14px;
+    background: var(--paper);
+    border: 1px solid #F0C4B0;
+    box-sizing: border-box;
+    padding: 7px 0;
+    text-align: center;
+    flex: none;
+  }
+  .cg-widget-jour { display: block; font: 800 17px var(--display); line-height: 1; }
+  .cg-widget-mois { display: block; font: 500 8.5px var(--mono); letter-spacing: .06em; color: var(--muted); margin-top: 3px; }
+  /* `.cm-hex` se dimensionne en `width: 100%` + `aspect-ratio` : porté par un
+     `<span>`, donc inline par défaut, il resterait sans hauteur. Partout où
+     l'hexagone vit dans un span ou un bouton, on le repasse en bloc. */
+  .cg-widget-hex { width: 42px; flex: none; display: block; }
+  .cg-widget-hex .cm-hex, .cg-hex-choix .cm-hex { display: block; }
+
+  .cg-widget-kicker {
+    display: flex; align-items: center; gap: 5px;
+    font: 500 8.5px var(--mono);
+    letter-spacing: .12em;
+    color: var(--muted);
+  }
+  .cg-widget-corps { display: flex; align-items: center; gap: 11px; margin-top: 10px; }
+  .cg-widget-photo {
+    width: 46px; height: 46px;
+    border-radius: 14px;
+    object-fit: cover;
+    flex: none;
+    display: block;
+  }
+  .cg-widget-numero {
+    width: 46px; height: 46px;
+    border-radius: 14px;
+    background: var(--violet);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font: 800 19px var(--display);
+    flex: none;
+  }
+  .cg-widget-titre { display: block; font: 800 13.5px/1.3 var(--display); }
+  .cg-widget-detail { display: block; font: 400 11px/1.4 var(--text); color: var(--muted); margin-top: 3px; }
+  .cg-widget-gros { font: 800 19px var(--display); color: var(--violet-d); }
+  .cg-widget-vs { font: 500 9px var(--mono); color: var(--faint); flex: none; }
+  .cg-widget-piste {
+    display: block;
+    height: 7px;
+    border-radius: 5px;
+    background: rgba(124,92,255,.18);
+    overflow: hidden;
+    margin-top: 9px;
+  }
+  .cg-widget-jauge { display: block; height: 100%; background: var(--violet); border-radius: 5px; }
+  .cg-widget-cta {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    border: 0;
+    background: var(--ink);
+    color: #fff;
+    border-radius: 13px;
+    text-align: center;
+    padding: 10px 0;
+    margin-top: 11px;
+    font: 800 11.5px var(--display);
+    cursor: pointer;
+  }
+  .cg-widget.w-troc .cg-widget-cta { background: var(--violet); }
+  .cg-widget-cta.est-eteint { background: var(--sand); color: var(--muted); }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     Sélecteur de partage — galerie de widgets, puis choix de l'objet
+     ═══════════════════════════════════════════════════════════════════ */
+  .cg-vue { display: none; }
+  .cg-vue.est-active { display: block; animation: cgVue 240ms cubic-bezier(.2,.8,.3,1) both; }
+  @keyframes cgVue {
+    from { transform: translateX(10px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+
+  .cg-vue-tete { display: flex; align-items: center; gap: 12px; padding: 4px 0 16px; }
+  .cg-vue-retour {
+    width: 36px; height: 36px;
+    border: 0;
+    border-radius: 13px;
+    background: var(--sand);
+    color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+    cursor: pointer;
+  }
+  .cg-vue-titre { display: block; font: 800 17px var(--display); }
+  .cg-vue-sous { display: block; font: 400 11.5px/1.4 var(--text); color: var(--muted); margin-top: 3px; }
+
+  /* Carte de la galerie : l'en-tête nomme le widget, l'aperçu le montre. */
+  .cg-choix {
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 26px;
+    padding: 13px 13px 4px;
+    background: var(--paper);
+    cursor: pointer;
+  }
+  .cg-choix + .cg-choix { margin-top: 12px; }
+  .cg-choix:hover { border-color: var(--line-2); }
+  .cg-choix.est-vide { opacity: .55; cursor: default; }
+  .cg-choix-tete { display: flex; align-items: center; gap: 11px; }
+  .cg-choix-marque {
+    width: 36px; height: 36px;
+    border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    flex: none;
+  }
+  .cg-choix-marque.m-patron    { background: linear-gradient(150deg, #7FC9E8, #2E7EA3); }
+  .cg-choix-marque.m-etape     { background: linear-gradient(150deg, #C4B4FF, #5B45B8); }
+  .cg-choix-marque.m-tissu     { background: linear-gradient(150deg, #8FD9AF, #12633A); }
+  .cg-choix-marque.m-duel      { background: linear-gradient(150deg, #FF9B4C, #E1552A); }
+  .cg-choix-marque.m-defi      { background: linear-gradient(150deg, #C4B4FF, #7C5CFF); }
+  .cg-choix-marque.m-evenement { background: linear-gradient(150deg, #F3A183, #B03A12); }
+  .cg-choix-marque.m-ecusson   { background: linear-gradient(150deg, #FFF3C4, #E0A20C); color: #5A3C02; }
+  .cg-choix-nom { display: block; font: 800 14px var(--display); }
+  .cg-choix-detail { display: block; font: 400 11px/1.4 var(--text); color: var(--muted); margin-top: 2px; }
+  .cg-choix-chevron { color: var(--faint); display: flex; flex: none; }
+
+  /* L'aperçu est une image de ce qui sera posté : il ne se clique pas
+     lui-même, le tap traverse jusqu'à la carte. */
+  .cg-choix-apercu { pointer-events: none; margin-top: 4px; padding-bottom: 9px; }
+  .cg-choix-apercu .cg-widget { margin-top: 8px; }
+  .cg-choix-rien {
+    font: 400 11.5px/1.5 var(--text);
+    color: var(--faint);
+    background: var(--sand);
+    border-radius: 16px;
+    padding: 14px;
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  /* Grille de vignettes (patrons, tissus). */
+  .cg-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  /* `min-width: 0` : sans cela une tuile de grille refuse de descendre sous la
+     largeur de son contenu, et le titre en `nowrap` fait déborder la colonne. */
+  .cg-tuile {
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    background: var(--paper);
+    border-radius: 22px;
+    padding: 10px;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .cg-tuile-photo {
+    width: 100%; height: 92px;
+    border-radius: 16px;
+    object-fit: cover;
+    display: block;
+  }
+  .cg-tuile-nom {
+    display: block;
+    font: 800 12.5px/1.3 var(--display);
+    margin-top: 9px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cg-tuile-detail {
+    display: block;
+    font: 400 10.5px var(--text);
+    color: var(--muted);
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Ligne de choix (projets, rendez-vous, amies à défier). */
+  .cg-ligne {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1.5px solid var(--line);
+    background: var(--paper);
+    border-radius: 20px;
+    padding: 11px 13px;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  /* Les lignes se suivent, qu'elles soient nues (choix direct) ou enveloppées
+     dans un formulaire (défier une amie). */
+  .cg-ligne + .cg-ligne, .cg-ligne + form .cg-ligne, form + form .cg-ligne { margin-top: 8px; }
+  .cg-ligne-photo {
+    width: 44px; height: 44px;
+    border-radius: 15px;
+    object-fit: cover;
+    flex: none;
+    display: block;
+  }
+  .cg-ligne-marque {
+    width: 40px; height: 40px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+    font: 800 13px var(--display);
+  }
+  .cg-ligne-marque.m-duel { background: linear-gradient(150deg, #FF9B4C, #E1552A); color: #fff; }
+  .cg-ligne-date {
+    width: 44px;
+    border-radius: 14px;
+    background: var(--sand);
+    padding: 7px 0;
+    text-align: center;
+    flex: none;
+  }
+  .cg-ligne-nom { display: block; font: 800 13px var(--display); }
+  .cg-ligne-detail { display: block; font: 400 11px var(--text); color: var(--muted); margin-top: 3px; }
+  .cg-ligne-action {
+    background: var(--orange-l);
+    color: #B03A12;
+    border-radius: 12px;
+    padding: 8px 11px;
+    font: 800 11px var(--display);
+    flex: none;
+  }
+
+  /* Étapes d'un projet : le numéro dit d'un coup d'œil où on en est. */
+  .cg-etape-choix {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    border: 0;
+    background: none;
+    border-radius: 18px;
+    padding: 9px 8px;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .cg-etape-choix:hover { background: var(--sand); }
+  .cg-etape-num {
+    width: 34px; height: 34px;
+    border-radius: 12px;
+    background: var(--sand);
+    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    font: 800 14px var(--display);
+    flex: none;
+  }
+  .cg-etape-num.est-faite { background: var(--green-l); color: var(--green-d); }
+  .cg-etape-num.est-courante { background: var(--violet); color: #fff; }
+
+  /* Planche d'écussons. */
+  .cg-planche { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .cg-hex-choix {
+    border: 0;
+    background: none;
+    padding: 6px 2px;
+    text-align: center;
+    cursor: pointer;
+    font-family: inherit;
+    border-radius: 16px;
+  }
+  .cg-hex-choix:hover { background: var(--sand); }
+
+  .cg-separe {
+    display: flex; align-items: center; gap: 9px;
+    margin: 14px 0 10px;
+    font: 500 8.5px var(--mono);
+    letter-spacing: .14em;
+    color: var(--faint);
+  }
+  .cg-separe span { flex: 1; height: 1px; background: var(--line); }
+  .cg-apercu-seul { pointer-events: none; }
+
+  /* Pièce jointe retenue, affichée au-dessus du champ.
+     `[hidden]` doit être redéclaré : une classe qui pose `display` l'emporte
+     sinon sur l'attribut, et la barre resterait visible à vide. */
+  .cg-jointe {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--sand);
+    border-radius: 16px;
+    padding: 9px 12px;
+    margin-bottom: 9px;
+  }
+  .cg-jointe[hidden] { display: none; }
+  .cg-jointe-texte { flex: 1; min-width: 0; font: 700 12px var(--text); }
+  .cg-jointe-retirer {
+    width: 26px; height: 26px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--paper);
+    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex: none;
+  }
+
+  /* Suggestions de mention, au-dessus du champ. */
+  .cg-mentions-liste {
+    position: absolute;
+    left: 16px; right: 16px; bottom: calc(100% + 6px);
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 18px;
+    box-shadow: 0 -10px 30px rgba(20,18,15,.14);
+    overflow: hidden;
+    max-height: 190px;
+    overflow-y: auto;
+  }
+  .cg-mentions-liste[hidden] { display: none; }
+  .cg-mention-item {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    border: 0;
+    background: none;
+    padding: 10px 13px;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .cg-mention-item:hover, .cg-mention-item.est-vise { background: var(--sand); }
+  .cg-mention-nom { font: 800 12.5px var(--display); }
+
+  /* Barre de saisie. Elle empile la pièce jointe retenue, les suggestions de
+     mention, puis la ligne de saisie proprement dite. */
+  .cg-saisie {
+    position: fixed;
+    left: 50%; bottom: 0;
+    transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    z-index: 12;
+    padding: 12px 16px calc(22px + env(safe-area-inset-bottom, 0px));
+    background: var(--paper);
+    border-top: 1.5px solid var(--line);
+    box-sizing: border-box;
+  }
+  .cg-saisie-ligne { display: flex; align-items: center; gap: 9px; }
+  .cg-saisie-photo {
+    width: 44px; height: 44px;
+    border-radius: 16px;
+    border: 1.5px solid var(--line-2);
+    box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink);
+    flex: none;
+  }
+  .cg-saisie-champ {
+    flex: 1; min-width: 0;
+    background: var(--sand);
+    border: 0;
+    border-radius: 18px;
+    padding: 14px 16px;
+    font: 400 13px var(--text);
+    color: var(--ink);
+    outline: none;
+  }
+  .cg-saisie-champ::placeholder { color: var(--faint); }
+  .cg-saisie-envoyer {
+    width: 44px; height: 44px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    flex: none;
+    cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm" style="padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px))">
+
+  {# ══ En-tête du salon ══ #}
+  <header class="cg-entete">
+    <div class="cg-entete-corps">
+      {% if salon.est_mp %}
+        <a href="{% url 'communaute_messages' %}" class="cg-retour" aria-label="Retour">
+          {% include 'core/communaute/_icones.html' with icone='fleche-gauche' taille=17 %}
+        </a>
+
+        {% if autre %}
+          <a href="{% url 'communaute_profil' autre.pk %}" class="cm-jeton {{ autre|teinte }}" style="width:42px;height:42px;font-size:14px;flex:none">
+            {{ autre|initiales }}
+          </a>
+          <div style="flex:1;min-width:0;padding-left:4px">
+            <a href="{% url 'communaute_profil' autre.pk %}" class="cg-nom cm-nom-lien" style="display:block">{{ autre|nom_court }}</a>
+            <div class="cg-etat">
+              {% if autre.est_en_ligne %}<span class="cg-pouls"></span>{% endif %}
+              <span class="cg-etat-texte">MESSAGE PRIVÉ</span>
+            </div>
+          </div>
+        {% endif %}
+
+        <span class="cg-retour" aria-hidden="true"></span>
+      {% else %}
+        <a href="{% url 'communaute' %}?onglet=entraide" class="cg-retour" aria-label="Retour">
+          {% include 'core/communaute/_icones.html' with icone='fleche-gauche' taille=17 %}
+        </a>
+
+        <span class="cg-vignette">
+          <span class="cg-vignette-fond cm-motif m-{{ salon.motif }}"></span>
+          <span class="cg-vignette-pile">
+            {% for membre in membres %}
+              {% if forloop.counter <= 3 %}
+                <span class="{{ membre|teinte }}"></span>
+              {% endif %}
+            {% endfor %}
+          </span>
+        </span>
+
+        <div style="flex:1;min-width:0;padding-left:4px">
+          <div class="cg-nom">{{ salon.nom }}</div>
+          <div class="cg-etat">
+            <span class="cg-pouls"></span>
+            <span class="cg-etat-texte">{{ nb_en_ligne }} EN LIGNE · {{ nb_membres }} MEMBRE{{ nb_membres|pluralize:"S" }}</span>
+          </div>
+        </div>
+
+        <span class="cg-retour" aria-hidden="true">
+          {% include 'core/communaute/_icones.html' with icone='points' taille=17 %}
+        </span>
+      {% endif %}
+    </div>
+  </header>
+
+  {# ══ Fil ══ #}
+  <div class="cg-fil">
+    <div class="cg-jour">AUJOURD'HUI</div>
+
+    {% for message in messages %}
+      {% if message.auteur_id == user.pk %}
+        {# ── Mes messages : alignés à droite, bulle encre ── #}
+        <div class="cg-message est-moi" id="msg-{{ message.pk }}">
+          <div class="cg-message-corps">
+            <div class="cg-auteur">TOI · {{ message.date_envoi|date:"H:i" }}</div>
+            {% if message.contenu %}<div class="cg-bulle">{{ message|mentions }}</div>{% endif %}
+            {% if message.type_message == 'photos' %}
+              <div class="cg-galerie">
+                {% for motif in message.liste_motifs %}<span class="cm-motif m-{{ motif }}"></span>{% endfor %}
+              </div>
+            {% elif message.a_piece_jointe %}
+              {% include 'core/communaute/_widget_message.html' with w_type=message.type_message w_patron=message.patron w_etape=message.etape w_tissu=message.vetement w_defi=message.defi_ville w_duel=message.duel w_annonce=message.annonce w_evenement=message.evenement w_ecusson=message.ecusson w_uid=message.pk %}
+            {% endif %}
+            {% include 'core/communaute/_reactions.html' %}
+          </div>
+          <span class="cm-jeton t-moi cg-message-jeton">{{ user|initiales }}</span>
+        </div>
+
+      {% else %}
+        {# ── Messages des autres : jeton à gauche, bulle sable ── #}
+        <div class="cg-message" id="msg-{{ message.pk }}">
+          <a href="{% url 'communaute_profil' message.auteur.pk %}"
+             class="cm-jeton {{ message.auteur|teinte }} cg-message-jeton">{{ message.auteur|initiales }}</a>
+          <div class="cg-message-corps">
+            <div class="cg-auteur">
+              <a href="{% url 'communaute_profil' message.auteur.pk %}" class="cm-nom-lien">{{ message.auteur|prenom|upper }}</a>
+              · {{ message.date_envoi|date:"H:i" }}
+            </div>
+            {% if message.contenu %}<div class="cg-bulle">{{ message|mentions }}</div>{% endif %}
+            {% if message.type_message == 'photos' %}
+              <div class="cg-galerie">
+                {% for motif in message.liste_motifs %}<span class="cm-motif m-{{ motif }}"></span>{% endfor %}
+              </div>
+            {% elif message.a_piece_jointe %}
+              {% include 'core/communaute/_widget_message.html' with w_type=message.type_message w_patron=message.patron w_etape=message.etape w_tissu=message.vetement w_defi=message.defi_ville w_duel=message.duel w_annonce=message.annonce w_evenement=message.evenement w_ecusson=message.ecusson w_uid=message.pk %}
+            {% endif %}
+            {% include 'core/communaute/_reactions.html' %}
+          </div>
+        </div>
+      {% endif %}
+    {% empty %}
+      <div class="cm-vide" style="margin:0">Le salon est encore silencieux. Lance la conversation.</div>
+    {% endfor %}
+
+    {# ══ Défi coopératif ══ #}
+    {% if salon.defi_objectif_m2 %}
+      <div class="cg-defi">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0">
+            <span class="cg-defi-marque">
+              {% include 'core/communaute/_icones.html' with icone='coche' taille=15 %}
+            </span>
+            <span class="cg-defi-titre">{{ salon.defi_titre }}</span>
+          </span>
+          <span class="cg-defi-score">{{ salon.defi_avance_m2 }} / {{ salon.defi_objectif_m2|floatformat:"0" }} m²</span>
+        </div>
+        <div class="cg-defi-piste">
+          <div class="cg-defi-jauge" style="width:{{ salon.defi_pourcentage }}%"></div>
+        </div>
+        <div class="cg-defi-reste">
+          Plus que {{ salon.defi_restant_m2 }} m²{% if salon.defi_echeance %} avant {{ salon.defi_echeance|date:"l" }}{% endif %}.
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  {# ══ Saisie ══ #}
+  <form method="post" action="{% url 'communaute_envoyer_message' salon.pk %}"
+        class="cg-saisie" id="cg-form">
+    {% csrf_token %}
+    <input type="hidden" name="type_message" id="cg-type" value="texte">
+    <input type="hidden" name="piece" id="cg-piece">
+
+    {# Pièce retenue et suggestions de mention se placent au-dessus du champ. #}
+    <div class="cg-jointe" id="cg-jointe" hidden>
+      <span id="cg-jointe-marque" style="display:flex;flex:none;color:var(--violet-d)">
+        {% include 'core/communaute/_icones.html' with icone='troc' taille=16 %}
+      </span>
+      <span class="cg-jointe-texte" id="cg-jointe-texte"></span>
+      <button type="button" class="cg-jointe-retirer" id="cg-jointe-retirer" aria-label="Retirer">
+        {% include 'core/communaute/_icones.html' with icone='croix' taille=13 %}
+      </button>
+    </div>
+
+    <div class="cg-mentions-liste" id="cg-mentions" hidden>
+      {% for membre in membres %}
+        {% if membre.pk != user.pk %}
+          <button type="button" class="cg-mention-item"
+                  data-mention="{{ membre|prenom }}">
+            <span class="cm-jeton {{ membre|teinte }}" style="width:28px;height:28px;font-size:10px">
+              {{ membre|initiales }}
+            </span>
+            <span class="cg-mention-nom">{{ membre|nom_court }}</span>
+          </button>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="cg-saisie-ligne">
+      <button type="button" class="cg-saisie-photo" data-feuille-ouvre="feuille-partage"
+              aria-label="Partager quelque chose">
+        {% include 'core/communaute/_icones.html' with icone='plus' taille=20 %}
+      </button>
+      <input type="text" name="contenu" class="cg-saisie-champ" id="cg-champ"
+             placeholder="{% if salon.est_mp %}Écrire un message…{% else %}Écrire au salon… « @ » pour citer{% endif %}" autocomplete="off">
+      <button type="submit" class="cg-saisie-envoyer" aria-label="Envoyer">
+        {% include 'core/communaute/_icones.html' with icone='envoyer' taille=20 %}
+      </button>
+    </div>
+  </form>
+
+  {# ══ Sélecteur de partage ══ #}
+  {% include 'core/communaute/_feuille_partage.html' %}
+</div>
+{% endblock %}
+
+{% block communaute_js %}
+<script>
+  /* ═══════════════════════════════════════════════════════════════════
+     Composeur du salon : mentions « @ » et pièce jointe partagée.
+     ═══════════════════════════════════════════════════════════════════ */
+  (function () {
+    var champ = document.getElementById('cg-champ');
+    if (!champ) return;
+
+    var formulaire = document.getElementById('cg-form');
+    var champType = document.getElementById('cg-type');
+    var champPiece = document.getElementById('cg-piece');
+    var jointe = document.getElementById('cg-jointe');
+    var jointeTexte = document.getElementById('cg-jointe-texte');
+    var liste = document.getElementById('cg-mentions');
+
+    // ── Pièce jointe ────────────────────────────────────────────────
+    function retenir(type, piece, libelle) {
+      champType.value = type;
+      champPiece.value = piece;
+      jointeTexte.textContent = libelle;
+      jointe.hidden = false;
+      champ.focus();
+    }
+
+    function oublier() {
+      champType.value = 'texte';
+      champPiece.value = '';
+      jointe.hidden = true;
+    }
+
+    var feuille = document.getElementById('feuille-partage');
+
+    // Un seul délégué : les boutons de choix vivent dans sept panneaux, et
+    // certains n'existent que si la joueuse a des projets en cours.
+    document.addEventListener('click', function (e) {
+      var bouton = e.target.closest && e.target.closest('[data-type][data-piece]');
+      if (!bouton || !feuille || !feuille.contains(bouton)) return;
+      e.preventDefault();
+      retenir(bouton.getAttribute('data-type'),
+              bouton.getAttribute('data-piece'),
+              bouton.getAttribute('data-libelle'));
+      feuille.hidden = true;
+      montrerVue('galerie');
+    });
+
+    document.getElementById('cg-jointe-retirer').addEventListener('click', oublier);
+
+    // ── Navigation du sélecteur ─────────────────────────────────────
+    // La galerie et les panneaux de choix sont des « vues » : une seule est
+    // active, et le retour revient d'un cran (ou à la galerie).
+    function montrerVue(nom) {
+      if (!feuille) return;
+      feuille.querySelectorAll('.cg-vue').forEach(function (vue) {
+        vue.classList.toggle('est-active', vue.getAttribute('data-vue') === nom);
+      });
+      var corps = feuille.querySelector('.cm-feuille-corps');
+      if (corps) corps.scrollTop = 0;
+    }
+
+    document.addEventListener('click', function (e) {
+      var declencheur = e.target.closest && e.target.closest('[data-vue-ouvre]');
+      if (!declencheur || !feuille || !feuille.contains(declencheur)) return;
+      e.preventDefault();
+      montrerVue(declencheur.getAttribute('data-vue-ouvre'));
+    });
+
+    // Les cartes de la galerie sont des `div` (elles contiennent un aperçu
+    // avec ses propres liens) : le clavier doit pouvoir les activer.
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var carte = e.target.closest && e.target.closest('[data-vue-ouvre][role="button"]');
+      if (!carte || !feuille || !feuille.contains(carte)) return;
+      e.preventDefault();
+      montrerVue(carte.getAttribute('data-vue-ouvre'));
+    });
+
+    // Rouvrir le sélecteur le remet sur la galerie : on ne reprend pas là où
+    // on avait abandonné un choix.
+    var ouvreur = document.querySelector('[data-feuille-ouvre="feuille-partage"]');
+    if (ouvreur) ouvreur.addEventListener('click', function () { montrerVue('galerie'); });
+
+    // Les aperçus sont des images de widgets : leurs liens ne se cliquent pas
+    // (pointer-events), ils ne doivent pas non plus se prendre le focus, sans
+    // quoi la tabulation quitterait le sélecteur par une carte décorative.
+    if (feuille) {
+      feuille.querySelectorAll('.cg-choix-apercu a, .cg-apercu-seul a').forEach(function (lien) {
+        lien.setAttribute('tabindex', '-1');
+      });
+    }
+
+    // ── Mentions ────────────────────────────────────────────────────
+    // La liste s'ouvre dès qu'un « @ » est en cours de frappe, et filtre
+    // sur ce qui suit jusqu'à l'espace.
+    function fragmentMention() {
+      var avant = champ.value.slice(0, champ.selectionStart);
+      var arobase = avant.lastIndexOf('@');
+      if (arobase === -1) return null;
+      var fragment = avant.slice(arobase + 1);
+      // Un espace referme la saisie de mention.
+      return fragment.indexOf(' ') === -1 ? { arobase: arobase, texte: fragment } : null;
+    }
+
+    function majListe() {
+      var etat = fragmentMention();
+      if (!etat) { liste.hidden = true; return; }
+
+      var recherche = etat.texte.toLowerCase();
+      var visibles = 0;
+      liste.querySelectorAll('.cg-mention-item').forEach(function (item) {
+        var nom = (item.getAttribute('data-mention') || '').toLowerCase();
+        var montre = nom.indexOf(recherche) === 0;
+        item.hidden = !montre;
+        if (montre) visibles++;
+      });
+      liste.hidden = visibles === 0;
+    }
+
+    function inserer(prenom) {
+      var etat = fragmentMention();
+      if (!etat) return;
+      var avant = champ.value.slice(0, etat.arobase);
+      var apres = champ.value.slice(champ.selectionStart);
+      champ.value = avant + '@' + prenom + ' ' + apres;
+      liste.hidden = true;
+      champ.focus();
+      var position = (avant + '@' + prenom + ' ').length;
+      champ.setSelectionRange(position, position);
+    }
+
+    liste.querySelectorAll('.cg-mention-item').forEach(function (item) {
+      item.addEventListener('click', function () {
+        inserer(item.getAttribute('data-mention'));
+      });
+    });
+
+    champ.addEventListener('input', majListe);
+    champ.addEventListener('blur', function () {
+      // Laisser le temps au clic sur une suggestion d'aboutir.
+      setTimeout(function () { liste.hidden = true; }, 160);
+    });
+
+    // ── Envoi ───────────────────────────────────────────────────────
+    // Un message vide n'a de sens que s'il porte une pièce jointe.
+    formulaire.addEventListener('submit', function (e) {
+      if (!champ.value.trim() && champType.value === 'texte') e.preventDefault();
+    });
+  })();
+</script>
+
+<script>
+  /* ═══════════════════════════════════════════════════════════════════
+     Réactions : palette flottante et mise à jour sur place.
+
+     Les formulaires fonctionnent sans JavaScript (POST puis retour à
+     l'ancre du message) ; ici on les intercepte pour que la pastille
+     bouge sans recharger le fil, ce qui ferait perdre sa position de
+     lecture.
+     ═══════════════════════════════════════════════════════════════════ */
+  (function () {
+    var fil = document.querySelector('.cg-fil');
+    if (!fil) return;
+
+    // ── Palette ─────────────────────────────────────────────────────
+    function fermerPalettes(sauf) {
+      fil.querySelectorAll('.cg-palette:not([hidden])').forEach(function (palette) {
+        if (palette === sauf) return;
+        palette.hidden = true;
+        var bouton = fil.querySelector('[data-palette="' + palette.id + '"]');
+        if (bouton) bouton.setAttribute('aria-expanded', 'false');
+      });
+    }
+
+    document.addEventListener('click', function (e) {
+      var bouton = e.target.closest && e.target.closest('[data-palette]');
+      if (bouton) {
+        var palette = document.getElementById(bouton.getAttribute('data-palette'));
+        if (!palette) return;
+        var ouverte = !palette.hidden;
+        fermerPalettes(palette);
+        palette.hidden = ouverte;
+        bouton.setAttribute('aria-expanded', String(!ouverte));
+        return;
+      }
+      if (!e.target.closest || !e.target.closest('.cg-palette')) fermerPalettes();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') fermerPalettes();
+    });
+
+    // ── Pose / retrait ──────────────────────────────────────────────
+    function dessiner(conteneur, reactions, action, jeton) {
+      // Les pastilles sont refaites à neuf : le serveur seul sait qui a
+      // réagi, et recompter côté client ferait diverger les deux.
+      conteneur.querySelectorAll('.cg-reaction-form').forEach(function (f) { f.remove(); });
+      var ancre = conteneur.querySelector('.cg-palette-ancre');
+
+      reactions.forEach(function (reaction) {
+        // Construction par le DOM plutôt que par `innerHTML` : les prénoms
+        // affichés en infobulle viennent des utilisatrices.
+        var forme = document.createElement('form');
+        forme.method = 'post';
+        forme.action = action;
+        forme.className = 'cg-reaction-form';
+        forme.appendChild(champCache('csrfmiddlewaretoken', jeton));
+        forme.appendChild(champCache('emoji', reaction.emoji));
+
+        var bouton = document.createElement('button');
+        bouton.type = 'submit';
+        bouton.className = 'cg-reaction' + (reaction.par_moi ? ' est-mienne' : '');
+        bouton.title = (reaction.noms || []).join(', ');
+
+        var emoji = document.createElement('span');
+        emoji.className = 'cg-reaction-emoji';
+        emoji.textContent = reaction.emoji;
+        var nombre = document.createElement('span');
+        nombre.className = 'cg-reaction-nombre';
+        nombre.textContent = reaction.nombre;
+
+        bouton.appendChild(emoji);
+        bouton.appendChild(nombre);
+        forme.appendChild(bouton);
+        conteneur.insertBefore(forme, ancre);
+      });
+    }
+
+    function champCache(nom, valeur) {
+      var champ = document.createElement('input');
+      champ.type = 'hidden';
+      champ.name = nom;
+      champ.value = valeur;
+      return champ;
+    }
+
+    document.addEventListener('submit', function (e) {
+      var forme = e.target;
+      if (!forme.action || forme.action.indexOf('/reagir/') === -1) return;
+      var conteneur = forme.closest('.cg-reactions');
+      if (!conteneur || !window.fetch) return;
+
+      e.preventDefault();
+      fermerPalettes();
+
+      var donnees = new FormData(forme);
+      var jeton = donnees.get('csrfmiddlewaretoken');
+      fetch(forme.action, {
+        method: 'POST',
+        body: donnees,
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) { dessiner(conteneur, data.reactions || [], forme.action, jeton); })
+        // Réseau coupé : on laisse le formulaire partir normalement.
+        .catch(function () { forme.submit(); });
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,242 +1,107 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="{% static 'core/images/favicon/favicon-logo.png' %}">
-  <link rel="apple-touch-icon" href="{% static 'core/images/favicon/favicon-logo.png' %}">
-  <title>La Fabrique - Connexion</title>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+{% extends 'core/auth_base.html' %}
 
+{% comment %}
+  Connexion — même langage visuel que le parcours d'inscription.
+{% endcomment %}
+
+{% block title %}La Fabrique — Connexion{% endblock %}
+
+{% block extra_css %}
 <style>
-/* =========================================
-   Variables CSS (Design System)
-   ========================================= */
-:root {
-  --bg-main: #FFFBFF;
-  --bg-input: #EFEEE3;
-  --text-dark: #39382B;
-  --text-muted: #666556;
-  --text-placeholder: rgba(101, 101, 94, 0.50);
-  --color-primary: #237329;
-  --color-accent: #A24A33;
-  --color-white: #FFFFFF;
-  --blur-color: rgba(157, 241, 151, 0.30);
+  .cx-hello { display: flex; align-items: center; gap: 12px; margin-top: 34px; }
+  .cx-hello i { width: 56px; height: 56px; border-radius: 20px; background: var(--yellow); display: block; }
+  .cx-hello small { font: 500 10px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .1em; }
+  .cx-hello b { font: 800 26px/1 var(--display); margin-top: 5px; letter-spacing: -.02em; display: block; }
 
-  --font-title: 'Plus Jakarta Sans', sans-serif;
-  --font-body: 'Manrope', sans-serif;
-  --font-input: 'Manrope', sans-serif;
-}
+  .cx-fields { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+  .cx-field {
+    border: 1.5px solid var(--line); border-radius: 20px;
+    padding: 14px 18px; background: #fff;
+    transition: border-color .14s ease;
+  }
+  .cx-field:focus-within { border-color: var(--ink); }
+  .cx-field label { font: 500 10px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .08em; display: block; }
+  .cx-field:focus-within label { color: var(--ink); }
+  .cx-field input {
+    border: none; outline: none; background: transparent; width: 100%;
+    font: 500 16px var(--text); color: var(--ink); margin-top: 5px; padding: 0;
+  }
+  .cx-field input::placeholder { color: var(--line-d); }
+  .cx-field-row { display: flex; align-items: flex-end; gap: 12px; }
+  .cx-field-row > div { flex: 1; min-width: 0; }
+  .cx-field-row button {
+    background: none; border: none; cursor: pointer;
+    font: 700 12px var(--text); color: var(--green); flex: none; padding: 0 0 2px;
+  }
 
-/* =========================================
-   Reset & Layout
-   ========================================= */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  background-color: #f0f0f0;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100dvh;
-}
-
-.app-container {
-  width: 100%;
-  max-width: 430px;
-  min-height: 100vh;
-  min-height: 100dvh;
-  position: relative;
-  background: var(--bg-main);
-  font-family: var(--font-body);
-  display: flex;
-  flex-direction: column;
-}
-
-.decorative-blur {
-  width: 256px; height: 256px; position: absolute;
-  left: 173px; top: -82px; background: var(--blur-color);
-  border-radius: 50%; filter: blur(32px); z-index: 0; pointer-events: none;
-}
-
-.scrollable-content {
-  flex: 1; overflow-y: auto; position: relative; z-index: 1;
-  padding: 48px 24px 0 24px;
-}
-
-/* =========================================
-   En-tête & Formulaire
-   ========================================= */
-.header-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 56px; }
-.brand-logo { width: 32px; height: 32px; background: var(--color-primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; }
-.logo-inner { width: 13.5px; height: 13.5px; background: var(--color-white); }
-.brand-name { color: var(--text-dark); font-size: 24px; font-family: var(--font-title); font-weight: 800; }
-
-.onboarding-step { display: flex; flex-direction: column; gap: 32px; }
-
-.step-header { display: flex; flex-direction: column; gap: 8px; }
-.step-title { color: var(--text-dark); font-size: 24px; font-family: var(--font-title); font-weight: 700; line-height: 1.3; }
-.step-subtitle { color: var(--text-muted); font-size: 16px; line-height: 1.5; }
-
-.step-form { display: flex; flex-direction: column; gap: 16px; } /* Ajout d'un gap pour séparer les inputs */
-
-.input-pill {
-  width: 100%; height: 56px; background: var(--bg-input);
-  border: none; border-radius: 9999px; padding: 0 24px;
-  font-size: 16px; font-family: var(--font-input); font-weight: 600;
-  color: var(--text-dark); outline: none; transition: box-shadow 0.2s ease;
-}
-.input-pill::placeholder { color: var(--text-placeholder); }
-.input-pill:focus { box-shadow: 0 0 0 2px var(--color-primary); }
-
-.password-wrapper {
-  position: relative;
-  width: 100%;
-}
-.password-wrapper .input-pill {
-  padding-right: 56px;
-}
-.btn-toggle-pw {
-  position: absolute;
-  right: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 0;
-}
-.btn-toggle-pw:hover { color: var(--text-dark); }
-.btn-toggle-pw svg { width: 20px; height: 20px; }
-
-/* Message d'erreur Django */
-.error-msg {
-  color: var(--color-accent);
-  font-size: 14px;
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 16px;
-}
-
-/* =========================================
-   Barre d'actions (Sticky Footer)
-   ========================================= */
-.bottom-actions {
-  flex-shrink: 0;
-  position: sticky; bottom: 0; width: 100%; padding: 18px 24px;
-  background: rgba(255,255,255,0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  display: flex; justify-content: space-between; align-items: center; z-index: 10;
-  border-top: 1px solid rgba(0,0,0,0.05);
-}
-
-.btn-skip {
-  background: transparent; border: none; padding: 14px 8px;
-  color: var(--text-muted); font-size: 14px; font-family: var(--font-body);
-  font-weight: 600; cursor: pointer; text-decoration: none;
-}
-.btn-skip:hover { color: var(--text-dark); }
-
-.btn-next {
-  position: relative;
-  border: none; border-radius: 9999px; padding: 15px 26px;
-  background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
-  box-shadow: 0 5px 0 #1B5E20, 0 8px 20px rgba(35,115,41,0.35);
-  transform: translateY(0);
-  transition: transform 0.08s, box-shadow 0.08s;
-  display: flex; align-items: center; gap: 8px; color: white;
-  font-size: 16px; font-family: var(--font-title); font-weight: 700; cursor: pointer;
-  overflow: hidden;
-}
-.btn-next::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.13) 0%, transparent 55%);
-  border-radius: inherit; pointer-events: none;
-}
-.btn-next:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #1B5E20, 0 12px 24px rgba(35,115,41,0.4); }
-.btn-next:active { transform: translateY(4px); box-shadow: 0 1px 0 #1B5E20, 0 3px 10px rgba(35,115,41,0.25); }
+  .cx-links { display: flex; align-items: center; justify-content: flex-end; margin-top: 16px; }
+  .cx-links a { font: 700 13px var(--text); color: var(--green); }
 </style>
+{% endblock %}
 
-</head>
-<body>
+{% block auth_content %}
+<div class="auth-top">
+  <a href="{% url 'home' %}" class="auth-back" aria-label="Retour">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  </a>
+</div>
 
-  <main class="app-container">
-    <div class="decorative-blur"></div>
+<form class="auth-body" method="POST" novalidate>
+  {% csrf_token %}
 
-    <div class="scrollable-content">
-      <header class="header-brand">
-        <a href="{% url 'home' %}" style="line-height: 0; display: block;">
-          <img src="{% static 'core/images/logo-la-fabrique.svg' %}" alt="La Fabrique" style="height: 28px;">
-        </a>
-      </header>
-
-      <section class="onboarding-step">
-        
-        <div class="step-header">
-          <h1 class="step-title">Bon retour !</h1>
-          <p class="step-subtitle">Prêt à transformer de nouveaux tissus ?</p>
-        </div>
-
-        {% if form.errors %}
-          <div class="error-msg">Nom d'utilisateur ou mot de passe incorrect.</div>
-        {% endif %}
-
-        <form id="login-form" class="step-form" method="POST">
-          {% csrf_token %}
-          
-          <input type="text" name="username" class="input-pill" placeholder="Nom d'utilisateur ou e-mail" autocomplete="username" required>
-
-          <div class="password-wrapper">
-            <input type="password" id="password-input" name="password" class="input-pill" placeholder="Mot de passe" autocomplete="current-password" required>
-            <button type="button" class="btn-toggle-pw" id="toggle-pw" aria-label="Afficher/masquer le mot de passe">
-              <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              <svg id="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                <line x1="1" y1="1" x2="23" y2="23"/>
-              </svg>
-            </button>
-          </div>
-
-          <a href="{% url 'password_reset' %}" style="display:block;margin-top:14px;color:var(--color-accent);font-size:14px;font-weight:600;text-decoration:none;">
-            Mot de passe oublié ?
-          </a>
-        </form>
-
-      </section>
+  <div class="cx-hello">
+    <i></i>
+    <div>
+      <small>Bon retour</small>
+      <b>dans l'atelier</b>
     </div>
+  </div>
 
-    <footer class="bottom-actions">
-      <a href="{% url 'inscription' %}" class="btn-skip">Créer un compte</a>
-      
-      <button type="submit" form="login-form" class="btn-next">
-        Se connecter
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </button>
-    </footer>
-  </main>
+  <h1 class="auth-title" style="margin-top:26px;font-size:36px;line-height:1.02;">Ta machine t'attend</h1>
 
+  {% if form.errors %}
+    <div class="auth-error">Nom d'utilisateur, e-mail ou mot de passe incorrect.</div>
+  {% endif %}
+
+  <div class="cx-fields">
+    <div class="cx-field">
+      <label for="id_username">E-mail ou nom d'utilisateur</label>
+      <input type="text" name="username" id="id_username" placeholder="camille.b@mail.fr"
+             autocomplete="username" autocapitalize="off" spellcheck="false" required autofocus>
+    </div>
+    <div class="cx-field">
+      <div class="cx-field-row">
+        <div>
+          <label for="id_password">Mot de passe</label>
+          <input type="password" name="password" id="id_password" placeholder="••••••••"
+                 autocomplete="current-password" required>
+        </div>
+        <button type="button" id="reveal">Afficher</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cx-links">
+    <a href="{% url 'password_reset' %}">Mot de passe oublié&nbsp;?</a>
+  </div>
+
+  <div class="auth-actions">
+    <button type="submit" class="auth-btn">Se connecter</button>
+    <a href="{% url 'inscription' %}" class="auth-btn auth-btn--ghost">Créer un compte</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-  const toggleBtn = document.getElementById('toggle-pw');
-  const pwInput = document.getElementById('password-input');
-  const iconEye = document.getElementById('icon-eye');
-  const iconEyeOff = document.getElementById('icon-eye-off');
-
-  toggleBtn.addEventListener('click', () => {
-    const isHidden = pwInput.type === 'password';
-    pwInput.type = isHidden ? 'text' : 'password';
-    iconEye.style.display = isHidden ? 'none' : '';
-    iconEyeOff.style.display = isHidden ? '' : 'none';
-  });
+  (() => {
+    const input = document.getElementById('id_password');
+    const btn = document.getElementById('reveal');
+    btn.addEventListener('click', () => {
+      const hidden = input.type === 'password';
+      input.type = hidden ? 'text' : 'password';
+      btn.textContent = hidden ? 'Masquer' : 'Afficher';
+    });
+  })();
 </script>
-</body>
-</html>
+{% endblock %}

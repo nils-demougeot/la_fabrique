@@ -1,0 +1,183 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  45a — Classement complet. S'ouvre depuis « Tout le classement » (onglet
+  Atelier). Fond encre, portées en pastilles, zone de promotion en tête,
+  zone de maintien en pied, et la ligne de la joueuse répétée en socle fixe.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cl {
+    background: radial-gradient(130% 60% at 50% -8%, #2A3F33 0%, #1A1712 46%, #14120F 100%);
+    color: #fff;
+  }
+  .cl .cm-topbar-titre { text-align: center; }
+  .cl-ligue { font: 800 18px var(--display); color: #fff; }
+  .cl-meta { font: 500 9px var(--mono); color: var(--dim); letter-spacing: .08em; margin-top: 3px; }
+
+  .cl-liste { flex: 1; padding: 16px 20px 0; box-sizing: border-box; }
+
+  .cl-ligne {
+    display: flex; align-items: center; gap: 11px;
+    padding: 9px 12px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.05);
+    margin-top: 5px;
+  }
+  .cl-ligne.is-premiere {
+    background: linear-gradient(90deg, rgba(255,201,60,.22), rgba(255,201,60,.06));
+    margin-top: 0;
+  }
+  .cl-ligne.is-moi {
+    padding: 11px 12px;
+    background: linear-gradient(90deg, rgba(31,168,92,.4), rgba(31,168,92,.12));
+    border: 1.5px solid rgba(143,217,175,.45);
+    box-sizing: border-box;
+  }
+  .cl-ligne.is-hors { background: none; opacity: .72; }
+  .cl-ligne.is-loin { background: none; opacity: .5; }
+
+  .cl-rang { width: 18px; font: 800 12.5px var(--display); color: var(--dim-2); flex: none; }
+  .cl-ligne.is-premiere .cl-rang { color: var(--yellow); }
+  .cl-ligne.is-moi .cl-rang { color: #fff; }
+  .cl-ligne.is-hors .cl-rang, .cl-ligne.is-loin .cl-rang { color: var(--dim); }
+
+  .cl-jeton { width: 34px; height: 34px; font-size: 12px; }
+  .cl-ligne.is-moi .cl-jeton {
+    width: 36px; height: 36px;
+    border: 2px solid var(--paper);
+    box-sizing: border-box;
+  }
+
+  .cl-nom { font: 700 13px var(--text); color: #fff; }
+  .cl-ligne.is-moi .cl-nom { font: 800 13.5px var(--display); }
+  .cl-ligne.is-hors .cl-nom, .cl-ligne.is-loin .cl-nom { color: var(--dim-2); }
+  .cl-serie { font: 500 9px var(--mono); color: var(--dim); margin-top: 2px; }
+  .cl-ligne.is-premiere .cl-serie { color: var(--gold-t); }
+  .cl-ligne.is-moi .cl-serie { color: var(--green-pale); }
+
+  .cl-xp { font: 500 10.5px var(--mono); color: var(--dim-2); flex: none; }
+  .cl-ligne.is-premiere .cl-xp { color: var(--gold-t); }
+  .cl-ligne.is-moi .cl-xp { font: 800 11px var(--display); color: #fff; }
+  .cl-ligne.is-hors .cl-xp, .cl-ligne.is-loin .cl-xp { color: var(--dim); }
+
+  /* Socle : la position de la joueuse reste visible quoi qu'il arrive. */
+  .cl-socle {
+    display: flex; align-items: center; gap: 11px;
+    background: linear-gradient(120deg, rgba(255,201,60,.24), rgba(31,168,92,.2));
+    border: 1px solid rgba(255,255,255,.16);
+    box-sizing: border-box;
+    border-radius: 22px;
+    padding: 13px 15px;
+  }
+  .cl-socle-jeton {
+    width: 34px; height: 34px;
+    font-size: 11.5px;
+    border: 2px solid var(--paper);
+    box-sizing: border-box;
+  }
+  .cl-socle-texte { flex: 1; font: 800 13px var(--display); color: #fff; }
+  .cl-socle-cta {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 10px 13px;
+    font: 800 11.5px var(--display);
+    flex: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm cl has-cta">
+
+  <header class="cm-topbar is-dark">
+    <a href="{% url 'communaute' %}" class="cm-back" aria-label="Retour">
+      {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+    </a>
+    <div class="cm-topbar-titre">
+      <div class="cl-ligue">{{ nom_ligue }}</div>
+      <div class="cl-meta">
+        {{ nb_joueuses }} JOUEUR{{ nb_joueuses|pluralize:"S" }}{% if reste %} · {{ reste.jours }} J {{ reste.heures|stringformat:"02d" }} H{% endif %}
+      </div>
+    </div>
+    <span class="cm-back" aria-hidden="true">
+      {% include 'core/communaute/_icones.html' with icone='info' %}
+    </span>
+  </header>
+
+  {# ══ Portées ══ #}
+  <div class="cm-rail" style="gap:7px;padding:16px 20px 0;flex:none">
+    <a href="?portee=ligue" class="cm-chip on-dark" {% if portee == 'ligue' %}aria-current="true"{% endif %}>{{ nom_ligue }}</a>
+    <a href="?portee=amies" class="cm-chip on-dark" {% if portee == 'amies' %}aria-current="true"{% endif %}>Amis</a>
+    <a href="?portee=quartier" class="cm-chip on-dark" {% if portee == 'quartier' %}aria-current="true"{% endif %}>Quartier</a>
+    <a href="?portee=ville" class="cm-chip on-dark" {% if portee == 'ville' %}aria-current="true"{% endif %}>Toute la ville</a>
+  </div>
+
+  {# ══ Classement ══ #}
+  <div class="cl-liste">
+    <div class="cm-separateur is-promo" style="margin-bottom:12px">
+      <span class="cm-separateur-filet"></span>
+      <span class="cm-separateur-pastille">
+        {% include 'core/communaute/_icones.html' with icone='fleche-haut' taille=12 %}
+        <span>TOP {{ places_promotion }} · {{ ligue_suivante|upper|cut:"LIGUE " }}</span>
+      </span>
+      <span class="cm-separateur-filet"></span>
+    </div>
+
+    {% for ligne in lignes %}
+      {% if ligne.rang == places_promotion|add:1 %}
+        <div class="cm-separateur is-maintien">
+          <span class="cm-separateur-filet"></span>
+          <span class="cm-separateur-texte">ZONE DE MAINTIEN</span>
+          <span class="cm-separateur-filet"></span>
+        </div>
+      {% endif %}
+
+      <div class="cl-ligne
+                  {% if ligne.rang == 1 %}is-premiere{% endif %}
+                  {% if ligne.est_moi %}is-moi{% endif %}
+                  {% if not ligne.promu and not ligne.est_moi %}{% if ligne.rang > 8 %}is-loin{% else %}is-hors{% endif %}{% endif %}">
+        <span class="cl-rang">{{ ligne.rang }}</span>
+
+        {% if ligne.est_moi %}
+          <span class="cm-jeton t-moi cl-jeton">{{ ligne.utilisateur|initiales }}</span>
+        {% elif ligne.promu %}
+          <span class="cm-jeton {{ ligne.utilisateur|teinte }} cl-jeton">{{ ligne.utilisateur|initiales }}</span>
+        {% else %}
+          <span class="cm-jeton t-gris cl-jeton">{{ ligne.utilisateur|initiales }}</span>
+        {% endif %}
+
+        <div style="flex:1;min-width:0">
+          <a href="{% url 'communaute_profil' ligne.utilisateur.pk %}" class="cl-nom cm-nom-lien" style="display:block">{% if ligne.est_moi %}Toi{% else %}{{ ligne.utilisateur|nom_court }}{% endif %}</a>
+          {% if ligne.est_moi and ecart %}
+            <div class="cl-serie">{{ ecart.xp }} XP DE {{ ecart.prenom|upper }}</div>
+          {% elif ligne.serie and ligne.rang <= 2 %}
+            <div class="cl-serie">SÉRIE {{ ligne.serie }} J</div>
+          {% endif %}
+        </div>
+
+        <span class="cl-xp">{{ ligne.xp|espace_millier }}</span>
+      </div>
+    {% empty %}
+      <div class="cm-vide" style="margin:0;background:rgba(255,255,255,.05);color:var(--dim-2)">
+        Personne dans cette portée pour l'instant.
+      </div>
+    {% endfor %}
+  </div>
+
+  {# ══ Ma position, toujours à l'écran ══ #}
+  <div class="cm-cta on-dark">
+    <div class="cl-socle">
+      <span class="cm-jeton t-moi cl-socle-jeton">{{ user|initiales }}</span>
+      <span class="cl-socle-texte">
+        {% if ma_ligne %}{{ ma_ligne.rang }}<sup>e</sup> · {{ ma_ligne.xp|espace_millier }} XP{% else %}Pas encore classée{% endif %}
+      </span>
+      <a href="{% url 'patrons' %}" class="cl-socle-cta">Coudre</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

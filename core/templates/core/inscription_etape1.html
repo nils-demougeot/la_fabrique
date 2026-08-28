@@ -1,467 +1,64 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="{% static 'core/images/favicon/favicon-logo.png' %}">
-  <link rel="apple-touch-icon" href="{% static 'core/images/favicon/favicon-logo.png' %}">
-  <title>La Fabrique - Étape 01</title>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+{% extends 'core/auth_base.html' %}
 
-<style>
-:root {
-  --bg-main: #FFFBFF;
-  --bg-input: #EFEEE3;
-  --bg-progress-track: #ECE9D1;
-  --text-dark: #39382B;
-  --text-muted: #666556;
-  --text-placeholder: rgba(101, 101, 94, 0.50);
-  --color-primary: #237329;
-  --color-primary-dark: #3E6E59;
-  --color-accent: #A24A33;
-  --color-white: #FFFFFF;
-  --blur-color: rgba(157, 241, 151, 0.30);
-  --font-title: 'Plus Jakarta Sans', sans-serif;
-  --font-body: 'Manrope', sans-serif;
-  --font-input: 'Manrope', sans-serif;
-}
+{% comment %}
+  Inscription — étape 2/4 : le prénom (= nom d'utilisateur affiché).
+{% endcomment %}
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+{% block title %}La Fabrique — Inscription (2/4){% endblock %}
 
-body {
-  background-color: #f0f0f0;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100dvh;
-  font-family: var(--font-body);
-}
+{% block auth_content %}
+<div class="auth-top">
+  <a href="{% url 'inscription' %}" class="auth-back" aria-label="Retour">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  </a>
+  <div class="auth-progress" role="progressbar" aria-valuenow="2" aria-valuemin="1" aria-valuemax="4">
+    <span class="is-done"></span><span class="is-done"></span><span></span><span></span>
+  </div>
+  <span class="auth-count">02/04</span>
+</div>
 
-.app-container {
-  width: 100%;
-  max-width: 430px;
-  min-height: 100dvh;
-  position: relative;
-  background: var(--bg-main);
-  display: flex;
-  flex-direction: column;
-  overflow-x: hidden;
-}
+<form class="auth-body" method="POST" action="{% url 'inscription_etape1' %}" novalidate>
+  {% csrf_token %}
 
-.decorative-blur {
-  width: 256px;
-  height: 256px;
-  position: absolute;
-  left: 173px;
-  top: -82px;
-  background: var(--blur-color);
-  border-radius: 50%;
-  filter: blur(32px);
-  z-index: 0;
-  pointer-events: none;
-}
+  <div class="auth-eyebrow">Étape 2 · ton profil</div>
+  <h1 class="auth-title">Comment on t'appelle&nbsp;?</h1>
+  <p class="auth-lead">Ton prénom apparaît sur tes partages de patrons.</p>
 
-.scrollable-content {
-  flex: 1;
-  overflow-y: auto;
-  position: relative;
-  z-index: 1;
-  padding: 48px 24px 0 24px;
-}
+  {% if error %}<div class="auth-error">{{ error }}</div>{% endif %}
 
-.header-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 48px;
-}
+  <input type="text" name="username" id="username" class="auth-field"
+         placeholder="Camille" value="{{ username|default:'' }}"
+         maxlength="24" autocomplete="nickname" required autofocus>
 
-.brand-logo {
-  width: 32px;
-  height: 32px;
-  background: var(--color-primary);
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+  <div class="auth-hint" id="count">0 / 24 caractères</div>
 
-.logo-inner { width: 13.5px; height: 13.5px; background: var(--color-white); }
-
-.brand-name {
-  color: var(--text-dark);
-  font-size: 24px;
-  font-family: var(--font-title);
-  font-weight: 800;
-}
-
-.onboarding-step {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-
-.progress-container { display: flex; align-items: center; gap: 16px; }
-
-.progress-track {
-  flex: 1;
-  height: 4px;
-  background: var(--bg-progress-track);
-  border-radius: 9999px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  width: 33.33%;
-  height: 100%;
-  background: var(--color-primary);
-  border-radius: 9999px;
-}
-
-.progress-text {
-  color: var(--color-primary-dark);
-  font-size: 12px;
-  font-family: var(--font-title);
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-}
-
-.step-header { display: flex; flex-direction: column; gap: 6px; }
-
-.step-title {
-  color: var(--text-dark);
-  font-size: 24px;
-  font-family: var(--font-title);
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.step-subtitle {
-  color: var(--text-muted);
-  font-size: 15px;
-  line-height: 1.5;
-}
-
-/* ---- Input username ---- */
-.input-pill {
-  width: 100%;
-  height: 56px;
-  background: var(--bg-input);
-  border: none;
-  border-radius: 9999px;
-  padding: 0 24px;
-  font-size: 16px;
-  font-family: var(--font-input);
-  font-weight: 600;
-  color: var(--text-dark);
-  outline: none;
-  transition: box-shadow 0.2s ease;
-  display: block;
-}
-
-.input-pill::placeholder { color: var(--text-placeholder); }
-.input-pill:focus { box-shadow: 0 0 0 2px var(--color-primary); }
-
-/* ---- Séparateur ---- */
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-family: var(--font-title);
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  margin: 8px 0 4px;
-}
-
-.divider::before, .divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: #E5E3D6;
-}
-
-/* ---- Avatar preview ---- */
-.avatar-preview {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: #F5F4EA;
-  border-radius: 20px;
-  padding: 14px 18px;
-}
-
-.avatar-preview-img {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid var(--color-primary);
-  flex-shrink: 0;
-  transition: all 0.2s ease;
-}
-
-.avatar-preview-text { display: flex; flex-direction: column; gap: 2px; }
-
-.avatar-preview-name {
-  color: var(--text-dark);
-  font-size: 15px;
-  font-family: var(--font-title);
-  font-weight: 700;
-}
-
-.avatar-preview-hint {
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-/* ---- Grille d'avatars ---- */
-.avatar-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-
-.avatar-option {
-  position: relative;
-  cursor: pointer;
-}
-
-.avatar-option input[type="radio"] {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.avatar-img-wrap {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2.5px solid transparent;
-  transition: border-color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
-  background: #ECE9D1;
-}
-
-.avatar-img-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.avatar-option input[type="radio"]:checked + .avatar-img-wrap {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary);
-  transform: scale(1.07);
-}
-
-.avatar-option:not(:has(input:checked)):hover .avatar-img-wrap {
-  transform: scale(1.04);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
-}
-
-/* Badge check vert sur l'avatar sélectionné */
-.avatar-check-badge {
-  display: none;
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 18px;
-  height: 18px;
-  background: var(--color-primary);
-  border-radius: 50%;
-  border: 2px solid white;
-  align-items: center;
-  justify-content: center;
-}
-
-.avatar-check-badge::after {
-  content: '';
-  width: 5px;
-  height: 3px;
-  border-left: 2px solid white;
-  border-bottom: 2px solid white;
-  transform: rotate(-45deg) translateY(-1px);
-  display: block;
-  margin-left: 1px;
-}
-
-.avatar-option input[type="radio"]:checked ~ .avatar-check-badge {
-  display: flex;
-}
-
-/* Espace avant le footer */
-.spacer-bottom { height: 32px; }
-
-/* ---- Footer sticky ---- */
-.bottom-actions {
-  flex-shrink: 0;
-  width: 100%;
-  padding: 18px 24px;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 10;
-  border-top: 1px solid rgba(0,0,0,0.05);
-  position: sticky;
-  bottom: 0;
-}
-
-.btn-skip {
-  background: transparent;
-  border: none;
-  padding: 14px 8px;
-  color: var(--text-muted);
-  font-size: 14px;
-  font-family: var(--font-body);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-skip:hover { color: var(--text-dark); }
-
-.btn-next {
-  position: relative;
-  border: none;
-  border-radius: 9999px;
-  padding: 15px 26px;
-  background: linear-gradient(135deg, #8B3A24 0%, #A24A33 100%);
-  box-shadow: 0 5px 0 #6B2A14, 0 8px 20px rgba(162,74,51,0.35);
-  transform: translateY(0);
-  transition: transform 0.08s, box-shadow 0.08s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: white;
-  font-size: 16px;
-  font-family: var(--font-title);
-  font-weight: 700;
-  cursor: pointer;
-  overflow: hidden;
-}
-.btn-next::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.13) 0%, transparent 55%);
-  border-radius: inherit; pointer-events: none;
-}
-.btn-next:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #6B2A14, 0 12px 24px rgba(162,74,51,0.4); }
-.btn-next:active { transform: translateY(4px); box-shadow: 0 1px 0 #6B2A14, 0 3px 10px rgba(162,74,51,0.25); }
-
-.sr-only {
-  position: absolute; width: 1px; height: 1px; padding: 0;
-  margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
-  white-space: nowrap; border-width: 0;
-}
-</style>
-</head>
-<body>
-
-{% get_static_prefix as STATIC_PREFIX %}
-
-  <main class="app-container">
-    <div class="decorative-blur"></div>
-
-    <div class="scrollable-content">
-      <header class="header-brand">
-        <a href="{% url 'home' %}" style="line-height: 0; display: block;">
-          <img src="{% static 'core/images/logo-la-fabrique.svg' %}" alt="La Fabrique" style="height: 28px;">
-        </a>
-      </header>
-
-      <section class="onboarding-step">
-
-        <div class="progress-container">
-          <div class="progress-track">
-            <div class="progress-fill"></div>
-          </div>
-          <span class="progress-text">ETAPE 01/03</span>
-        </div>
-
-        <div class="step-header">
-          <h1 class="step-title">Comment on vous appelle ?</h1>
-          <p class="step-subtitle">Ton matricule officiel de dompteur de fibres.</p>
-        </div>
-
-        <form id="form-etape-1" method="POST">
-          {% csrf_token %}
-
-          {% if error %}
-          <div style="background:#FCE8E6;color:#A24A33;padding:14px 18px;border-radius:14px;font-size:14px;font-weight:600;line-height:1.4;margin-bottom:16px;">
-            {{ error }}
-          </div>
-          {% endif %}
-
-          <input type="text" name="username" class="input-pill" placeholder="nom d'utilisateur" value="{{ username|default:'' }}" required>
-
-          <div class="divider" style="margin-top: 28px;">Votre avatar</div>
-
-          <!-- Aperçu de l'avatar sélectionné -->
-          <div class="avatar-preview" style="margin-top: 12px;">
-            <img id="avatarPreviewImg"
-                 class="avatar-preview-img"
-                 src="{% static 'core/images/avatars/image 11.png' %}"
-                 alt="Avatar sélectionné">
-            <div class="avatar-preview-text">
-              <span class="avatar-preview-name">Votre avatar</span>
-              <span class="avatar-preview-hint">Faites votre choix parmi les options ci-dessous</span>
-            </div>
-          </div>
-
-          <!-- Grille de sélection -->
-          <fieldset style="border:none; margin-top: 16px;">
-            <legend class="sr-only">Choisissez votre avatar</legend>
-            <div class="avatar-grid">
-              {% for avatar_file in avatars %}
-              <label class="avatar-option">
-                <input type="radio" name="avatar"
-                       value="{{ avatar_file }}"
-                       data-url="{% static 'core/images/avatars/'|add:avatar_file %}"
-                       {% if forloop.first %}checked{% endif %}
-                       onchange="updatePreview(this)">
-                <div class="avatar-img-wrap">
-                  <img src="{% static 'core/images/avatars/'|add:avatar_file %}"
-                       alt="Avatar {{ forloop.counter }}"
-                       loading="lazy">
-                </div>
-                <span class="avatar-check-badge"></span>
-              </label>
-              {% endfor %}
-            </div>
-          </fieldset>
-
-          <div class="spacer-bottom"></div>
-        </form>
-
-      </section>
+  <div style="margin-top:34px;background:var(--sand);border-radius:24px;padding:20px;display:flex;gap:14px;align-items:center;">
+    <span style="width:44px;height:44px;border-radius:16px;background:var(--yellow);flex:none;"></span>
+    <div>
+      <div style="font:800 15px var(--display);">Salut <span id="preview">toi</span>&nbsp;!</div>
+      <div style="font:400 12px/1.45 var(--text);color:var(--muted);margin-top:3px;">C'est le nom qu'on brodera sur ton profil.</div>
     </div>
+  </div>
 
-    <footer class="bottom-actions">
-      <button type="button" class="btn-skip">Passer</button>
-      <button type="submit" class="btn-next" form="form-etape-1">
-        Etape suivante
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </button>
-    </footer>
-  </main>
+  <div class="auth-actions">
+    <button type="submit" class="auth-btn">Continuer</button>
+  </div>
+</form>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-  const STATIC_PREFIX = "{{ STATIC_PREFIX }}";
-
-  function updatePreview(radio) {
-    // data-url contient l'URL résolue côté serveur (nom haché en production).
-    document.getElementById('avatarPreviewImg').src = radio.dataset.url;
-  }
+  (() => {
+    const input = document.getElementById('username');
+    const count = document.getElementById('count');
+    const preview = document.getElementById('preview');
+    const sync = () => {
+      const v = input.value.trim();
+      count.textContent = `${input.value.length} / 24 caractères`;
+      preview.textContent = v || 'toi';
+    };
+    input.addEventListener('input', sync);
+    sync();
+  })();
 </script>
-
-</body>
-</html>
+{% endblock %}

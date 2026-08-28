@@ -1,0 +1,252 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  Partager le code d'atelier (sous-page d'Amis, ouverte par « Partager »).
+  Décor festif — confettis, jeton du code en relief — puis les canaux de
+  partage : réseaux, SMS, plus un bouton de partage natif quand il existe.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cpp-scene {
+    background: radial-gradient(120% 70% at 50% 0%, #2A3F33 0%, #1A1712 55%, #14120F 100%);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .cm .cpp-glow-a {
+    position: absolute; top: -80px; left: -40px;
+    width: 240px; height: 240px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,201,60,.3) 0%, rgba(255,201,60,0) 70%);
+  }
+  .cm .cpp-glow-b {
+    position: absolute; top: 40px; right: -60px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,92,255,.28) 0%, rgba(124,92,255,0) 70%);
+  }
+  .cpp-scene > * { position: relative; }
+
+  .cpp-hero { text-align: center; padding: 12px 26px 0; }
+  .cpp-hero-marque {
+    width: 68px; height: 68px;
+    margin: 0 auto;
+    border-radius: 24px;
+    background: linear-gradient(150deg, #FFF3C4, #E0A20C);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 14px 30px rgba(224,162,12,.4);
+    animation: cppFlotte 3.2s ease-in-out infinite;
+  }
+  @keyframes cppFlotte {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50%      { transform: translateY(-7px) rotate(2deg); }
+  }
+  .cpp-titre { font: 800 24px/1.2 var(--display); margin-top: 18px; letter-spacing: -.01em; }
+  .cpp-sous { font: 400 13px/1.5 var(--text); color: var(--dim-2); margin-top: 8px; }
+
+  .cpp-carte {
+    margin: 24px 20px 0;
+    background: linear-gradient(150deg, rgba(255,201,60,.16), rgba(255,255,255,.04));
+    border: 1.5px dashed rgba(255,201,60,.5);
+    box-sizing: border-box;
+    border-radius: 26px;
+    padding: 20px;
+    text-align: center;
+  }
+  .cpp-carte-kicker { font: 500 9.5px var(--mono); letter-spacing: .16em; color: var(--yellow); }
+  .cpp-carte-code { font: 800 32px var(--display); letter-spacing: .05em; margin-top: 10px; }
+  .cpp-carte-detail { font: 400 12px/1.5 var(--text); color: var(--dim-2); margin-top: 8px; }
+
+  .cpp-canaux {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 22px 20px 0;
+  }
+  .cpp-canal {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    box-sizing: border-box;
+    border-radius: 20px;
+    padding: 14px 6px;
+    transition: transform .12s ease, background .12s ease;
+  }
+  .cpp-canal:active { transform: scale(.94); background: rgba(255,255,255,.12); }
+  .cpp-canal-marque {
+    width: 40px; height: 40px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    flex: none;
+  }
+  .cpp-canal-marque.m-whatsapp { background: linear-gradient(150deg, #6FE08C, #1E9E4C); }
+  .cpp-canal-marque.m-sms      { background: linear-gradient(150deg, #7FC9E8, #2E7EA3); }
+  .cpp-canal-marque.m-mail     { background: linear-gradient(150deg, #FF9B4C, #E1552A); }
+  .cpp-canal-marque.m-plus     { background: linear-gradient(150deg, #C4B4FF, #7C5CFF); }
+  .cpp-canal-nom { font: 700 10.5px var(--text); color: var(--dim-2); text-align: center; }
+
+  .cpp-copier {
+    display: flex; align-items: center; justify-content: center; gap: 9px;
+    margin: 18px 20px 0;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.14);
+    box-sizing: border-box;
+    border-radius: 18px;
+    padding: 14px 0;
+    color: #fff;
+    font: 800 13px var(--display);
+    cursor: pointer;
+    width: calc(100% - 40px);
+  }
+  .cpp-copier:active { transform: scale(.98); }
+  .cpp-copier svg { width: 17px; height: 17px; }
+
+  .cpp-avantage {
+    display: flex; align-items: center; gap: 12px;
+    margin: 22px 20px 0;
+    background: rgba(31,168,92,.14);
+    border: 1px solid rgba(143,217,175,.28);
+    box-sizing: border-box;
+    border-radius: 22px;
+    padding: 14px 16px;
+  }
+  .cpp-avantage-marque {
+    width: 36px; height: 36px;
+    border-radius: 13px;
+    background: linear-gradient(150deg, #4FD08A, #12633A);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    flex: none;
+  }
+  .cpp-avantage-texte { font: 400 12px/1.4 var(--text); color: var(--dim-2); }
+  .cpp-avantage-texte strong { color: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm cpp-scene has-nav">
+  <span class="cpp-glow-a" aria-hidden="true"></span>
+  <span class="cpp-glow-b" aria-hidden="true"></span>
+
+  <header class="cm-topbar is-dark">
+    <a href="{% url 'communaute' %}?onglet=amis" class="cm-back" aria-label="Retour">
+      {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+    </a>
+    <span class="cm-topbar-label">INVITER À L'ATELIER</span>
+    <span class="cm-back-ghost" aria-hidden="true"></span>
+  </header>
+
+  <section class="cpp-hero">
+    <span class="cpp-hero-marque">
+      {% include 'core/communaute/_icones.html' with icone='amis' taille=30 %}
+    </span>
+    <div class="cpp-titre">Fais entrer un ami à l'atelier</div>
+    <div class="cpp-sous">Envoie ton code, il rejoint tes défis et ton classement dès sa première pièce.</div>
+  </section>
+
+  <section class="cpp-carte">
+    <div class="cpp-carte-kicker">TON CODE D'ATELIER</div>
+    <div class="cpp-carte-code">{{ code_atelier }}</div>
+    <div class="cpp-carte-detail">+50 pièces dès qu'un filleul finit sa première pièce.</div>
+  </section>
+
+  <div class="cpp-canaux">
+    <a class="cpp-canal" id="cpp-whatsapp" target="_blank" rel="noopener">
+      <span class="cpp-canal-marque m-whatsapp">
+        {% include 'core/communaute/_icones.html' with icone='bulle' taille=18 %}
+      </span>
+      <span class="cpp-canal-nom">WhatsApp</span>
+    </a>
+    <a class="cpp-canal" id="cpp-sms">
+      <span class="cpp-canal-marque m-sms">
+        {% include 'core/communaute/_icones.html' with icone='envoyer' taille=18 %}
+      </span>
+      <span class="cpp-canal-nom">SMS</span>
+    </a>
+    <a class="cpp-canal" id="cpp-mail">
+      <span class="cpp-canal-marque m-mail">
+        {% include 'core/communaute/_icones.html' with icone='appareil' taille=18 %}
+      </span>
+      <span class="cpp-canal-nom">E-mail</span>
+    </a>
+    <button type="button" class="cpp-canal" id="cpp-natif" hidden>
+      <span class="cpp-canal-marque m-plus">
+        {% include 'core/communaute/_icones.html' with icone='partager' taille=18 %}
+      </span>
+      <span class="cpp-canal-nom">Plus</span>
+    </button>
+  </div>
+
+  <button type="button" class="cpp-copier" id="cpp-copier" data-code="{{ code_atelier }}">
+    {% include 'core/communaute/_icones.html' with icone='troc' taille=17 %}
+    <span id="cpp-copier-texte">Copier le message d'invitation</span>
+  </button>
+
+  <div class="cpp-avantage">
+    <span class="cpp-avantage-marque">
+      {% include 'core/communaute/_icones.html' with icone='piece' taille=18 %}
+    </span>
+    <span class="cpp-avantage-texte">
+      <strong>+50 pièces</strong> pour toi, un accueil doré pour lui : ton filleul démarre avec un gel de série offert.
+    </span>
+  </div>
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+  {% include 'core/bottom_nav.html' %}
+{% endblock %}
+
+{% block communaute_js %}
+<script>
+  (function () {
+    var code = document.getElementById('cpp-copier').getAttribute('data-code') || '';
+    var message = 'Rejoins-moi sur La Fabrique avec mon code d\'atelier ' + code + ' — on coud, on gagne des points, on se défie entre amis.';
+    var url = window.location.origin + '/inscription/';
+    var texte = message + ' ' + url;
+
+    var whatsapp = document.getElementById('cpp-whatsapp');
+    if (whatsapp) whatsapp.href = 'https://wa.me/?text=' + encodeURIComponent(texte);
+
+    var sms = document.getElementById('cpp-sms');
+    if (sms) sms.href = 'sms:?body=' + encodeURIComponent(texte);
+
+    var mail = document.getElementById('cpp-mail');
+    if (mail) {
+      mail.href = 'mailto:?subject=' + encodeURIComponent("Rejoins-moi sur La Fabrique")
+        + '&body=' + encodeURIComponent(texte);
+    }
+
+    var natif = document.getElementById('cpp-natif');
+    if (natif && navigator.share) {
+      natif.hidden = false;
+      natif.addEventListener('click', function () {
+        navigator.share({ title: 'La Fabrique', text: message, url: url }).catch(function () {});
+      });
+    }
+
+    var copier = document.getElementById('cpp-copier');
+    var copierTexte = document.getElementById('cpp-copier-texte');
+    copier.addEventListener('click', function () {
+      var fini = function () {
+        var avant = copierTexte.textContent;
+        copierTexte.textContent = 'Message copié !';
+        setTimeout(function () { copierTexte.textContent = avant; }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texte).then(fini).catch(function () {});
+      } else {
+        var champ = document.createElement('textarea');
+        champ.value = texte;
+        document.body.appendChild(champ);
+        champ.select();
+        try { document.execCommand('copy'); fini(); } catch (e) {}
+        document.body.removeChild(champ);
+      }
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,336 @@
+{% extends 'core/auth_base.html' %}
+{% load static %}
+
+{% comment %}
+  Fin d'inscription : la carte d'atelier du nouveau membre.
+  Le fond respire — trois nappes de vert dérivent lentement l'une sur l'autre
+  et les rayures claires s'épaississent en vague.
+{% endcomment %}
+
+{% block title %}La Fabrique — Bienvenue{% endblock %}
+{% block auth_class %}auth--accent{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* =========================================================
+     Fond vivant : nappes de vert à la dérive + vague de rayures
+     ========================================================= */
+
+  /* Le fond reste le vert de la marque. Ce qui bouge, ce sont trois nappes
+     de vert (forêt, prairie, menthe) qui dérivent lentement les unes sur
+     les autres : le dégradé se recompose en permanence sans jamais quitter
+     la famille verte, et sans période commune (17 / 23 / 29 s → la boucle
+     visible dure plusieurs minutes). */
+  .auth--accent {
+    --accent: #1FA85C;
+    background: var(--accent);
+    color: var(--paper);
+    overflow: hidden;
+  }
+  .auth--accent > * { position: relative; z-index: 2; }
+
+  .bv-aura {
+    position: absolute; z-index: 0; pointer-events: none;
+    border-radius: 50%;
+    will-change: transform;
+  }
+  /* Prairie : la lumière qui vient du haut-gauche. */
+  .bv-aura--1 {
+    width: 150%; aspect-ratio: 1; left: -45%; top: -25%;
+    background: radial-gradient(closest-side, #57D98C 0%, rgba(87,217,140,.42) 46%, rgba(87,217,140,0) 72%);
+    opacity: .85;
+    animation: bv-derive-1 17s ease-in-out infinite;
+  }
+  /* Forêt : la masse sombre qui creuse la profondeur à droite. */
+  .bv-aura--2 {
+    width: 140%; aspect-ratio: 1; right: -52%; top: 12%;
+    background: radial-gradient(closest-side, #076235 0%, rgba(7,98,53,.55) 50%, rgba(7,98,53,0) 76%);
+    animation: bv-derive-2 23s ease-in-out infinite;
+  }
+  /* Menthe : une simple respiration claire en bas, volontairement discrète. */
+  .bv-aura--3 {
+    width: 120%; aspect-ratio: 1; left: -10%; bottom: -34%;
+    background: radial-gradient(closest-side, #79E4A4 0%, rgba(121,228,164,.3) 46%, rgba(121,228,164,0) 70%);
+    opacity: .5;
+    animation: bv-derive-3 29s ease-in-out infinite;
+  }
+
+  /* Vignette vert forêt (jamais du noir) : les bords se referment,
+     le regard reste sur la carte. */
+  .auth--accent::after {
+    content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(125% 85% at 50% 34%,
+      rgba(6,70,38,0) 42%, rgba(6,70,38,.20) 72%, rgba(6,70,38,.42) 100%);
+  }
+
+  @keyframes bv-derive-1 {
+    0%, 100% { transform: translate3d(0, 0, 0)          scale(1); }
+    33%      { transform: translate3d(14%, 9%, 0)       scale(1.16); }
+    66%      { transform: translate3d(-8%, 16%, 0)      scale(.92); }
+  }
+  @keyframes bv-derive-2 {
+    0%, 100% { transform: translate3d(0, 0, 0)          scale(1.05); }
+    40%      { transform: translate3d(-16%, -12%, 0)    scale(.88); }
+    70%      { transform: translate3d(-6%, 14%, 0)      scale(1.2); }
+  }
+  @keyframes bv-derive-3 {
+    0%, 100% { transform: translate3d(0, 0, 0)          scale(1); }
+    50%      { transform: translate3d(12%, -18%, 0)     scale(1.25); }
+  }
+
+  /* Rayures : une SVG plein écran, un rectangle par rayure.
+     Chaque rayure se dilate puis se rétracte, avec un décalage
+     proportionnel à sa position → l'onde traverse l'écran. */
+  .bv-stripes {
+    position: absolute; inset: -30%;
+    width: 160%; height: 160%;
+    z-index: 0; pointer-events: none;
+    opacity: .55;
+  }
+  .bv-stripes rect {
+    fill: #fff;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: bv-vague 9s ease-in-out infinite;
+  }
+  @keyframes bv-vague {
+    0%, 100% { transform: scaleX(1);   opacity: .16; }
+    50%      { transform: scaleX(3.4); opacity: .30; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bv-aura, .bv-stripes rect { animation: none; }
+  }
+
+  /* =========================================================
+     Contenu
+     ========================================================= */
+  .bv-tag { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .bv-tag i { width: 7px; height: 7px; border-radius: 50%; background: var(--paper); display: block; }
+  .bv-tag span {
+    font: 500 10px var(--mono); color: rgba(255,253,248,.9);
+    text-transform: uppercase; letter-spacing: .16em;
+  }
+
+  .bv-hello { font: 800 34px/.92 var(--display); color: rgba(255,253,248,.78); margin-top: 16px; letter-spacing: -.035em; }
+  .bv-name { display: flex; align-items: baseline; gap: 12px; margin-top: 4px; }
+  .bv-name b {
+    font: 800 56px/.92 var(--display); color: var(--paper); letter-spacing: -.045em;
+    min-width: 0; overflow-wrap: anywhere;
+  }
+  .bv-name i { flex: 1; height: 2px; background: rgba(255,253,248,.4); display: block; }
+
+  .bv-card {
+    background: var(--paper); color: var(--ink);
+    border-radius: 30px; padding: 24px; margin-top: 34px;
+    box-shadow: 0 20px 40px rgba(20,18,15,.22);
+  }
+  .bv-card-top { display: flex; align-items: center; justify-content: space-between; }
+  .bv-card-top span { font: 500 10px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .16em; }
+  .bv-card-top i {
+    width: 20px; height: 20px; border-radius: 50%; display: block;
+    background: var(--accent);
+  }
+
+  .bv-id { display: flex; gap: 16px; margin-top: 20px; align-items: center; }
+
+  /* Portrait + bouton crayon */
+  .bv-portrait-wrap { position: relative; flex: none; }
+  .bv-portrait {
+    display: block; width: 84px; height: 100px; border-radius: 20px; object-fit: cover;
+    background: repeating-linear-gradient(135deg, #F2EADD 0 8px, #EAE0CF 8px 16px);
+  }
+  .bv-edit {
+    position: absolute; right: -8px; bottom: -8px;
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 2px solid var(--paper); background: var(--ink); color: var(--paper);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0;
+    transition: transform .14s ease;
+  }
+  .bv-edit:active { transform: scale(.9); }
+
+  .bv-role { font: 500 10px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .1em; }
+  .bv-member { font: 800 27px/1 var(--display); margin-top: 5px; letter-spacing: -.025em; overflow-wrap: anywhere; }
+  .bv-chips { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+  .bv-chips span { border-radius: 10px; padding: 6px 10px; font: 700 11px var(--text); background: var(--sand); }
+  .bv-chips span + span { background: var(--violet); }
+
+  .bv-sep { height: 1px; background: #EAE0CF; margin: 20px 0; }
+  .bv-meta { display: flex; justify-content: space-between; }
+  .bv-meta dt { font: 500 10px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .1em; }
+  .bv-meta dd { font: 700 14px var(--text); margin-top: 4px; }
+  .bv-meta div:last-child { text-align: right; }
+  .bv-meta div:last-child dd { font: 500 14px var(--mono); }
+
+  .bv-count {
+    background: rgba(20,18,15,.85); border-radius: 22px; padding: 18px 20px; margin-top: 14px;
+  }
+  .bv-count b { font: 800 24px var(--display); color: var(--paper); letter-spacing: -.02em; display: block; }
+  .bv-count span { font: 400 12px/1.4 var(--text); color: #B5ADA2; margin-top: 4px; display: block; }
+
+  /* =========================================================
+     Feuille de choix d'avatar
+     ========================================================= */
+  .bv-sheet {
+    position: fixed; inset: 0; z-index: 20;
+    display: none; align-items: flex-end; justify-content: center;
+    background: rgba(20,18,15,.45);
+    backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  }
+  .bv-sheet[open] { display: flex; }
+  .bv-sheet-panel {
+    width: 100%; max-width: 430px;
+    background: var(--paper); color: var(--ink);
+    border-radius: 30px 30px 0 0;
+    padding: 22px 24px calc(24px + env(safe-area-inset-bottom));
+    animation: bv-monte .22s ease-out;
+  }
+  @keyframes bv-monte { from { transform: translateY(16px); opacity: 0; } }
+
+  .bv-sheet-title { font: 800 20px var(--display); letter-spacing: -.02em; }
+  .bv-sheet-lead { font: 400 12px/1.45 var(--text); color: var(--muted); margin-top: 4px; }
+
+  .bv-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+    margin-top: 18px; max-height: 42vh; overflow-y: auto;
+  }
+  .bv-grid label { display: block; cursor: pointer; }
+  .bv-grid input { position: absolute; opacity: 0; pointer-events: none; }
+  .bv-grid img {
+    width: 100%; aspect-ratio: 1; border-radius: 16px; display: block;
+    background: var(--sand);
+    border: 2px solid transparent;
+    transition: border-color .14s ease, transform .14s ease;
+  }
+  .bv-grid input:checked + img { border-color: var(--ink); transform: scale(.94); }
+
+  .bv-sheet-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .bv-sheet-actions .auth-btn { margin: 0; }
+</style>
+{% endblock %}
+
+{% block auth_content %}
+<div class="bv-aura bv-aura--1" aria-hidden="true"></div>
+<div class="bv-aura bv-aura--2" aria-hidden="true"></div>
+<div class="bv-aura bv-aura--3" aria-hidden="true"></div>
+<svg class="bv-stripes" id="bv-stripes" aria-hidden="true"></svg>
+
+<div class="bv-tag">
+  <i></i><span>Compte créé · atelier n°{{ numero_atelier }}</span>
+</div>
+
+<div class="bv-hello">Bienvenue</div>
+<div class="bv-name"><b>{{ user.username }}</b><i></i></div>
+
+<div class="bv-card">
+  <div class="bv-card-top">
+    <span>La Fabrique · carte d'atelier</span>
+    <i></i>
+  </div>
+
+  <div class="bv-id">
+    <div class="bv-portrait-wrap">
+      <img class="bv-portrait" src="{% static user.avatar_url %}" alt="">
+      <button type="button" class="bv-edit" id="bv-open" aria-label="Changer d'image de profil">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+        </svg>
+      </button>
+    </div>
+    <div>
+      <div class="bv-role">Membre</div>
+      <div class="bv-member">{{ user.username }}</div>
+      <div class="bv-chips">
+        <span>{{ niveau_label }}</span>
+        <span>Anti-gaspillage</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bv-sep"></div>
+
+  <dl class="bv-meta">
+    <div>
+      <dt>Membre depuis</dt>
+      <dd>{{ user.date_joined|date:"j F Y" }}</dd>
+    </div>
+    <div>
+      <dt>N° d'atelier</dt>
+      <dd>{{ numero_atelier }}</dd>
+    </div>
+  </dl>
+</div>
+
+<div class="bv-count">
+  <b>{{ nb_membres }}</b>
+  <span>couturiers réparent avec toi cette année</span>
+</div>
+
+<div class="auth-actions">
+  <a href="{% url 'dashboard' %}" class="auth-btn auth-btn--ink">Entrer dans l'atelier</a>
+</div>
+
+{# ── Choix de l'image de profil ─────────────────────────────── #}
+<div class="bv-sheet" id="bv-sheet" role="dialog" aria-modal="true" aria-label="Changer d'image de profil">
+  <form class="bv-sheet-panel" method="POST" action="{% url 'inscription_bienvenue' %}">
+    {% csrf_token %}
+    <div class="bv-sheet-title">Ton image de profil</div>
+    <p class="bv-sheet-lead">Choisis la tête que tu montres à l'atelier. Modifiable à tout moment.</p>
+
+    <div class="bv-grid">
+      {% for nom in avatars %}
+        <label>
+          <input type="radio" name="avatar" value="{{ nom }}" {% if user.avatar == nom %}checked{% endif %}>
+          <img src="{% static 'core/images/avatars/' %}{{ nom|urlencode }}" alt="">
+        </label>
+      {% endfor %}
+    </div>
+
+    <div class="bv-sheet-actions">
+      <button type="button" class="auth-btn auth-btn--ghost" id="bv-close">Annuler</button>
+      <button type="submit" class="auth-btn">Choisir</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // ── Vague de rayures ─────────────────────────────────────────
+  // Une rayure = un rectangle fin dans un groupe incliné. Le retard
+  // d'animation croît avec l'indice : l'épaississement se propage.
+  (() => {
+    const svg = document.getElementById('bv-stripes');
+    const NS = 'http://www.w3.org/2000/svg';
+    const COUNT = 46, STEP = 26, W = 3;
+
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('transform', `rotate(-32 ${COUNT * STEP / 2} 600)`);
+    for (let i = 0; i < COUNT; i++) {
+      const r = document.createElementNS(NS, 'rect');
+      r.setAttribute('x', i * STEP);
+      r.setAttribute('y', -400);
+      r.setAttribute('width', W);
+      r.setAttribute('height', 2000);
+      r.style.animationDelay = `${(i * -0.16).toFixed(2)}s`;
+      g.appendChild(r);
+    }
+    svg.setAttribute('viewBox', `0 0 ${COUNT * STEP} 1200`);
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    svg.appendChild(g);
+  })();
+
+  // ── Feuille de choix d'avatar ────────────────────────────────
+  (() => {
+    const sheet = document.getElementById('bv-sheet');
+    const open = () => sheet.setAttribute('open', '');
+    const close = () => sheet.removeAttribute('open');
+
+    document.getElementById('bv-open').addEventListener('click', open);
+    document.getElementById('bv-close').addEventListener('click', close);
+    sheet.addEventListener('click', (e) => { if (e.target === sheet) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  })();
+</script>
+{% endblock %}
