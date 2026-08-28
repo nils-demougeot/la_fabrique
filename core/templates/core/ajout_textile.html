@@ -1,673 +1,1232 @@
-﻿{% extends 'core/header.html' %}
+{% extends 'core/header.html' %}
 {% load static %}
+
+{% comment %}
+  ─────────────────────────────────────────────────────────────────────────
+  Ajout d'un vêtement — parcours en 7 étapes (design « rayon X »).
+
+  Le formulaire est unique : chaque étape est une section montrée/masquée
+  côté client (.aj-page), l'envoi n'a lieu qu'à la dernière. Les noms des
+  champs sont inchangés, la vue ajout_textile n'a pas eu à bouger.
+
+  Numérotation : 01 nom · 02 faces à photographier · 03 faces détourées ·
+  04 type · 05 = passe « défauts » de l'éditeur plein écran · 06 couleurs ·
+  07 matières & qualité. L'éditeur plein écran (photo, détourage,
+  étalonnage, défauts) et l'overlay caméra sont conservés tels quels en
+  attendant leur propre refonte.
+
+  Bricolage Grotesque + DM Sans/Mono, encre #14120F, papier #FFFDF8.
+  ─────────────────────────────────────────────────────────────────────────
+{% endcomment %}
+
+{% block app_header %}{% endblock %}
+
 {% block extra_css %}
-  <style>
-    /* Variables de couleurs */
-    :root {
-      --bg-page: #FFFBFF;
-      --bg-header: #FEFCF3;
-      --bg-card: #FBFAF0;
-      --bg-input: #EFEEE3;
-      --bg-result: #F5F4EA;
-      
-      --primary-green: #237329;
-      --dark-green: #4E6C50;
-      --light-green: #D2F4D1;
-      
-      --text-dark: #383832;
-      --text-gray: #65655E;
-      --text-light-gray: #666556;
-      
-      --font-title: 'Plus Jakarta Sans', sans-serif;
-      --font-body: 'Manrope', sans-serif;
-    }
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* =========================================================
+     Jetons de design
+     ========================================================= */
+  .aj {
+    --ink:     #14120F;
+    --paper:   #FFFDF8;
+    --sand:    #F6F0E6;
+    --sand-d:  #F2EADD;
+    --line:    #E7DED0;
+    --muted:   #7A7168;
+    --faint:   #9C9184;
+    --green:   #1FA85C;
+    --green-l: #F1FBF5;
+    --red:     #C4452D;
+    --yellow:  #FFD166;
 
-    body {
-      background-color: #f4f4f4;
-      font-family: var(--font-body);
-      display: flex;
-      justify-content: center;
-    }
+    --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --text:    'DM Sans', 'Manrope', system-ui, sans-serif;
+    --mono:    'DM Mono', ui-monospace, monospace;
 
-    .app-container {
-      width: 100%;
-      max-width: 430px;
-      background-color: var(--bg-page);
-      overflow: hidden;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
+    --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
-    header {
-      background-color: var(--bg-header);
-      padding: 16px 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    background: var(--paper);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--text);
+    color: var(--ink);
+  }
+  .aj :where(a) { text-decoration: none; color: inherit; }
+  .aj button { font-family: inherit; }
 
-    .logo {
-      font-family: var(--font-title);
-      font-weight: 700;
-      font-size: 20px;
-      color: var(--dark-green);
-    }
+  /* =========================================================
+     Barre de progression
+     ========================================================= */
+  .aj-top {
+    flex: none;
+    padding: 26px 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .aj-back {
+    width: 36px; height: 36px;
+    border: none;
+    border-radius: 12px;
+    background: var(--sand-d);
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    cursor: pointer;
+    transition: transform .12s ease;
+  }
+  .aj-back:active { transform: scale(.92); }
+  .aj-bars { flex: 1; display: flex; gap: 5px; }
+  .aj-bar {
+    flex: 1;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--line);
+    transition: background .25s ease;
+  }
+  .aj-bar.on { background: var(--ink); }
+  .aj-count {
+    flex: none;
+    font: 500 11px var(--mono);
+    color: var(--faint);
+    letter-spacing: .08em;
+  }
 
-    .user-stats { display: flex; align-items: center; gap: 10px; }
-    .coins {
-      background-color: var(--bg-result);
-      color: var(--dark-green);
-      font-weight: 700;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 14px;
-    }
-    .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--light-green); object-fit: cover;}
+  /* =========================================================
+     Squelette d'une étape
+     ========================================================= */
+  .aj-form { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .aj-page { display: none; flex: 1; flex-direction: column; min-height: 0; }
+  .aj-page.on { display: flex; }
+  .aj-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 30px 24px 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .aj-foot {
+    flex: none;
+    padding: 20px 24px calc(26px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
-    main { padding: 32px 24px 60px; display: flex; flex-direction: column; gap: 40px; }
+  .aj-eyebrow {
+    font: 500 10px var(--mono);
+    color: var(--faint);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .aj-title {
+    font: 800 clamp(30px, 9vw, 38px)/1.04 var(--display);
+    letter-spacing: -.03em;
+    margin: 12px 0 0;
+    text-wrap: pretty;
+  }
+  .aj-lead {
+    font: 400 14px/1.5 var(--text);
+    color: var(--muted);
+    margin: 12px 0 0;
+  }
+  .aj-section-label {
+    font: 500 10px var(--mono);
+    color: var(--faint);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
 
-    .form-ajout_textile { display: flex; flex-direction: column; gap: 32px; }
+  .aj-cta {
+    display: block;
+    width: 100%;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: 26px;
+    padding: 20px 0;
+    text-align: center;
+    font: 800 18px var(--display);
+    cursor: pointer;
+    transition: transform .1s ease, opacity .15s ease;
+  }
+  .aj-cta:active { transform: scale(.985); }
+  .aj-cta:disabled { opacity: .45; cursor: default; }
+  .aj-cta-ghost {
+    display: block;
+    width: 100%;
+    background: none;
+    border: 1.5px solid var(--line);
+    border-radius: 26px;
+    padding: 17px 0;
+    text-align: center;
+    font: 800 15px var(--display);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .aj-cta-ghost:active { transform: scale(.985); }
 
-    .header-titles h1 { font-family: var(--font-title); font-size: 32px; font-weight: 800; color: var(--text-dark); margin-bottom: 8px; line-height: 1.2; }
-    .header-titles p { color: var(--text-gray); font-size: 16px; font-weight: 500; }
+  /* Encart d'aide bas de page */
+  .aj-note {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--sand);
+    border-radius: 26px;
+    padding: 16px 18px;
+  }
+  .aj-note-ico {
+    width: 40px; height: 40px;
+    border-radius: 14px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .aj-note p { font: 400 12px/1.45 var(--text); color: #4A443C; flex: 1; margin: 0; }
+  .aj-push { margin-top: auto; margin-bottom: 20px; }
 
-    .card { background-color: var(--bg-card); padding: 24px; border-radius: 32px; display: flex; flex-direction: column; gap: 16px; }
-    .card h2 { font-family: var(--font-title); font-size: 16px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; }
-    .icon-square { width: 16px; height: 16px; }
+  /* =========================================================
+     01 · Nom
+     ========================================================= */
+  .aj-name-field {
+    border: none;
+    border-bottom: 2px solid var(--ink);
+    background: none;
+    padding: 0 2px 12px;
+    margin-top: 36px;
+    width: 100%;
+    font: 800 28px var(--display);
+    letter-spacing: -.02em;
+    color: var(--ink);
+    caret-color: var(--green);
+  }
+  .aj-name-field::placeholder { color: #C4B9A8; }
+  .aj-name-field:focus { outline: none; border-bottom-color: var(--green); }
 
-    .photo-source-picker {
-      display: flex;
-      gap: 12px;
-    }
-    .photo-source-btn {
-      flex: 1;
-      background-color: rgba(255, 255, 255, 0.9);
-      border: 2px dashed rgba(187, 185, 177, 0.5);
-      border-radius: 18px;
-      padding: 28px 12px;
-      text-align: center;
-      cursor: pointer;
-      color: var(--text-gray);
-      font-weight: 600;
-      font-size: 13px;
-      font-family: var(--font-body);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      transition: border-color 0.15s, background-color 0.15s;
-    }
-    .photo-source-btn:hover {
-      border-color: var(--primary-green);
-      background-color: rgba(35, 115, 41, 0.05);
-    }
-    .photo-source-btn .src-icon { font-size: 26px; }
+  .aj-id-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 26px;
+  }
+  .aj-id-optional {
+    font: 500 9px var(--mono);
+    color: var(--faint);
+    background: var(--sand);
+    border-radius: 8px;
+    padding: 3px 7px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .aj-id-field {
+    margin-top: 10px;
+    width: 100%;
+    border: 1.5px solid var(--line);
+    border-radius: 16px;
+    background: none;
+    padding: 14px 16px;
+    font: 700 15px var(--mono);
+    letter-spacing: .01em;
+    color: var(--ink);
+    caret-color: var(--green);
+    transition: border-color .15s ease;
+  }
+  .aj-id-field::placeholder { color: #C4B9A8; font-weight: 500; }
+  .aj-id-field:focus { outline: none; border-color: var(--green); }
+  .aj-id-hint { font: 400 12px/1.4 var(--text); color: var(--muted); margin: 8px 2px 0; }
 
-    /* ── Overlay caméra ── */
-    #camera-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 2700;
-      background: #000;
-      flex-direction: column;
-      max-width: 430px;
-      margin: 0 auto;
-    }
-    #camera-overlay.active { display: flex; }
+  .aj-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .aj-chip {
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 10px 14px;
+    font: 700 13px var(--text);
+    color: #4A443C;
+    background: none;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .aj-chip:active { background: var(--sand); border-color: var(--ink); }
 
-    #camera-viewfinder {
-      position: relative;
-      flex: 1;
-      overflow: hidden;
-    }
-    #camera-video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    #camera-crop-box {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 80%;
-      aspect-ratio: 1;
-      border: 2px solid white;
-      border-radius: 4px;
-      box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
-    }
-    #camera-crop-box::before, #camera-crop-box::after,
-    .cam-corner-br, .cam-corner-bl {
-      content: '';
-      position: absolute;
-      width: 20px; height: 20px;
-      border-color: white;
-      border-style: solid;
-    }
-    #camera-crop-box::before { top:-2px; left:-2px;  border-width:3px 0 0 3px; }
-    #camera-crop-box::after  { top:-2px; right:-2px; border-width:3px 3px 0 0; }
-    .cam-corner-br { bottom:-2px; right:-2px; border-width:0 3px 3px 0; }
-    .cam-corner-bl { bottom:-2px; left:-2px;  border-width:0 0 3px 3px; }
+  /* =========================================================
+     02 / 03 · Faces
+     ========================================================= */
+  .aj-faces { display: flex; gap: 12px; margin-top: 26px; }
+  .face-card {
+    flex: 1;
+    min-width: 0;
+    border: 1.5px solid var(--line);
+    background: none;
+    border-radius: 26px;
+    padding: 14px;
+    text-align: left;
+    cursor: pointer;
+    position: relative;
+    transition: border-color .18s ease;
+  }
+  .face-card[data-face="avant"] { border-width: 2px; border-color: var(--ink); }
+  .face-card.done { border-width: 2px; border-color: var(--green); }
+  .face-card.pending { border-style: dashed; border-color: #C4B9A8; }
+  .face-thumb {
+    height: 150px;
+    border-radius: 18px;
+    background: var(--sand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .face-card[data-face="avant"]:not(.done) .face-thumb {
+    background: repeating-linear-gradient(135deg, var(--sand-d) 0 9px, #EAE0CF 9px 18px);
+  }
+  .face-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .face-thumb-emoji { color: #B5A895; display: flex; }
+  .face-name { display: block; font: 800 17px var(--display); margin-top: 12px; }
+  .face-card:not(.done) .face-name { color: #6E655B; }
+  .face-card[data-face="avant"]:not(.done) .face-name { color: var(--ink); }
+  .face-status {
+    display: block;
+    font: 500 10px var(--mono);
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-top: 4px;
+  }
+  .face-card[data-face="avant"]:not(.done) .face-status { color: var(--red); }
+  .face-card.done .face-status { color: var(--green); }
+  .face-badge {
+    position: absolute;
+    right: 12px; top: 12px;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--green);
+    color: #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .face-card.done .face-badge { display: flex; }
 
-    #camera-controls {
-      padding: 24px 32px 48px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(0,0,0,0.6);
-    }
-    #btn-camera-cancel {
-      color: white; background: none; border: none;
-      font-family: var(--font-body); font-size: 16px; font-weight: 600;
-      cursor: pointer; padding: 12px; width: 70px;
-    }
-    #btn-camera-capture {
-      width: 70px; height: 70px;
-      border-radius: 50%;
-      background: white;
-      border: 5px solid rgba(255,255,255,0.4);
-      cursor: pointer;
-      transition: transform 0.1s;
-      outline: none;
-    }
-    #btn-camera-capture:active { transform: scale(0.92); }
+  .aj-surface {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--sand);
+    border-radius: 26px;
+    padding: 16px 18px;
+    margin-top: 22px;
+  }
+  .aj-surface-val { font: 800 25px var(--display); margin-top: 3px; }
+  .aj-surface-hint { font: 400 11px/1.4 var(--text); color: var(--muted); flex: 1; }
 
-    .photo-preview {
-      width: 100%; border-radius: 16px; overflow: hidden; display: none;
-    }
-    .photo-preview img {
-      width: 100%; height: 180px; object-fit: cover; display: block;
-    }
-    /* ── Étoiles ── */
-    .star-label {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      color: var(--text-gray);
-      letter-spacing: 1px;
-      margin-top: 4px;
-    }
-    .star-rating {
-      display: flex;
-      flex-direction: row-reverse;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-    .star-rating input { display: none; }
-    .star-rating label {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      background: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      color: #BCBAA8;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s, transform 0.1s;
-      outline: 1.5px solid rgba(187,185,177,0.35);
-      outline-offset: -1px;
-      user-select: none;
-    }
-    .star-rating label:active { transform: scale(0.92); }
-    .star-rating input:checked ~ label,
-    .star-rating label:hover,
-    .star-rating label:hover ~ label {
-      background: #D2F4D1;
-      color: #237329;
-      outline-color: rgba(35,115,41,0.25);
-    }
-    .card-divider {
-      height: 1px;
-      background: rgba(187,185,177,0.3);
-      margin: 4px 0;
-    }
+  /* =========================================================
+     04 · Type
+     ========================================================= */
+  .aj-types { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+  .type-btn {
+    width: calc(50% - 5px);
+    border: 1.5px solid var(--line);
+    background: none;
+    border-radius: 24px;
+    padding: 18px;
+    text-align: left;
+    cursor: pointer;
+    position: relative;
+    transition: border-color .16s ease, background .16s ease;
+  }
+  .type-ico {
+    width: 38px; height: 38px;
+    border-radius: 14px;
+    background: var(--sand-d);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+  }
+  .type-ico img { width: 26px; height: 26px; display: block; }
+  .type-btn span.type-label { display: block; font: 800 17px var(--display); margin-top: 14px; }
+  .type-btn.active { border-width: 2px; border-color: var(--green); background: var(--green-l); }
+  .type-btn.active .type-ico { background: var(--green); color: #fff; }
+  .type-btn.active .type-ico img { filter: brightness(0) invert(1); }
+  .type-check {
+    position: absolute;
+    right: 14px; top: 14px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--green);
+    color: #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .type-btn.active .type-check { display: flex; }
+  #btn-other-type { border-style: dashed; border-color: #C4B9A8; }
+  #btn-other-type .type-ico { background: var(--sand); color: #8E877E; }
+  #btn-other-type .type-label { color: #6E655B; }
+  #btn-other-type.active { border-style: solid; }
+  #btn-other-type.active .type-label { color: var(--ink); }
 
-    /* ── Palette couleurs ── */
-    .color-grid {
-      display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      gap: 8px;
-    }
-    .color-swatch-input { display: none; }
-    .color-swatch {
-      aspect-ratio: 1;
-      border-radius: 10px;
-      cursor: pointer;
-      position: relative;
-      transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
-      border: 2px solid transparent;
-    }
-    .color-swatch:hover { transform: scale(1.12); }
-    .color-swatch-input:checked + .color-swatch {
-      border-color: white;
-      box-shadow: 0 0 0 2.5px #237329;
-      transform: scale(1.12);
-    }
-    .color-swatch-input:checked + .color-swatch::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.28);
-    }
-    .color-swatch.maxed { opacity: 0.35; cursor: not-allowed; }
-    .color-swatch.maxed:hover { transform: none; }
+  /* =========================================================
+     06 · Couleurs
+     ========================================================= */
+  .aj-color-slots { display: flex; gap: 10px; margin-top: 24px; }
+  .aj-slot {
+    flex: 1;
+    min-width: 0;
+    border: 1.5px dashed #C4B9A8;
+    border-radius: 24px;
+    padding: 14px;
+    text-align: center;
+  }
+  .aj-slot.filled { border-style: solid; border-color: var(--line); }
+  .aj-slot:first-child.filled { border-width: 2px; border-color: var(--ink); }
+  .aj-slot-chip {
+    width: 100%;
+    height: 56px;
+    border-radius: 16px;
+    background: var(--sand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8E877E;
+  }
+  .aj-slot-name {
+    font: 800 14px var(--display);
+    margin-top: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .aj-slot:not(.filled) .aj-slot-name { color: #6E655B; }
+  .aj-slot-role { font: 500 10px var(--mono); color: var(--faint); margin-top: 3px; text-transform: uppercase; }
 
-    /* ── Cache header/nav quand caméra ou popup active ── */
-    body.camera-open .header-global,
-    body.camera-open .bottom-nav { display: none !important; }
-    body.other-open .bottom-nav { display: none !important; }
+  .aj-palette { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .color-swatch-input { position: absolute; opacity: 0; pointer-events: none; }
+  .color-swatch {
+    width: 52px; height: 52px;
+    border-radius: 18px;
+    display: block;
+    cursor: pointer;
+    position: relative;
+    transition: transform .14s ease, box-shadow .14s ease, opacity .14s ease;
+  }
+  .color-swatch:active { transform: scale(.94); }
+  .color-swatch-input:checked + .color-swatch {
+    box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink);
+  }
+  .color-swatch.maxed { opacity: .35; cursor: default; }
 
-    /* ── Modal résultat ── */
-    #result-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 3000;
-      background: rgba(0,0,0,0.5);
-      justify-content: center;
-      align-items: flex-end;
-    }
-    #result-modal.active { display: flex; }
-    .result-modal-sheet {
-      background: var(--bg-page);
-      border-radius: 32px 32px 0 0;
-      padding: 32px 24px 48px;
-      width: 100%;
-      max-width: 430px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      animation: slideUp 0.3s ease;
-    }
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to   { transform: translateY(0); }
-    }
-    .result-modal-handle {
-      width: 40px; height: 4px;
-      background: #BCBAA8;
-      border-radius: 99px;
-      margin-bottom: 8px;
-    }
+  /* =========================================================
+     07 · Matières & qualité
+     ========================================================= */
+  .aj-materials { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+  .material-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 22px;
+    padding: 14px 16px;
+  }
+  .material-select-wrapper { flex: 1; min-width: 0; position: relative; display: flex; align-items: center; }
+  .material-name-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: none;
+    border: none;
+    width: 100%;
+    font: 800 17px var(--display);
+    color: var(--ink);
+    padding-right: 18px;
+    cursor: pointer;
+  }
+  .material-name-select:focus { outline: none; }
+  .material-select-chevron { position: absolute; right: 0; color: var(--faint); pointer-events: none; }
+  .material-percent-input {
+    width: 46px;
+    border: none;
+    border-bottom: 2px solid var(--ink);
+    background: none;
+    text-align: center;
+    font: 800 17px var(--display);
+    color: var(--ink);
+    padding: 0 0 3px;
+    -moz-appearance: textfield;
+  }
+  .material-percent-input::-webkit-outer-spin-button,
+  .material-percent-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .material-percent-input:focus { outline: none; border-bottom-color: var(--green); }
+  .material-percent-unit { font: 500 13px var(--mono); color: var(--faint); }
+  .material-delete-btn {
+    background: none;
+    border: none;
+    color: var(--faint);
+    cursor: pointer;
+    display: flex;
+    padding: 0;
+  }
+  .btn-add-material {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1.5px dashed #C4B9A8;
+    background: none;
+    border-radius: 22px;
+    padding: 14px 16px;
+    font: 800 17px var(--display);
+    color: #6E655B;
+    cursor: pointer;
+    width: 100%;
+  }
+  .aj-total-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+  .aj-total-bar { flex: 1; height: 8px; border-radius: 5px; background: var(--sand-d); overflow: hidden; }
+  .aj-total-fill { display: block; height: 100%; width: 0; background: var(--yellow); transition: width .2s ease, background .2s ease; }
+  .aj-total-text { font: 500 11px var(--mono); color: var(--faint); }
+  .aj-total-text.valid { color: var(--green); }
+  .aj-total-text.over  { color: var(--red); }
 
-    .photo-retake-btn {
-      background: none; border: none;
-      color: var(--primary-green); font-family: var(--font-body);
-      font-size: 14px; font-weight: 700; cursor: pointer;
-      text-decoration: underline; margin-top: 8px; display: none;
-    }
+  .aj-quality { display: flex; gap: 10px; margin-top: 12px; }
+  .aj-quality-btn {
+    flex: 1;
+    border: 1.5px solid var(--line);
+    background: none;
+    border-radius: 20px;
+    padding: 14px 0;
+    text-align: center;
+    font: 800 14px var(--display);
+    color: #6E655B;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+  .aj-quality-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
 
-    .type-grid { 
-      display: grid;
-      grid-template-columns: repeat(3, 1fr); 
-      gap: 10px; 
-    }
+  /* =========================================================
+     Résultat
+     ========================================================= */
+  .aj-result {
+    position: fixed;
+    inset: 0;
+    z-index: 2400;
+    background: rgba(20,18,15,.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .aj-result-sheet {
+    background: var(--paper);
+    border-radius: 34px 34px 0 0;
+    width: 100%;
+    max-width: 430px;
+    padding: 14px 24px 34px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: slideUp .3s ease;
+  }
+  .aj-result-handle { width: 40px; height: 4px; border-radius: 99px; background: #D8CFC0; }
+  .aj-result-label {
+    font: 500 10px var(--mono);
+    color: var(--faint);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-top: 22px;
+  }
+  .aj-result-value { font: 800 46px var(--display); letter-spacing: -.03em; margin-top: 6px; }
+  .aj-result-bar { width: 100%; margin-top: 20px; }
+  .aj-result-bar-head { display: flex; justify-content: space-between; font: 400 12px var(--text); color: var(--muted); }
+  .aj-result-track { height: 8px; border-radius: 5px; background: var(--sand-d); margin-top: 8px; overflow: hidden; }
+  .aj-result-fill { display: block; height: 100%; background: var(--green); border-radius: 5px; }
+  .aj-result-coins {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--green-l);
+    color: var(--green);
+    border-radius: 99px;
+    padding: 10px 18px;
+    font: 800 14px var(--display);
+    margin-top: 20px;
+  }
+  .aj-result-cta { margin-top: 18px; width: 100%; }
 
-    .type-btn {
-      background-color: white; 
-      border: 2px solid transparent; 
-      padding: 12px 4px; 
-      border-radius: 16px;
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      gap: 8px; 
-      cursor: pointer;
-      font-family: var(--font-title); 
-      font-size: 11px; 
-      font-weight: 700; 
-      text-transform: uppercase; 
-      color: var(--text-light-gray);
-      transition: all 0.2s ease;
-    }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-    .type-btn.active { 
-      background-color: var(--primary-green); 
-      color: white; 
-      box-shadow: 0 4px 15px rgba(35, 115, 41, 0.2); 
-    }
+  /* =========================================================
+     t1 · Célébration (fin d'analyse, avant le ticket)
+     ========================================================= */
+  .aj-celebrate {
+    position: fixed;
+    inset: 0;
+    z-index: 2700;
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--paper);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    pointer-events: none;
+    animation: aj-cel-out .34s var(--ease-in-out) forwards;
+    animation-delay: 1s;
+  }
+  .aj-celebrate-burst {
+    position: relative;
+    width: 96px; height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .aj-check-circle {
+    stroke-dasharray: 201;
+    stroke-dashoffset: 201;
+    transform-origin: 36px 36px;
+    animation: aj-cel-circle .5s var(--ease-out) .08s forwards;
+  }
+  .aj-check-mark {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    animation: aj-cel-check .3s var(--ease-out) .52s forwards;
+  }
+  .aj-celebrate-burst::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--green-l);
+    opacity: 0;
+    animation: aj-cel-pulse .6s var(--ease-out) .5s forwards;
+    z-index: -1;
+  }
+  .aj-celebrate-txt {
+    font: 800 15px var(--display);
+    letter-spacing: -.01em;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: aj-cel-txt .35s var(--ease-out) .58s forwards;
+  }
+  .aj-confetti { position: absolute; inset: 0; pointer-events: none; }
+  .aj-confetto {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 7px; height: 7px;
+    border-radius: 2px;
+    background: var(--dot, var(--green));
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--rot)) translateY(0) scale(.4);
+    animation: aj-cel-confetti .75s var(--ease-out) .5s forwards;
+  }
+  .aj-confetto:nth-child(1) { --rot: 0deg;    --dot: var(--green);  animation-delay: .50s; }
+  .aj-confetto:nth-child(2) { --rot: 33deg;   --dot: var(--yellow); animation-delay: .53s; }
+  .aj-confetto:nth-child(3) { --rot: 66deg;   --dot: var(--green);  animation-delay: .49s; }
+  .aj-confetto:nth-child(4) { --rot: 99deg;   --dot: #FF6B3D;       animation-delay: .55s; }
+  .aj-confetto:nth-child(5) { --rot: 132deg;  --dot: var(--yellow); animation-delay: .51s; }
+  .aj-confetto:nth-child(6) { --rot: 165deg;  --dot: var(--green);  animation-delay: .56s; }
+  .aj-confetto:nth-child(7) { --rot: 198deg;  --dot: #7C5CFF;       animation-delay: .48s; }
+  .aj-confetto:nth-child(8) { --rot: 231deg;  --dot: var(--yellow); animation-delay: .54s; }
+  .aj-confetto:nth-child(9) { --rot: 264deg;  --dot: var(--green);  animation-delay: .52s; }
+  .aj-confetto:nth-child(10){ --rot: 297deg;  --dot: #FF6B3D;       animation-delay: .57s; }
+  .aj-confetto:nth-child(11){ --rot: 330deg;  --dot: var(--yellow); animation-delay: .50s; }
+  .aj-confetto:nth-child(12){ --rot: 360deg;  --dot: var(--green);  animation-delay: .55s; }
 
-    .type-icon-img {
-      width: 28px;
-      height: 28px;
-      transition: filter 0.2s ease;
-    }
+  @keyframes aj-cel-circle { to { stroke-dashoffset: 0; } }
+  @keyframes aj-cel-check  { to { stroke-dashoffset: 0; } }
+  @keyframes aj-cel-pulse  { 0% { opacity: .55; transform: scale(.7); } 100% { opacity: 0; transform: scale(1.7); } }
+  @keyframes aj-cel-txt    { to { opacity: 1; transform: translateY(0); } }
+  @keyframes aj-cel-confetti {
+    0%   { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot)) translateY(0)     scale(.9); }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rot)) translateY(-64px) scale(.4); }
+  }
+  @keyframes aj-cel-out { to { opacity: 0; transform: scale(1.02); } }
 
-    .type-btn.active .type-icon-img {
-      filter: brightness(0) invert(1);
-    }
+  @media (prefers-reduced-motion: reduce) {
+    .aj-celebrate { animation-duration: .2s; animation-delay: .5s; }
+    .aj-check-circle, .aj-check-mark { animation-duration: .01s; animation-delay: 0s; }
+    .aj-celebrate-burst::after { display: none; }
+    .aj-celebrate-txt { animation: aj-cel-txt-fade .2s ease .1s forwards; }
+    .aj-confetto { display: none; }
+  }
+  @keyframes aj-cel-txt-fade { to { opacity: 1; transform: none; } }
 
-    .details-section { display: flex; flex-direction: column; gap: 24px; }
-    .input-group label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-gray); letter-spacing: 1px; margin-bottom: 8px; display: block; }
-    
-    .custom-input {
-      background-color: var(--bg-input); 
-      border: none; 
-      border-radius: 99px; 
-      padding: 16px 24px;
-      width: 100%; 
-      font-family: var(--font-body); 
-      font-size: 16px; 
-      font-weight: 600; 
-      color: var(--text-dark); 
-      outline: none;
-    }
+  /* =========================================================
+     t2 · Ticket de soustraction (écran de fin)
+     ========================================================= */
+  .aj-ticket {
+    position: fixed;
+    inset: 0;
+    z-index: 2600;
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--paper);
+    overflow-y: auto;
+  }
+  .aj-ticket-in {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 32px 26px calc(26px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+  }
+  .aj-ticket-top { display: flex; align-items: center; justify-content: space-between; }
+  .aj-ticket-ref {
+    font: 500 10px var(--mono);
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: .16em;
+  }
+  .aj-ticket-date {
+    background: var(--sand-d);
+    border-radius: 11px;
+    padding: 6px 10px;
+    font: 500 10px var(--mono);
+    letter-spacing: .08em;
+  }
+  .aj-ticket-nom { font: 800 34px/1 var(--display); margin: 20px 0 0; letter-spacing: -.03em; }
+  .aj-ticket-meta { font: 400 13px var(--text); color: var(--muted); margin: 8px 0 0; }
 
-    .custom-select {
-      background-color: var(--bg-input); 
-      border: none; 
-      border-radius: 99px; 
-      padding: 16px 24px;
-      width: 100%; 
-      font-family: var(--font-body); 
-      font-size: 16px; 
-      font-weight: 600; 
-      color: var(--text-dark); 
-      outline: none;
-      
-      appearance: none;
-      -webkit-appearance: none;
-      
-      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2365655E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 24px center;
-      background-size: 16px;
-      padding-right: 48px;
-    }
+  .aj-ticket-head { display: flex; align-items: baseline; justify-content: space-between; margin-top: 30px; }
+  .aj-ticket-label { font: 500 10px var(--mono); color: var(--faint); letter-spacing: .12em; }
+  .aj-ticket-total { font: 800 40px var(--display); letter-spacing: -.03em; }
 
-    .dimensions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .dimension-box { background-color: var(--bg-input); border-radius: 99px; padding: 16px; display: flex; align-items: center; justify-content: space-between; }
-    .dimension-box input { background: none; border: none; font-family: var(--font-title); font-size: 24px; font-weight: 800; color: var(--primary-green); width: 60%; outline: none; }
-    .dimension-box span { color: var(--text-light-gray); font-weight: 700; }
+  .aj-ticket-lines { display: flex; flex-direction: column; gap: 14px; margin-top: 22px; }
+  .aj-ticket-line { display: flex; align-items: center; gap: 14px; }
+  .aj-ticket-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; display: block; background: #C4B9A8; }
+  .aj-ticket-dot[data-dtype="tache"]  { background: #FF6B3D; }
+  .aj-ticket-dot[data-dtype="trou"]   { background: #7C5CFF; }
+  .aj-ticket-dot[data-dtype="usure"]  { background: #FFC93C; }
+  .aj-ticket-dot[data-dtype="ourlet"] { background: #2C6CA8; }
+  .aj-ticket-line-txt { flex: 1; min-width: 0; }
+  .aj-ticket-line-name { font: 700 14px var(--text); }
+  .aj-ticket-line-sub { font: 500 10px var(--mono); color: var(--faint); margin-top: 2px; text-transform: uppercase; }
+  .aj-ticket-minus { font: 800 24px var(--display); color: var(--red); letter-spacing: -.02em; }
 
-    .tags {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 16px;
-      width: 100%;
-    }
+  .aj-ticket-rule { height: 3px; background: var(--ink); margin-top: 24px; }
+  .aj-ticket-foot { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 18px; }
+  .aj-ticket-big { font: 800 68px/.9 var(--display); letter-spacing: -.05em; margin-top: 6px; }
+  .aj-ticket-unit { font: 500 12px var(--mono); color: var(--muted); margin-top: 4px; }
+  .aj-ticket-badge {
+    background: var(--green);
+    color: #fff;
+    border-radius: 16px;
+    padding: 11px 14px;
+    font: 800 14px var(--display);
+    white-space: nowrap;
+  }
 
-    .hidden-radio {
-      display: none;
-    }
+  /* Apparition progressive du contenu du ticket, séquencée après
+     la célébration : chaque bloc entre en fondu + léger décalage,
+     du total détouré vers les lignes de défauts puis le résultat. */
+  .aj-reveal {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: aj-reveal-in .34s var(--ease-out) forwards;
+  }
+  .aj-ticket-head.aj-reveal        { animation-delay: .70s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(1)  { animation-delay: .84s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(2)  { animation-delay: .95s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(3)  { animation-delay: 1.06s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(4)  { animation-delay: 1.17s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(5)  { animation-delay: 1.28s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(6)  { animation-delay: 1.39s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(7)  { animation-delay: 1.50s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(8)  { animation-delay: 1.61s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(9)  { animation-delay: 1.72s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(10) { animation-delay: 1.83s; }
+  .aj-ticket-line.aj-reveal:nth-of-type(n+11) { animation-delay: 1.83s; }
+  .aj-ticket-rule.aj-reveal        { animation-delay: 1.96s; transform: none; animation-name: aj-reveal-fade; }
+  .aj-ticket-foot.aj-reveal        { animation-delay: 2.02s; }
+  .aj-ticket-badge.aj-reveal       { animation-delay: 2.16s; }
+  .aj-cta.aj-reveal                { animation-delay: 2.18s; }
+  .aj-cta-ghost.aj-reveal          { animation-delay: 2.24s; }
 
-    .tag {
-      flex: 1;
-      display: flex;
-      gap: 6px;
-      justify-content: center;
-      align-items: center;
-      background-color: #EAE9DD;
-      padding: 12px 16px;
-      border-radius: 9999px;
-      font-size: 14px;
-      font-family: var(--font-body);
-      font-weight: 700;
-      color: var(--text-dark);
-      fill : #383832;
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
+  @keyframes aj-reveal-in   { to { opacity: 1; transform: none; } }
+  @keyframes aj-reveal-fade { to { opacity: 1; } }
 
-    .tag img {
-      filter: brightness(0) opacity(0.45);
-      transition: filter 0.15s;
+  @media (prefers-reduced-motion: reduce) {
+    .aj-reveal {
+      transform: none;
+      animation-name: aj-reveal-fade;
+      animation-duration: .2s;
     }
-    .hidden-radio:checked + .tag {
-      border-color: var(--primary-green);
-      color: var(--primary-green);
-    }
-    .hidden-radio:checked + .tag img {
-      filter: brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(456%) hue-rotate(91deg) brightness(87%) contrast(91%);
-    }
+    .aj-ticket-head.aj-reveal  { animation-delay: .55s; }
+    .aj-ticket-line.aj-reveal  { animation-delay: .6s; }
+    .aj-ticket-rule.aj-reveal,
+    .aj-ticket-foot.aj-reveal,
+    .aj-ticket-badge.aj-reveal { animation-delay: .68s; }
+    .aj-cta.aj-reveal, .aj-cta-ghost.aj-reveal { animation-delay: .74s; }
+  }
 
-    input[type=range] { width: 100%; margin: 10px 0; accent-color: var(--primary-green); }
-    .slider-labels { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: var(--text-gray); }
-    .current-slider-value { text-align: center; font-family: var(--font-title); font-weight: 800; color: var(--primary-green); font-size: 18px; margin-bottom: 8px; }
+  /* =========================================================
+     Legacy — variables de la feuille « autre type »,
+     seul bloc encore écrit dans l'ancienne charte.
+     ========================================================= */
+  #other-type-modal {
+    --bg-page: #FFFBFF;
+    --bg-input: #EFEEE3;
+    --primary-green: #237329;
+    --text-dark: #383832;
+    --text-gray: #65655E;
+    --text-light-gray: #666556;
+    --font-title: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Manrope', sans-serif;
+  }
+  #other-type-modal * { box-sizing: border-box; }
 
-    .btn-delete-damage {
-      background: rgba(162, 74, 51, 0.07);
-      border: 1.5px solid rgba(162, 74, 51, 0.25);
-      border-radius: 99px;
-      color: #A24A33;
-      font-family: var(--font-body);
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 8px;
-      padding: 10px 20px;
-      display: block;
-      width: 100%;
-      text-align: center;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    .btn-delete-damage:hover {
-      background: rgba(162, 74, 51, 0.13);
-      border-color: rgba(162, 74, 51, 0.45);
-    }
+  /* =========================================================
+     Éditeur plein écran — caméra, détourage, échelle, défauts
+     =========================================================
+     Écrans 03 à 09 : fond encre, panneaux sombres, mêmes familles
+     typographiques que le reste du parcours. */
+  #editor-overlay {
+    --ink:    #14120F;
+    --panel:  #1E1B17;
+    --chip:   #221F1B;
+    --chip-2: #2A2620;
+    --line:   #3A342C;
+    --muted:  #9C9184;
+    --soft:   #B5ADA2;
+    --paper:  #FFFDF8;
+    --green:  #1FA85C;
+    --yellow: #FFD166;
+    --red:    #C4452D;
 
-    .btn-add-damage {
-      width: 100%;
-      background: transparent;
-      border: 2px dashed rgba(35, 115, 41, 0.35);
-      border-radius: 99px;
-      color: var(--primary-green);
-      font-family: var(--font-body);
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      padding: 14px 20px;
-      margin-top: 8px;
-      margin-bottom: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    .btn-add-damage:hover {
-      background: rgba(35, 115, 41, 0.06);
-      border-color: rgba(35, 115, 41, 0.6);
-    }
+    --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --text:    'DM Sans', 'Manrope', system-ui, sans-serif;
+    --mono:    'DM Mono', ui-monospace, monospace;
 
-    .toggle-icon {
-      transition: transform 0.3s ease-in-out;
-    }
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2500;
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--text);
+    flex-direction: column;
+  }
+  #editor-overlay.active { display: flex; }
+  #editor-overlay * { box-sizing: border-box; }
+  #editor-overlay button { font-family: inherit; color: inherit; cursor: pointer; }
+  body.editor-open .header-global { display: none !important; }
 
-    .no-damage-row {
-      display: flex;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 16px;
-      margin-bottom: 12px;
-      border: 1.5px solid rgba(187, 185, 177, 0.3);
-      overflow: hidden;
-    }
-    .no-damage-label {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      padding: 14px 16px;
-      cursor: pointer;
-      font-family: var(--font-body);
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-dark);
-      gap: 12px;
-    }
-    .toggle-sw-wrap {
-      position: relative;
-      width: 44px;
-      height: 24px;
-      flex-shrink: 0;
-    }
-    .toggle-sw-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
-    .toggle-sw-track {
-      position: absolute;
-      inset: 0;
-      background: rgba(187, 185, 177, 0.5);
-      border-radius: 99px;
-      transition: background 0.2s;
-      cursor: pointer;
-    }
-    .toggle-sw-track::before {
-      content: '';
-      position: absolute;
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      top: 3px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.2s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-    .toggle-sw-wrap input:checked + .toggle-sw-track { background: var(--primary-green); }
-    .toggle-sw-wrap input:checked + .toggle-sw-track::before { transform: translateX(20px); }
+  /* Bouton rond de barre (retour, torche…) */
+  .ed-round {
+    width: 38px; height: 38px;
+    flex: none;
+    border: none;
+    border-radius: 13px;
+    background: var(--chip-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .12s ease, opacity .15s ease;
+  }
+  .ed-round:active { transform: scale(.92); }
+  .ed-round:disabled { opacity: .35; cursor: default; }
 
-    .btn-primary {
-      background-color: var(--primary-green); color: white; border: none; border-radius: 30px; padding: 20px;
-      width: 100%; font-family: var(--font-title); font-size: 16px; font-weight: 700; cursor: pointer;
-      box-shadow: 0 8px 20px rgba(35, 115, 41, 0.3); transition: transform 0.2s;
-    }
-    .btn-primary:hover { transform: translateY(-2px); }
+  /* =========================================================
+     03 · Appareil photo
+     ========================================================= */
+  #ed-camera {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: #0E0D0B;
+    flex-direction: column;
+  }
+  #ed-camera.active { display: flex; }
+  .ed-cam-top { display: flex; align-items: center; gap: 10px; padding: 26px 20px 0; }
+  .ed-cam-pill {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--chip);
+    border-radius: 15px;
+    padding: 9px 12px;
+    font: 800 12px var(--display);
+    letter-spacing: .04em;
+  }
+  .ed-cam-view {
+    flex: 1;
+    margin: 12px 12px 0;
+    border-radius: 34px;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(120% 90% at 50% 20%, #3A342C 0%, #1A1815 70%);
+  }
+  .ed-cam-view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(115deg, rgba(255,255,255,.03) 0 22px, rgba(255,255,255,0) 22px 44px);
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity .35s ease;
+  }
+  .ed-cam-view.cam-live::after { opacity: 0; }
+  #camera-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ed-cam-ctrl {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 34px calc(30px + env(safe-area-inset-bottom, 0px));
+  }
+  .ed-cam-side {
+    width: 50px; height: 50px;
+    border-radius: 17px;
+    border: none;
+    background: var(--chip);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #ed-pick-file {
+    background: repeating-linear-gradient(135deg, #3A342C 0 7px, #2A2620 7px 14px);
+    border: 2px solid var(--line);
+    overflow: hidden;
+    padding: 0;
+  }
+  #ed-pick-file img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ed-shutter {
+    width: 78px; height: 78px;
+    border-radius: 50%;
+    border: 4px solid rgba(255,255,255,.85);
+    background: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .1s ease;
+  }
+  .ed-shutter:active { transform: scale(.94); }
+  .ed-shutter span {
+    width: 62px; height: 62px;
+    border-radius: 50%;
+    background: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-    /* ── Bouton Analyser ── */
-    .btn-analyze {
-      position: relative;
-      width: 100%;
-      border: none;
-      border-radius: 20px;
-      padding: 20px 24px;
-      font-family: var(--font-title);
-      font-size: 17px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      color: white;
-      cursor: pointer;
-      background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
-      box-shadow: 0 6px 0 #1B5E20, 0 10px 24px rgba(35,115,41,0.35);
-      transform: translateY(0);
-      transition: transform 0.08s, box-shadow 0.08s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      overflow: hidden;
-    }
-    .btn-analyze::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%);
-      border-radius: inherit;
-      pointer-events: none;
-    }
-    .btn-analyze:hover {
-      box-shadow: 0 8px 0 #1B5E20, 0 14px 28px rgba(35,115,41,0.4);
-      transform: translateY(-2px);
-    }
-    .btn-analyze:active {
-      transform: translateY(5px);
-      box-shadow: 0 1px 0 #1B5E20, 0 4px 12px rgba(35,115,41,0.25);
-    }
-    .btn-analyze-icon { font-size: 20px; }
+  /* =========================================================
+     En-tête commun (écrans 04 · 05 · 05b · 08)
+     ========================================================= */
+  #ed-head { display: flex; align-items: center; gap: 12px; padding: 26px 20px 0; flex: none; }
+  .ed-head-txt { flex: 1; min-width: 0; }
+  #ed-title { font: 800 17px var(--display); }
+  #ed-sub {
+    font: 500 10px var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-top: 3px;
+  }
+  #ed-sub.warn { color: var(--yellow); }
+  #ed-undo {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    border-radius: 14px;
+    background: var(--chip);
+    padding: 9px 12px;
+    font: 700 11px var(--text);
+    color: var(--muted);
+  }
+  #ed-undo:disabled { opacity: .35; cursor: default; }
 
-    .result-card { background-color: var(--bg-result); border-radius: 32px; padding: 32px 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; }
-    .result-icon { width: 80px; height: 80px; background-color: var(--light-green); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 8px; }
-    .inner-icon { width: 30px; height: 30px; }
-    .result-label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-gray); letter-spacing: 1px; }
-    .result-value { font-family: var(--font-title); font-size: 36px; font-weight: 800; color: var(--text-dark); }
-    
-    .progress-container { width: 100%; margin-top: 8px; }
-    .progress-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
-    .progress-header span:first-child { color: var(--text-gray); }
-    .progress-header span:last-child { color: var(--dark-green); }
-    .progress-bar { height: 12px; background-color: #EAE9DD; border-radius: 10px; overflow: hidden; }
-    .progress-fill { height: 100%; background-color: var(--dark-green); border-radius: 10px; transition: width 0.5s ease-in-out; }
+  /* Scène (photo + calques) */
+  #editor-stage {
+    flex: 1;
+    min-height: 0;
+    margin: 14px 20px 0;
+    border-radius: 30px;
+    background: #1B1814;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+  }
+  #edit-canvas { display: block; max-width: 100%; max-height: 100%; touch-action: none; }
 
-    .bonus-badge { background-color: rgba(255, 148, 119, 0.1); padding: 16px; border-radius: 30px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 8px; }
-    .bonus-badge span:first-child { font-size: 24px; }
-    .bonus-badge span:last-child { color: #A24A33; font-family: var(--font-title); font-weight: 800; font-size: 16px; }
+  /* Loupe de précision */
+  #loupe {
+    position: absolute;
+    width: 132px; height: 132px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--paper);
+    box-shadow: 0 10px 26px rgba(0,0,0,.5);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .12s ease;
+    z-index: 4;
+  }
+  #loupe.active { opacity: 1; }
+  #loupe canvas { width: 100%; height: 100%; display: block; }
 
-    .error-msg { color: #A24A33; font-weight: bold; text-align: center; margin-top: 10px; }
+  /* Toast d'information */
+  #editor-toast {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%) translateY(8px);
+    background: rgba(20,18,15,.92);
+    border: 1px solid var(--line);
+    color: var(--paper);
+    border-radius: 16px;
+    padding: 11px 16px;
+    font: 400 12px/1.35 var(--text);
+    max-width: calc(100% - 32px);
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 5;
+  }
+  #editor-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* Pied : panneaux propres à chaque étape */
+  #ed-foot { flex: none; padding: 16px 20px calc(28px + env(safe-area-inset-bottom, 0px)); }
+  .ed-panel { display: none; flex-direction: column; gap: 10px; }
+  .ed-panel.on { display: flex; }
 
-    /* --- Styles pour la Modale et le Canvas --- */
-    .modal {
-      display: none; /* Caché par défaut */
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
+  .ed-note {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    background: var(--panel);
+    border-radius: 24px;
+    padding: 16px 18px;
+  }
+  .ed-note-ico {
+    width: 34px; height: 34px;
+    border-radius: 12px;
+    background: var(--chip-2);
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ed-note p { flex: 1; margin: 0; font: 400 12px/1.45 var(--text); color: var(--soft); }
+  .ed-note strong { display: block; font: 800 15px var(--display); color: var(--paper); margin-bottom: 4px; }
+  .ed-note.hero .ed-note-ico { background: var(--green); }
+  .ed-note.hero { align-items: flex-start; border-radius: 26px; padding: 18px 20px; }
 
-    .modal.active {
-      display: flex;
-    }
+  .ed-cta {
+    display: block;
+    width: 100%;
+    border: none;
+    border-radius: 26px;
+    background: var(--green);
+    color: #fff;
+    padding: 19px 0;
+    font: 800 17px var(--display);
+    transition: transform .1s ease, opacity .15s ease;
+  }
+  .ed-cta:active { transform: scale(.985); }
+  .ed-cta:disabled { opacity: .4; cursor: default; }
+  .ed-ghost {
+    display: block;
+    width: 100%;
+    border: 1.5px solid var(--line);
+    border-radius: 26px;
+    background: none;
+    padding: 17px 0;
+    font: 800 15px var(--display);
+    color: var(--paper);
+  }
+  .ed-row { display: flex; gap: 10px; }
+  .ed-row .ed-ghost { padding: 15px 0; border-radius: 24px; font-size: 14px; }
 
-    .modal-content {
-      background-color: var(--bg-page);
-      padding: 24px;
-      border-radius: 24px;
-      width: 90%;
-      max-width: 400px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+  /* ── 05 · outils de contour ── */
+  .ed-tools { display: flex; gap: 10px; }
+  .ed-tool {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    border: none;
+    border-radius: 20px;
+    background: var(--chip);
+    padding: 13px 0;
+    color: var(--muted);
+  }
+  .ed-tool span { font: 800 10px var(--display); letter-spacing: .04em; }
+  .ed-tool.active { background: var(--green); color: #fff; }
 
-    .modal-content h3 {
-      font-family: var(--font-title);
-      color: var(--text-dark);
-    }
+  /* ── 05b · échelle ── */
+  .ed-scale-card { background: var(--panel); border-radius: 26px; padding: 18px 20px; }
+  .ed-scale-label {
+    font: 500 10px var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+  .ed-scale-input {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 12px;
+    border-bottom: 2px solid var(--yellow);
+    padding: 0 4px 10px;
+  }
+  #editor-calib-distance {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: none;
+    color: var(--paper);
+    font: 800 34px var(--display);
+    letter-spacing: -.02em;
+    padding: 0;
+    -moz-appearance: textfield;
+  }
+  #editor-calib-distance::-webkit-outer-spin-button,
+  #editor-calib-distance::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #editor-calib-distance:focus { outline: none; }
+  #editor-calib-distance::placeholder { color: #5C544A; }
+  .ed-scale-unit-txt { font: 500 14px var(--mono); color: var(--muted); flex: none; }
+  .ed-units { display: flex; gap: 8px; margin-top: 14px; }
+  .ed-unit {
+    flex: 1;
+    border: none;
+    border-radius: 16px;
+    background: var(--chip);
+    padding: 11px 0;
+    font: 800 12px var(--display);
+    color: var(--muted);
+  }
+  .ed-unit.active { background: var(--yellow); color: var(--ink); }
 
-    .modal-content p {
-      font-size: 14px;
-      color: var(--text-gray);
-    }
+  /* ── 08 · défauts ── */
+  .ed-types { display: flex; gap: 8px; }
+  .ed-type {
+    flex: 1;
+    border: none;
+    border-radius: 18px;
+    background: var(--chip);
+    padding: 12px 0;
+    font: 800 12px var(--display);
+    color: var(--muted);
+  }
+  .ed-type.active { color: #fff; background: var(--dtype, var(--green)); }
 
-    .canvas-container {
-      width: 100%;
-      background-color: #000;
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    canvas {
-      max-width: 100%;
-      cursor: crosshair;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 12px;
-    }
-
-    .btn-secondary {
-      background-color: var(--bg-input);
-      color: var(--text-dark);
-      border: none;
-      border-radius: 30px;
-      padding: 16px;
-      flex: 1;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
+  /* ── 09 · détail d'un défaut ── */
+  #ed-sheet {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: none;
+    flex-direction: column;
+    justify-content: flex-end;
+    background: rgba(20,18,15,.5);
+  }
+  #ed-sheet.on { display: flex; }
+  .ed-sheet-card {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 34px 34px 0 0;
+    padding: 22px 24px calc(26px + env(safe-area-inset-bottom, 0px));
+    animation: slideUp .26s ease;
+  }
+  .ed-sheet-grip { width: 44px; height: 5px; border-radius: 3px; background: #E7DED0; display: block; margin: 0 auto 18px; }
+  .ed-sheet-head { display: flex; align-items: center; gap: 12px; }
+  .ed-sheet-num {
+    width: 44px; height: 44px;
+    border-radius: 16px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 800 19px var(--display);
+    color: #fff;
+  }
+  .ed-sheet-title { font: 800 22px var(--display); letter-spacing: -.02em; }
+  .ed-sheet-sub { font: 400 12px var(--text); color: #7A7168; margin-top: 2px; }
+  #ed-sheet-del { border: none; background: none; padding: 0; font: 700 13px var(--text); color: var(--red); }
+  .ed-sheet-label {
+    font: 500 10px var(--mono);
+    color: #9C9184;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+  .ed-sheet-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .ed-chip {
+    border: 1.5px solid #E7DED0;
+    background: none;
+    border-radius: 14px;
+    padding: 10px 15px;
+    font: 700 13px var(--text);
+    color: #4A443C;
+  }
+  .ed-chip.active { border-color: transparent; background: var(--dtype, #FF6B3D); color: #fff; font: 800 13px var(--display); }
+  .ed-sheet-size { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; }
+  .ed-sheet-size b { font: 800 15px var(--display); }
+  #defect-radius {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 6px;
+    background: #F2EADD;
+    margin-top: 12px;
+    outline: none;
+  }
+  #defect-radius::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--dtype, #FF6B3D);
+    box-shadow: 0 4px 10px rgba(20,18,15,.2);
+    cursor: pointer;
+  }
+  #defect-radius::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--dtype, #FF6B3D);
+    cursor: pointer;
+  }
+  .ed-sheet-loss {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #F6F0E6;
+    border-radius: 24px;
+    padding: 15px 17px;
+    margin-top: 22px;
+  }
+  .ed-sheet-loss-val { font: 800 22px var(--display); margin-top: 3px; }
+  .ed-sheet-loss p { flex: 1; margin: 0; font: 400 11px/1.4 var(--text); color: #7A7168; }
+  .ed-sheet-foot { display: flex; gap: 10px; margin-top: 20px; }
+  .ed-sheet-foot .ed-chip { flex: 1; text-align: center; border-radius: 24px; padding: 16px 0; font: 800 15px var(--display); }
+  #ed-sheet-ok {
+    flex: 2;
+    border: none;
+    border-radius: 24px;
+    background: var(--green);
+    color: #fff;
+    padding: 16px 0;
+    font: 800 16px var(--display);
+  }
     /* ── Autre type modal ── */
     #other-type-modal {
       display: none;
@@ -748,985 +1307,699 @@
     }
     .btn-other-cancel:hover { background: #E0DDD1; }
 
-    /* ── Matières ── */
-    .material-input-group { padding: 12px 0; }
-    .material-section { display: flex; flex-direction: column; gap: 10px; }
-    #material-list {
-      background: white;
-      border-radius: 32px;
-      outline: 1.5px solid rgba(187,185,177,0.25);
-      outline-offset: -1px;
-      overflow: hidden;
-      transition: outline-color 0.2s;
-    }
-    #material-list:focus-within { outline-color: rgba(35,115,41,0.4); }
-    .material-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 18px;
-      border-bottom: 1px solid rgba(187,185,177,0.2);
-    }
-    .material-row:last-child { border-bottom: none; }
-    .material-dot {
-      width: 13px;
-      height: 13px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      transition: background 0.3s;
-    }
-    .material-select-wrapper {
-      flex: 1;
-      position: relative;
-      display: flex;
-      align-items: center;
-      min-width: 0;
-    }
-    .material-name-select {
-      flex: 1;
-      background: none;
-      border: none;
-      font-family: var(--font-body);
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-dark);
-      outline: none;
-      cursor: pointer;
-      appearance: none;
-      -webkit-appearance: none;
-      min-width: 0;
-      padding-right: 20px;
-    }
-    .material-select-chevron {
-      position: absolute;
-      right: 0;
-      pointer-events: none;
-      color: #BCBAA8;
-      flex-shrink: 0;
-    }
-    .material-percent-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      background: var(--bg-input);
-      border-radius: 99px;
-      padding: 6px 12px;
-      flex-shrink: 0;
-    }
-    .material-percent-input {
-      width: 38px;
-      background: none;
-      border: none;
-      font-family: var(--font-title);
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--primary-green);
-      text-align: right;
-      outline: none;
-      -moz-appearance: textfield;
-    }
-    .material-percent-input::-webkit-outer-spin-button,
-    .material-percent-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-    .material-percent-unit {
-      font-family: var(--font-title);
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-gray);
-    }
-    .material-delete-btn {
-      background: none;
-      border: none;
-      color: #BCBAA8;
-      font-size: 17px;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-      transition: color 0.15s, background 0.15s;
-      flex-shrink: 0;
-      border-radius: 50%;
-      width: 26px;
-      height: 26px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .material-delete-btn:hover { color: #A24A33; background: rgba(162,74,51,0.08); }
-    .material-total-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 2px 2px 0;
-    }
-    .material-total-bar-wrapper {
-      flex: 1;
-      height: 6px;
-      background: #EAE9DD;
-      border-radius: 99px;
-      overflow: hidden;
-    }
-    .material-total-bar-fill {
-      height: 100%;
-      background: var(--primary-green);
-      border-radius: 99px;
-      transition: width 0.3s ease, background 0.3s ease;
-      width: 0%;
-    }
-    .material-total-text {
-      font-family: var(--font-title);
-      font-size: 13px;
-      font-weight: 800;
-      white-space: nowrap;
-      transition: color 0.3s;
-      min-width: 72px;
-      text-align: right;
-      color: var(--text-gray);
-    }
-    .material-total-text.valid { color: var(--primary-green); }
-    .material-total-text.over  { color: #A24A33; }
-    .btn-add-material {
-      width: 100%;
-      background: transparent;
-      border: 2px dashed rgba(35, 115, 41, 0.35);
-      border-radius: 99px;
-      color: var(--primary-green);
-      font-family: var(--font-body);
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    .btn-add-material:hover {
-      background: rgba(35, 115, 41, 0.06);
-      border-color: rgba(35, 115, 41, 0.6);
-    }
-
-    /* ════════ Cartes de face (avant / arrière) ════════ */
-    .faces-hint {
-      font-size: 13px;
-      color: var(--text-gray);
-      line-height: 1.4;
-      margin-top: -4px;
-    }
-    .faces-grid { display: flex; flex-direction: column; gap: 12px; }
-    .face-card {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      width: 100%;
-      background: white;
-      border: 1.5px solid rgba(187,185,177,0.35);
-      border-radius: 22px;
-      padding: 12px 14px;
-      cursor: pointer;
-      text-align: left;
-      font-family: var(--font-body);
-      transition: border-color 0.18s, box-shadow 0.18s, transform 0.08s;
-    }
-    .face-card:active { transform: scale(0.99); }
-    .face-card:hover { border-color: rgba(35,115,41,0.45); }
-    .face-card.done {
-      border-color: var(--primary-green);
-      box-shadow: 0 6px 18px rgba(35,115,41,0.12);
-    }
-    .face-thumb {
-      width: 58px; height: 58px;
-      flex-shrink: 0;
-      border-radius: 16px;
-      background: var(--bg-input);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-    .face-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .face-thumb-emoji { font-size: 26px; }
-    .face-info { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-    .face-name {
-      font-family: var(--font-title);
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--text-dark);
-    }
-    .face-status {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-gray);
-    }
-    .face-card.done .face-status { color: var(--primary-green); }
-    .face-badge {
-      width: 38px; height: 38px;
-      flex-shrink: 0;
-      border-radius: 50%;
-      background: var(--bg-result);
-      color: var(--dark-green);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.18s, color 0.18s;
-    }
-    .face-card.done .face-badge { background: var(--primary-green); color: white; }
-
-    /* ════════ Éditeur plein écran ════════ */
-    body.editor-open .header-global,
-    body.editor-open .bottom-nav { display: none !important; }
-
-    #editor-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 2500;
-      background: #14160F;
-      flex-direction: column;
-      max-width: 430px;
-      margin: 0 auto;
-    }
-    #editor-overlay.active { display: flex; }
-
-    #editor-topbar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      background: rgba(0,0,0,0.35);
-      color: white;
-      flex-shrink: 0;
-    }
-    #editor-topbar button {
-      background: rgba(255,255,255,0.12);
-      border: none;
-      color: white;
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: background 0.15s;
-    }
-    #editor-topbar button:hover { background: rgba(255,255,255,0.22); }
-    #editor-undo:disabled { opacity: 0.3; cursor: default; }
-    #editor-title-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; }
-    #editor-face-name {
-      font-family: var(--font-title);
-      font-size: 15px;
-      font-weight: 800;
-      letter-spacing: 0.3px;
-    }
-    #editor-steps { display: flex; gap: 6px; }
-    .ed-step {
-      width: 22px; height: 4px;
-      border-radius: 99px;
-      background: rgba(255,255,255,0.25);
-      transition: background 0.25s;
-    }
-    .ed-step.active { background: #6FCF73; }
-    .ed-step.done { background: var(--primary-green); }
-
-    #editor-stage {
-      position: relative;
-      flex: 1;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      touch-action: none;
-    }
-    #edit-canvas { max-width: 100%; max-height: 100%; display: block; cursor: crosshair; }
-
-    /* Sélecteur de source dans l'éditeur */
-    #editor-source {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: #14160F;
-    }
-    .editor-source-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      width: 100%;
-      max-width: 320px;
-    }
-    .editor-source-emoji { font-size: 44px; }
-    .editor-source-title {
-      color: rgba(255,255,255,0.85);
-      font-family: var(--font-title);
-      font-weight: 700;
-      font-size: 16px;
-      text-align: center;
-    }
-    .editor-source-btns { display: flex; gap: 12px; width: 100%; }
-
-    /* Loupe de précision */
-    #loupe {
-      position: absolute;
-      top: 0; left: 0;
-      width: 132px; height: 132px;
-      border-radius: 50%;
-      border: 3px solid rgba(255,255,255,0.9);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
-      overflow: hidden;
-      pointer-events: none;
-      display: none;
-      z-index: 10;
-      background: #000;
-    }
-    #loupe.active { display: block; }
-    #loupe-canvas { width: 100%; height: 100%; display: block; }
-
-    /* Panneau du bas */
-    #editor-panel {
-      background: var(--bg-page);
-      border-radius: 24px 24px 0 0;
-      padding: 18px 20px calc(20px + env(safe-area-inset-bottom));
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      flex-shrink: 0;
-    }
-    .editor-instruction {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-dark);
-      line-height: 1.4;
-      text-align: center;
-    }
-    .editor-instruction b { color: var(--primary-green); }
-
-    /* Toast info */
-    #editor-toast {
-      position: absolute;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-8px);
-      background: rgba(20,22,15,0.85);
-      color: #fff;
-      font-family: var(--font-body);
-      font-weight: 600;
-      font-size: 13px;
-      padding: 10px 16px;
-      border-radius: 99px;
-      max-width: 88%;
-      text-align: center;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s, transform 0.25s;
-      z-index: 12;
-      -webkit-backdrop-filter: blur(4px);
-      backdrop-filter: blur(4px);
-    }
-    #editor-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    /* Bouton détourage auto */
-    .editor-auto-row { display: flex; justify-content: center; }
-    .editor-auto-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
-      color: #fff;
-      border: none;
-      border-radius: 99px;
-      padding: 11px 22px;
-      font-family: var(--font-title);
-      font-weight: 800;
-      font-size: 14px;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(35,115,41,0.3);
-      transition: transform 0.08s, box-shadow 0.15s;
-    }
-    .editor-auto-btn:active { transform: translateY(1px); }
-    .editor-auto-btn:hover { box-shadow: 0 6px 18px rgba(35,115,41,0.4); }
-    .editor-auto-btn span { font-size: 15px; }
-
-    .editor-calib-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--bg-input);
-      border-radius: 99px;
-      padding: 8px 10px 8px 20px;
-    }
-    .editor-calib-label { font-size: 13px; font-weight: 700; color: var(--text-gray); }
-    .editor-calib-input-wrap {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: white;
-      border-radius: 99px;
-      padding: 8px 16px;
-    }
-    .editor-calib-input-wrap input {
-      width: 64px;
-      border: none;
-      background: none;
-      outline: none;
-      font-family: var(--font-title);
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--primary-green);
-      text-align: right;
-    }
-    .editor-calib-input-wrap input::-webkit-outer-spin-button,
-    .editor-calib-input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    .editor-calib-input-wrap span { font-weight: 700; color: var(--text-gray); font-size: 14px; }
-
-    /* Contrôles défauts */
-    .defect-empty {
-      font-size: 13px;
-      color: var(--text-gray);
-      text-align: center;
-      padding: 6px 0;
-    }
-    .defect-type-tags { display: flex; gap: 10px; margin-bottom: 12px; }
-    .defect-type-btn {
-      flex: 1;
-      display: flex;
-      gap: 6px;
-      justify-content: center;
-      align-items: center;
-      background: #EAE9DD;
-      padding: 11px 12px;
-      border-radius: 99px;
-      font-family: var(--font-body);
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-dark);
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .defect-type-btn img { filter: brightness(0) opacity(0.45); transition: filter 0.15s; }
-    .defect-type-btn.active { border-color: var(--primary-green); color: var(--primary-green); background: rgba(35,115,41,0.06); }
-    .defect-type-btn.active img { filter: brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(456%) hue-rotate(91deg) brightness(87%) contrast(91%); }
-    .defect-radius-row { display: flex; align-items: center; gap: 12px; }
-    .defect-radius-label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-gray); letter-spacing: 0.5px; }
-    .defect-radius-row input[type=range] { flex: 1; margin: 0; accent-color: var(--primary-green); }
-    .defect-delete-btn {
-      width: 40px; height: 40px;
-      flex-shrink: 0;
-      border-radius: 12px;
-      background: rgba(162,74,51,0.08);
-      border: 1.5px solid rgba(162,74,51,0.25);
-      color: #A24A33;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .defect-delete-btn:hover { background: rgba(162,74,51,0.16); }
-
-    .editor-nav { display: flex; gap: 12px; margin-top: 2px; }
-    .editor-btn-ghost {
-      background: var(--bg-input);
-      border: none;
-      border-radius: 99px;
-      padding: 16px;
-      flex: 1;
-      font-family: var(--font-body);
-      font-weight: 700;
-      font-size: 15px;
-      color: var(--text-gray);
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .editor-btn-ghost:hover { background: #E0DDD1; }
-    .editor-btn-main {
-      flex: 2;
-      background: var(--primary-green);
-      border: none;
-      border-radius: 99px;
-      padding: 16px;
-      color: white;
-      font-family: var(--font-title);
-      font-weight: 800;
-      font-size: 15px;
-      cursor: pointer;
-      box-shadow: 0 6px 16px rgba(35,115,41,0.3);
-      transition: transform 0.08s, box-shadow 0.15s, opacity 0.15s;
-    }
-    .editor-btn-main:active { transform: translateY(1px); }
-    .editor-btn-main:disabled { opacity: 0.45; box-shadow: none; cursor: default; }
   </style>
 {% endblock %}
 
 {% block content %}
-    <main>
-      <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: inline-flex">
-        <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
-          <div style="align-self: stretch; text-align: center; justify-content: center; display: flex; flex-direction: column; color: #237329; font-size: 32px; font-family: Plus Jakarta Sans; font-style: italic; font-weight: 800; text-transform: uppercase; line-height: 40px; word-wrap: break-word">Nouveau vêtement</div>
+<div class="aj">
+
+  <!-- ═══════════ Barre de progression ═══════════ -->
+  <div class="aj-top">
+    <button type="button" class="aj-back" id="aj-back" aria-label="Retour">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M14.5 5 8 12l6.5 7" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="aj-bars" id="aj-bars">
+      <span class="aj-bar"></span><span class="aj-bar"></span><span class="aj-bar"></span>
+      <span class="aj-bar"></span><span class="aj-bar"></span><span class="aj-bar"></span>
+      <span class="aj-bar"></span>
+    </div>
+    <span class="aj-count" id="aj-count">01 / 07</span>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data" class="aj-form" id="aj-form">
+    {% csrf_token %}
+
+    <!-- ═══════════ 01 · Nom ═══════════ -->
+    <section class="aj-page on" data-page="1">
+      <div class="aj-body">
+        <span class="aj-eyebrow">Nouveau vêtement</span>
+        <h1 class="aj-title">On passe ton futur chef-d'œuvre au rayon X</h1>
+        <p class="aj-lead">Donne-lui un nom, tu le retrouveras dans ton atelier.</p>
+
+        <input type="text" name="nom_vetement" id="aj-nom" class="aj-name-field"
+               placeholder="Jean droit délavé" maxlength="30" autocomplete="off">
+
+        <span class="aj-section-label" style="margin-top:26px;">Suggestions</span>
+        <div class="aj-chips">
+          <button type="button" class="aj-chip">Vieux jean bleu</button>
+          <button type="button" class="aj-chip">Chemise rayée</button>
+          <button type="button" class="aj-chip">Drap usé</button>
         </div>
-        <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
-          <div style="align-self: stretch; text-align: center; justify-content: center; display: flex; flex-direction: column; color: #65655E; font-size: 16px; font-family: Manrope; font-weight: 500; line-height: 24px; word-wrap: break-word">On passe ton futur chef-d'œuvre au rayon X.</div>
+
+        <div class="aj-id-label">
+          <span class="aj-section-label">Numéro d'identité</span>
+          <span class="aj-id-optional">Optionnel</span>
+        </div>
+        <input type="text" name="numero_identite" id="aj-numero-identite" class="aj-id-field"
+               placeholder="Ex. TX-2024-0453" maxlength="50" autocomplete="off">
+        <p class="aj-id-hint">Si ce tissu a déjà été utilisé sur l'app, indique son numéro pour retracer tout son parcours.</p>
+
+        <div class="aj-note aj-push">
+          <span class="aj-note-ico" style="background:var(--yellow);">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="13.5" r="7.5" stroke="#14120F" stroke-width="2"/><path d="M12 10v3.5l2.2 1.6M9.5 2.8h5M12 2.8v2.6M18.6 6.2l1.5-1.5" stroke="#14120F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <p>Sept étapes : nom, photo, détourage, défauts, matières. Environ 3 minutes.</p>
         </div>
       </div>
+      <div class="aj-foot">
+        <button type="button" class="aj-cta" data-next>Passer au scan</button>
+      </div>
+    </section>
 
-      {% if error %}
-        <p class="error-msg">{{ error }}</p>
-      {% endif %}
+    <!-- ═══════════ 02 / 03 · Faces (à détourer, puis détourées) ═══════════ -->
+    <section class="aj-page" data-page="2" id="aj-page-faces">
+      <div class="aj-body">
+        <span class="aj-eyebrow" id="aj-faces-eyebrow">Nouveau vêtement</span>
+        <h1 class="aj-title" id="aj-faces-title">Photographie chaque face</h1>
+        <p class="aj-lead" id="aj-faces-lead">L'avant est obligatoire. L'arrière améliore la précision du calcul de surface.</p>
 
-      <form method="POST" enctype="multipart/form-data" class="form-ajout_textile">
-        {% csrf_token %}
-
-        <section class="card">
-          <h2>
-            <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-scan.svg' %}" alt="Scan">
-            Nom du vêtement
-          </h2>
-          <input type="text" name="nom_vetement" class="custom-input" placeholder="Ex : Vieux jean bleu, Chemise rayée…" maxlength="30">
-
-          <div class="card-divider"></div>
-
-          <p class="star-label">Qualité du tissu</p>
-          <div class="star-rating">
-            {% for i in "54321" %}
-            <input type="radio" name="qualite" id="star{{ i }}" value="{{ i }}" {% if i == "3" %}checked{% endif %}>
-            <label for="star{{ i }}"><i class="ic fi-br-star"></i></label>
-            {% endfor %}
-          </div>
-
-        </section>
-
-        <section class="card">
-          <h2>
-            <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-scan.svg' %}" alt="Scan">
-            Détourage du vêtement
-          </h2>
-          <p class="faces-hint">Photographie et détoure chaque face. L'avant est obligatoire, l'arrière améliore la précision.</p>
-
-          <div class="faces-grid">
-            <!-- Face AVANT -->
-            <button type="button" class="face-card" data-face="avant">
-              <div class="face-thumb" id="face-thumb-avant">
-                <span class="face-thumb-emoji">👕</span>
-              </div>
-              <div class="face-info">
-                <span class="face-name">Face avant</span>
-                <span class="face-status" id="face-status-avant">À détourer · requis</span>
-              </div>
-              <span class="face-badge" id="face-badge-avant">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <div class="aj-faces">
+          <!-- Face AVANT -->
+          <button type="button" class="face-card" data-face="avant">
+            <span class="face-thumb" id="face-thumb-avant">
+              <span class="face-thumb-emoji">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2L9 4.8h6L16.5 7h2A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" stroke="currentColor" stroke-width="2"/></svg>
               </span>
-            </button>
+            </span>
+            <span class="face-name">Face avant</span>
+            <span class="face-status" id="face-status-avant">À détourer · requis</span>
+            <span class="face-badge" id="face-badge-avant"></span>
+          </button>
 
-            <!-- Face ARRIÈRE -->
-            <button type="button" class="face-card" data-face="arriere">
-              <div class="face-thumb" id="face-thumb-arriere">
-                <span class="face-thumb-emoji"><i class="ic fi-br-refresh"></i></span>
-              </div>
-              <div class="face-info">
-                <span class="face-name">Face arrière</span>
-                <span class="face-status" id="face-status-arriere">À détourer · optionnel</span>
-              </div>
-              <span class="face-badge" id="face-badge-arriere">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <!-- Face ARRIÈRE -->
+          <button type="button" class="face-card pending" data-face="arriere">
+            <span class="face-thumb" id="face-thumb-arriere">
+              <span class="face-thumb-emoji">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
               </span>
-            </button>
+            </span>
+            <span class="face-name">Face arrière</span>
+            <span class="face-status" id="face-status-arriere">Optionnel</span>
+            <span class="face-badge" id="face-badge-arriere"></span>
+          </button>
+        </div>
+
+        <!-- Aide (tant que rien n'est détouré) -->
+        <div class="aj-note" id="aj-faces-note" style="margin-top:22px;">
+          <span class="aj-note-ico" style="background:#D9E8F7;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#2C6CA8" stroke-width="2"/><path d="M12 11v5.2" stroke="#2C6CA8" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="7.8" r="1.3" fill="#2C6CA8"/></svg>
+          </span>
+          <p>Pose le vêtement à plat sur un fond uni. Le détourage sera calculé tout seul.</p>
+        </div>
+
+        <!-- Récapitulatif de surface (une fois l'avant détouré) -->
+        <div class="aj-surface" id="aj-faces-surface" style="display:none;">
+          <div style="flex:1;">
+            <div class="aj-section-label">Surface totale</div>
+            <div class="aj-surface-val" id="aj-surface-val">—</div>
           </div>
-        </section>
+          <span class="aj-surface-hint" id="aj-surface-hint">+0,9 m² estimés si tu scannes l'arrière</span>
+        </div>
+      </div>
+      <div class="aj-foot">
+        <button type="button" class="aj-cta" id="aj-faces-cta">Photographier l'avant</button>
+        <button type="button" class="aj-cta-ghost" id="aj-faces-ghost" style="display:none;">Scanner l'arrière</button>
+      </div>
+    </section>
+
+    <!-- ═══════════ 04 · Type ═══════════ -->
+    <section class="aj-page" data-page="4">
+      <div class="aj-body">
+        <h1 class="aj-title">C'est quel type de pièce&nbsp;?</h1>
+        <p class="aj-lead">Ça nous sert à estimer les coutures et les zones réutilisables.</p>
 
         <input type="hidden" name="clothing_type" id="clothing_type_input" value="tshirt">
-
-        <section class="card">
-          <h2><img class="type-square" src="{% static 'core/images/ajout_textile/icon-shirt.svg' %}" alt="Vêtement"> Type de vêtement</h2>
-          <div class="type-grid">
-            
-            <button type="button" class="type-btn active" data-type="tshirt">
-              <img class="type-icon-img" src="{% static 'core/images/ajout_textile/shirt.svg' %}" alt="Shirt">
-              T-Shirt
-            </button>
-
-            <button type="button" class="type-btn" data-type="jean">
-              <img class="type-icon-img" src="{% static 'core/images/ajout_textile/pants.svg' %}" alt="Pantalon">
-              Jean
-            </button>
-
-            <button type="button" class="type-btn" data-type="hoodie">
-              <img class="type-icon-img" src="{% static 'core/images/ajout_textile/hoodie.svg' %}" alt="Hoodie">
-              Hoodie
-            </button>
-
-            <button type="button" class="type-btn" data-type="robe">
-              <img class="type-icon-img" src="{% static 'core/images/ajout_textile/dress.svg' %}" alt="Robe">
-              Robe
-            </button>
-
-            <button type="button" class="type-btn" data-type="jupe">
-              <img class="type-icon-img" src="{% static 'core/images/ajout_textile/skirt.svg' %}" alt="Jupe">
-              Jupe
-            </button>
-
-            <button type="button" class="type-btn" id="btn-other-type" data-type="">
-              <svg class="type-icon-img" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="7" cy="14" r="2.5" fill="currentColor"/>
-                <circle cx="14" cy="14" r="2.5" fill="currentColor"/>
-                <circle cx="21" cy="14" r="2.5" fill="currentColor"/>
-              </svg>
-              <span class="other-btn-label">Autre</span>
-            </button>
-
-          </div>
-
-          <div class="card-divider"></div>
-
-          <p class="star-label">Couleur(s) <span style="font-weight:500;text-transform:none;letter-spacing:0;color:#9E9E88;">— 3 max</span></p>
-          <input type="hidden" name="couleur" id="couleur-input" value="">
-          <div class="color-grid">
-            <input type="checkbox" name="couleur_pick" id="c-ivoire"     class="color-swatch-input" value="ivoire">
-            <label for="c-ivoire"     class="color-swatch" style="background:#F5F0E8;outline:1px solid rgba(0,0,0,0.1);outline-offset:-1px;" title="Ivoire"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-beige"      class="color-swatch-input" value="beige">
-            <label for="c-beige"      class="color-swatch" style="background:#D4C5A9;" title="Beige"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-camel"      class="color-swatch-input" value="camel">
-            <label for="c-camel"      class="color-swatch" style="background:#C19A6B;" title="Camel"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-terracotta" class="color-swatch-input" value="terracotta">
-            <label for="c-terracotta" class="color-swatch" style="background:#C8604A;" title="Terracotta"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-rouge"      class="color-swatch-input" value="rouge">
-            <label for="c-rouge"      class="color-swatch" style="background:#C0392B;" title="Rouge"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-bordeaux"   class="color-swatch-input" value="bordeaux">
-            <label for="c-bordeaux"   class="color-swatch" style="background:#722F37;" title="Bordeaux"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-rose"       class="color-swatch-input" value="rose">
-            <label for="c-rose"       class="color-swatch" style="background:#F2C4CE;outline:1px solid rgba(0,0,0,0.07);outline-offset:-1px;" title="Rose"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-marron"     class="color-swatch-input" value="marron">
-            <label for="c-marron"     class="color-swatch" style="background:#7B4226;" title="Marron"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-lavande"    class="color-swatch-input" value="lavande">
-            <label for="c-lavande"    class="color-swatch" style="background:#B39DDB;" title="Lavande"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-marine"     class="color-swatch-input" value="marine">
-            <label for="c-marine"     class="color-swatch" style="background:#1F3461;" title="Marine"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-ciel"       class="color-swatch-input" value="bleu ciel">
-            <label for="c-ciel"       class="color-swatch" style="background:#6AAFE6;" title="Bleu ciel"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-sauge"      class="color-swatch-input" value="vert sauge">
-            <label for="c-sauge"      class="color-swatch" style="background:#8FAF8A;" title="Vert sauge"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-foret"      class="color-swatch-input" value="vert forêt">
-            <label for="c-foret"      class="color-swatch" style="background:#355E3B;" title="Vert forêt"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-moutarde"   class="color-swatch-input" value="moutarde">
-            <label for="c-moutarde"   class="color-swatch" style="background:#D4A017;" title="Moutarde"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-ardoise"    class="color-swatch-input" value="gris ardoise">
-            <label for="c-ardoise"    class="color-swatch" style="background:#607D8B;" title="Gris ardoise"></label>
-
-            <input type="checkbox" name="couleur_pick" id="c-noir"       class="color-swatch-input" value="noir">
-            <label for="c-noir"       class="color-swatch" style="background:#2C2C2C;" title="Noir"></label>
-          </div>
-        </section>
-
-        <div class="details-section">
-          <input type="hidden" name="material" id="material-hidden" value="coton:100">
-          <div class="input-group material-input-group">
-            <label>Matière(s) du vêtement <span style="font-weight:500;text-transform:none;letter-spacing:0;color:#9E9E88;">— indiquer les %</span></label>
-            <div class="material-section">
-              <div id="material-list"></div>
-              <div class="material-total-row">
-                <div class="material-total-bar-wrapper">
-                  <div class="material-total-bar-fill" id="material-total-fill"></div>
-                </div>
-                <span class="material-total-text" id="material-total-text">Total : 0%</span>
-              </div>
-              <button type="button" class="btn-add-material" id="btn-add-material">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Ajouter une matière
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" class="btn-analyze" id="btn-submit">
-            <span class="btn-analyze-icon"><i class="ic fi-br-microscope"></i></span>
-            Analyser le tissu
+        <div class="aj-types">
+          <button type="button" class="type-btn active" data-type="tshirt">
+            <span class="type-ico"><img src="{% static 'core/images/ajout_textile/shirt.svg' %}" alt=""></span>
+            <span class="type-label">T-Shirt</span>
+            <span class="type-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button type="button" class="type-btn" data-type="jean">
+            <span class="type-ico"><img src="{% static 'core/images/ajout_textile/pants.svg' %}" alt=""></span>
+            <span class="type-label">Jean</span>
+            <span class="type-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button type="button" class="type-btn" data-type="hoodie">
+            <span class="type-ico"><img src="{% static 'core/images/ajout_textile/hoodie.svg' %}" alt=""></span>
+            <span class="type-label">Hoodie</span>
+            <span class="type-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button type="button" class="type-btn" data-type="robe">
+            <span class="type-ico"><img src="{% static 'core/images/ajout_textile/dress.svg' %}" alt=""></span>
+            <span class="type-label">Robe</span>
+            <span class="type-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button type="button" class="type-btn" data-type="jupe">
+            <span class="type-ico"><img src="{% static 'core/images/ajout_textile/skirt.svg' %}" alt=""></span>
+            <span class="type-label">Jupe</span>
+            <span class="type-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button type="button" class="type-btn" id="btn-other-type" data-type="">
+            <span class="type-ico">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
+            </span>
+            <span class="type-label other-btn-label">Autre</span>
+            <span class="type-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           </button>
         </div>
+      </div>
+      <div class="aj-foot">
+        <button type="button" class="aj-cta" data-next>Continuer</button>
+      </div>
+    </section>
 
-        <!-- Données par face (remplies par l'éditeur plein écran) -->
-        <input type="hidden" name="photo_data_avant"     id="photo_data_avant">
-        <input type="hidden" name="polygon_avant"        id="polygon_avant"        value="[]">
-        <input type="hidden" name="calib_coords_avant"   id="calib_coords_avant"   value="[]">
-        <input type="hidden" name="calib_distance_avant" id="calib_distance_avant" value="0">
-        <input type="hidden" name="img_w_avant"          id="img_w_avant"          value="0">
-        <input type="hidden" name="img_h_avant"          id="img_h_avant"          value="0">
-        <input type="hidden" name="defects_avant"        id="defects_avant"        value="[]">
+    <!-- ═══════════ 06 · Couleurs ═══════════ -->
+    <section class="aj-page" data-page="6">
+      <div class="aj-body">
+        <h1 class="aj-title">Ses couleurs</h1>
+        <p class="aj-lead">Trois maximum. Choisis la dominante en premier.</p>
 
-        <input type="hidden" name="photo_data_arriere"     id="photo_data_arriere">
-        <input type="hidden" name="polygon_arriere"        id="polygon_arriere"        value="[]">
-        <input type="hidden" name="calib_coords_arriere"   id="calib_coords_arriere"   value="[]">
-        <input type="hidden" name="calib_distance_arriere" id="calib_distance_arriere" value="0">
-        <input type="hidden" name="img_w_arriere"          id="img_w_arriere"          value="0">
-        <input type="hidden" name="img_h_arriere"          id="img_h_arriere"          value="0">
-        <input type="hidden" name="defects_arriere"        id="defects_arriere"        value="[]">
-      </form>
+        <input type="hidden" name="couleur" id="couleur-input" value="">
+        <div class="aj-color-slots" id="aj-color-slots">
+          <div class="aj-slot"><span class="aj-slot-chip"></span><div class="aj-slot-name">Dominante</div><div class="aj-slot-role">À choisir</div></div>
+          <div class="aj-slot"><span class="aj-slot-chip"></span><div class="aj-slot-name">Secondaire</div><div class="aj-slot-role">Optionnel</div></div>
+          <div class="aj-slot"><span class="aj-slot-chip"></span><div class="aj-slot-name">Tertiaire</div><div class="aj-slot-role">3 max</div></div>
+        </div>
 
-      <!-- ═══════════ ÉDITEUR PLEIN ÉCRAN (détourage · étalonnage · défauts) ═══════════ -->
-      <div id="editor-overlay">
-        <!-- Barre du haut -->
-        <header id="editor-topbar">
-          <button type="button" id="editor-close" aria-label="Fermer">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span class="aj-section-label" style="margin-top:30px;">Palette</span>
+        <div class="aj-palette">
+          <input type="checkbox" id="c-ivoire" class="color-swatch-input" value="ivoire" data-hex="#F5F0E8" data-label="Ivoire">
+          <label for="c-ivoire" class="color-swatch" style="background:#F5F0E8;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);" title="Ivoire"></label>
+
+          <input type="checkbox" id="c-beige" class="color-swatch-input" value="beige" data-hex="#D4C5A9" data-label="Beige">
+          <label for="c-beige" class="color-swatch" style="background:#D4C5A9;" title="Beige"></label>
+
+          <input type="checkbox" id="c-camel" class="color-swatch-input" value="camel" data-hex="#C19A6B" data-label="Camel">
+          <label for="c-camel" class="color-swatch" style="background:#C19A6B;" title="Camel"></label>
+
+          <input type="checkbox" id="c-terracotta" class="color-swatch-input" value="terracotta" data-hex="#C8604A" data-label="Terracotta">
+          <label for="c-terracotta" class="color-swatch" style="background:#C8604A;" title="Terracotta"></label>
+
+          <input type="checkbox" id="c-rouge" class="color-swatch-input" value="rouge" data-hex="#C0392B" data-label="Rouge">
+          <label for="c-rouge" class="color-swatch" style="background:#C0392B;" title="Rouge"></label>
+
+          <input type="checkbox" id="c-bordeaux" class="color-swatch-input" value="bordeaux" data-hex="#722F37" data-label="Bordeaux">
+          <label for="c-bordeaux" class="color-swatch" style="background:#722F37;" title="Bordeaux"></label>
+
+          <input type="checkbox" id="c-rose" class="color-swatch-input" value="rose" data-hex="#F2C4CE" data-label="Rose">
+          <label for="c-rose" class="color-swatch" style="background:#F2C4CE;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07);" title="Rose"></label>
+
+          <input type="checkbox" id="c-marron" class="color-swatch-input" value="marron" data-hex="#7B4226" data-label="Marron">
+          <label for="c-marron" class="color-swatch" style="background:#7B4226;" title="Marron"></label>
+
+          <input type="checkbox" id="c-lavande" class="color-swatch-input" value="lavande" data-hex="#B39DDB" data-label="Lavande">
+          <label for="c-lavande" class="color-swatch" style="background:#B39DDB;" title="Lavande"></label>
+
+          <input type="checkbox" id="c-marine" class="color-swatch-input" value="marine" data-hex="#1F3461" data-label="Marine">
+          <label for="c-marine" class="color-swatch" style="background:#1F3461;" title="Marine"></label>
+
+          <input type="checkbox" id="c-ciel" class="color-swatch-input" value="bleu ciel" data-hex="#6AAFE6" data-label="Bleu ciel">
+          <label for="c-ciel" class="color-swatch" style="background:#6AAFE6;" title="Bleu ciel"></label>
+
+          <input type="checkbox" id="c-sauge" class="color-swatch-input" value="vert sauge" data-hex="#8FAF8A" data-label="Vert sauge">
+          <label for="c-sauge" class="color-swatch" style="background:#8FAF8A;" title="Vert sauge"></label>
+
+          <input type="checkbox" id="c-foret" class="color-swatch-input" value="vert forêt" data-hex="#355E3B" data-label="Vert forêt">
+          <label for="c-foret" class="color-swatch" style="background:#355E3B;" title="Vert forêt"></label>
+
+          <input type="checkbox" id="c-moutarde" class="color-swatch-input" value="moutarde" data-hex="#D4A017" data-label="Moutarde">
+          <label for="c-moutarde" class="color-swatch" style="background:#D4A017;" title="Moutarde"></label>
+
+          <input type="checkbox" id="c-ardoise" class="color-swatch-input" value="gris ardoise" data-hex="#607D8B" data-label="Gris ardoise">
+          <label for="c-ardoise" class="color-swatch" style="background:#607D8B;" title="Gris ardoise"></label>
+
+          <input type="checkbox" id="c-noir" class="color-swatch-input" value="noir" data-hex="#2C2C2C" data-label="Noir">
+          <label for="c-noir" class="color-swatch" style="background:#2C2C2C;" title="Noir"></label>
+        </div>
+
+        <div class="aj-note aj-push">
+          <span class="aj-note-ico" style="background:#E3DBFF;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#5B3FE0" stroke-width="2"/><path d="M12 8.5v7M8.5 12h7" stroke="#5B3FE0" stroke-width="2" stroke-linecap="round"/></svg>
+          </span>
+          <p>La couleur sert à te proposer des associations de chutes cohérentes.</p>
+        </div>
+      </div>
+      <div class="aj-foot">
+        <button type="button" class="aj-cta" data-next>Continuer</button>
+      </div>
+    </section>
+
+    <!-- ═══════════ 07 · Matières & qualité ═══════════ -->
+    <section class="aj-page" data-page="7">
+      <div class="aj-body">
+        <h1 class="aj-title">De quoi est-il fait&nbsp;?</h1>
+        <p class="aj-lead">Regarde l'étiquette. Le total doit faire 100&nbsp;%.</p>
+
+        <input type="hidden" name="material" id="material-hidden" value="coton:100">
+        <div class="aj-materials" id="material-list"></div>
+        <button type="button" class="btn-add-material" id="btn-add-material" style="margin-top:10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
+          Ajouter une matière
+        </button>
+
+        <div class="aj-total-row">
+          <div class="aj-total-bar"><span class="aj-total-fill" id="material-total-fill"></span></div>
+          <span class="aj-total-text" id="material-total-text">Total : 0 %</span>
+        </div>
+
+        <span class="aj-section-label" style="margin-top:28px;">Qualité du tissu</span>
+        <input type="hidden" name="qualite" id="qualite-input" value="3">
+        <div class="aj-quality">
+          <button type="button" class="aj-quality-btn" data-qualite="2">Fatigué</button>
+          <button type="button" class="aj-quality-btn active" data-qualite="3">Correct</button>
+          <button type="button" class="aj-quality-btn" data-qualite="5">Comme neuf</button>
+        </div>
+      </div>
+      <div class="aj-foot">
+        <button type="submit" class="aj-cta" id="btn-submit">Lancer l'analyse</button>
+      </div>
+    </section>
+
+    <!-- Données par face (remplies par l'éditeur plein écran) -->
+    <input type="hidden" name="photo_data_avant"     id="photo_data_avant">
+    <input type="hidden" name="polygon_avant"        id="polygon_avant"        value="[]">
+    <input type="hidden" name="calib_coords_avant"   id="calib_coords_avant"   value="[]">
+    <input type="hidden" name="calib_distance_avant" id="calib_distance_avant" value="0">
+    <input type="hidden" name="img_w_avant"          id="img_w_avant"          value="0">
+    <input type="hidden" name="img_h_avant"          id="img_h_avant"          value="0">
+    <input type="hidden" name="defects_avant"        id="defects_avant"        value="[]">
+
+    <input type="hidden" name="photo_data_arriere"     id="photo_data_arriere">
+    <input type="hidden" name="polygon_arriere"        id="polygon_arriere"        value="[]">
+    <input type="hidden" name="calib_coords_arriere"   id="calib_coords_arriere"   value="[]">
+    <input type="hidden" name="calib_distance_arriere" id="calib_distance_arriere" value="0">
+    <input type="hidden" name="img_w_arriere"          id="img_w_arriere"          value="0">
+    <input type="hidden" name="img_h_arriere"          id="img_h_arriere"          value="0">
+    <input type="hidden" name="defects_arriere"        id="defects_arriere"        value="[]">
+  </form>
+
+  {% if error %}
+  <div class="aj-result">
+    <div class="aj-result-sheet">
+      <div class="aj-result-handle"></div>
+      <div class="aj-result-label">Analyse impossible</div>
+      <p style="font:400 14px/1.5 var(--text);color:var(--muted);text-align:center;margin-top:14px;">{{ error }}</p>
+      <button type="button" class="aj-cta aj-result-cta" onclick="this.closest('.aj-result').remove()">Reprendre</button>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if result_ready %}
+  <!-- ═══════════ t1 · Célébration (fin d'analyse) ═══════════ -->
+  <div class="aj-celebrate" aria-hidden="true">
+    <div class="aj-celebrate-burst">
+      <div class="aj-confetti">
+        <span class="aj-confetto"></span><span class="aj-confetto"></span><span class="aj-confetto"></span>
+        <span class="aj-confetto"></span><span class="aj-confetto"></span><span class="aj-confetto"></span>
+        <span class="aj-confetto"></span><span class="aj-confetto"></span><span class="aj-confetto"></span>
+        <span class="aj-confetto"></span><span class="aj-confetto"></span><span class="aj-confetto"></span>
+      </div>
+      <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+        <circle class="aj-check-circle" cx="36" cy="36" r="32" stroke="#1FA85C" stroke-width="4" stroke-linecap="round"/>
+        <path class="aj-check-mark" d="M22 37l10 10 18-20" stroke="#1FA85C" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <p class="aj-celebrate-txt">Vêtement enregistré</p>
+  </div>
+
+  <!-- ═══════════ t2 · Ticket de soustraction (fin du parcours) ═══════════ -->
+  <div class="aj-ticket">
+    <div class="aj-ticket-in">
+      <div class="aj-ticket-top">
+        <span class="aj-ticket-ref">Ticket {{ ticket.ref }}</span>
+        <span class="aj-ticket-date">{{ ticket.date }}</span>
+      </div>
+
+      <h1 class="aj-ticket-nom">{{ ticket.nom }}</h1>
+      <p class="aj-ticket-meta">
+        {{ ticket.matieres }}{% if ticket.couleurs %} · {{ ticket.couleurs }}{% endif %}
+      </p>
+
+      <div class="aj-ticket-head aj-reveal">
+        <span class="aj-ticket-label">SURFACE DÉTOURÉE</span>
+        <span class="aj-ticket-total">{{ ticket.surface_totale|floatformat:2 }}</span>
+      </div>
+
+      <div class="aj-ticket-lines">
+        {% for l in ticket.lignes %}
+        <div class="aj-ticket-line aj-reveal">
+          <span class="aj-ticket-dot" data-dtype="{{ l.type }}"></span>
+          <div class="aj-ticket-line-txt">
+            <div class="aj-ticket-line-name">{{ l.libelle }} · {{ l.face|lower }}</div>
+            <div class="aj-ticket-line-sub">{{ l.taille_cm }} CM</div>
+          </div>
+          <span class="aj-ticket-minus">−{{ l.perte_m2|floatformat:2 }}</span>
+        </div>
+        {% endfor %}
+        <div class="aj-ticket-line aj-reveal">
+          <span class="aj-ticket-dot" data-dtype="chutes"></span>
+          <div class="aj-ticket-line-txt">
+            <div class="aj-ticket-line-name">Chutes de bords</div>
+            <div class="aj-ticket-line-sub">COUTURES, OURLETS</div>
+          </div>
+          <span class="aj-ticket-minus">−{{ ticket.chutes|floatformat:2 }}</span>
+        </div>
+      </div>
+
+      <div class="aj-ticket-rule aj-reveal"></div>
+
+      <div class="aj-ticket-foot aj-reveal">
+        <div>
+          <div class="aj-ticket-label">EXPLOITABLE</div>
+          <div class="aj-ticket-big" id="aj-ticket-big" data-target="{{ usable_area|floatformat:2 }}">0,00</div>
+          <div class="aj-ticket-unit">MÈTRES CARRÉS</div>
+        </div>
+        <span class="aj-ticket-badge aj-reveal">{{ percentage }} % SAUVÉ</span>
+      </div>
+
+      <a href="{% url 'patrons' %}" class="aj-cta aj-reveal" style="margin-top:auto;">Voir les patrons</a>
+      <a href="{% url 'mes_tissus' %}" class="aj-cta-ghost aj-reveal" style="margin-top:10px;">Voir mes tissus</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ═══════════ Éditeur plein écran ═══════════
+       03 caméra · 04 détourage proposé · 05 ajuster les points ·
+       05b échelle · 08 défauts · 09 détail d'un défaut. -->
+  <div id="editor-overlay">
+
+    <!-- ── 03 · Appareil photo ── -->
+    <div id="ed-camera">
+      <div class="ed-cam-top">
+        <button type="button" class="ed-round" id="ed-cam-close" aria-label="Retour">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M14.5 5 8 12l6.5 7" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="ed-cam-pill">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 4l1.6 3.3 3.6.5-2.6 2.6.6 3.6L12 12.3 8.8 14l.6-3.6L6.8 7.8l3.6-.5L12 4Z" stroke="#1FA85C" stroke-width="1.9" stroke-linejoin="round"/></svg>
+          <span id="ed-cam-face">FACE AVANT</span>
+        </span>
+        <button type="button" class="ed-round" id="ed-cam-torch" aria-label="Lampe" disabled>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M13 3 6 13.5h4.5L10 21l7.5-11H13L13 3Z" stroke="#FFC93C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <div class="ed-cam-view" id="ed-cam-view">
+        <video id="camera-video" autoplay playsinline muted></video>
+      </div>
+
+      <div class="ed-cam-ctrl">
+        <button type="button" class="ed-cam-side" id="ed-pick-file" aria-label="Choisir une photo"></button>
+        <button type="button" class="ed-shutter" id="btn-camera-capture" aria-label="Photographier">
+          <span>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2L9 4.8h6L16.5 7h2A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9Z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" stroke="#fff" stroke-width="2"/></svg>
+          </span>
+        </button>
+        <button type="button" class="ed-cam-side" id="ed-cam-switch" aria-label="Changer de caméra">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4.5 12a7.5 7.5 0 1 0 2.6-5.7M4.5 5v4h4" stroke="#9C9184" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <input type="file" id="ed-file-input" accept="image/*" hidden>
+      <canvas id="camera-hidden-canvas" hidden></canvas>
+    </div>
+
+    <!-- ── En-tête commun aux écrans 04 / 05 / 05b / 08 ── -->
+    <header id="ed-head">
+      <button type="button" class="ed-round" id="ed-back" aria-label="Retour">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M14.5 5 8 12l6.5 7" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="ed-head-txt">
+        <div id="ed-title">Détourage automatique</div>
+        <div id="ed-sub">Face avant</div>
+      </div>
+      <button type="button" id="ed-undo">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4.5 12a7.5 7.5 0 1 0 2.6-5.7M4.5 5v4h4" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Annuler</span>
+      </button>
+    </header>
+
+    <div id="editor-stage">
+      <canvas id="edit-canvas"></canvas>
+      <div id="loupe"><canvas id="loupe-canvas"></canvas></div>
+      <div id="editor-toast"></div>
+    </div>
+
+    <div id="ed-foot">
+      <!-- 04 · proposition automatique -->
+      <div class="ed-panel" id="ed-panel-auto">
+        <div class="ed-note hero">
+          <span class="ed-note-ico">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 4l1.6 3.3 3.6.5-2.6 2.6.6 3.6L12 12.3 8.8 14l.6-3.6L6.8 7.8l3.6-.5L12 4Z" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/></svg>
+          </span>
+          <p><strong>On a détouré pour toi</strong>Vérifie les bords. Tu peux valider tel quel, affiner au point près, ou tout refaire à la main.</p>
+        </div>
+        <button type="button" class="ed-cta" id="ed-auto-accept">Valider ce détourage</button>
+        <div class="ed-row">
+          <button type="button" class="ed-ghost" id="ed-auto-refine">Affiner</button>
+          <button type="button" class="ed-ghost" id="ed-auto-reject">Refuser</button>
+        </div>
+      </div>
+
+      <!-- 05 · ajuster les points -->
+      <div class="ed-panel" id="ed-panel-poly">
+        <div class="ed-tools">
+          <button type="button" class="ed-tool active" data-tool="add">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><path d="M12 3v3.2M12 17.8V21M3 12h3.2M17.8 12H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>POSER</span>
           </button>
-          <div id="editor-title-wrap">
-            <span id="editor-face-name">Face avant</span>
-            <div id="editor-steps">
-              <span class="ed-step" data-step="1"></span>
-              <span class="ed-step" data-step="2"></span>
-              <span class="ed-step" data-step="3"></span>
-            </div>
-          </div>
-          <button type="button" id="editor-undo" aria-label="Annuler">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+          <button type="button" class="ed-tool" data-tool="move">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2 3"/><circle cx="12" cy="12" r="3.4" stroke="currentColor" stroke-width="2"/><path d="M12 2.5 14 5h-4l2-2.5ZM12 21.5 10 19h4l-2 2.5ZM2.5 12 5 10v4l-2.5-2ZM21.5 12 19 14v-4l2.5 2Z" fill="currentColor"/></svg>
+            <span>DÉPLACER</span>
           </button>
-        </header>
-
-        <!-- Zone photo / canvas -->
-        <div id="editor-stage">
-          <canvas id="edit-canvas"></canvas>
-          <!-- Loupe de précision -->
-          <div id="loupe"><canvas id="loupe-canvas"></canvas></div>
-          <!-- Toast d'info -->
-          <div id="editor-toast"></div>
-          <!-- Sélecteur de source (avant prise de photo) -->
-          <div id="editor-source">
-            <div class="editor-source-inner">
-              <span class="editor-source-emoji"><i class="ic fi-br-camera"></i></span>
-              <p class="editor-source-title">Ajoute la photo de cette face</p>
-              <div class="editor-source-btns">
-                <button type="button" class="photo-source-btn" id="ed-pick-file">
-                  <span class="src-icon"><i class="ic fi-br-picture"></i></span>
-                  Mes fichiers
-                </button>
-                <button type="button" class="photo-source-btn" id="ed-open-camera">
-                  <span class="src-icon"><i class="ic fi-br-camera"></i></span>
-                  Caméra
-                </button>
-              </div>
-              <input type="file" id="ed-file-input" accept="image/*" style="display:none;">
-            </div>
-          </div>
+          <button type="button" class="ed-tool" data-tool="del">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><path d="M17.5 6.5 6.5 17.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>SUPPRIMER</span>
+          </button>
         </div>
-
-        <!-- Panneau du bas (instructions + contrôles + navigation) -->
-        <div id="editor-panel">
-          <p class="editor-instruction" id="editor-instruction"></p>
-
-          <!-- Détourage auto (étape 1) -->
-          <div class="editor-auto-row" id="editor-auto-row" style="display:none;">
-            <button type="button" class="editor-auto-btn" id="editor-auto">
-              <span><i class="ic fi-br-sparkles"></i></span> Détourage auto
-            </button>
-          </div>
-
-          <!-- Contrôles étalonnage (étape 2) -->
-          <div class="editor-calib-row" id="editor-calib-row" style="display:none;">
-            <span class="editor-calib-label">Distance réelle</span>
-            <div class="editor-calib-input-wrap">
-              <input type="number" id="editor-calib-distance" min="1" step="0.1" placeholder="ex : 20">
-              <span>cm</span>
-            </div>
-          </div>
-
-          <!-- Contrôles défauts (étape 3) -->
-          <div class="editor-defect-controls" id="editor-defect-controls" style="display:none;">
-            <div class="defect-empty" id="defect-empty">Touche le vêtement pour marquer une tache ou un trou.</div>
-            <div class="defect-editor" id="defect-editor" style="display:none;">
-              <div class="defect-type-tags">
-                <button type="button" class="defect-type-btn" data-dtype="tache">
-                  <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-tache.svg' %}" alt=""> Tache
-                </button>
-                <button type="button" class="defect-type-btn" data-dtype="trou">
-                  <img class="icon-square" src="{% static 'core/images/ajout_textile/icon-trou.svg' %}" alt=""> Trou
-                </button>
-              </div>
-              <div class="defect-radius-row">
-                <span class="defect-radius-label">Rayon</span>
-                <input type="range" id="defect-radius" min="3" max="80" value="18">
-                <button type="button" class="defect-delete-btn" id="defect-delete" aria-label="Supprimer ce défaut">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Navigation -->
-          <div class="editor-nav">
-            <button type="button" class="editor-btn-ghost" id="editor-back">Retour</button>
-            <button type="button" class="editor-btn-main" id="editor-next">Suivant</button>
-          </div>
+        <div class="ed-note">
+          <span class="ed-note-ico">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#9C9184" stroke-width="2"/><path d="M12 11v5.2" stroke="#9C9184" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="7.8" r="1.3" fill="#9C9184"/></svg>
+          </span>
+          <p id="ed-poly-hint">Touche un point pour le déplacer, appuie entre deux points pour en insérer un.</p>
         </div>
+        <button type="button" class="ed-cta" id="ed-poly-next">Valider le contour</button>
       </div>
 
-      <!-- ── Overlay caméra ── -->
-      <div id="camera-overlay">
-        <div id="camera-viewfinder">
-          <video id="camera-video" autoplay playsinline muted></video>
-          <div id="camera-crop-box">
-            <span class="cam-corner-br"></span>
-            <span class="cam-corner-bl"></span>
+      <!-- 05b · échelle de référence -->
+      <div class="ed-panel" id="ed-panel-scale">
+        <div class="ed-scale-card">
+          <div class="ed-scale-label">Distance réelle entre les deux points</div>
+          <div class="ed-scale-input">
+            <input type="number" id="editor-calib-distance" min="0.1" step="0.1" inputmode="decimal" placeholder="30">
+            <span class="ed-scale-unit-txt" id="ed-unit-txt">cm</span>
+          </div>
+          <div class="ed-units">
+            <button type="button" class="ed-unit active" data-unit="cm" data-factor="1">CM</button>
+            <button type="button" class="ed-unit" data-unit="mm" data-factor="0.1">MM</button>
+            <button type="button" class="ed-unit" data-unit="pouce" data-factor="2.54">POUCE</button>
           </div>
         </div>
-        <div id="camera-controls">
-          <button type="button" id="btn-camera-cancel">Annuler</button>
-          <button type="button" id="btn-camera-capture"></button>
-          <div style="width:70px;"></div>
+        <div class="ed-note">
+          <span class="ed-note-ico">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#9C9184" stroke-width="2"/><path d="M12 11v5.2" stroke="#9C9184" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="7.8" r="1.3" fill="#9C9184"/></svg>
+          </span>
+          <p>Mesure une longueur bien visible sur la photo, par exemple la largeur de la taille.</p>
         </div>
-      </div>
-      <canvas id="camera-hidden-canvas" style="display:none;"></canvas>
-
-      <!-- ── Popup "Autre type" ── -->
-      <div id="other-type-modal">
-        <div class="other-type-sheet">
-          <div class="other-type-handle"></div>
-          <p class="other-type-title">Choisir un type</p>
-          <div class="other-type-grid">
-            <button type="button" class="other-type-btn" data-type="manteau">
-              <span class="other-type-emoji">🧥</span>Manteau
-            </button>
-            <button type="button" class="other-type-btn" data-type="veste">
-              <span class="other-type-emoji">🥼</span>Veste
-            </button>
-            <button type="button" class="other-type-btn" data-type="blazer">
-              <span class="other-type-emoji">👔</span>Blazer
-            </button>
-            <button type="button" class="other-type-btn" data-type="pull">
-              <span class="other-type-emoji">🧤</span>Pull
-            </button>
-            <button type="button" class="other-type-btn" data-type="chemise">
-              <span class="other-type-emoji">👕</span>Chemise
-            </button>
-            <button type="button" class="other-type-btn" data-type="short">
-              <span class="other-type-emoji">🩳</span>Short
-            </button>
-            <button type="button" class="other-type-btn" data-type="gilet">
-              <span class="other-type-emoji">🦺</span>Gilet
-            </button>
-            <button type="button" class="other-type-btn" data-type="debardeur">
-              <span class="other-type-emoji">🩱</span>Débardeur
-            </button>
-            <button type="button" class="other-type-btn" data-type="combinaison">
-              <span class="other-type-emoji">👘</span>Combinaison
-            </button>
-            <button type="button" class="other-type-btn" data-type="pyjama">
-              <span class="other-type-emoji">😴</span>Pyjama
-            </button>
-            <button type="button" class="other-type-btn" data-type="accessoire">
-              <span class="other-type-emoji"><i class="ic fi-br-ribbon"></i></span>Accessoire
-            </button>
-            <button type="button" class="other-type-btn" data-type="autre">
-              <span class="other-type-emoji">•••</span>Autre
-            </button>
-          </div>
-          <button type="button" class="btn-other-cancel" id="btn-other-cancel">Annuler</button>
-        </div>
+        <button type="button" class="ed-cta" id="ed-scale-next">Valider l'échelle</button>
+        <button type="button" class="ed-ghost" id="ed-scale-reset">Replacer les points</button>
       </div>
 
-      {% if result_ready %}
-      <div id="result-modal" class="active">
-        <div class="result-modal-sheet">
-          <div class="result-modal-handle"></div>
-          <div class="result-icon">
-            <div class="inner-icon"><img src="{% static 'core/images/ajout_textile/icon-surface.svg' %}" alt="Surface"></div>
-          </div>
-          <div class="result-label">Résultats de l'analyse</div>
-          <div class="result-value">{{ usable_area }} m²</div>
+      <!-- 08 · zones abîmées -->
+      <div class="ed-panel" id="ed-panel-defects">
+        <div class="ed-scale-label">Type du prochain repère</div>
+        <div class="ed-types" id="ed-defect-types"></div>
+        <button type="button" class="ed-cta" id="ed-defects-next">Terminer les défauts</button>
+      </div>
+    </div>
 
-          <div class="progress-container" style="width:100%;">
-            <div class="progress-header">
-              <span>Zone réutilisable</span>
-              <span>{{ percentage }}%</span>
-            </div>
-            <div class="progress-bar">
-              <div class="progress-fill" style="width: {{ percentage }}%;"></div>
-            </div>
+    <!-- ── 09 · détail d'un défaut ── -->
+    <div id="ed-sheet">
+      <div class="ed-sheet-card">
+        <span class="ed-sheet-grip"></span>
+        <div class="ed-sheet-head">
+          <span class="ed-sheet-num" id="ed-sheet-num">1</span>
+          <div style="flex:1;min-width:0;">
+            <div class="ed-sheet-title" id="ed-sheet-title">Tache</div>
+            <div class="ed-sheet-sub" id="ed-sheet-face">Face avant</div>
           </div>
+          <button type="button" id="ed-sheet-del">Supprimer</button>
+        </div>
 
-          <div class="bonus-badge">
-            <span><i class="ic fi-br-party-horn"></i></span>
-            <span>+{{ coins_earned }} pièce{% if coins_earned > 1 %}s{% endif %}</span>
+        <div class="ed-sheet-label" style="margin-top:22px;">Type</div>
+        <div class="ed-sheet-chips" id="ed-sheet-chips"></div>
+
+        <div class="ed-sheet-size">
+          <span class="ed-sheet-label">Taille de la zone</span>
+          <b id="ed-sheet-size">8 cm</b>
+        </div>
+        <input type="range" id="defect-radius" min="4" max="90" value="18">
+
+        <div class="ed-sheet-loss">
+          <div style="flex:1;">
+            <div class="ed-sheet-label">Perte estimée</div>
+            <div class="ed-sheet-loss-val" id="ed-sheet-loss">−0,00 m²</div>
           </div>
+          <p>On contourne la zone au moment de la découpe.</p>
+        </div>
 
-          <a href="{% url 'dashboard' %}" class="btn-primary" style="text-align:center; text-decoration:none; margin-top:8px;">
-            Voir mon tableau de bord
-          </a>
+        <div class="ed-sheet-foot">
+          <button type="button" class="ed-chip" id="ed-sheet-back">Retour</button>
+          <button type="button" id="ed-sheet-ok">Enregistrer</button>
         </div>
       </div>
-      {% endif %}
+    </div>
+  </div>
+  <!-- ── Popup « Autre type » ── -->
+  <div id="other-type-modal">
+    <div class="other-type-sheet">
+      <div class="other-type-handle"></div>
+      <p class="other-type-title">Choisir un type</p>
+      <div class="other-type-grid">
+        <button type="button" class="other-type-btn" data-type="manteau"><span class="other-type-emoji">🧥</span>Manteau</button>
+        <button type="button" class="other-type-btn" data-type="veste"><span class="other-type-emoji">🥼</span>Veste</button>
+        <button type="button" class="other-type-btn" data-type="blazer"><span class="other-type-emoji">👔</span>Blazer</button>
+        <button type="button" class="other-type-btn" data-type="pull"><span class="other-type-emoji">🧤</span>Pull</button>
+        <button type="button" class="other-type-btn" data-type="chemise"><span class="other-type-emoji">👕</span>Chemise</button>
+        <button type="button" class="other-type-btn" data-type="short"><span class="other-type-emoji">🩳</span>Short</button>
+        <button type="button" class="other-type-btn" data-type="gilet"><span class="other-type-emoji">🦺</span>Gilet</button>
+        <button type="button" class="other-type-btn" data-type="debardeur"><span class="other-type-emoji">🩱</span>Débardeur</button>
+        <button type="button" class="other-type-btn" data-type="combinaison"><span class="other-type-emoji">👘</span>Combinaison</button>
+        <button type="button" class="other-type-btn" data-type="pyjama"><span class="other-type-emoji">😴</span>Pyjama</button>
+        <button type="button" class="other-type-btn" data-type="accessoire"><span class="other-type-emoji"><i class="ic fi-br-ribbon"></i></span>Accessoire</button>
+        <button type="button" class="other-type-btn" data-type="autre"><span class="other-type-emoji">•••</span>Autre</button>
+      </div>
+      <button type="button" class="btn-other-cancel" id="btn-other-cancel">Annuler</button>
+    </div>
+  </div>
 
+</div>
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      
+    (() => {
+
       // ==========================================
-      // 1. GESTION DU TYPE DE VÊTEMENT
+      // NAVIGATION ENTRE LES ÉTAPES
       // ==========================================
-      const typeButtons = document.querySelectorAll('.type-btn');
+      // Les sections portent leur numéro d'étape (data-page) ; 05 est la
+      // passe « défauts » de l'éditeur plein écran, elle n'a pas de section.
+      const pages    = [...document.querySelectorAll('.aj-page')];
+      const bars     = [...document.querySelectorAll('.aj-bar')];
+      const countEl  = document.getElementById('aj-count');
+      const backBtn  = document.getElementById('aj-back');
+      const DASHBOARD_URL = "{% url 'dashboard' %}";
+      let pageIdx = 0;
+
+      function renderProgress() {
+        const step = parseInt(pages[pageIdx].dataset.page, 10);
+        bars.forEach((b, i) => b.classList.toggle('on', i < step));
+        countEl.textContent = String(step).padStart(2, '0') + ' / 07';
+      }
+
+      function goTo(idx) {
+        pageIdx = Math.max(0, Math.min(pages.length - 1, idx));
+        pages.forEach((p, i) => p.classList.toggle('on', i === pageIdx));
+        pages[pageIdx].querySelector('.aj-body').scrollTop = 0;
+        renderProgress();
+      }
+
+      document.querySelectorAll('[data-next]').forEach(btn => {
+        btn.addEventListener('click', () => goTo(pageIdx + 1));
+      });
+
+      backBtn.addEventListener('click', () => {
+        if (pageIdx === 0) { window.location.href = DASHBOARD_URL; return; }
+        goTo(pageIdx - 1);
+      });
+
+      renderProgress();
+
+      // ==========================================
+      // 01 · NOM — suggestions
+      // ==========================================
+      const nomInput = document.getElementById('aj-nom');
+      document.querySelectorAll('.aj-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          nomInput.value = chip.textContent.trim();
+          nomInput.focus();
+        });
+      });
+
+      // ==========================================
+      // 04 · TYPE DE VÊTEMENT
+      // ==========================================
+      const typeButtons    = document.querySelectorAll('.type-btn');
       const hiddenTypeInput = document.getElementById('clothing_type_input');
-      const btnOtherType  = document.getElementById('btn-other-type');
+      const btnOtherType   = document.getElementById('btn-other-type');
       const otherTypeModal = document.getElementById('other-type-modal');
 
-      function openOtherModal()  { otherTypeModal && otherTypeModal.classList.add('active');    document.body.classList.add('other-open'); }
-      function closeOtherModal() { otherTypeModal && otherTypeModal.classList.remove('active'); document.body.classList.remove('other-open'); }
+      function openOtherModal()  { otherTypeModal.classList.add('active');    document.body.classList.add('other-open'); }
+      function closeOtherModal() { otherTypeModal.classList.remove('active'); document.body.classList.remove('other-open'); }
 
       typeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-          if (btn.id === 'btn-other-type') {
-            openOtherModal();
-            return;
-          }
+          if (btn.id === 'btn-other-type') { openOtherModal(); return; }
           typeButtons.forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
-          hiddenTypeInput.value = btn.getAttribute('data-type');
-          if (btnOtherType) btnOtherType.querySelector('.other-btn-label').textContent = 'Autre';
+          hiddenTypeInput.value = btn.dataset.type;
+          btnOtherType.querySelector('.other-btn-label').textContent = 'Autre';
         });
       });
 
       document.querySelectorAll('.other-type-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          const type  = btn.getAttribute('data-type');
           const label = btn.textContent.replace(btn.querySelector('.other-type-emoji').textContent, '').trim();
           typeButtons.forEach(b => b.classList.remove('active'));
-          if (btnOtherType) {
-            btnOtherType.classList.add('active');
-            btnOtherType.querySelector('.other-btn-label').textContent = label;
-          }
-          hiddenTypeInput.value = type;
+          btnOtherType.classList.add('active');
+          btnOtherType.querySelector('.other-btn-label').textContent = label;
+          hiddenTypeInput.value = btn.dataset.type;
           closeOtherModal();
         });
       });
 
-      document.getElementById('btn-other-cancel') &&
-        document.getElementById('btn-other-cancel').addEventListener('click', closeOtherModal);
+      document.getElementById('btn-other-cancel').addEventListener('click', closeOtherModal);
 
-      otherTypeModal && otherTypeModal.addEventListener('click', e => {
-        if (e.target === otherTypeModal) closeOtherModal();
+      // ==========================================
+      // 06 · COULEURS — 3 max, la 1ʳᵉ cochée est la dominante
+      // ==========================================
+      const couleurInput = document.getElementById('couleur-input');
+      const slots        = [...document.querySelectorAll('#aj-color-slots .aj-slot')];
+      const SLOT_ROLES   = ['Dominante', 'Secondaire', 'Tertiaire'];
+      const MAX_COLORS   = 3;
+      const colorInputs  = [...document.querySelectorAll('.color-swatch-input')];
+      let colorOrder = [];   // ids cochés, dans l'ordre de sélection
+
+      function syncCouleur() {
+        colorOrder = colorOrder.filter(id => document.getElementById(id).checked);
+        couleurInput.value = colorOrder.map(id => document.getElementById(id).value).join(',');
+
+        const atMax = colorOrder.length >= MAX_COLORS;
+        colorInputs.forEach(cb => {
+          cb.nextElementSibling.classList.toggle('maxed', !cb.checked && atMax);
+        });
+
+        slots.forEach((slot, i) => {
+          const cb = colorOrder[i] ? document.getElementById(colorOrder[i]) : null;
+          slot.classList.toggle('filled', !!cb);
+          slot.querySelector('.aj-slot-chip').style.background = cb ? cb.dataset.hex : '';
+          slot.querySelector('.aj-slot-name').textContent = cb ? cb.dataset.label : SLOT_ROLES[i];
+          slot.querySelector('.aj-slot-role').textContent =
+            cb ? SLOT_ROLES[i] : (i === 0 ? 'À choisir' : i === 1 ? 'Optionnel' : '3 max');
+        });
+      }
+
+      colorInputs.forEach(cb => {
+        cb.addEventListener('change', () => {
+          if (cb.checked) {
+            if (colorOrder.length >= MAX_COLORS) { cb.checked = false; return; }
+            colorOrder.push(cb.id);
+          }
+          syncCouleur();
+        });
       });
+      syncCouleur();
 
       // ==========================================
-      // GESTION DES MATIÈRES
+      // 07 · MATIÈRES & QUALITÉ
       // ==========================================
-      const MATERIAL_COLORS = {
-        coton:'#D4C5A9', polyester:'#93A8B8', laine:'#C8A96A', lin:'#C9B882',
-        soie:'#C4B0D8', viscose:'#7FC9CF', nylon:'#F4A06A', elasthanne:'#8DC89A',
-        acrylique:'#F4A0B4', cachemire:'#C4AFA9', bambou:'#9DBE94', velours:'#9A80C8',
-        denim:'#5B8BB4', cuir:'#8D6E63', satin:'#F0B0C8', modal:'#80C4BE',
-      };
       const MATERIALS_LIST = [
         {value:'coton',      label:'Coton'},
         {value:'polyester',  label:'Polyester'},
@@ -1746,11 +2019,11 @@
         {value:'modal',      label:'Modal'},
       ];
 
-      const materialListEl    = document.getElementById('material-list');
-      const materialTotalFill = document.getElementById('material-total-fill');
-      const materialTotalText = document.getElementById('material-total-text');
+      const materialListEl      = document.getElementById('material-list');
+      const materialTotalFill   = document.getElementById('material-total-fill');
+      const materialTotalText   = document.getElementById('material-total-text');
       const materialHiddenInput = document.getElementById('material-hidden');
-      const btnAddMaterial    = document.getElementById('btn-add-material');
+      const btnAddMaterial      = document.getElementById('btn-add-material');
 
       function getMaterialOptions(selected) {
         return MATERIALS_LIST.map(m =>
@@ -1759,48 +2032,38 @@
       }
 
       function updateMaterialTotal() {
-        if (!materialListEl) return;
-        const rows = materialListEl.querySelectorAll('.material-row');
+        const rows = [...materialListEl.querySelectorAll('.material-row')];
         let total = 0;
-        rows.forEach(row => { total += parseInt(row.querySelector('.material-percent-input').value) || 0; });
+        rows.forEach(row => { total += parseInt(row.querySelector('.material-percent-input').value, 10) || 0; });
 
-        if (materialTotalFill) {
-          materialTotalFill.style.width = Math.min(total, 100) + '%';
-          materialTotalFill.style.background = total > 100 ? '#A24A33' : total === 100 ? 'var(--primary-green)' : '#C8A96A';
-        }
-        if (materialTotalText) {
-          materialTotalText.textContent = `Total : ${total}%`;
-          materialTotalText.className = 'material-total-text' + (total > 100 ? ' over' : total === 100 ? ' valid' : '');
-        }
+        materialTotalFill.style.width = Math.min(total, 100) + '%';
+        materialTotalFill.style.background =
+          total > 100 ? 'var(--red)' : total === 100 ? 'var(--green)' : 'var(--yellow)';
+        materialTotalText.textContent = `Total : ${total} %`;
+        materialTotalText.className = 'aj-total-text' + (total > 100 ? ' over' : total === 100 ? ' valid' : '');
+
         const parts = [];
         rows.forEach(row => {
           const sel = row.querySelector('.material-name-select');
           const inp = row.querySelector('.material-percent-input');
-          if (sel && inp && inp.value) parts.push(`${sel.value}:${inp.value}`);
+          if (inp.value) parts.push(`${sel.value}:${inp.value}`);
         });
-        if (materialHiddenInput) materialHiddenInput.value = parts.join(',');
-
-        rows.forEach(row => {
-          const sel = row.querySelector('.material-name-select');
-          const dot = row.querySelector('.material-dot');
-          if (sel && dot) dot.style.background = MATERIAL_COLORS[sel.value] || '#BCBAA8';
-        });
+        materialHiddenInput.value = parts.join(',');
       }
 
       function createMaterialRow(matValue, percent) {
         const row = document.createElement('div');
         row.className = 'material-row';
         row.innerHTML = `
-          <span class="material-dot" style="background:${MATERIAL_COLORS[matValue] || '#BCBAA8'};"></span>
           <div class="material-select-wrapper">
             <select class="material-name-select">${getMaterialOptions(matValue)}</select>
             <svg class="material-select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
-          <div class="material-percent-wrapper">
-            <input type="number" class="material-percent-input" min="0" max="100" value="${percent}">
-            <span class="material-percent-unit">%</span>
-          </div>
-          <button type="button" class="material-delete-btn" title="Supprimer">×</button>
+          <input type="number" class="material-percent-input" min="0" max="100" value="${percent}">
+          <span class="material-percent-unit">%</span>
+          <button type="button" class="material-delete-btn" aria-label="Supprimer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6.5 17.5 18M17.5 6.5 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </button>
         `;
         row.querySelector('.material-name-select').addEventListener('change', updateMaterialTotal);
         row.querySelector('.material-percent-input').addEventListener('input', updateMaterialTotal);
@@ -1813,51 +2076,34 @@
         return row;
       }
 
-      if (materialListEl) {
-        materialListEl.appendChild(createMaterialRow('coton', 100));
-        updateMaterialTotal();
-      }
+      materialListEl.appendChild(createMaterialRow('coton', 100));
+      updateMaterialTotal();
 
-      btnAddMaterial && btnAddMaterial.addEventListener('click', () => {
+      btnAddMaterial.addEventListener('click', () => {
         const used = [...materialListEl.querySelectorAll('.material-name-select')].map(s => s.value);
         const next = MATERIALS_LIST.find(m => !used.includes(m.value)) || MATERIALS_LIST[1];
         materialListEl.appendChild(createMaterialRow(next.value, 0));
         updateMaterialTotal();
       });
 
-      // ── Couleur : multi-select checkbox (max 3) → hidden input ──
-      const couleurInput = document.getElementById('couleur-input');
-      const MAX_COLORS = 3;
-
-      function syncCouleur() {
-        const checked = [...document.querySelectorAll('.color-swatch-input:checked')];
-        couleurInput.value = checked.map(c => c.value).join(',');
-        const atMax = checked.length >= MAX_COLORS;
-        document.querySelectorAll('.color-swatch-input').forEach(cb => {
-          const label = cb.nextElementSibling;
-          if (!cb.checked && atMax) {
-            label.classList.add('maxed');
-          } else {
-            label.classList.remove('maxed');
-          }
-        });
-      }
-
-      document.querySelectorAll('.color-swatch-input').forEach(cb => {
-        cb.addEventListener('change', () => {
-          const checked = document.querySelectorAll('.color-swatch-input:checked');
-          if (checked.length > MAX_COLORS) {
-            cb.checked = false;
-          }
-          syncCouleur();
+      // Qualité : 3 crans mappés sur l'échelle 1-5 stockée en base.
+      const qualiteInput = document.getElementById('qualite-input');
+      document.querySelectorAll('.aj-quality-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.aj-quality-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          qualiteInput.value = btn.dataset.qualite;
         });
       });
 
-
-
       // ==========================================
-      // 2. ÉDITEUR PLEIN ÉCRAN — détourage · étalonnage · défauts
+      // ÉDITEUR PLEIN ÉCRAN
       // ==========================================
+      // Enchaînement : caméra (03) → détourage proposé (04) → ajuster les
+      // points (05) → échelle (05b) → défauts (08), le détail d'un défaut
+      // (09) s'ouvrant en feuille par-dessus. Le détourage automatique
+      // (rembg côté serveur) et tout le calcul de surface sont inchangés :
+      // seule la présentation a été refaite.
       const FACE_LABELS = { avant: 'Face avant', arriere: 'Face arrière' };
 
       const facesState = {
@@ -1865,7 +2111,16 @@
         arriere: { photo: null, imgW: 0, imgH: 0, polygon: [], calib: [], calibDist: 0, defects: [], done: false },
       };
 
-      // DOM éditeur
+      const DEFECT_TYPES = [
+        { id: 'tache',  label: 'Tache',  color: '#FF6B3D' },
+        { id: 'trou',   label: 'Trou',   color: '#7C5CFF' },
+        { id: 'usure',  label: 'Usure',  color: '#FFC93C' },
+        { id: 'ourlet', label: 'Ourlet', color: '#2C6CA8' },
+        { id: 'autre',  label: 'Autre',  color: '#C4B9A8' },
+      ];
+      const defectType = id => DEFECT_TYPES.find(t => t.id === id) || DEFECT_TYPES[0];
+
+      // ── DOM ──
       const editorOverlay  = document.getElementById('editor-overlay');
       const editorStage    = document.getElementById('editor-stage');
       const edCanvas       = document.getElementById('edit-canvas');
@@ -1873,51 +2128,65 @@
       const loupeEl        = document.getElementById('loupe');
       const loupeCanvas    = document.getElementById('loupe-canvas');
       const loupeCtx       = loupeCanvas.getContext('2d');
-      const edSource       = document.getElementById('editor-source');
-      const edPickFile     = document.getElementById('ed-pick-file');
-      const edOpenCamera   = document.getElementById('ed-open-camera');
-      const edFileInput    = document.getElementById('ed-file-input');
-      const editorPanel    = document.getElementById('editor-panel');
-      const edInstruction  = document.getElementById('editor-instruction');
-      const autoRow        = document.getElementById('editor-auto-row');
-      const edAuto         = document.getElementById('editor-auto');
       const edToast        = document.getElementById('editor-toast');
-      const calibRow       = document.getElementById('editor-calib-row');
+
+      const edCamera       = document.getElementById('ed-camera');
+      const edCamFace      = document.getElementById('ed-cam-face');
+      const edCamClose     = document.getElementById('ed-cam-close');
+      const edCamSwitch    = document.getElementById('ed-cam-switch');
+      const edCamTorch     = document.getElementById('ed-cam-torch');
+      const cameraVideo    = document.getElementById('camera-video');
+      const edCamView      = document.getElementById('ed-cam-view');
+      const cameraCanvas   = document.getElementById('camera-hidden-canvas');
+      const btnCapture     = document.getElementById('btn-camera-capture');
+      const edPickFile     = document.getElementById('ed-pick-file');
+      const edFileInput    = document.getElementById('ed-file-input');
+
+      const edHead         = document.getElementById('ed-head');
+      const edFoot         = document.getElementById('ed-foot');
+      const edTitle        = document.getElementById('ed-title');
+      const edSub          = document.getElementById('ed-sub');
+      const edBack         = document.getElementById('ed-back');
+      const edUndo         = document.getElementById('ed-undo');
+      const edPanels       = {
+        auto:    document.getElementById('ed-panel-auto'),
+        poly:    document.getElementById('ed-panel-poly'),
+        scale:   document.getElementById('ed-panel-scale'),
+        defects: document.getElementById('ed-panel-defects'),
+      };
+      const edPolyNext     = document.getElementById('ed-poly-next');
+      const edScaleNext    = document.getElementById('ed-scale-next');
       const calibDistInput = document.getElementById('editor-calib-distance');
-      const defectControls = document.getElementById('editor-defect-controls');
-      const defectEmpty    = document.getElementById('defect-empty');
-      const defectEditor   = document.getElementById('defect-editor');
+      const edUnitTxt      = document.getElementById('ed-unit-txt');
+      const edTypesRow     = document.getElementById('ed-defect-types');
+
+      const edSheet        = document.getElementById('ed-sheet');
+      const edSheetCard    = edSheet.querySelector('.ed-sheet-card');
+      const edSheetNum     = document.getElementById('ed-sheet-num');
+      const edSheetTitle   = document.getElementById('ed-sheet-title');
+      const edSheetFace    = document.getElementById('ed-sheet-face');
+      const edSheetChips   = document.getElementById('ed-sheet-chips');
+      const edSheetSize    = document.getElementById('ed-sheet-size');
+      const edSheetLoss    = document.getElementById('ed-sheet-loss');
       const radiusSlider   = document.getElementById('defect-radius');
-      const defectDelete   = document.getElementById('defect-delete');
-      const defectTypeBtns = [...document.querySelectorAll('.defect-type-btn')];
-      const edNext         = document.getElementById('editor-next');
-      const edBack         = document.getElementById('editor-back');
-      const edUndo         = document.getElementById('editor-undo');
-      const editorClose    = document.getElementById('editor-close');
       const btnSubmit      = document.getElementById('btn-submit');
 
-      // DOM caméra (réutilisé)
-      const cameraOverlay      = document.getElementById('camera-overlay');
-      const cameraVideo        = document.getElementById('camera-video');
-      const cameraCropBox      = document.getElementById('camera-crop-box');
-      const btnCameraCancel    = document.getElementById('btn-camera-cancel');
-      const btnCameraCapture   = document.getElementById('btn-camera-capture');
-      const cameraHiddenCanvas = document.getElementById('camera-hidden-canvas');
+      // ── État ──
+      const LOUPE = 132, LOUPE_ZOOM = 2.6;
+      loupeCanvas.width = loupeCanvas.height = LOUPE;
 
-      // État de travail
       let activeFace = null;
-      let step = 1;
+      let edStep = 'camera';           // camera | auto | poly | scale | defects
       let img = new Image();
       let poly = [], calib = [], defects = [];
       let dragging = null;
       let selDefect = -1;
+      let polyTool = 'add';            // add | move | del
+      let unitFactor = 1;              // vers les cm
       let lastDefectType = 'tache';
       let lastRadiusPx = 18;
       let cameraStream = null;
-
-      const LOUPE = 132, LOUPE_ZOOM = 2.4;
-      loupeCanvas.width = LOUPE;
-      loupeCanvas.height = LOUPE;
+      let camFacing = 'environment';
 
       const clamp01 = v => Math.max(0, Math.min(1, v));
       function evtPos(e) {
@@ -1926,11 +2195,28 @@
       }
       function nearestPoint(arr, p) {
         const W = edCanvas.width, H = edCanvas.height;
-        let best = -1, bd = 20;
+        let best = -1, bd = 22;
         arr.forEach((q, i) => {
           const d = Math.hypot((q.x - p.x) * W, (q.y - p.y) * H);
           if (d < bd) { bd = d; best = i; }
         });
+        return best;
+      }
+      // Segment du contour le plus proche : « appuie entre deux points pour
+      // en insérer un » place le nouveau point au bon endroit du tracé.
+      function nearestSegment(p) {
+        const W = edCanvas.width, H = edCanvas.height;
+        let best = -1, bd = Infinity;
+        for (let i = 0; i < poly.length; i++) {
+          const a = poly[i], b = poly[(i + 1) % poly.length];
+          const ax = a.x * W, ay = a.y * H, bx = b.x * W, by = b.y * H;
+          const px = p.x * W, py = p.y * H;
+          const vx = bx - ax, vy = by - ay;
+          const len2 = vx * vx + vy * vy;
+          const t = len2 ? Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / len2)) : 0;
+          const d = Math.hypot(px - (ax + t * vx), py - (ay + t * vy));
+          if (d < bd) { bd = d; best = i; }
+        }
         return best;
       }
       function hitDefect(p) {
@@ -1943,7 +2229,7 @@
         return -1;
       }
 
-      // ── Dessin du canvas principal ──
+      // ── Dessin ──
       function fitCanvas() {
         const sw = editorStage.clientWidth, sh = editorStage.clientHeight;
         if (!img.width) return;
@@ -1956,10 +2242,10 @@
 
       function drawDot(c, x, y, color, r) {
         c.beginPath();
-        c.arc(x, y, r || 6, 0, 2 * Math.PI);
-        c.fillStyle = 'white';
+        c.arc(x, y, r || 7, 0, 2 * Math.PI);
+        c.fillStyle = '#FFFDF8';
         c.fill();
-        c.lineWidth = 2.5;
+        c.lineWidth = 3;
         c.strokeStyle = color;
         c.stroke();
       }
@@ -1969,7 +2255,6 @@
         edCtx.clearRect(0, 0, W, H);
         if (img.width) edCtx.drawImage(img, 0, 0, W, H);
 
-        // Polygone (visible à toutes les étapes)
         if (poly.length) {
           edCtx.beginPath();
           poly.forEach((pt, i) => {
@@ -1978,42 +2263,44 @@
           });
           if (poly.length > 2) {
             edCtx.closePath();
-            edCtx.fillStyle = step === 1 ? 'rgba(110, 207, 115, 0.22)' : 'rgba(110, 207, 115, 0.12)';
+            edCtx.fillStyle = edStep === 'defects' ? 'rgba(31,168,92,.10)' : 'rgba(31,168,92,.16)';
             edCtx.fill();
           }
-          edCtx.strokeStyle = '#6FCF73';
+          edCtx.strokeStyle = '#1FA85C';
           edCtx.lineWidth = 2.5;
           edCtx.stroke();
-          if (step === 1) poly.forEach(pt => drawDot(edCtx, pt.x * W, pt.y * H, '#237329'));
+          if (edStep === 'poly') poly.forEach(pt => drawDot(edCtx, pt.x * W, pt.y * H, '#1FA85C'));
         }
 
-        // Ligne d'étalonnage
         if (calib.length) {
           if (calib.length === 2) {
             edCtx.beginPath();
             edCtx.moveTo(calib[0].x * W, calib[0].y * H);
             edCtx.lineTo(calib[1].x * W, calib[1].y * H);
-            edCtx.strokeStyle = step === 2 ? '#FF9477' : 'rgba(255,148,119,0.5)';
-            edCtx.lineWidth = 4;
+            edCtx.strokeStyle = edStep === 'scale' ? '#FFD166' : 'rgba(255,209,102,.5)';
+            edCtx.lineWidth = 3;
             edCtx.stroke();
           }
-          if (step === 2) calib.forEach(pt => drawDot(edCtx, pt.x * W, pt.y * H, '#A24A33'));
+          if (edStep === 'scale') calib.forEach(pt => drawDot(edCtx, pt.x * W, pt.y * H, '#FFD166'));
         }
 
-        // Cercles de défaut
         defects.forEach((d, i) => {
           const x = d.x * W, y = d.y * H, r = d.r * W;
+          const col = defectType(d.type).color;
           edCtx.beginPath();
           edCtx.arc(x, y, r, 0, 2 * Math.PI);
-          const col = d.type === 'tache' ? '#A24A33' : '#3A4DB0';
-          edCtx.fillStyle = d.type === 'tache' ? 'rgba(162,74,51,0.28)' : 'rgba(58,77,176,0.28)';
+          edCtx.fillStyle = col + '47';
           edCtx.fill();
-          edCtx.lineWidth = (step === 3 && i === selDefect) ? 3.5 : 2;
+          edCtx.lineWidth = (edStep === 'defects' && i === selDefect) ? 4 : 3;
           edCtx.strokeStyle = col;
-          edCtx.setLineDash(step === 3 && i === selDefect ? [] : [5, 4]);
           edCtx.stroke();
-          edCtx.setLineDash([]);
-          if (step === 3) drawDot(edCtx, x, y, col, 4);
+          if (edStep === 'defects') {
+            edCtx.fillStyle = '#FFFDF8';
+            edCtx.font = '800 ' + Math.max(13, Math.min(20, r * 0.9)) + "px 'Bricolage Grotesque', sans-serif";
+            edCtx.textAlign = 'center';
+            edCtx.textBaseline = 'middle';
+            edCtx.fillText(String(i + 1), x, y + 1);
+          }
         });
       }
 
@@ -2032,40 +2319,36 @@
         loupeCtx.fillRect(0, 0, LOUPE, LOUPE);
         loupeCtx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, LOUPE, LOUPE);
 
-        // Géométrie projetée dans la loupe
         const lp = (px, py) => ({ x: (px - cx) * LOUPE_ZOOM + LOUPE / 2, y: (py - cy) * LOUPE_ZOOM + LOUPE / 2 });
-        if (step === 1 && poly.length) {
+        if (edStep === 'poly' && poly.length) {
           loupeCtx.beginPath();
           poly.forEach((pt, i) => { const q = lp(pt.x * W, pt.y * H); i === 0 ? loupeCtx.moveTo(q.x, q.y) : loupeCtx.lineTo(q.x, q.y); });
           if (poly.length > 2) loupeCtx.closePath();
-          loupeCtx.strokeStyle = '#6FCF73'; loupeCtx.lineWidth = 2; loupeCtx.stroke();
-          poly.forEach(pt => { const q = lp(pt.x * W, pt.y * H); drawDot(loupeCtx, q.x, q.y, '#237329', 4); });
+          loupeCtx.strokeStyle = '#1FA85C'; loupeCtx.lineWidth = 2; loupeCtx.stroke();
+          poly.forEach(pt => { const q = lp(pt.x * W, pt.y * H); drawDot(loupeCtx, q.x, q.y, '#1FA85C', 4); });
         }
-        if (step === 2 && calib.length === 2) {
+        if (edStep === 'scale' && calib.length === 2) {
           const a = lp(calib[0].x * W, calib[0].y * H), b = lp(calib[1].x * W, calib[1].y * H);
           loupeCtx.beginPath(); loupeCtx.moveTo(a.x, a.y); loupeCtx.lineTo(b.x, b.y);
-          loupeCtx.strokeStyle = '#FF9477'; loupeCtx.lineWidth = 3; loupeCtx.stroke();
+          loupeCtx.strokeStyle = '#FFD166'; loupeCtx.lineWidth = 3; loupeCtx.stroke();
         }
-        if (step === 3) {
+        if (edStep === 'defects') {
           defects.forEach(d => {
             const q = lp(d.x * W, d.y * H);
             loupeCtx.beginPath(); loupeCtx.arc(q.x, q.y, d.r * W * LOUPE_ZOOM, 0, 2 * Math.PI);
-            loupeCtx.strokeStyle = d.type === 'tache' ? '#A24A33' : '#3A4DB0'; loupeCtx.lineWidth = 2; loupeCtx.stroke();
+            loupeCtx.strokeStyle = defectType(d.type).color; loupeCtx.lineWidth = 2; loupeCtx.stroke();
           });
         }
 
-        // Réticule
-        loupeCtx.strokeStyle = 'rgba(255,255,255,0.9)'; loupeCtx.lineWidth = 1.5;
+        loupeCtx.strokeStyle = 'rgba(255,255,255,.9)'; loupeCtx.lineWidth = 1.5;
         loupeCtx.beginPath();
         loupeCtx.moveTo(LOUPE / 2 - 11, LOUPE / 2); loupeCtx.lineTo(LOUPE / 2 + 11, LOUPE / 2);
         loupeCtx.moveTo(LOUPE / 2, LOUPE / 2 - 11); loupeCtx.lineTo(LOUPE / 2, LOUPE / 2 + 11);
         loupeCtx.stroke();
-        loupeCtx.beginPath(); loupeCtx.arc(LOUPE / 2, LOUPE / 2, 7, 0, 2 * Math.PI);
-        loupeCtx.strokeStyle = '#237329'; loupeCtx.lineWidth = 2; loupeCtx.stroke();
 
-        // Positionnement (au-dessus du doigt, basculé si bord haut)
-        const offX = (editorStage.clientWidth - W) / 2;
-        const offY = (editorStage.clientHeight - H) / 2;
+        const stageRect = editorStage.getBoundingClientRect();
+        const canvRect = edCanvas.getBoundingClientRect();
+        const offX = canvRect.left - stageRect.left, offY = canvRect.top - stageRect.top;
         let lx = offX + cx - LOUPE / 2;
         let ly = offY + cy - LOUPE - 28;
         if (ly < 4) ly = offY + cy + 28;
@@ -2077,20 +2360,32 @@
 
       // ── Interaction pointeur ──
       edCanvas.addEventListener('pointerdown', (e) => {
-        if (edSource.style.display !== 'none') return;
-        edCanvas.setPointerCapture(e.pointerId);
+        if (!img.width || edStep === 'auto') return;
+        try { edCanvas.setPointerCapture(e.pointerId); } catch (err) { /* pointeur déjà relâché */ }
         const p = evtPos(e);
 
-        if (step === 1) {
+        if (edStep === 'poly') {
           const hit = nearestPoint(poly, p);
-          if (hit >= 0) dragging = { type: 'poly', index: hit };
-          else { poly.push(p); dragging = { type: 'poly', index: poly.length - 1 }; }
-        } else if (step === 2) {
+          if (polyTool === 'del') {
+            if (hit >= 0) poly.splice(hit, 1);
+          } else if (hit >= 0) {
+            dragging = { type: 'poly', index: hit };
+          } else if (polyTool === 'add') {
+            if (poly.length >= 2) {
+              const seg = nearestSegment(p);
+              poly.splice(seg + 1, 0, p);
+              dragging = { type: 'poly', index: seg + 1 };
+            } else {
+              poly.push(p);
+              dragging = { type: 'poly', index: poly.length - 1 };
+            }
+          }
+        } else if (edStep === 'scale') {
           const hit = nearestPoint(calib, p);
           if (hit >= 0) dragging = { type: 'calib', index: hit };
           else if (calib.length < 2) { calib.push(p); dragging = { type: 'calib', index: calib.length - 1 }; }
           else { calib[1] = p; dragging = { type: 'calib', index: 1 }; }
-        } else if (step === 3) {
+        } else if (edStep === 'defects') {
           const hit = hitDefect(p);
           if (hit >= 0) { selDefect = hit; dragging = { type: 'defect', index: hit }; }
           else {
@@ -2098,11 +2393,10 @@
             selDefect = defects.length - 1;
             dragging = { type: 'defect', index: selDefect };
           }
-          syncDefectUI();
         }
-        showLoupe(p);
+        if (dragging) showLoupe(p);
         draw();
-        updateButtons();
+        updateEdButtons();
       });
 
       edCanvas.addEventListener('pointermove', (e) => {
@@ -2115,106 +2409,213 @@
         draw();
       });
 
-      function endDrag() { dragging = null; hideLoupe(); updateButtons(); }
+      function endDrag(e) {
+        // Un simple tap sur un défaut existant en ouvre le détail (écran 09).
+        const wasDefect = dragging && dragging.type === 'defect';
+        dragging = null;
+        hideLoupe();
+        updateEdButtons();
+        if (wasDefect && edStep === 'defects') openDefectSheet();
+      }
       edCanvas.addEventListener('pointerup', endDrag);
       edCanvas.addEventListener('pointercancel', endDrag);
 
-      // ── Défauts : contrôles ──
-      function syncDefectUI() {
-        const has = selDefect >= 0 && defects[selDefect];
-        defectEmpty.style.display = has ? 'none' : 'block';
-        defectEditor.style.display = has ? 'block' : 'none';
-        if (has) {
-          const d = defects[selDefect];
-          defectTypeBtns.forEach(b => b.classList.toggle('active', b.dataset.dtype === d.type));
-          radiusSlider.value = Math.round(d.r * edCanvas.width);
-        }
+      // ── Outils de contour (05) ──
+      const POLY_HINTS = {
+        add:  'Touche un point pour le déplacer, appuie entre deux points pour en insérer un.',
+        move: 'Glisse un point existant pour le repositionner exactement sur le bord.',
+        del:  'Touche un point pour le retirer du contour.',
+      };
+      document.querySelectorAll('.ed-tool').forEach(btn => {
+        btn.addEventListener('click', () => {
+          polyTool = btn.dataset.tool;
+          document.querySelectorAll('.ed-tool').forEach(b => b.classList.toggle('active', b === btn));
+          document.getElementById('ed-poly-hint').textContent = POLY_HINTS[polyTool];
+        });
+      });
+
+      // ── Unités de l'échelle (05b) ──
+      document.querySelectorAll('.ed-unit').forEach(btn => {
+        btn.addEventListener('click', () => {
+          unitFactor = parseFloat(btn.dataset.factor);
+          edUnitTxt.textContent = btn.dataset.unit;
+          document.querySelectorAll('.ed-unit').forEach(b => b.classList.toggle('active', b === btn));
+          updateEdButtons();
+        });
+      });
+      calibDistInput.addEventListener('input', updateEdButtons);
+      // Distance saisie ramenée en centimètres, seule unité stockée.
+      const calibCm = () => (parseFloat(calibDistInput.value) || 0) * unitFactor;
+
+      // ── Types de défauts (08) ──
+      // L'ourlet n'apparaît que dans le détail : la barre du bas garde les
+      // quatre repères les plus fréquents.
+      DEFECT_TYPES.filter(t => t.id !== 'ourlet').forEach(t => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ed-type';
+        b.dataset.dtype = t.id;
+        b.style.setProperty('--dtype', t.color);
+        b.textContent = t.label.toUpperCase();
+        b.addEventListener('click', () => {
+          lastDefectType = t.id;
+          syncDefectTypeRow();
+        });
+        edTypesRow.appendChild(b);
+      });
+      function syncDefectTypeRow() {
+        edTypesRow.querySelectorAll('.ed-type').forEach(b =>
+          b.classList.toggle('active', b.dataset.dtype === lastDefectType));
       }
+      syncDefectTypeRow();
+
+      // ── Détail d'un défaut (09) ──
+      DEFECT_TYPES.forEach(t => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ed-chip';
+        b.dataset.dtype = t.id;
+        b.textContent = t.label;
+        b.addEventListener('click', () => {
+          if (selDefect < 0) return;
+          defects[selDefect].type = t.id;
+          lastDefectType = t.id;
+          syncDefectTypeRow();
+          syncDefectSheet();
+          draw();
+        });
+        edSheetChips.appendChild(b);
+      });
+
+      // Diamètre réel de la zone, en cm (null tant que l'échelle manque).
+      function defectSizeCm(d) {
+        const st = facesState[activeFace];
+        if (!st || calib.length !== 2 || !calibCm() || !st.imgW) return null;
+        const c1 = { x: calib[0].x * st.imgW, y: calib[0].y * st.imgH };
+        const c2 = { x: calib[1].x * st.imgW, y: calib[1].y * st.imgH };
+        const dpx = Math.hypot(c2.x - c1.x, c2.y - c1.y);
+        if (!dpx) return null;
+        const cmpp = calibCm() / dpx;
+        return d.r * st.imgW * cmpp * 2;
+      }
+
+      function openDefectSheet() {
+        if (selDefect < 0) return;
+        syncDefectSheet();
+        edSheet.classList.add('on');
+      }
+      function closeDefectSheet() { edSheet.classList.remove('on'); }
+
+      function syncDefectSheet() {
+        const d = defects[selDefect];
+        if (!d) return;
+        const t = defectType(d.type);
+        edSheetCard.style.setProperty('--dtype', t.color);
+        edSheetNum.style.background = t.color;
+        edSheetNum.textContent = String(selDefect + 1);
+        edSheetTitle.textContent = t.label;
+        edSheetFace.textContent = FACE_LABELS[activeFace];
+        edSheetChips.querySelectorAll('.ed-chip').forEach(b =>
+          b.classList.toggle('active', b.dataset.dtype === d.type));
+        radiusSlider.value = Math.round(d.r * edCanvas.width);
+        const cm = defectSizeCm(d);
+        edSheetSize.textContent = cm ? Math.round(cm) + ' cm' : '—';
+        const perte = cm ? Math.PI * (cm / 2) * (cm / 2) / 10000 : 0;
+        edSheetLoss.textContent = '−' + perte.toFixed(2).replace('.', ',') + ' m²';
+      }
+
       radiusSlider.addEventListener('input', () => {
-        lastRadiusPx = parseInt(radiusSlider.value);
+        lastRadiusPx = parseInt(radiusSlider.value, 10);
         if (selDefect >= 0 && defects[selDefect]) {
           defects[selDefect].r = lastRadiusPx / edCanvas.width;
+          syncDefectSheet();
           draw();
         }
       });
-      defectTypeBtns.forEach(b => b.addEventListener('click', () => {
-        lastDefectType = b.dataset.dtype;
-        if (selDefect >= 0 && defects[selDefect]) {
-          defects[selDefect].type = lastDefectType;
-          syncDefectUI();
-          draw();
-        }
-      }));
-      defectDelete.addEventListener('click', () => {
-        if (selDefect >= 0) {
-          defects.splice(selDefect, 1);
-          selDefect = -1;
-          syncDefectUI();
-          draw();
-          updateButtons();
-        }
+      document.getElementById('ed-sheet-del').addEventListener('click', () => {
+        if (selDefect < 0) return;
+        defects.splice(selDefect, 1);
+        selDefect = -1;
+        closeDefectSheet();
+        draw();
+        updateEdButtons();
       });
+      document.getElementById('ed-sheet-back').addEventListener('click', closeDefectSheet);
+      document.getElementById('ed-sheet-ok').addEventListener('click', closeDefectSheet);
 
       // ── Étapes ──
-      const INSTRUCTIONS = {
-        1: 'Place des points tout autour du vêtement pour le <b>détourer</b>. Glisse un point pour l’ajuster.',
-        2: 'Place <b>2 points</b> sur un repère dont tu connais la taille réelle (couture, col…), puis saisis sa longueur.',
-        3: 'Touche le vêtement pour marquer une <b>tache</b> ou un <b>trou</b>. Glisse pour déplacer, ajuste le rayon.',
+      const ED_STEPS = {
+        auto:    { title: 'Détourage automatique', sub: () => FACE_LABELS[activeFace] },
+        poly:    { title: 'Ajuste les points',     sub: () => FACE_LABELS[activeFace] + ' · ' + poly.length + ' points' },
+        scale:   { title: 'Donne-nous une échelle', sub: () => 'Obligatoire · 2 points', warn: true },
+        defects: { title: 'Touche les zones abîmées', sub: () => FACE_LABELS[activeFace] + ' · ' + defects.length + ' défaut' + (defects.length > 1 ? 's' : '') },
       };
-      function setStep(s) {
-        step = s;
-        document.querySelectorAll('.ed-step').forEach(el => {
-          const n = +el.dataset.step;
-          el.classList.toggle('active', n === s);
-          el.classList.toggle('done', n < s);
-        });
-        autoRow.style.display = s === 1 ? 'flex' : 'none';
-        calibRow.style.display = s === 2 ? 'flex' : 'none';
-        defectControls.style.display = s === 3 ? 'block' : 'none';
-        edInstruction.innerHTML = INSTRUCTIONS[s];
-        edNext.textContent = s === 3 ? 'Valider cette face' : 'Suivant';
-        edBack.textContent = s === 1 ? 'Annuler' : 'Retour';
+
+      function setEdStep(s) {
+        edStep = s;
+        const isCam = s === 'camera';
+        edCamera.classList.toggle('active', isCam);
+        edHead.style.display = isCam ? 'none' : 'flex';
+        editorStage.style.display = isCam ? 'none' : 'flex';
+        edFoot.style.display = isCam ? 'none' : 'block';
+        closeDefectSheet();
         selDefect = -1;
-        syncDefectUI();
+        if (isCam) return;
+
+        Object.entries(edPanels).forEach(([k, el]) => el.classList.toggle('on', k === s));
+        edSub.classList.toggle('warn', !!ED_STEPS[s].warn);
+        edUndo.style.display = (s === 'auto') ? 'none' : 'flex';
+        fitCanvas();
         draw();
-        updateButtons();
+        updateEdButtons();
       }
 
-      function updateButtons() {
-        let ok = true;
-        if (step === 1) ok = poly.length >= 3;
-        else if (step === 2) ok = calib.length === 2 && parseFloat(calibDistInput.value) > 0;
-        edNext.disabled = !ok;
+      function updateEdButtons() {
+        if (edStep === 'camera') return;
+        edTitle.textContent = ED_STEPS[edStep].title;
+        edSub.textContent = ED_STEPS[edStep].sub();
+        edPolyNext.disabled = poly.length < 3;
+        edScaleNext.disabled = !(calib.length === 2 && calibCm() > 0);
         let canUndo = false;
-        if (step === 1) canUndo = poly.length > 0;
-        else if (step === 2) canUndo = calib.length > 0;
-        else if (step === 3) canUndo = defects.length > 0;
+        if (edStep === 'poly') canUndo = poly.length > 0;
+        else if (edStep === 'scale') canUndo = calib.length > 0;
+        else if (edStep === 'defects') canUndo = defects.length > 0;
         edUndo.disabled = !canUndo;
       }
-      calibDistInput.addEventListener('input', updateButtons);
 
-      // ── Navigation ──
-      edNext.addEventListener('click', () => {
-        if (step === 1 && poly.length < 3) return;
-        if (step === 2) {
-          if (calib.length !== 2) return;
-          if (!(parseFloat(calibDistInput.value) > 0)) { alert('Saisis la distance réelle du repère (en cm).'); return; }
-        }
-        if (step < 3) setStep(step + 1);
-        else finalizeFace();
+      edUndo.addEventListener('click', () => {
+        if (edStep === 'poly') poly.pop();
+        else if (edStep === 'scale') calib.pop();
+        else if (edStep === 'defects') { defects.pop(); selDefect = -1; }
+        draw();
+        updateEdButtons();
       });
+
+      // Navigation entre écrans
+      document.getElementById('ed-auto-accept').addEventListener('click', () => setEdStep('scale'));
+      document.getElementById('ed-auto-refine').addEventListener('click', () => setEdStep('poly'));
+      document.getElementById('ed-auto-reject').addEventListener('click', () => {
+        poly = [];
+        polyTool = 'add';
+        setEdStep('poly');
+        showToast('Contour effacé — place tes points à la main');
+      });
+      edPolyNext.addEventListener('click', () => { if (poly.length >= 3) setEdStep('scale'); });
+      edScaleNext.addEventListener('click', () => { if (calib.length === 2 && calibCm() > 0) setEdStep('defects'); });
+      document.getElementById('ed-scale-reset').addEventListener('click', () => {
+        calib = [];
+        draw();
+        updateEdButtons();
+      });
+      document.getElementById('ed-defects-next').addEventListener('click', finalizeFace);
+
       edBack.addEventListener('click', () => {
-        if (step > 1) setStep(step - 1);
+        if (edStep === 'defects') setEdStep('scale');
+        else if (edStep === 'scale') setEdStep(poly.length ? 'poly' : 'camera');
+        else if (edStep === 'poly') setEdStep('camera');
         else closeEditor();
       });
-      editorClose.addEventListener('click', closeEditor);
-      edUndo.addEventListener('click', () => {
-        if (step === 1) poly.pop();
-        else if (step === 2) calib.pop();
-        else if (step === 3) { defects.pop(); selDefect = -1; syncDefectUI(); }
-        draw();
-        updateButtons();
-      });
+      edCamClose.addEventListener('click', closeEditor);
 
       // ── Surface (miroir du calcul backend, pour l'affichage) ──
       function faceArea(st) {
@@ -2234,53 +2635,115 @@
         return { area: areaCm2 / 10000, usable: Math.max(0, (areaCm2 - def) / 10000) };
       }
 
-      const CHECK_SVG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-      const PLUS_SVG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+      // ==========================================
+      // 02 / 03 · CARTES DE FACE
+      // ==========================================
+      // Une seule section pour les deux étapes : tant que l'avant n'est pas
+      // détouré on est à l'étape 02 (« photographie »), ensuite à l'étape 03
+      // (« avant détouré » + surface).
+      const facesPage    = document.getElementById('aj-page-faces');
+      const facesEyebrow = document.getElementById('aj-faces-eyebrow');
+      const facesTitle   = document.getElementById('aj-faces-title');
+      const facesLead    = document.getElementById('aj-faces-lead');
+      const facesNote    = document.getElementById('aj-faces-note');
+      const facesSurface = document.getElementById('aj-faces-surface');
+      const surfaceVal   = document.getElementById('aj-surface-val');
+      const surfaceHint  = document.getElementById('aj-surface-hint');
+      const facesCta     = document.getElementById('aj-faces-cta');
+      const facesGhost   = document.getElementById('aj-faces-ghost');
+
+      const CHECK_BADGE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
       function refreshFaceCard(face) {
-        const st = facesState[face];
-        const card = document.querySelector('.face-card[data-face="' + face + '"]');
-        const thumb = document.getElementById('face-thumb-' + face);
+        const st     = facesState[face];
+        const card   = document.querySelector('.face-card[data-face="' + face + '"]');
+        const thumb  = document.getElementById('face-thumb-' + face);
         const status = document.getElementById('face-status-' + face);
-        const badge = document.getElementById('face-badge-' + face);
+        const badge  = document.getElementById('face-badge-' + face);
+
         if (st.done) {
           card.classList.add('done');
+          card.classList.remove('pending');
           thumb.innerHTML = '<img src="' + st.photo + '" alt="">';
           const fa = faceArea(st);
-          status.innerHTML = fa ? '<i class="ic fi-br-check"></i> Détouré · ' + fa.usable.toFixed(2) + ' m² utiles' : '<i class="ic fi-br-check"></i> Détouré';
-          badge.innerHTML = CHECK_SVG;
+          status.textContent = fa
+            ? 'Détourée · ' + fa.usable.toFixed(2).replace('.', ',') + ' m²'
+            : 'Détourée';
+          badge.innerHTML = CHECK_BADGE;
         } else {
           card.classList.remove('done');
-          thumb.innerHTML = '<span class="face-thumb-emoji">' + (face === 'avant' ? '👕' : '<i class="ic fi-br-refresh"></i>') + '</span>';
-          status.textContent = 'À détourer · ' + (face === 'avant' ? 'requis' : 'optionnel');
-          badge.innerHTML = PLUS_SVG;
+          if (face === 'arriere') card.classList.add('pending');
+          status.textContent = face === 'avant' ? 'À détourer · requis' : 'Optionnel';
+          badge.innerHTML = '';
         }
+        renderFacesPage();
       }
+
+      function totalUsable() {
+        let total = 0;
+        ['avant', 'arriere'].forEach(f => {
+          const fa = facesState[f].done ? faceArea(facesState[f]) : null;
+          if (fa) total += fa.usable;
+        });
+        return total;
+      }
+
+      function renderFacesPage() {
+        const avantDone   = facesState.avant.done;
+        const arriereDone = facesState.arriere.done;
+
+        facesPage.dataset.page = avantDone ? '3' : '2';
+        if (facesPage.classList.contains('on')) renderProgress();
+
+        facesEyebrow.textContent = nomInput.value.trim() || 'Nouveau vêtement';
+        facesTitle.textContent   = avantDone ? 'Avant détouré' : 'Photographie chaque face';
+        facesLead.textContent    = avantDone
+          ? "Ajoute l'arrière pour affiner le calcul, ou passe à la suite."
+          : "L'avant est obligatoire. L'arrière améliore la précision du calcul de surface.";
+
+        facesNote.style.display    = avantDone ? 'none' : 'flex';
+        facesSurface.style.display = avantDone ? 'flex' : 'none';
+
+        if (avantDone) {
+          surfaceVal.textContent = totalUsable().toFixed(2).replace('.', ',') + ' m²';
+          surfaceHint.textContent = arriereDone
+            ? 'Les deux faces sont prises en compte.'
+            : "L'arrière sera estimé identique à l'avant si tu ne le scannes pas.";
+        }
+
+        facesCta.textContent     = avantDone ? 'Continuer' : "Photographier l'avant";
+        facesGhost.style.display = avantDone && !arriereDone ? 'block' : 'none';
+      }
+
+      facesCta.addEventListener('click', () => {
+        if (facesState.avant.done) goTo(pageIdx + 1);
+        else openFace('avant');
+      });
+      facesGhost.addEventListener('click', () => openFace('arriere'));
 
       function writeFaceInputs(face) {
         const st = facesState[face];
-        document.getElementById('photo_data_' + face).value = st.photo || '';
-        document.getElementById('polygon_' + face).value = JSON.stringify(st.polygon);
-        document.getElementById('calib_coords_' + face).value = JSON.stringify(st.calib);
+        document.getElementById('photo_data_' + face).value     = st.photo || '';
+        document.getElementById('polygon_' + face).value        = JSON.stringify(st.polygon);
+        document.getElementById('calib_coords_' + face).value   = JSON.stringify(st.calib);
         document.getElementById('calib_distance_' + face).value = st.calibDist || 0;
-        document.getElementById('img_w_' + face).value = st.imgW || 0;
-        document.getElementById('img_h_' + face).value = st.imgH || 0;
-        document.getElementById('defects_' + face).value = JSON.stringify(st.defects);
+        document.getElementById('img_w_' + face).value          = st.imgW || 0;
+        document.getElementById('img_h_' + face).value          = st.imgH || 0;
+        document.getElementById('defects_' + face).value        = JSON.stringify(st.defects);
       }
 
       function updateSubmit() {
         btnSubmit.disabled = !facesState.avant.done;
-        btnSubmit.style.opacity = facesState.avant.done ? '1' : '0.5';
       }
 
       function finalizeFace() {
-        if (poly.length < 3 || calib.length !== 2 || !(parseFloat(calibDistInput.value) > 0)) return;
+        if (poly.length < 3 || calib.length !== 2 || !(calibCm() > 0)) return;
         const st = facesState[activeFace];
-        st.polygon = poly.map(p => ({ x: p.x, y: p.y }));
-        st.calib = calib.map(p => ({ x: p.x, y: p.y }));
-        st.calibDist = parseFloat(calibDistInput.value);
-        st.defects = defects.map(d => ({ x: d.x, y: d.y, r: d.r, type: d.type }));
-        st.done = true;
+        st.polygon   = poly.map(p => ({ x: p.x, y: p.y }));
+        st.calib     = calib.map(p => ({ x: p.x, y: p.y }));
+        st.calibDist = calibCm();
+        st.defects   = defects.map(d => ({ x: d.x, y: d.y, r: d.r, type: d.type }));
+        st.done      = true;
         writeFaceInputs(activeFace);
         refreshFaceCard(activeFace);
         updateSubmit();
@@ -2296,27 +2759,29 @@
         toastTimer = setTimeout(() => edToast.classList.remove('show'), 2800);
       }
 
-      // Message affiché quand aucun contour automatique n'est disponible
-      // (détourage serveur désactivé, en échec, ou aucun contour exploitable).
-      function noAutoDetectAvailable(manual) {
-        if (manual) showToast('Détourage automatique indisponible — place les points à la main');
-      }
-
-      // Détourage serveur (IA, rembg). REMBG_ENABLED est piloté par le réglage
-      // Django REMBG_DETOURAGE_ENABLED.
+      // ── Détourage automatique (rembg côté serveur) ──
+      // REMBG_ENABLED est piloté par le réglage Django REMBG_DETOURAGE_ENABLED.
       const REMBG_ENABLED = {{ rembg_enabled|yesno:"true,false" }};
       const DETOURAGE_AUTO_URL = "{% url 'detourage_auto' %}";
 
-      function runAutoDetectServer(manual) {
-        const st = facesState[activeFace];
-        const photoData = st && st.photo;
-        if (!photoData) { noAutoDetectAvailable(manual); return; }
+      // Sans contour automatique exploitable, on bascule directement sur le
+      // tracé manuel : l'écran 04 n'aurait rien à proposer.
+      function noAutoDetect(msg) {
+        poly = [];
+        polyTool = 'add';
+        setEdStep('poly');
+        showToast(msg || 'Détourage automatique indisponible — place les points à la main');
+      }
 
-        if (edAuto) edAuto.disabled = true;
-        if (manual) showToast('<i class="ic fi-br-sparkles"></i> Analyse en cours…');
+      function runAutoDetect() {
+        const st = facesState[activeFace];
+        if (!REMBG_ENABLED || !st || !st.photo) { noAutoDetect(); return; }
+
+        setEdStep('poly');
+        showToast('<b>Analyse en cours…</b> on cherche les contours');
 
         const body = new URLSearchParams();
-        body.set('photo_data', photoData);
+        body.set('photo_data', st.photo);
 
         fetch(DETOURAGE_AUTO_URL, {
           method: 'POST',
@@ -2327,30 +2792,16 @@
           .then(data => {
             if (data && data.success && Array.isArray(data.polygon) && data.polygon.length >= 3) {
               poly = data.polygon;
-              selDefect = -1;
-              draw();
-              updateButtons();
-              showToast('<i class="ic fi-br-sparkles"></i> Contour détecté (IA) — ajuste les points si besoin');
+              edToast.classList.remove('show');
+              setEdStep('auto');
             } else {
-              // Pas de contour exploitable (fond ambigu, échec…).
-              noAutoDetectAvailable(manual);
+              noAutoDetect();
             }
           })
-          .catch(() => noAutoDetectAvailable(manual))
-          .finally(() => { if (edAuto) edAuto.disabled = false; });
+          .catch(() => noAutoDetect());
       }
 
-      function runAutoDetect(manual) {
-        if (!img.width) return;
-        if (REMBG_ENABLED) {
-          runAutoDetectServer(manual);
-        } else {
-          noAutoDetectAvailable(manual);
-        }
-      }
-      edAuto.addEventListener('click', () => runAutoDetect(true));
-
-      // ── Chargement photo / ouverture éditeur ──
+      // ── Chargement photo ──
       function loadPhoto(dataUrl, restore) {
         const st = facesState[activeFace];
         st.photo = dataUrl;
@@ -2358,16 +2809,20 @@
         img.onload = () => {
           st.imgW = img.width;
           st.imgH = img.height;
-          edSource.style.display = 'none';
-          edCanvas.style.visibility = 'visible';
-          editorPanel.style.display = 'flex';
-          fitCanvas();
           poly = restore ? st.polygon.map(p => ({ x: p.x, y: p.y })) : [];
           calib = restore ? st.calib.map(p => ({ x: p.x, y: p.y })) : [];
           defects = restore ? st.defects.map(d => ({ x: d.x, y: d.y, r: d.r, type: d.type })) : [];
-          calibDistInput.value = (restore && st.calibDist) ? st.calibDist : '';
-          setStep(1);
-          if (!restore) runAutoDetect(false);
+          if (restore && st.calibDist) {
+            calibDistInput.value = st.calibDist;
+            unitFactor = 1;
+            edUnitTxt.textContent = 'cm';
+            document.querySelectorAll('.ed-unit').forEach(b => b.classList.toggle('active', b.dataset.unit === 'cm'));
+          } else {
+            calibDistInput.value = '';
+          }
+          edPickFile.innerHTML = '<img src="' + dataUrl + '" alt="">';
+          if (restore) setEdStep('poly');
+          else runAutoDetect();
         };
         img.src = dataUrl;
       }
@@ -2391,30 +2846,32 @@
         downscale(rawDataUrl, 1280, (dataUrl) => {
           const st = facesState[activeFace];
           st.polygon = []; st.calib = []; st.calibDist = 0; st.defects = []; st.done = false;
+          stopCamera();
           loadPhoto(dataUrl, false);
         });
       }
 
+      // ── Ouverture / fermeture ──
       function openFace(face) {
         activeFace = face;
         const st = facesState[face];
-        document.getElementById('editor-face-name').textContent = FACE_LABELS[face];
+        edCamFace.textContent = FACE_LABELS[face].toUpperCase();
         editorOverlay.classList.add('active');
         document.body.classList.add('editor-open');
         if (st.photo) {
-          loadPhoto(st.photo, st.done);
+          loadPhoto(st.photo, st.done || st.polygon.length > 0);
         } else {
-          edSource.style.display = 'flex';
-          edCanvas.style.visibility = 'hidden';
-          editorPanel.style.display = 'none';
+          setEdStep('camera');
+          startCamera();
         }
       }
 
       function closeEditor() {
-        if (cameraStream) stopCamera();
+        stopCamera();
         editorOverlay.classList.remove('active');
         document.body.classList.remove('editor-open');
         hideLoupe();
+        closeDefectSheet();
         activeFace = null;
       }
 
@@ -2422,7 +2879,55 @@
         card.addEventListener('click', () => openFace(card.dataset.face));
       });
 
-      // ── Source : fichier / caméra ──
+      // ── Caméra ──
+      function startCamera() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+        navigator.mediaDevices.getUserMedia({
+          video: { facingMode: camFacing, width: { ideal: 1920 }, height: { ideal: 1080 } },
+          audio: false,
+        }).then(stream => {
+          cameraStream = stream;
+          cameraVideo.srcObject = stream;
+          cameraVideo.addEventListener('playing', () => edCamView.classList.add('cam-live'), { once: true });
+          // La torche n'existe que sur certains capteurs arrière.
+          const track = stream.getVideoTracks()[0];
+          const caps = track.getCapabilities ? track.getCapabilities() : {};
+          edCamTorch.disabled = !caps.torch;
+        }).catch(() => {
+          showToast('Caméra indisponible — utilise « mes photos »');
+        });
+      }
+
+      function stopCamera() {
+        if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+        cameraVideo.srcObject = null;
+        edCamView.classList.remove('cam-live');
+      }
+
+      edCamSwitch.addEventListener('click', () => {
+        camFacing = camFacing === 'environment' ? 'user' : 'environment';
+        stopCamera();
+        startCamera();
+      });
+
+      edCamTorch.addEventListener('click', () => {
+        if (!cameraStream) return;
+        const track = cameraStream.getVideoTracks()[0];
+        const on = !edCamTorch.classList.contains('on');
+        track.applyConstraints({ advanced: [{ torch: on }] })
+          .then(() => edCamTorch.classList.toggle('on', on))
+          .catch(() => { edCamTorch.disabled = true; });
+      });
+
+      btnCapture.addEventListener('click', () => {
+        if (!cameraStream || !cameraVideo.videoWidth) return;
+        cameraCanvas.width = cameraVideo.videoWidth;
+        cameraCanvas.height = cameraVideo.videoHeight;
+        cameraCanvas.getContext('2d').drawImage(cameraVideo, 0, 0);
+        onPhotoReady(cameraCanvas.toDataURL('image/jpeg', 0.85));
+      });
+
       edPickFile.addEventListener('click', () => edFileInput.click());
       edFileInput.addEventListener('change', () => {
         const file = edFileInput.files[0];
@@ -2433,67 +2938,55 @@
         edFileInput.value = '';
       });
 
-      function openCamera() {
-        navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-          audio: false
-        }).then(stream => {
-          cameraStream = stream;
-          cameraVideo.srcObject = stream;
-          cameraOverlay.classList.add('active');
-          document.body.classList.add('camera-open');
-        }).catch(err => {
-          alert('Impossible d\'accéder à la caméra : ' + err.message);
-        });
-      }
-      function stopCamera() {
-        if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
-        cameraStream = null;
-        cameraOverlay.classList.remove('active');
-        document.body.classList.remove('camera-open');
-      }
-      edOpenCamera.addEventListener('click', openCamera);
-      btnCameraCancel.addEventListener('click', stopCamera);
-      btnCameraCapture.addEventListener('click', () => {
-        const vfEl = document.getElementById('camera-viewfinder');
-        const vfRect = vfEl.getBoundingClientRect();
-        const boxRect = cameraCropBox.getBoundingClientRect();
-        const videoW = cameraVideo.videoWidth, videoH = cameraVideo.videoHeight;
-        const scale = Math.min(videoW / vfRect.width, videoH / vfRect.height);
-        const renderedW = videoW / scale, renderedH = videoH / scale;
-        const offsetX = (vfRect.width - renderedW) / 2, offsetY = (vfRect.height - renderedH) / 2;
-        const relX = boxRect.left - vfRect.left, relY = boxRect.top - vfRect.top;
-        const srcX = (relX - offsetX) * scale, srcY = (relY - offsetY) * scale;
-        const srcW = boxRect.width * scale, srcH = boxRect.height * scale;
-        cameraHiddenCanvas.width = srcW;
-        cameraHiddenCanvas.height = srcH;
-        cameraHiddenCanvas.getContext('2d').drawImage(cameraVideo, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
-        const dataUrl = cameraHiddenCanvas.toDataURL('image/jpeg', 0.85);
-        stopCamera();
-        onPhotoReady(dataUrl);
-      });
-
       window.addEventListener('resize', () => {
-        if (editorOverlay.classList.contains('active') && img.width && edCanvas.style.visibility !== 'hidden') {
+        if (editorOverlay.classList.contains('active') && img.width && edStep !== 'camera') {
           fitCanvas();
           draw();
         }
       });
 
-      // Empêcher l'envoi tant que la face avant n'est pas détourée
-      updateSubmit();
-      btnSubmit.addEventListener('click', (e) => {
+      // ==========================================
+      // ENVOI
+      // ==========================================
+      const form = document.getElementById('aj-form');
+
+      form.addEventListener('submit', (e) => {
         if (!facesState.avant.done) {
           e.preventDefault();
-          alert('Détoure au moins la face avant avant de lancer l\'analyse.');
+          goTo(pages.indexOf(facesPage));
         }
       });
-    });
-  </script>
-{% endblock %}
 
-{% block bottom_nav %}
-  {% with nav_active='scanner' %}
-    {% include 'core/bottom_nav.html' %}
-  {% endwith %}
+      updateSubmit();
+      renderFacesPage();
+      nomInput.addEventListener('input', renderFacesPage);
+
+      // ==========================================
+      // TICKET — total « exploitable » qui défile
+      // ==========================================
+      const ticketBig = document.getElementById('aj-ticket-big');
+      if (ticketBig) {
+        const target = parseFloat(ticketBig.dataset.target.replace(',', '.')) || 0;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const fmt = (v) => v.toFixed(2).replace('.', ',');
+
+        if (reduceMotion) {
+          ticketBig.textContent = fmt(target);
+        } else {
+          const delay = 2080;   // synchronisé avec l'apparition du pied de ticket (aj-ticket-foot)
+          const duration = 600;
+          const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+          setTimeout(() => {
+            const start = performance.now();
+            function tick(now) {
+              const p = Math.min(1, (now - start) / duration);
+              ticketBig.textContent = fmt(target * easeOut(p));
+              if (p < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+          }, delay);
+        }
+      }
+    })();
+  </script>
 {% endblock %}

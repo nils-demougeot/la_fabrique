@@ -1,0 +1,405 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  Défi de ville — l'effort collectif en grand.
+
+  On répond dans l'ordre : où en est la ville, où en est mon quartier, ce que
+  j'y ai mis. La déclaration passe par une feuille modale plutôt qu'un champ
+  posé dans la page : c'est une action ponctuelle, pas un formulaire à
+  remplir à chaque visite.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cd-entete {
+    background: linear-gradient(140deg, #3B2F6B 0%, #221E19 78%);
+    border-radius: 0 0 34px 34px;
+    padding-bottom: 26px;
+    flex: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .cm .cd-glow {
+    position: absolute; top: -80px; left: -40px;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,92,255,.5) 0%, rgba(124,92,255,0) 70%);
+  }
+  .cd-entete > * { position: relative; }
+
+  .cd-kicker { font: 500 10px var(--mono); letter-spacing: .14em; color: var(--violet-p); }
+  .cd-titre {
+    font: 800 24px/1.2 var(--display);
+    color: #fff;
+    letter-spacing: -.02em;
+    margin-top: 10px;
+  }
+  .cd-chiffre {
+    font: 800 46px var(--display);
+    color: var(--violet-p);
+    line-height: 1;
+    letter-spacing: -.02em;
+  }
+  .cd-chiffre small { font: 800 18px var(--display); }
+  .cd-objectif { font: 500 10px var(--mono); color: var(--dim); letter-spacing: .08em; margin-top: 8px; }
+
+  .cd-piste {
+    height: 16px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.12);
+    overflow: hidden;
+    margin-top: 14px;
+    position: relative;
+  }
+  .cd-jauge {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #7C5CFF, #C4B4FF);
+    box-shadow: 0 0 18px rgba(124,92,255,.55);
+  }
+  /* Repères des caps : ils donnent une échelle au remplissage. */
+  .cd-cap {
+    position: absolute; top: 0; bottom: 0;
+    width: 2px;
+    background: rgba(255,255,255,.22);
+  }
+  .cd-legende {
+    display: flex; align-items: center; justify-content: space-between;
+    font: 500 9px var(--mono);
+    color: var(--dim);
+    letter-spacing: .06em;
+    margin-top: 9px;
+  }
+
+  .cd-mini { display: flex; gap: 9px; margin-top: 18px; }
+  .cd-mini-carte {
+    flex: 1;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.1);
+    box-sizing: border-box;
+    border-radius: 20px;
+    padding: 13px 0;
+    text-align: center;
+    min-width: 0;
+  }
+  .cd-mini-valeur { font: 800 18px var(--display); color: #fff; line-height: 1; }
+  .cd-mini-label { font: 500 7.5px var(--mono); color: var(--dim); letter-spacing: .1em; margin-top: 5px; }
+
+  /* ── Quartiers ── */
+  .cd-quartier {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    border-radius: 20px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+  }
+  .cd-quartier + .cd-quartier { margin-top: 9px; }
+  .cd-quartier.est-mien {
+    background: var(--violet-l);
+    border-color: #CFC2F5;
+  }
+  .cd-quartier-rang {
+    width: 22px;
+    font: 800 13px var(--display);
+    color: var(--faint);
+    flex: none;
+  }
+  .cd-quartier.est-mien .cd-quartier-rang { color: var(--violet-d); }
+  .cd-quartier-nom { font: 800 14px var(--display); }
+  .cd-quartier-meta { font: 500 9px var(--mono); color: var(--faint); margin-top: 3px; }
+  .cd-quartier.est-mien .cd-quartier-meta { color: #4A4262; }
+  .cd-quartier-piste {
+    height: 6px;
+    border-radius: 4px;
+    background: var(--line);
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .cd-quartier-jauge { height: 100%; background: var(--violet); border-radius: 4px; }
+  .cd-quartier-m2 { font: 800 15px var(--display); flex: none; }
+
+  /* ── Contributrices ── */
+  .cd-contrib {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 2px;
+    border-bottom: 1px solid #F2EADD;
+  }
+  .cd-contrib:last-child { border-bottom: 0; }
+  .cd-contrib-nom { font: 700 13px var(--text); }
+  .cd-contrib-quartier { font: 500 9px var(--mono); color: var(--faint); margin-top: 2px; }
+  .cd-contrib-m2 { font: 800 15px var(--display); flex: none; }
+
+  /* ── Historique ── */
+  .cd-ligne {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--sand);
+    border-radius: 18px;
+    padding: 12px 14px;
+  }
+  .cd-ligne + .cd-ligne { margin-top: 8px; }
+  .cd-ligne-m2 {
+    width: 52px; flex: none;
+    text-align: center;
+    font: 800 14px var(--display);
+    color: var(--violet-d);
+  }
+  .cd-ligne-texte { font: 700 12.5px var(--text); }
+  .cd-ligne-date { font: 500 9px var(--mono); color: var(--faint); margin-top: 2px; }
+
+  /* ── Feuille de déclaration ── */
+  .cd-raccourcis { display: flex; gap: 8px; margin-bottom: 14px; }
+  .cd-raccourci {
+    flex: 1;
+    border: 1.5px solid var(--line);
+    background: var(--paper);
+    border-radius: 16px;
+    padding: 13px 0;
+    font: 800 14px var(--display);
+    color: var(--ink);
+    cursor: pointer;
+    transition: background .14s ease, border-color .14s ease;
+  }
+  .cd-raccourci:hover, .cd-raccourci.est-actif {
+    background: var(--violet-l);
+    border-color: var(--violet);
+  }
+  .cd-saisie {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--sand);
+    border-radius: 18px;
+    padding: 4px 16px 4px 4px;
+  }
+  .cd-saisie input {
+    flex: 1; min-width: 0;
+    border: 0; background: none; outline: none;
+    padding: 16px;
+    font: 800 22px var(--display);
+    color: var(--ink);
+  }
+  .cd-saisie-unite { font: 800 15px var(--display); color: var(--muted); flex: none; }
+  .cd-aide { font: 400 11.5px/1.5 var(--text); color: var(--muted); margin-top: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm has-nav">
+
+  {# ══ Avancée de la ville ══ #}
+  <header class="cd-entete">
+    <span class="cd-glow" aria-hidden="true"></span>
+
+    <div class="cm-topbar is-dark">
+      <a href="{% url 'communaute' %}" class="cm-back" aria-label="Retour">
+        {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+      </a>
+      <span class="cm-topbar-label">DÉFI DE VILLE</span>
+      <span class="cm-back-ghost" aria-hidden="true"></span>
+    </div>
+
+    <div style="padding:16px 22px 0">
+      <div class="cd-kicker">{{ defi.ville|upper }} · J-{{ jours_restants }}</div>
+      <div class="cd-titre">{{ defi.titre }}</div>
+
+      <div style="display:flex;align-items:baseline;gap:10px;margin-top:18px">
+        <span class="cd-chiffre"><span data-compteur="{{ defi.total_m2|floatformat:0 }}">0</span><small> m²</small></span>
+        <span class="cd-objectif">/ {{ defi.objectif_m2|floatformat:0 }} M² · {{ defi.pourcentage }} %</span>
+      </div>
+
+      <div class="cd-piste">
+        <div class="cd-jauge" data-jauge="{{ defi.pourcentage }}"></div>
+        <span class="cd-cap" style="left:25%"></span>
+        <span class="cd-cap" style="left:50%"></span>
+        <span class="cd-cap" style="left:75%"></span>
+      </div>
+      <div class="cd-legende">
+        <span>25 %</span><span>50 %</span><span>75 %</span><span>OBJECTIF</span>
+      </div>
+
+      <div class="cd-mini">
+        <div class="cd-mini-carte">
+          <div class="cd-mini-valeur">{{ restant }}</div>
+          <div class="cd-mini-label">M² RESTANTS</div>
+        </div>
+        <div class="cd-mini-carte">
+          <div class="cd-mini-valeur">{{ ma_part }}</div>
+          <div class="cd-mini-label">MA PART</div>
+        </div>
+        <div class="cd-mini-carte">
+          <div class="cd-mini-valeur">{{ quartiers|length }}</div>
+          <div class="cd-mini-label">QUARTIERS</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {# ══ Classement des quartiers ══ #}
+  <section class="cm-section cm-entree">
+    <div class="cm-section-head">
+      <span class="cm-section-titre">Les quartiers</span>
+      {% if rang_quartier %}
+        <span class="cm-section-meta">LE TIEN EST {{ rang_quartier }}<sup>E</sup></span>
+      {% endif %}
+    </div>
+
+    <div style="padding:0 16px">
+      {% for quartier in quartiers %}
+        <div class="cd-quartier {% if quartier.quartier == mon_quartier.quartier %}est-mien{% endif %}">
+          <span class="cd-quartier-rang">{{ forloop.counter }}</span>
+          <div style="flex:1;min-width:0">
+            <div class="cd-quartier-nom">{{ quartier.quartier }}</div>
+            <div class="cd-quartier-meta">
+              {{ quartier.nb }} COUTURIÈRE{{ quartier.nb|pluralize:"S" }} · {{ quartier.part }} % DU TOTAL
+            </div>
+            <div class="cd-quartier-piste">
+              <div class="cd-quartier-jauge" data-jauge="{{ quartier.pourcentage }}"></div>
+            </div>
+          </div>
+          <span class="cd-quartier-m2">{{ quartier.m2 }} m²</span>
+        </div>
+      {% empty %}
+        <div class="cm-vide" style="margin:0">Personne n'a encore déclaré de surface.</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ══ Meilleures contributrices ══ #}
+  {% if contributrices %}
+  <section class="cm-section cm-entree" style="--rang:1">
+    <div class="cm-section-head">
+      <span class="cm-section-titre">Qui recoud le plus</span>
+    </div>
+    <div style="padding:0 20px">
+      <div class="cm-panneau">
+        {% for contribution in contributrices %}
+          <div class="cd-contrib">
+            <span class="cd-quartier-rang">{{ forloop.counter }}</span>
+            <span class="cm-jeton {{ contribution.utilisateur|teinte }}"
+                  style="width:34px;height:34px;font-size:12px">
+              {{ contribution.utilisateur|initiales }}
+            </span>
+            <div style="flex:1;min-width:0">
+              <a href="{% url 'communaute_profil' contribution.utilisateur.pk %}"
+                 class="cd-contrib-nom cm-nom-lien" style="display:block">
+                {% if contribution.utilisateur == user %}Toi{% else %}{{ contribution.utilisateur|nom_court }}{% endif %}
+              </a>
+              <div class="cd-contrib-quartier">{{ contribution.quartier|upper }}</div>
+            </div>
+            <span class="cd-contrib-m2">{{ contribution.m2|floatformat:1 }} m²</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ══ Mes déclarations ══ #}
+  <section class="cm-section cm-entree" style="--rang:2">
+    <div class="cm-section-head">
+      <span class="cm-section-titre">Mes déclarations</span>
+      <span class="cm-section-meta">{{ ma_part }} M² AU TOTAL</span>
+    </div>
+    <div style="padding:0 20px">
+      {% for declaration in mes_declarations %}
+        <div class="cd-ligne">
+          <span class="cd-ligne-m2">{{ declaration.m2|floatformat:1 }}<br><small style="font:500 8px var(--mono)">m²</small></span>
+          <div style="flex:1;min-width:0">
+            <div class="cd-ligne-texte">
+              {% if declaration.commentaire %}{{ declaration.commentaire }}{% else %}Surface sauvée{% endif %}
+            </div>
+            <div class="cd-ligne-date">{{ declaration.quartier|upper }} · IL Y A {{ declaration.date_declaration|depuis|upper }}</div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="cm-vide" style="margin:0">
+          Tu n'as encore rien déclaré. Chaque m² compte pour {{ defi.ville }}.
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ══ Déclarer ══ #}
+  <div class="cm-cta">
+    <button type="button" class="cm-bouton" data-feuille-ouvre="feuille-m2"
+            style="background:var(--violet);color:#fff;box-shadow:0 12px 26px rgba(124,92,255,.34)">
+      Déclarer mes m²
+    </button>
+  </div>
+
+  {# ══ Feuille de déclaration ══ #}
+  <div class="cm-feuille" id="feuille-m2" hidden>
+    <span class="cm-feuille-voile"></span>
+    <div class="cm-feuille-corps">
+      <span class="cm-feuille-poignee"></span>
+      <div class="cm-feuille-titre">Combien de m² sauvés ?</div>
+      <div class="cm-feuille-sous">
+        La surface du tissu que tu viens de recoudre. Elle compte pour
+        {{ mon_quartier.quartier|default:defi.ville }}.
+      </div>
+
+      <form method="post" action="{% url 'communaute_declarer_m2' %}">
+        {% csrf_token %}
+
+        <div class="cd-raccourcis">
+          {% for valeur in raccourcis %}
+            <button type="button" class="cd-raccourci" data-m2="{{ valeur|stringformat:'g' }}">
+              {{ valeur|stringformat:'g' }} m²
+            </button>
+          {% endfor %}
+        </div>
+
+        <label class="cd-saisie">
+          <input type="number" name="m2" id="cd-champ-m2" min="0.1" max="50" step="0.1"
+                 value="0.5" required aria-label="Surface en mètres carrés">
+          <span class="cd-saisie-unite">m²</span>
+        </label>
+
+        <div class="cd-aide">
+          10 XP par m². Au-delà de 50 m² en une fois, la déclaration est refusée.
+        </div>
+
+        <button type="submit" class="cm-bouton" style="background:var(--violet);color:#fff;margin-top:18px">
+          Valider
+        </button>
+        <button type="button" class="cm-cta-secondaire" data-feuille-ferme
+                style="background:none;border:0;width:100%;cursor:pointer;color:var(--muted)">
+          Annuler
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+  {% include 'core/bottom_nav.html' %}
+{% endblock %}
+
+{% block communaute_js %}
+<script>
+  /* Les raccourcis remplissent le champ : la saisie libre reste possible,
+     mais le cas courant tient en un tap. */
+  (function () {
+    var champ = document.getElementById('cd-champ-m2');
+    if (!champ) return;
+
+    document.querySelectorAll('.cd-raccourci').forEach(function (bouton) {
+      bouton.addEventListener('click', function () {
+        champ.value = bouton.getAttribute('data-m2');
+        document.querySelectorAll('.cd-raccourci').forEach(function (autre) {
+          autre.classList.toggle('est-actif', autre === bouton);
+        });
+      });
+    });
+
+    // Une saisie manuelle annule la sélection d'un raccourci.
+    champ.addEventListener('input', function () {
+      document.querySelectorAll('.cd-raccourci').forEach(function (bouton) {
+        bouton.classList.remove('est-actif');
+      });
+    });
+  })();
+</script>
+{% endblock %}

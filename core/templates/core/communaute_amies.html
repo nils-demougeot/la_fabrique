@@ -1,0 +1,325 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  Chercher et ajouter des couturières.
+
+  Trois zones dans l'ordre d'urgence : les invitations qui attendent une
+  réponse, la recherche, puis ses amies actuelles. Sans requête, la recherche
+  suggère les couturières du quartier — celles qu'on croisera à un atelier.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .ca-recherche-barre { margin: 18px 16px 0; flex: none; display: flex; gap: 9px; }
+  .ca-champ {
+    flex: 1;
+    background: var(--sand);
+    border-radius: 20px;
+    padding: 13px 16px;
+    display: flex; align-items: center; gap: 9px;
+    min-width: 0;
+  }
+  .ca-champ input {
+    flex: 1; min-width: 0;
+    border: 0; background: none; outline: none;
+    font: 400 13px var(--text);
+    color: var(--ink);
+  }
+  .ca-champ input::placeholder { color: var(--faint); }
+  .ca-envoyer {
+    width: 52px; flex: none;
+    background: var(--ink);
+    border: 0;
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  /* ── Invitations reçues ── */
+  .ca-demandes {
+    margin: 20px 16px 0;
+    border-radius: 28px;
+    padding: 18px;
+    background: linear-gradient(140deg, #E3DBFF 0%, #FFFDF8 82%);
+    border: 1px solid #CFC2F5;
+    box-sizing: border-box;
+  }
+  .ca-demandes-titre {
+    display: flex; align-items: center; gap: 8px;
+    font: 500 9.5px var(--mono);
+    letter-spacing: .12em;
+    color: #3B2F6B;
+  }
+  .ca-demande {
+    display: flex; align-items: center; gap: 11px;
+    margin-top: 14px;
+  }
+  .ca-demande-nom { font: 800 14px var(--display); }
+  .ca-demande-meta { font: 400 11.5px var(--text); color: var(--muted); margin-top: 2px; }
+  .ca-oui, .ca-non {
+    border: 0;
+    border-radius: 14px;
+    cursor: pointer;
+    flex: none;
+    font-family: var(--display);
+  }
+  .ca-oui {
+    background: var(--violet);
+    color: #fff;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .ca-non {
+    background: rgba(255,253,248,.9);
+    color: var(--muted);
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ── Résultats ── */
+  .ca-resultat {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    border-radius: 22px;
+    padding: 13px 15px;
+  }
+  .ca-resultat + .ca-resultat { margin-top: 9px; }
+  .ca-resultat-nom { font: 800 14px var(--display); }
+  .ca-resultat-meta { font: 500 9.5px var(--mono); color: var(--faint); margin-top: 3px; }
+  .ca-inviter {
+    border: 0;
+    border-radius: 14px;
+    padding: 10px 13px;
+    font: 800 11.5px var(--display);
+    flex: none;
+    cursor: pointer;
+    background: var(--ink);
+    color: #fff;
+  }
+  .ca-etat {
+    border-radius: 14px;
+    padding: 9px 12px;
+    font: 800 11px var(--display);
+    flex: none;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .ca-etat.est-amies { background: var(--green-l); color: var(--green-d); }
+  .ca-etat.est-envoyee { background: var(--sand); color: var(--muted); }
+
+  /* ── Code d'atelier ── */
+  .ca-code-bloc {
+    margin: 20px 16px 0;
+    border-radius: 26px;
+    padding: 8px;
+    background: var(--yellow);
+  }
+  .ca-code-cadre {
+    border: 1.5px dashed rgba(0,0,0,.35);
+    border-radius: 20px;
+    padding: 16px 18px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .ca-code-kicker { font: 500 9px var(--mono); letter-spacing: .14em; color: #7A5303; }
+  .ca-code-valeur { font: 800 24px var(--display); letter-spacing: .03em; margin-top: 6px; }
+  .ca-code-detail { font: 400 11.5px/1.4 var(--text); color: #6B4A0A; margin-top: 5px; }
+  .ca-copier {
+    background: var(--ink);
+    color: var(--yellow);
+    border: 0;
+    border-radius: 14px;
+    padding: 11px 14px;
+    font: 800 11.5px var(--display);
+    flex: none;
+    cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm has-nav">
+
+  <header class="cm-topbar">
+    <a href="{% url 'communaute' %}?onglet=amis" class="cm-back" aria-label="Retour">
+      {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+    </a>
+    <span class="cm-topbar-label">TROUVER DES AMIS</span>
+    <span class="cm-back-ghost" aria-hidden="true"></span>
+  </header>
+
+  {# ══ Recherche ══ #}
+  <form method="get" action="{% url 'communaute_amies' %}" class="ca-recherche-barre">
+    <label class="ca-champ">
+      <span style="color:var(--faint);flex:none;display:flex">
+        {% include 'core/communaute/_icones.html' with icone='loupe' taille=17 %}
+      </span>
+      <input type="search" name="q" value="{{ requete }}"
+             placeholder="Prénom, pseudo ou code d'atelier" autofocus>
+    </label>
+    <button type="submit" class="ca-envoyer" aria-label="Chercher">
+      {% include 'core/communaute/_icones.html' with icone='fleche-droite' taille=20 %}
+    </button>
+  </form>
+
+  {# ══ Invitations en attente ══ #}
+  {% if demandes %}
+  <section class="ca-demandes cm-entree">
+    <div class="ca-demandes-titre">
+      {% include 'core/communaute/_icones.html' with icone='amis' taille=14 %}
+      {{ demandes|length }} INVITATION{{ demandes|length|pluralize:"S" }} EN ATTENTE
+    </div>
+
+    {% for demande in demandes %}
+      <div class="ca-demande">
+        <a href="{% url 'communaute_profil' demande.de.pk %}" class="cm-jeton {{ demande.de|teinte }}"
+           style="width:42px;height:42px;font-size:14px">{{ demande.de|initiales }}</a>
+        <div style="flex:1;min-width:0">
+          <a href="{% url 'communaute_profil' demande.de.pk %}" class="ca-demande-nom cm-nom-lien" style="display:block">{{ demande.de|nom_court }}</a>
+          <div class="ca-demande-meta">
+            {% if demande.de.profil_jeu %}{{ demande.de.profil_jeu.quartier }} · {% endif %}
+            il y a {{ demande.date_creation|depuis }}
+          </div>
+        </div>
+        <form method="post" action="{% url 'communaute_repondre_amitie' demande.pk %}"
+              style="display:flex;gap:7px;flex:none">
+          {% csrf_token %}
+          <input type="hidden" name="reponse" value="accepter">
+          <button type="submit" class="ca-oui">Accepter</button>
+        </form>
+        <form method="post" action="{% url 'communaute_repondre_amitie' demande.pk %}" style="flex:none">
+          {% csrf_token %}
+          <input type="hidden" name="reponse" value="refuser">
+          <button type="submit" class="ca-non" aria-label="Refuser">
+            {% include 'core/communaute/_icones.html' with icone='croix' taille=14 %}
+          </button>
+        </form>
+      </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {# ══ Résultats ══ #}
+  <section class="cm-section cm-entree" style="--rang:1">
+    <div class="cm-section-head">
+      <span class="cm-section-titre">
+        {% if requete %}Résultats{% else %}Autour de toi{% endif %}
+      </span>
+      <span class="cm-section-meta">{{ resultats|length }} COUTURIÈRE{{ resultats|length|pluralize:"S" }}</span>
+    </div>
+
+    <div style="padding:0 16px">
+      {% for personne in resultats %}
+        <div class="ca-resultat">
+          <a href="{% url 'communaute_profil' personne.pk %}" class="cm-jeton {{ personne|teinte }}"
+             style="width:42px;height:42px;font-size:14px">{{ personne|initiales }}</a>
+          <a href="{% url 'communaute_profil' personne.pk %}" style="flex:1;min-width:0">
+            <span class="ca-resultat-nom" style="display:block">{{ personne|nom_court }}</span>
+            <span class="ca-resultat-meta" style="display:block">
+              NIV. {{ personne.niveau }}{% if personne.profil_jeu %} · {{ personne.profil_jeu.quartier|upper }}{% endif %}
+            </span>
+          </a>
+
+          {% if personne.etat_lien == 'amies' %}
+            <span class="ca-etat est-amies">
+              {% include 'core/communaute/_icones.html' with icone='coche' taille=12 %}
+              Amis
+            </span>
+          {% elif personne.etat_lien == 'envoyee' %}
+            <span class="ca-etat est-envoyee">Envoyée</span>
+          {% elif personne.etat_lien == 'recue' %}
+            <span class="ca-etat est-envoyee">T'a invité</span>
+          {% else %}
+            <form method="post" action="{% url 'communaute_inviter' personne.pk %}" style="flex:none">
+              {% csrf_token %}
+              <input type="hidden" name="retour" value="{{ request.get_full_path }}">
+              <button type="submit" class="ca-inviter">Inviter</button>
+            </form>
+          {% endif %}
+        </div>
+      {% empty %}
+        <div class="cm-vide" style="margin:0">
+          {% if requete %}
+            Aucun couturier ne correspond à « {{ requete }} ».
+          {% else %}
+            Personne d'autre dans ton quartier pour l'instant. Partage ton code d'atelier.
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ══ Code d'atelier ══ #}
+  <section class="ca-code-bloc cm-entree" style="--rang:2">
+    <div class="ca-code-cadre">
+      <div style="flex:1;min-width:0">
+        <div class="ca-code-kicker">TON CODE D'ATELIER</div>
+        <div class="ca-code-valeur">{{ code_atelier }}</div>
+        <div class="ca-code-detail">Donne-le pour qu'on te trouve du premier coup.</div>
+      </div>
+      <button type="button" class="ca-copier" id="ca-copier" data-code="{{ code_atelier }}">Copier</button>
+    </div>
+  </section>
+
+  {# ══ Mes amies ══ #}
+  {% if amies %}
+  <section class="cm-section cm-entree" style="--rang:3">
+    <div class="cm-section-head">
+      <span class="cm-section-titre">Tes amis</span>
+      <span class="cm-section-meta">{{ amies|length }}</span>
+    </div>
+    <div style="padding:0 16px">
+      {% for amie in amies %}
+        <a href="{% url 'communaute_profil' amie.pk %}" class="ca-resultat cm-tap">
+          <span class="cm-jeton {{ amie|teinte }}" style="width:42px;height:42px;font-size:14px">
+            {{ amie|initiales }}
+          </span>
+          <span style="flex:1;min-width:0">
+            <span class="ca-resultat-nom" style="display:block">{{ amie|nom_court }}</span>
+            <span class="ca-resultat-meta" style="display:block">
+              {% if amie.profil_jeu.serie_actuelle %}SÉRIE {{ amie.profil_jeu.serie_actuelle }} J{% else %}SÉRIE À RELANCER{% endif %}
+            </span>
+          </span>
+          {% include 'core/communaute/_icones.html' with icone='chevron' taille=14 %}
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+  {% include 'core/bottom_nav.html' %}
+{% endblock %}
+
+{% block communaute_js %}
+<script>
+  (function () {
+    var bouton = document.getElementById('ca-copier');
+    if (!bouton) return;
+    bouton.addEventListener('click', function () {
+      var code = bouton.getAttribute('data-code') || '';
+      var fini = function () {
+        var avant = bouton.textContent;
+        bouton.textContent = 'Copié !';
+        setTimeout(function () { bouton.textContent = avant; }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(fini).catch(function () {});
+      } else {
+        var champ = document.createElement('input');
+        champ.value = code;
+        document.body.appendChild(champ);
+        champ.select();
+        try { document.execCommand('copy'); fini(); } catch (e) {}
+        document.body.removeChild(champ);
+      }
+    });
+  })();
+</script>
+{% endblock %}

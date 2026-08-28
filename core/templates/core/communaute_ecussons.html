@@ -1,0 +1,266 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  45e — Collection d'écussons. S'ouvre en tapant le compteur d'écussons de la
+  carte d'atelier. Anneau de progression, filtres, grilles hexagonales par
+  catégorie, section « à débloquer », et mise en avant du dernier obtenu.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .ce-entete {
+    margin: 16px 16px 0;
+    background: linear-gradient(150deg, #1F5E3F 0%, #221E19 72%);
+    border-radius: 28px;
+    padding: 20px;
+    flex: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .cm .ce-entete-glow {
+    position: absolute; top: -60px; right: -40px;
+    width: 190px; height: 190px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,201,60,.24) 0%, rgba(255,201,60,0) 70%);
+  }
+  .ce-entete > * { position: relative; }
+  .ce-anneau { width: 80px; height: 80px; flex: none; position: relative; }
+  .ce-anneau-piste {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(#FFC93C 0 var(--pct, 42%), rgba(255,255,255,.14) var(--pct, 42%));
+  }
+  .ce-anneau-coeur {
+    position: absolute; inset: 8px;
+    border-radius: 50%;
+    background: var(--ink);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .ce-anneau-nombre { font: 800 22px var(--display); color: #fff; line-height: 1; }
+  .ce-anneau-total { font: 500 8px var(--mono); color: var(--dim); letter-spacing: .08em; margin-top: 2px; }
+  .ce-entete-titre { font: 800 19px var(--display); color: #fff; }
+  .ce-entete-phrase { font: 400 12px/1.45 var(--text); color: var(--dim-2); margin-top: 6px; }
+  .ce-rang-pastille {
+    background: rgba(255,255,255,.1);
+    color: #E7DED0;
+    border-radius: 10px;
+    padding: 4px 8px;
+    font: 500 8.5px var(--mono);
+    letter-spacing: .08em;
+  }
+
+  .ce-groupe { padding: 20px 20px 0; flex: none; }
+  .ce-groupe-titre { font: 800 13.5px var(--display); color: var(--muted); margin-bottom: 12px; }
+  .ce-grille {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    row-gap: 16px;
+    column-gap: 8px;
+  }
+  .ce-case { text-align: center; }
+  .ce-case.est-manquant .cm-hex svg { filter: none; }
+  .ce-case.est-manquant .cm-hex-icone { color: var(--stone); opacity: .55; }
+  .ce-case.est-manquant .cm-hex-nom { color: var(--faint); }
+
+  /* Anneau de progression : le même tracé que le fond de l'hexagone, mais
+     juste le contour, dessiné en pointillés dont la part visible avance
+     depuis la pointe du haut (là où le tracé commence). Sa longueur réelle
+     n'est connue qu'au rendu (SVG) : `equiper()` la calcule et pose le
+     `stroke-dasharray` correspondant. */
+  .ce-case .cm-hex-progres { fill: none; stroke-width: 5; stroke-linecap: round; opacity: .9; }
+
+  /* Éclat des badges décrochés : un reflet diagonal balaie le losange en
+     boucle lente, clippé à sa silhouette. */
+  .ce-hex-brillance {
+    position: absolute; inset: 0;
+    clip-path: polygon(41% 6.1%, 59% 6.1%, 86% 19.3%, 95% 34.2%, 95% 65.8%, 86% 80.7%, 59% 93.9%, 41% 93.9%, 14% 80.7%, 5% 65.8%, 5% 34.2%, 14% 19.3%);
+    pointer-events: none;
+  }
+  .ce-hex-brillance span {
+    position: absolute; top: -30%; left: -60%;
+    width: 45%; height: 160%;
+    background: linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.55) 50%, rgba(255,255,255,0) 100%);
+    transform: skewX(-16deg);
+    animation: ceBrillance 3.4s ease-in-out infinite;
+  }
+  @keyframes ceBrillance {
+    0%, 55%  { left: -60%; }
+    100%     { left: 130%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ce-hex-brillance span { animation: none; display: none; }
+  }
+
+  /* Dernier écusson obtenu, mis en avant en pied de page. */
+  .ce-dernier {
+    background: var(--sand);
+    border-radius: 26px;
+    padding: 18px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .ce-dernier-hex { width: 64px; flex: none; }
+  .ce-dernier-nom { font: 800 15px var(--display); }
+  .ce-dernier-rang {
+    background: var(--yellow-l);
+    color: #8A6200;
+    border-radius: 8px;
+    padding: 2px 6px;
+    font: 800 8.5px var(--display);
+  }
+  .ce-dernier-detail { font: 400 11.5px/1.4 var(--text); color: var(--muted); margin-top: 5px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm" style="padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px))">
+
+  <header class="cm-topbar">
+    <a href="{% url 'communaute' %}" class="cm-back" aria-label="Retour">
+      {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+    </a>
+    <span class="cm-topbar-label">MES ÉCUSSONS</span>
+    <span class="cm-back" aria-hidden="true">
+      {% include 'core/communaute/_icones.html' with icone='partager' %}
+    </span>
+  </header>
+
+  {# ══ Progression ══ #}
+  <section class="ce-entete">
+    <span class="ce-entete-glow" aria-hidden="true"></span>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="ce-anneau">
+        <div class="ce-anneau-piste" style="--pct:{{ collection.pourcentage }}%"></div>
+        <div class="ce-anneau-coeur">
+          <span class="ce-anneau-nombre">{{ collection.nb_obtenus }}</span>
+          <span class="ce-anneau-total">/ {{ collection.total }}</span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="ce-entete-titre">Collection en cours</div>
+        <div class="ce-entete-phrase">
+          {% if collection.nb_restants %}
+            Encore {{ collection.nb_restants }} écusson{{ collection.nb_restants|pluralize }} à décrocher.
+          {% else %}
+            La collection est complète. Chapeau.
+          {% endif %}
+        </div>
+        {% if par_rang %}
+        <div style="display:flex;gap:6px;margin-top:11px;flex-wrap:wrap">
+          {% for rang in par_rang %}
+            <span class="ce-rang-pastille">{{ rang.nombre }} {{ rang.libelle }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {# ══ Filtres ══ #}
+  <div class="cm-rail" style="gap:7px;padding:16px 20px 0;flex:none">
+    <a href="?filtre=tout" class="cm-chip" {% if filtre == 'tout' %}aria-current="true"{% endif %}>Tout · {{ collection.total }}</a>
+    <a href="?filtre=obtenus" class="cm-chip" {% if filtre == 'obtenus' %}aria-current="true"{% endif %}>Obtenus · {{ collection.nb_obtenus }}</a>
+    <a href="?filtre=manquants" class="cm-chip" {% if filtre == 'manquants' %}aria-current="true"{% endif %}>En cours</a>
+    <a href="?filtre=or" class="cm-chip" {% if filtre == 'or' %}aria-current="true"{% endif %}>Or</a>
+  </div>
+
+  {# ══ Grilles par catégorie ══ #}
+  {% for groupe in collection.groupes %}
+    <section class="ce-groupe">
+      <div class="ce-groupe-titre">{{ groupe.libelle }}</div>
+      <div class="ce-grille">
+        {% for item in groupe.items %}
+          <div class="ce-case {% if not item.obtenu %}est-manquant{% endif %}">
+            <div class="cm-hex">
+              <svg viewBox="0 0 100 114">
+                {% if item.obtenu %}
+                  <defs>
+                    <linearGradient id="hx{{ item.ecusson.code }}" x1="15" y1="5" x2="90" y2="110" gradientUnits="userSpaceOnUse">
+                      <stop offset="0" stop-color="{{ item.ecusson.couleur_haut }}"/>
+                      <stop offset="1" stop-color="{{ item.ecusson.couleur_bas }}"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M41 7 Q50 2 59 7 L86 22 Q95 27 95 39 L95 75 Q95 87 86 92 L59 107 Q50 112 41 107 L14 92 Q5 87 5 75 L5 39 Q5 27 14 22 Z"
+                        fill="url(#hx{{ item.ecusson.code }})"/>
+                {% else %}
+                  <path d="M41 7 Q50 2 59 7 L86 22 Q95 27 95 39 L95 75 Q95 87 86 92 L59 107 Q50 112 41 107 L14 92 Q5 87 5 75 L5 39 Q5 27 14 22 Z"
+                        fill="#EDE4D6"/>
+                  {% if item.progres_pct is not None %}
+                    <path class="cm-hex-progres" data-hex-progres="{{ item.progres_pct }}"
+                          stroke="{{ item.ecusson.couleur_bas }}" style="opacity:0"
+                          d="M41 7 Q50 2 59 7 L86 22 Q95 27 95 39 L95 75 Q95 87 86 92 L59 107 Q50 112 41 107 L14 92 Q5 87 5 75 L5 39 Q5 27 14 22 Z"/>
+                  {% endif %}
+                {% endif %}
+              </svg>
+
+              {% if item.obtenu %}
+                <span class="ce-hex-brillance" aria-hidden="true"><span></span></span>
+              {% endif %}
+
+              <span class="cm-hex-icone">
+                {% if item.obtenu %}
+                  {% include 'core/communaute/_icones.html' with icone=item.ecusson.icone taille=28 uid=item.ecusson.code %}
+                {% elif item.ecusson.secret %}
+                  <svg viewBox="0 0 24 24">
+                    <text x="12" y="18" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif"
+                          font-weight="800" font-size="18" fill="#B0A493">?</text>
+                  </svg>
+                {% else %}
+                  {% include 'core/communaute/_icones.html' with icone=item.ecusson.icone taille=24 uid='m'|add:item.ecusson.code %}
+                {% endif %}
+              </span>
+            </div>
+            <div class="cm-hex-nom">
+              {% if item.obtenu or not item.ecusson.secret %}{{ item.ecusson.nom }}{% else %}?{% endif %}
+            </div>
+            {% if item.ecusson.condition %}
+              <div class="cm-hex-cond">{{ item.ecusson.condition }}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% empty %}
+    <div class="cm-vide">Aucun écusson dans ce filtre.</div>
+  {% endfor %}
+
+  {# ══ Dernier obtenu ══ #}
+  {% if collection.dernier %}
+  <section style="padding:22px 20px 24px;flex:none">
+    <div class="ce-dernier">
+      <div class="ce-dernier-hex">
+        <div class="cm-hex">
+          <svg viewBox="0 0 100 114">
+            <defs>
+              <linearGradient id="hxDernier" x1="15" y1="5" x2="90" y2="110" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="{{ collection.dernier.ecusson.couleur_haut }}"/>
+                <stop offset="1" stop-color="{{ collection.dernier.ecusson.couleur_bas }}"/>
+              </linearGradient>
+            </defs>
+            <path d="M41 7 Q50 2 59 7 L86 22 Q95 27 95 39 L95 75 Q95 87 86 92 L59 107 Q50 112 41 107 L14 92 Q5 87 5 75 L5 39 Q5 27 14 22 Z"
+                  fill="url(#hxDernier)"/>
+          </svg>
+          <span class="cm-hex-icone">
+            {% include 'core/communaute/_icones.html' with icone=collection.dernier.ecusson.icone taille=26 uid='dernier' %}
+          </span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+          <span class="ce-dernier-nom">{{ collection.dernier.ecusson.nom }}</span>
+          <span class="ce-dernier-rang">RANG {{ collection.dernier.ecusson.get_rang_display|upper }}</span>
+        </div>
+        <div class="ce-dernier-detail">
+          {{ collection.dernier.ecusson.condition }}.
+          {% if collection.dernier.ecusson.rarete %}
+            Obtenu par {{ collection.dernier.ecusson.rarete }} % des couturiers.
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}

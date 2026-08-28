@@ -1,0 +1,190 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  45b — Série plein écran. S'ouvre en tapant la flamme de la carte d'atelier.
+  Halo chaud, flamme géante, calendrier de la semaine, gels et record.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cse {
+    background: radial-gradient(120% 70% at 50% 0%, #3A2110 0%, #1A1712 52%, #14120F 100%);
+    color: #fff;
+    position: relative;
+  }
+  .cm .cse-halo {
+    position: absolute; top: -60px; left: 50%;
+    transform: translateX(-50%);
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,140,40,.35) 0%, rgba(255,140,40,0) 70%);
+    pointer-events: none;
+  }
+  .cse > * { position: relative; }
+
+  .cse-flamme {
+    display: flex; justify-content: center;
+    filter: drop-shadow(0 12px 26px rgba(255,120,30,.6));
+    animation: cseRespire 3.4s ease-in-out infinite;
+  }
+  @keyframes cseRespire {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.045); }
+  }
+  .cse-nombre {
+    font: 800 76px var(--display);
+    color: #fff;
+    line-height: .95;
+    letter-spacing: -.03em;
+    margin-top: 10px;
+  }
+  .cse-legende { font: 800 17px var(--display); color: var(--yellow); margin-top: 6px; }
+  .cse-phrase { font: 400 12.5px/1.5 var(--text); color: var(--dim-2); margin-top: 10px; }
+
+  .cse-semaine {
+    margin: 22px 20px 0;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    box-sizing: border-box;
+    border-radius: 26px;
+    padding: 18px;
+    flex: none;
+  }
+  .cse-semaine-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .cse-semaine-kicker { font: 500 9px var(--mono); letter-spacing: .14em; color: var(--dim); }
+  .cse-semaine-score { font: 800 11px var(--display); color: var(--green-pale); }
+  .cse-jours { display: flex; gap: 6px; }
+  .cse-jour { flex: 1; text-align: center; min-width: 0; }
+  .cse-case {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+  }
+  .cse-case.e-fait {
+    background: linear-gradient(160deg, #FF9B4C, #E1552A);
+    box-shadow: 0 4px 12px rgba(225,85,42,.4);
+  }
+  .cse-case.e-gel { background: linear-gradient(160deg, #7FC9E8, #2E7EA3); }
+  .cse-case.e-vide, .cse-case.e-aujourdhui {
+    border: 1.5px dashed rgba(255,255,255,.25);
+    box-sizing: border-box;
+  }
+  .cse-jour-lettre { font: 500 8px var(--mono); color: var(--dim); margin-top: 6px; }
+  .cse-jour-lettre.est-auj { font: 800 8px var(--display); color: var(--yellow); }
+
+  .cse-bas { display: flex; gap: 10px; margin: 12px 20px 0; flex: none; }
+  .cse-gels {
+    flex: 1;
+    background: rgba(127,201,232,.14);
+    border: 1px solid rgba(127,201,232,.28);
+    box-sizing: border-box;
+    border-radius: 22px;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 11px;
+  }
+  .cse-gels-icone { display: flex; flex: none; filter: drop-shadow(0 3px 8px rgba(94,178,216,.5)); }
+  .cse-valeur { font: 800 16px var(--display); color: #fff; line-height: 1; }
+  .cse-sous { font: 500 8px var(--mono); letter-spacing: .1em; margin-top: 4px; }
+  .cse-record {
+    width: 104px; flex: none;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    box-sizing: border-box;
+    border-radius: 22px;
+    padding: 14px;
+    text-align: center;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm cse has-cta">
+  <span class="cse-halo" aria-hidden="true"></span>
+
+  <header class="cm-topbar is-dark" style="justify-content:flex-end">
+    <a href="{% url 'communaute' %}" class="cm-back" aria-label="Fermer">
+      {% include 'core/communaute/_icones.html' with icone='croix' %}
+    </a>
+  </header>
+
+  {# ══ Flamme et compte ══ #}
+  <section style="text-align:center;padding:8px 24px 0;flex:none">
+    <span class="cse-flamme">
+      {% include 'core/communaute/_icones.html' with icone='flamme' taille=118 uid='serie' %}
+    </span>
+    <div class="cse-nombre">{{ profil.serie_actuelle }}</div>
+    <div class="cse-legende">jour{{ profil.serie_actuelle|pluralize }} d'atelier d'affilée</div>
+    <div class="cse-phrase">
+      {% if prochain_palier %}
+        Ton record est de {{ profil.serie_record }} jour{{ profil.serie_record|pluralize }}.
+        Encore {{ jours_avant_palier }} et tu décroches {{ prochain_ecusson }}.
+      {% else %}
+        Ton record est de {{ profil.serie_record }} jours — et tu viens de le battre.
+      {% endif %}
+    </div>
+  </section>
+
+  {# ══ Calendrier de la semaine ══ #}
+  <section class="cse-semaine">
+    <div class="cse-semaine-head">
+      <span class="cse-semaine-kicker">CETTE SEMAINE</span>
+      <span class="cse-semaine-score">{{ jours_faits }} / 7 JOURS</span>
+    </div>
+    <div class="cse-jours">
+      {% for case in cases %}
+        <div class="cse-jour">
+          <span class="cse-case e-{{ case.etat }}">
+            {% if case.etat == 'fait' %}
+              {% include 'core/communaute/_icones.html' with icone='coche' taille=16 %}
+            {% elif case.etat == 'gel' %}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+              </svg>
+            {% endif %}
+          </span>
+          <div class="cse-jour-lettre {% if case.etat == 'aujourdhui' %}est-auj{% endif %}">
+            {% if case.etat == 'aujourdhui' %}AUJ.{% else %}{{ case.lettre }}{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ══ Gels et record ══ #}
+  <section class="cse-bas">
+    <div class="cse-gels">
+      <span class="cse-gels-icone">
+        {% include 'core/communaute/_icones.html' with icone='gel' taille=24 uid='serieGel' %}
+      </span>
+      <div style="flex:1;min-width:0">
+        <div class="cse-valeur">{{ profil.gels }} gel{{ profil.gels|pluralize }}</div>
+        <div class="cse-sous" style="color:var(--blue-l)">PROTÈGENT TA SÉRIE</div>
+      </div>
+    </div>
+    <div class="cse-record">
+      <div class="cse-valeur">{{ profil.serie_record }} j</div>
+      <div class="cse-sous" style="color:var(--dim)">RECORD</div>
+    </div>
+  </section>
+
+  {# ══ Action ══ #}
+  <div class="cm-cta on-dark">
+    {% if en_danger %}
+      <form method="post" action="{% url 'communaute_entretenir_serie' %}">
+        {% csrf_token %}
+        <button type="submit" class="cm-bouton b-feu">Entretenir ma série</button>
+      </form>
+    {% else %}
+      <a href="{% url 'patrons' %}" class="cm-bouton b-feu">Continuer à coudre</a>
+    {% endif %}
+    <a href="{% url 'communaute_quetes' %}" class="cm-cta-secondaire">Voir tout mon calendrier</a>
+  </div>
+
+</div>
+{% endblock %}

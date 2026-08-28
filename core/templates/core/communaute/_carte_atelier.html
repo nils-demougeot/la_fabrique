@@ -1,0 +1,128 @@
+{% load communaute_extras %}
+{% comment %}
+  ─────────────────────────────────────────────────────────────────────────
+  Carte d'atelier — bloc identique en tête des trois onglets (37a/46a/46b).
+
+  Trois zones y sont des portes d'entrée vers les sous-pages :
+    · la flamme de série     → 45b  série plein écran
+    · le compteur de pièces  → 45c  boutique de pièces
+    · le compteur d'écussons → 45e  collection d'écussons
+
+  Attendu dans le contexte : profil, niveau, pieces, nb_ecussons,
+  total_ecussons, serie, gels.
+  ─────────────────────────────────────────────────────────────────────────
+{% endcomment %}
+<section class="cm-card">
+  <span class="cm-card-glow" aria-hidden="true"></span>
+
+  <div class="cm-card-top">
+    <span class="cm-card-top-label">MA CARTE D'ATELIER</span>
+    <a href="{% url 'mon_profil' %}" class="cm-card-profil">
+      <span>Mon profil</span>
+      {% include 'core/communaute/_icones.html' with icone='chevron' %}
+    </a>
+  </div>
+
+  <div class="cm-identite">
+    <span class="cm-avatar">{{ profil.initiales }}</span>
+    <div style="flex:1;min-width:0">
+      <div class="cm-identite-nom">{{ profil.nom_affiche }}</div>
+      <div class="cm-identite-role">{{ niveau.nom }} · {{ profil.arrondissement }}</div>
+    </div>
+  </div>
+
+  {# ── Niveau : anneau + barre de CP, porte vers l'écran de progression ── #}
+  <a href="{% url 'communaute_progression' %}" class="cm-niveau cm-tap">
+    <span class="cm-niveau-glow" aria-hidden="true"></span>
+    <div class="cm-niveau-corps">
+      <div class="cm-anneau">
+        <div class="cm-anneau-piste" style="--pct:{{ niveau.pourcentage }}%"></div>
+        <div class="cm-anneau-coeur"><span>{{ niveau.numero }}</span></div>
+        <span class="cm-anneau-pastille" aria-hidden="true"></span>
+      </div>
+      <div class="cm-niveau-infos">
+        <div class="cm-niveau-ligne">
+          <span class="cm-niveau-kicker">NIVEAU {{ niveau.numero }}</span>
+          <span class="cm-niveau-filet"></span>
+          <span class="cm-niveau-chevron">
+            {% include 'core/communaute/_icones.html' with icone='chevron' taille=11 %}
+          </span>
+        </div>
+        <div class="cm-niveau-titre">{{ niveau.nom }}</div>
+        <div class="cm-xp-piste">
+          <div class="cm-xp-jauge" style="width:{{ niveau.pourcentage }}%"></div>
+        </div>
+        {% comment %}
+          Mêmes CP que le tableau de bord (barème unique de gamification.py).
+          Sans séparateur de milliers : la ligne doit tenir sur un seul rang.
+        {% endcomment %}
+        <div class="cm-xp-legende">
+          {% if niveau.niveau_suivant %}
+            {{ niveau.points_dans_niveau }} / {{ niveau.points_palier }} · NIVEAU {{ niveau.niveau_suivant }} DANS {{ niveau.points_restants }} CP
+          {% else %}
+            {{ niveau.points }} CP · NIVEAU MAXIMUM ATTEINT
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </a>
+
+  {# ── Série (→ 45b) et gels ── #}
+  <div class="cm-tuiles">
+    <a href="{% url 'communaute_serie' %}" class="cm-tuile-serie cm-tap">
+      <span class="cm-tuile-serie-glow" aria-hidden="true"></span>
+      <span class="cm-tuile-serie-corps">
+        <span class="cm-flamme">
+          {% include 'core/communaute/_icones.html' with icone='flamme' taille=40 uid='carte' %}
+        </span>
+        <span style="flex:none">
+          <span class="cm-tuile-nombre" style="display:block">{{ serie }}</span>
+          <span class="cm-tuile-legende" style="display:block">JOURS DE SÉRIE</span>
+        </span>
+      </span>
+    </a>
+
+    <div class="cm-tuile-gels">
+      <span class="cm-gel-icone">
+        {% include 'core/communaute/_icones.html' with icone='gel' taille=22 uid='carte' %}
+      </span>
+      <span class="cm-gel-cubes">
+        {% for i in 3|repeter %}
+          <span class="cm-gel-cube {% if i >= gels %}is-vide{% endif %}"></span>
+        {% endfor %}
+      </span>
+      <span class="cm-gel-legende">{{ gels }} GEL{{ gels|pluralize:"S" }}</span>
+    </div>
+  </div>
+
+  {# ── Pièces (→ 45c) et écussons (→ 45e) ── #}
+  <div class="cm-tuiles">
+    <a href="{% url 'communaute_boutique' %}" class="cm-tuile-pieces cm-tap">
+      <span class="cm-piece-icone">
+        {% include 'core/communaute/_icones.html' with icone='piece' taille=30 uid='carte' %}
+      </span>
+      <span style="flex:1;min-width:0">
+        <span class="cm-tuile-valeur" style="display:block">{{ pieces|espace_millier }}</span>
+        <span class="cm-tuile-sous is-or" style="display:block">PIÈCES</span>
+      </span>
+    </a>
+
+    <a href="{% url 'communaute_ecussons' %}" class="cm-tuile-ecussons cm-tap">
+      <span style="flex:none">
+        <span class="cm-tuile-valeur" style="display:block">{{ nb_ecussons }}<small> / {{ total_ecussons }}</small></span>
+        <span class="cm-tuile-sous is-violet" style="display:block">ÉCUSSONS</span>
+      </span>
+      <span class="cm-pile">
+        <span class="cm-pile-item" style="background:linear-gradient(150deg,#4FD08A,#12633A)">
+          {% include 'core/communaute/_icones.html' with icone='coche' taille=13 %}
+        </span>
+        <span class="cm-pile-item" style="background:linear-gradient(150deg,#FFE9A8,#E0A20C);color:#5A3C02">
+          {% include 'core/communaute/_icones.html' with icone='bobine' taille=13 %}
+        </span>
+        <span class="cm-pile-item" style="background:linear-gradient(150deg,#C4B4FF,#5B45B8)">
+          {% include 'core/communaute/_icones.html' with icone='etoile' taille=13 %}
+        </span>
+      </span>
+    </a>
+  </div>
+</section>

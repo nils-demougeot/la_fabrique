@@ -1,0 +1,207 @@
+{% extends 'core/communaute/_base.html' %}
+{% load communaute_extras %}
+
+{% comment %}
+  Ouvrir un salon entre amies : un nom, une vignette, et les amies à convier.
+  Seules les amies apparaissent — un salon privé ne se peuple pas au hasard,
+  et le service le vérifie de son côté.
+{% endcomment %}
+
+{% block communaute_css %}
+<style>
+  .cc-champ-bloc { margin: 20px 16px 0; }
+  .cc-label {
+    font: 500 9px var(--mono);
+    letter-spacing: .14em;
+    color: var(--faint);
+    margin-bottom: 8px;
+  }
+  .cc-champ {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--sand);
+    border: 1.5px solid transparent;
+    border-radius: 20px;
+    padding: 15px 17px;
+    font: 700 15px var(--display);
+    color: var(--ink);
+    outline: none;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .cc-champ:focus { border-color: var(--green); background: var(--paper); }
+  .cc-champ.est-texte { font: 400 13px/1.5 var(--text); resize: vertical; min-height: 76px; }
+
+  /* ── Vignette ── */
+  .cc-motifs { display: flex; gap: 10px; }
+  .cc-motif {
+    flex: 1;
+    aspect-ratio: 1;
+    border-radius: 18px;
+    border: 3px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    transition: transform .12s ease;
+  }
+  .cc-motif:active { transform: scale(.94); }
+  .cc-motif.est-actif { border-color: var(--ink); }
+  .cc-motif.est-actif::after {
+    content: '';
+    position: absolute;
+    inset: auto 6px 6px auto;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--ink);
+  }
+
+  /* ── Amies ── */
+  .cc-amie {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px;
+    border-radius: 20px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: background .14s ease, border-color .14s ease;
+  }
+  .cc-amie + .cc-amie { margin-top: 8px; }
+  .cc-amie.est-choisie { background: var(--green-l); border-color: #BFE6D2; }
+  .cc-amie input { position: absolute; opacity: 0; pointer-events: none; }
+  .cc-amie-nom { font: 800 14px var(--display); }
+  .cc-amie-meta { font: 500 9px var(--mono); color: var(--faint); margin-top: 2px; }
+  .cc-coche {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--line-2);
+    box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center;
+    color: transparent;
+    flex: none;
+    transition: background .14s ease, border-color .14s ease, color .14s ease;
+  }
+  .cc-amie.est-choisie .cc-coche {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+  }
+
+  .cc-compte {
+    font: 500 9.5px var(--mono);
+    color: var(--muted);
+    letter-spacing: .06em;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cm has-cta">
+
+  <header class="cm-topbar">
+    <a href="{% url 'communaute_salons' %}" class="cm-back" aria-label="Retour">
+      {% include 'core/communaute/_icones.html' with icone='fleche-gauche' %}
+    </a>
+    <span class="cm-topbar-label">NOUVEAU SALON</span>
+    <span class="cm-back-ghost" aria-hidden="true"></span>
+  </header>
+
+  <form method="post" action="{% url 'communaute_creer_salon' %}" id="cc-form">
+    {% csrf_token %}
+
+    <div class="cc-champ-bloc">
+      <div class="cc-label">NOM DU SALON</div>
+      <input type="text" name="nom" class="cc-champ" maxlength="80" required autofocus
+             placeholder="Les cousettes du mardi">
+    </div>
+
+    <div class="cc-champ-bloc">
+      <div class="cc-label">DE QUOI ON Y PARLE ?</div>
+      <textarea name="description" class="cc-champ est-texte" maxlength="200"
+                placeholder="Optionnel — une phrase pour situer le salon."></textarea>
+    </div>
+
+    <div class="cc-champ-bloc">
+      <div class="cc-label">VIGNETTE</div>
+      <div class="cc-motifs">
+        {% for motif in motifs %}
+          <button type="button" class="cc-motif cm-motif m-{{ motif }} {% if forloop.first %}est-actif{% endif %}"
+                  data-motif="{{ motif }}" aria-label="Vignette {{ motif }}"></button>
+        {% endfor %}
+      </div>
+      <input type="hidden" name="motif" id="cc-motif" value="{{ motifs.0 }}">
+    </div>
+
+    <section class="cm-section" style="padding-top:24px">
+      <div class="cm-section-head">
+        <span class="cm-section-titre">Qui tu invites</span>
+        <span class="cc-compte"><span id="cc-compte">0</span> CHOISIE<span id="cc-compte-s"></span></span>
+      </div>
+
+      <div style="padding:0 16px">
+        {% for amie in amies %}
+          <label class="cc-amie">
+            <input type="checkbox" name="membres" value="{{ amie.pk }}">
+            <span class="cm-jeton {{ amie|teinte }}" style="width:40px;height:40px;font-size:13px">
+              {{ amie|initiales }}
+            </span>
+            <span style="flex:1;min-width:0">
+              <span class="cc-amie-nom" style="display:block">{{ amie|nom_court }}</span>
+              <span class="cc-amie-meta" style="display:block">
+                {% if amie.profil_jeu %}{{ amie.profil_jeu.quartier|upper }}{% endif %}
+              </span>
+            </span>
+            <span class="cc-coche">
+              {% include 'core/communaute/_icones.html' with icone='coche' taille=14 %}
+            </span>
+          </label>
+        {% empty %}
+          <div class="cm-vide" style="margin:0">
+            Tu n'as pas encore d'amis à inviter.
+            <a href="{% url 'communaute_amies' %}" style="color:var(--green);font-weight:700">En trouver</a>.
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <div class="cm-cta">
+      <button type="submit" class="cm-bouton b-ink">Ouvrir le salon</button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}
+
+{% block communaute_js %}
+<script>
+  (function () {
+    // Vignette : un seul motif retenu à la fois.
+    var champMotif = document.getElementById('cc-motif');
+    document.querySelectorAll('.cc-motif').forEach(function (bouton) {
+      bouton.addEventListener('click', function () {
+        document.querySelectorAll('.cc-motif').forEach(function (autre) {
+          autre.classList.toggle('est-actif', autre === bouton);
+        });
+        champMotif.value = bouton.getAttribute('data-motif');
+      });
+    });
+
+    // Amies : l'état visuel suit la case, et le compteur suit la sélection.
+    var compte = document.getElementById('cc-compte');
+    var pluriel = document.getElementById('cc-compte-s');
+
+    function recompter() {
+      var n = document.querySelectorAll('.cc-amie input:checked').length;
+      compte.textContent = n;
+      pluriel.textContent = n > 1 ? 'S' : '';
+    }
+
+    document.querySelectorAll('.cc-amie').forEach(function (ligne) {
+      var case_ = ligne.querySelector('input');
+      case_.addEventListener('change', function () {
+        ligne.classList.toggle('est-choisie', case_.checked);
+        recompter();
+      });
+    });
+  })();
+</script>
+{% endblock %}

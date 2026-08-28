@@ -1,0 +1,31 @@
+   <h2 class="pat-section-title">Le plus compatible pour toi</h2>
+      </div>
+      <a href="/patrons/53/" class="pat-feature pat-link">
+        <div class="pat-feature-media">
+          
+          <img src="https://res.cloudinary.com/dh1i1pzbv/image/upload/v1780491684/patrons/patron_tote_bag_xxl.jpg" alt="Tote bag XXL">
+          
+          <span class="pat-feature-tag">Top compatibilité</span>
+        </div>
+        <div class="pat-feature-body">
+          <h3 class="pat-feature-title">Tote bag XXL</h3>
+          <div class="pat-feature-meta">
+            <span class="pat-feature-badge is-compat"><span class="pat-badge-dot"></span>100% compatible</span>
+            
+            <span class="pat-feature-badge is-info">Sac · 2h</span>
+            
+            <span class="pat-feature-arrow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M12.5 6l6 6-6 6"/></svg>
+            </span>
+          </div>
+        </div>
+      </a>
+    </section>
+    
+
+    <!-- ══════════════ Déjà cousus ══════════════ -->
+    
+
+    <!-- ══════════════ Tous les patrons ══════════════ -->
+    <section>
+      <div class="pat-sec

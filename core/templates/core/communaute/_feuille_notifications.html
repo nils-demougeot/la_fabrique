@@ -1,0 +1,62 @@
+{% load communaute_extras %}
+{% comment %}
+  Contenu du menu de notifications, servi seul à la cloche par htmx.
+
+  Ce fragment n'étend rien : il est injecté dans le menu déjà présent dans la
+  page. Les styles vivent dans le socle de la rubrique.
+{% endcomment %}
+
+<div class="cn-entete">
+  <span class="cn-entete-titre">Notifications</span>
+  {% if nb %}<span class="cn-entete-compte">{{ nb }}</span>{% endif %}
+</div>
+
+{% for groupe in groupes %}
+  <div class="cn-jour">{{ groupe.libelle|upper }}</div>
+
+  {% for notification in groupe.items %}
+    {% if notification.lien %}<a href="{{ notification.lien }}" class="cn-ligne">{% else %}<div class="cn-ligne">{% endif %}
+
+      <span class="cn-marque t-{{ notification.type_notif }}">
+        {% if notification.type_notif == 'duel' %}
+          {% include 'core/communaute/_icones.html' with icone='eclair' taille=14 %}
+        {% elif notification.type_notif == 'coffre' %}
+          {% include 'core/communaute/_icones.html' with icone='coffre' taille=18 uid=notification.pk %}
+        {% elif notification.type_notif == 'niveau' %}
+          {% include 'core/communaute/_icones.html' with icone='fleche-haut' taille=14 %}
+        {% elif notification.type_notif == 'amitie_demande' or notification.type_notif == 'amitie_acceptee' %}
+          {% include 'core/communaute/_icones.html' with icone='amis' taille=14 %}
+        {% elif notification.type_notif == 'reponse' or notification.type_notif == 'salon' %}
+          {% include 'core/communaute/_icones.html' with icone='bulle' taille=14 %}
+        {% elif notification.type_notif == 'troc' %}
+          {% include 'core/communaute/_icones.html' with icone='troc' taille=14 %}
+        {% elif notification.type_notif == 'defi' %}
+          {% include 'core/communaute/_icones.html' with icone='epingle' taille=14 %}
+        {% elif notification.type_notif == 'evenement' %}
+          {% include 'core/communaute/_icones.html' with icone='calendrier' taille=14 %}
+        {% else %}
+          {% include 'core/communaute/_icones.html' with icone='trophee' taille=14 uid=notification.pk %}
+        {% endif %}
+      </span>
+
+      <span style="flex:1;min-width:0">
+        <span class="cn-titre" style="display:block">{{ notification.titre }}</span>
+        {% if notification.detail %}
+          <span class="cn-detail" style="display:block">{{ notification.detail }}</span>
+        {% endif %}
+        <span class="cn-temps" style="display:block">il y a {{ notification.depuis }}</span>
+      </span>
+
+      {% if not notification.lue %}<span class="cn-point"></span>{% endif %}
+
+    {% if notification.lien %}</a>{% else %}</div>{% endif %}
+  {% endfor %}
+{% empty %}
+  <div class="cn-vide">
+    <span class="cn-vide-marque">
+      {% include 'core/communaute/_icones.html' with icone='cloche' taille=22 %}
+    </span>
+    <div class="cn-vide-titre">Rien de neuf</div>
+    <div class="cn-vide-texte">Les défis, coffres et invitations arriveront ici.</div>
+  </div>
+{% endfor %}

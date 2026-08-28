@@ -1,635 +1,947 @@
 {% extends 'core/header.html' %}
-{% load static %}
+{% load static l10n %}
+
+{% comment %}
+  ─────────────────────────────────────────────────────────────────────────
+  Banque de tissus — design V2 (même langage visuel que le tableau de bord
+  et la barre de navigation : Bricolage Grotesque + DM Sans/Mono, encre
+  #14120F, papier #FFFDF8, jaune #FFC93C).
+
+  La page porte son propre en-tête vert : le bandeau global du gabarit est
+  neutralisé, comme sur le tableau de bord.
+
+  Deux présentations de la même collection de cartes, commutées par un seul
+  attribut `data-view` sur `#tis-body` :
+      · mosaïque — grille 6 colonnes, une tuile « héros » toutes les 6 pièces
+      · liste    — tableau compact trié, avec jauge d'état
+
+  Chaque pièce n'est donc rendue qu'une fois : le filtrage, le tri et la
+  sélection travaillent sur un seul jeu de nœuds.
+  ─────────────────────────────────────────────────────────────────────────
+{% endcomment %}
 
 {% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  body { background: #F5F4EE; }
+  /* =========================================================
+     Jetons de design de la banque de tissus
+     ========================================================= */
+  .tis {
+    --ink:      #14120F;
+    --paper:    #FFFDF8;
+    --sand:     #F1EADE;
+    --line:     #EFE6D8;
+    --hairline: #F2EADD;
+    --muted:    #8E877E;
+    --stone:    #9C9184;
+    --slate:    #6E655B;
+    --green:    #FFC93C;   /* jaune de la barre de navigation */
+    --orange:   #FF6B3D;
 
-  .page-wrapper {
-    max-width: 390px;
-    margin: 0 auto;
-    padding: 28px 16px 120px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
+    --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --text:    'DM Sans', 'Manrope', system-ui, sans-serif;
+    --mono:    'DM Mono', ui-monospace, monospace;
 
-  /* ── Titre ── */
-  .page-heading { display: flex; flex-direction: column; gap: 6px; }
-  .page-heading-title {
-    text-align: center; color: #237329;
-    font-size: 32px; font-family: 'Plus Jakarta Sans', sans-serif;
-    font-style: italic; font-weight: 800; text-transform: uppercase; line-height: 40px;
+    background: var(--paper);
+    min-height: 100%;
+    font-family: var(--text);
+    color: var(--ink);
+    /* Réserve : barre de navigation (≈96 px) + bouton flottant. */
+    padding-bottom: 176px;
+    transition: padding-bottom .18s ease;
   }
-  .page-heading-sub {
-    text-align: center; color: #65655E;
-    font-size: 16px; font-family: 'Manrope', sans-serif; font-weight: 500; line-height: 24px;
-  }
+  /* Le socle de sélection s'ajoute sous le bouton flottant : on creuse
+     d'autant pour que la dernière pièce reste atteignable. */
+  .tis.has-dock { padding-bottom: 258px; }
+  .tis :where(a) { text-decoration: none; color: inherit; }
+  .tis :where(button) { font-family: inherit; }
+  .tis [hidden] { display: none !important; }
 
-  /* ── Stats row (3 cartes) ── */
-  .stats-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
+  /* =========================================================
+     Bandeau
+     ========================================================= */
+  .tis-hero {
+    background: var(--green);
+    border-radius: 0 0 44px 44px;
+    padding: 30px 22px 36px;
+    color: var(--ink);
   }
-  .stat-col {
-    flex: 1 1 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  .tis-hero h1 {
+    font-family: var(--display);
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -.025em;
+    line-height: 1.12;
   }
-  .stat-card {
-    width: 100%;
-    height: 104px;
-    padding: 20px 12px;
-    background: #FDFAE5;
-    box-shadow: 0px 10px 40px -15px rgba(57, 56, 43, 0.06);
-    overflow: hidden;
-    border-radius: 32px;
-    outline: 2px rgba(0,0,0,0.02) solid;
-    outline-offset: -2px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 2px;
+  .tis-hero hr {
+    height: 1.5px;
+    border: 0;
+    background: rgba(20, 18, 15, .18);
+    margin: 16px 0;
   }
-  .stat-card-number {
-    color: #237329;
-    font-size: 36px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+  .tis-hero-figures { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+  .tis-hero-total {
+    font-family: var(--display);
+    font-size: 34px;
     font-weight: 800;
     line-height: 1;
-    letter-spacing: -0.03em;
+    letter-spacing: -.03em;
   }
-  .stat-card-unit {
-    color: #39382B;
-    font-size: 14px;
-    font-family: 'Manrope', sans-serif;
-    font-weight: 700;
-    text-transform: uppercase;
-    line-height: 1;
-    letter-spacing: 0.02em;
-  }
+  .tis-hero-detail { font-size: 12px; color: rgba(20, 18, 15, .68); padding-bottom: 3px; }
 
-  /* ── Filtres ── */
-  .filter-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-  .filter-row::-webkit-scrollbar { display: none; }
-  .filter-chip {
-    padding: 8px 18px; border-radius: 9999px; border: none; cursor: pointer;
-    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 600;
-    white-space: nowrap; background: #E0DFD4; color: #65655E;
-    transition: background 0.15s, color 0.15s; flex-shrink: 0;
-  }
-  .filter-chip.active { background: #237329; color: white; }
-
-  /* ── Liste ── */
-  .vcard-list { display: flex; flex-direction: column; gap: 14px; }
-
-  /* ── Carte (base commune) ── */
-  .vcard {
-    background: white;
-    box-shadow: 0px 20px 50px rgba(0,0,0,0.08);
-    border-radius: 32px;
-    padding: 15px 20px 15px 15px; /* moins à gauche : place pour la photo */
+  /* =========================================================
+     Recherche + filtres
+     ========================================================= */
+  .tis-search {
+    position: relative;
+    z-index: 2;
+    margin: -22px 18px 0;
+    height: 50px;
     display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    align-items: flex-start;
+    align-items: center;
+    gap: 11px;
+    padding: 0 8px 0 15px;
+    background: var(--ink);
+    border-radius: 20px;
+    box-shadow: 0 14px 28px rgba(20, 18, 15, .18);
+  }
+  .tis-search > svg { flex: none; color: var(--muted); }
+  .tis-search input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    background: none;
+    font-family: var(--text);
+    font-size: 14px;
+    color: #fff;
+    -webkit-appearance: none;
+  }
+  .tis-search input::placeholder { color: var(--muted); }
+  .tis-search input::-webkit-search-cancel-button { filter: invert(1) opacity(.5); }
+
+  .tis-filters-btn {
+    flex: none;
+    border: 0;
+    cursor: pointer;
+    background: var(--green);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 9px 12px;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 12px;
+    transition: background .14s ease, color .14s ease;
+  }
+  .tis-filters-btn[aria-expanded="true"] { background: var(--paper); color: var(--ink); }
+
+  .tis-filters { margin: 12px 18px 0; display: flex; flex-wrap: wrap; gap: 7px; }
+
+  /* =========================================================
+     Répartition par matière
+     ========================================================= */
+  .tis-split {
+    margin: 16px 18px 0;
+    border: 1.5px solid var(--line);
+    border-radius: 24px;
+    padding: 15px 17px 14px;
+  }
+  .tis-split-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 11px;
+  }
+  .tis-split-head span {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 10px;
+    color: var(--stone);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .tis-split-bar { height: 12px; display: flex; gap: 3px; }
+  .tis-split-bar i { display: block; min-width: 5px; border-radius: 7px; }
+  .tis-split-legend { display: flex; gap: 8px; margin-top: 13px; }
+  .tis-split-item { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+  .tis-split-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--slate);
+    min-width: 0;
+  }
+  .tis-split-name i { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+  .tis-split-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tis-split-val { font-family: var(--display); font-weight: 800; font-size: 15px; }
+
+  /* =========================================================
+     Tri + bascule de vue
+     ========================================================= */
+  .tis-controls { margin: 14px 18px 0; display: flex; align-items: center; gap: 7px; }
+
+  .tis-pill {
+    border: 1.5px solid var(--line);
+    background: none;
+    border-radius: 14px;
+    padding: 9px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--slate);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .14s ease, color .14s ease, border-color .14s ease;
+  }
+  .tis-pill[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  .tis-views {
+    margin-left: auto;
+    flex: none;
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    background: var(--sand);
+    border-radius: 14px;
+  }
+  .tis-view {
+    width: 30px;
+    height: 28px;
+    border: 0;
+    border-radius: 11px;
+    background: none;
+    color: var(--stone);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .14s ease, color .14s ease;
+  }
+  .tis-view[aria-pressed="true"] {
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 0 2px 5px rgba(20, 18, 15, .1);
+  }
+
+  /* =========================================================
+     Collection — squelette commun aux deux vues
+     ========================================================= */
+  .tis-body { padding: 12px 18px 0; }
+
+  .tis-thead {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 0 4px 9px;
+    border-bottom: 1.5px solid var(--line);
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--stone);
+  }
+  .tis-thead i { font-style: normal; }
+  .tis-body[data-view="list"] .tis-thead { display: flex; }
+  .tis-thead .c-thumb { width: 44px; flex: none; }
+  .tis-thead .c-name  { flex: 1; }
+  .tis-thead .c-surf  { width: 52px; flex: none; text-align: right; color: var(--ink); }
+  .tis-thead .c-etat  { width: 38px; flex: none; text-align: right; }
+
+  .tis-card {
+    position: relative;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Fond de tuile / vignette : l'aplat vient de la couleur saisie au scan,
+     la trame diagonale donne la matière. La photo, si elle existe, passe
+     par-dessus. */
+  .tis-visual {
+    overflow: hidden;
+    background-color: var(--tint, #C7BCA8);
+    background-image: repeating-linear-gradient(135deg,
+                      rgba(0, 0, 0, .075) 0 11px,
+                      rgba(255, 255, 255, .075) 11px 22px);
+  }
+  .tis-visual img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .tis-name    { font-family: var(--display); font-weight: 800; }
+  .tis-surface { font-family: var(--display); font-weight: 800; }
+
+  /* Pastille de sélection */
+  .tis-check {
+    position: absolute;
+    z-index: 3;
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 253, 248, .92);
+    background: rgba(20, 18, 15, .3);
+    box-shadow: 0 1px 5px rgba(20, 18, 15, .28);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .12s ease, border-color .12s ease, transform .12s ease;
+  }
+  .tis-check:active { transform: scale(.88); }
+  .tis-check svg { opacity: 0; color: var(--ink); transition: opacity .12s ease; }
+  .tis-card.is-picked .tis-check { background: var(--green); border-color: var(--green); }
+  .tis-card.is-picked .tis-check svg { opacity: 1; }
+
+  /* Badge d'état (mosaïque) et jauge d'état (liste) */
+  .tis-badge {
+    position: absolute;
+    top: 11px;
+    right: 11px;
+    z-index: 2;
+    border-radius: 10px;
+    padding: 5px 8px;
+    background: rgba(20, 18, 15, .72);
+    color: #fff;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 10px;
+  }
+  .tis-badge.is-low { background: var(--orange); }
+
+  .tis-gauge {
+    width: 30px;
+    height: 6px;
+    flex: none;
+    margin-left: 8px;
+    border-radius: 4px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .tis-gauge i { display: block; height: 100%; border-radius: 4px; background: var(--green); }
+
+  /* ── Vue mosaïque ─────────────────────────────────────────────────────
+     Six colonnes, une hauteur de rangée fixe. Le cycle de six tuiles pose
+     un « héros » (4 colonnes × 2 rangées) suivi de cinq demi-tuiles : deux
+     empilées à sa droite, puis une rangée pleine de trois. */
+  .tis-body[data-view="mosaic"] .tis-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: 84px;
     gap: 10px;
   }
-
-  /* Variante photo à droite */
-  .vcard--right {
-    flex-direction: row-reverse;
-    padding: 15px 15px 15px 20px; /* moins à droite : place pour la photo */
-  }
-
-  /* ── Photo / illustration ── */
-  .vcard-photo {
-    flex-shrink: 0;
-    width: 90px;
-    height: 128px;
+  .tis-body[data-view="mosaic"] .tis-card {
+    grid-column: span 2;
     border-radius: 20px;
     overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* Gradients fallback par type */
-  .illu-tshirt  { background: linear-gradient(145deg, #DBEAFE, #93C5FD); }
-  .illu-jean    { background: linear-gradient(145deg, #EFF6FF, #BFDBFE); }
-  .illu-hoodie  { background: linear-gradient(145deg, #FED7AA, #FDBA74); }
-  .illu-robe    { background: linear-gradient(145deg, #FCE7F3, #F9A8D4); }
-  .illu-jupe    { background: linear-gradient(145deg, #EDE9FE, #DDD6FE); }
-  .illu-manteau { background: linear-gradient(145deg, #D1FAE5, #6EE7B7); }
-  .illu-default { background: linear-gradient(145deg, #F3F4F6, #E5E7EB); }
-
-  .vcard-photo img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-  }
-  .vcard-photo-emoji {
-    font-size: 48px; line-height: 1;
-  }
-
-  /* ── Contenu ── */
-  .vcard-content {
-    flex: 1 1 0;
+    padding: 12px;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    align-items: flex-end;   /* badges calés côté opposé à la photo */
-    gap: 12px;
+    justify-content: flex-end;
+    color: rgba(20, 18, 15, .88);
+    transition: transform .14s ease;
+  }
+  .tis-body[data-view="mosaic"] .tis-card.is-hero {
+    grid-column: span 4;
+    grid-row: span 2;
+    border-radius: 22px;
+    padding: 13px;
+  }
+  .tis-body[data-view="mosaic"] .tis-card:active { transform: scale(.985); }
+  .tis-body[data-view="mosaic"] .tis-card.is-dark { color: rgba(255, 253, 248, .95); }
+  .tis-body[data-view="mosaic"] .tis-card.has-photo {
+    color: #fff;
+    text-shadow: 0 1px 10px rgba(20, 18, 15, .45);
+  }
+  .tis-body[data-view="mosaic"] .tis-card.is-picked { outline: 3px solid var(--green); outline-offset: -3px; }
+
+  .tis-body[data-view="mosaic"] .tis-visual { position: absolute; inset: 0; z-index: 0; }
+  .tis-body[data-view="mosaic"] .tis-card.has-photo .tis-visual::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top,
+                rgba(20, 18, 15, .72) 0%,
+                rgba(20, 18, 15, .12) 58%,
+                rgba(20, 18, 15, 0) 100%);
   }
 
-  /* Quand la photo est à droite, le contenu s'aligne à gauche */
-  .vcard--right .vcard-content {
-    align-items: flex-start;
-  }
+  .tis-body[data-view="mosaic"] .tis-check { top: 10px; left: 10px; width: 24px; height: 24px; }
+  .tis-body[data-view="mosaic"] .tis-check svg { width: 12px; height: 12px; }
 
-  .vcard-name {
-    align-self: stretch;
-    color: #39382B;
-    font-size: 18px; font-family: 'Plus Jakarta Sans', sans-serif;
-    font-weight: 700; line-height: 28px; word-wrap: break-word;
+  .tis-body[data-view="mosaic"] .tis-info,
+  .tis-body[data-view="mosaic"] .tis-surface { position: relative; z-index: 1; }
+  /* Une demi-tuile ne fait que 84 px : le nom tient sur une ligne, sinon il
+     remonte sous la pastille de sélection et sous le badge d'état. */
+  .tis-body[data-view="mosaic"] .tis-name {
+    font-size: 13px;
+    line-height: 1.15;
+    letter-spacing: -.012em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
+  .tis-body[data-view="mosaic"] .tis-surface { font-size: 17px; margin-top: 2px; }
+  .tis-body[data-view="mosaic"] .tis-card.is-hero .tis-name {
+    font-size: 17px;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .tis-body[data-view="mosaic"] .tis-card.is-hero .tis-surface { font-size: 22px; }
+  .tis-body[data-view="mosaic"] .tis-sub,
+  .tis-body[data-view="mosaic"] .tis-gauge { display: none; }
 
-  /* ── Badges ── */
-  .vcard-badges {
-    display: inline-flex;
-    justify-content: flex-start;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .badge-col {
-    display: inline-flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .badge-pill {
-    width: 60px; height: 60px;
-    background: #F7F4DE;
-    border-radius: 20px;
-  }
-
-  /* Surface */
-  .badge-pill--surface {
-    display: flex; flex-direction: column;
-    justify-content: center; align-items: center;
-    gap: 1px;
-  }
-  .badge-pill--surface .badge-num {
-    color: #237329;
-    font-size: 22px; font-family: 'Plus Jakarta Sans', sans-serif;
-    font-weight: 700; line-height: 1;
-    letter-spacing: -0.04em; /* réduit l'espace autour de la virgule */
-  }
-  .badge-pill--surface .badge-unit {
-    color: #39382B;
-    font-size: 10px; font-family: 'Manrope', sans-serif;
-    font-weight: 700; text-transform: uppercase; line-height: 1;
-  }
-
-  /* Qualité */
-  .badge-pill--qualite {
+  /* ── Vue liste ───────────────────────────────────────────────────────── */
+  .tis-body[data-view="list"] .tis-grid { display: flex; flex-direction: column; }
+  .tis-body[data-view="list"] .tis-card {
     display: flex;
-    justify-content: center;
-    align-items: center; /* centre le groupe dans la case */
+    align-items: center;
+    gap: 10px;
+    padding: 6px 4px;
+    border-bottom: 1px solid var(--hairline);
+    border-radius: 14px;
+    transition: background .14s ease;
   }
-  .qualite-inner {
-    display: inline-flex;
-    align-items: baseline; /* aligne les bas de "2" et "/5" */
+  .tis-body[data-view="list"] .tis-card.is-picked {
+    background: #F9F4EA;
+    margin: 0 -6px;
+    padding: 6px 10px;
+    border-bottom-color: transparent;
   }
-  .badge-pill--qualite .badge-num {
-    color: #237329;
-    font-size: 25px; font-family: 'Plus Jakarta Sans', sans-serif;
-    font-weight: 700; line-height: 1;
+  .tis-body[data-view="list"] .tis-visual {
+    position: relative;
+    width: 44px;
+    height: 48px;
+    flex: none;
+    border-radius: 13px;
   }
-  .badge-pill--qualite .badge-denom {
-    color: #39382B;
-    font-size: 12px; font-family: 'Manrope', sans-serif;
-    font-weight: 700; text-transform: uppercase; line-height: 1;
+  .tis-body[data-view="list"] .tis-check {
+    top: 2px;
+    left: 32px;
+    width: 18px;
+    height: 18px;
+    border-color: var(--paper);
+    background: rgba(20, 18, 15, .24);
   }
+  .tis-body[data-view="list"] .tis-check svg { width: 9px; height: 9px; }
+  .tis-body[data-view="list"] .tis-info { flex: 1; min-width: 0; }
+  .tis-body[data-view="list"] .tis-name {
+    font-family: var(--text);
+    font-weight: 700;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tis-body[data-view="list"] .tis-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tis-body[data-view="list"] .tis-surface { width: 52px; flex: none; text-align: right; font-size: 14px; }
+  .tis-body[data-view="list"] .tis-unit,
+  .tis-body[data-view="list"] .tis-badge { display: none; }
 
-  /* Couleur */
-  .badge-pill--color {
-    border: 3px solid rgba(0,0,0,0.20);
-    background: #CCCCCC;
-  }
-
-  .badge-lbl {
-    color: #666556;
-    font-size: 10px; font-family: 'Manrope', sans-serif;
-    font-weight: 700; text-transform: uppercase; line-height: 14px;
+  /* ── États vides ─────────────────────────────────────────────────────── */
+  .tis-empty {
+    margin: 18px 18px 0;
+    border: 1.5px dashed var(--line);
+    border-radius: 24px;
+    padding: 34px 24px;
     text-align: center;
   }
+  .tis-empty h2 { font-family: var(--display); font-size: 17px; font-weight: 800; }
+  .tis-empty p { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
 
-  /* Labels des stat-cols légèrement plus grands, retour à la ligne autorisé */
-  .stat-col > .badge-lbl {
-    font-size: 13px;
-    line-height: 17px;
-    margin-top: 6px;
-  }
-
-  /* ── Barre de recherche + bouton sélectionner ── */
-  .toolbar {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-  .search-input-wrap {
-    flex: 1;
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-  .search-icon {
-    position: absolute;
-    left: 14px;
-    width: 16px; height: 16px;
-    color: #65655E;
-    pointer-events: none;
-    flex-shrink: 0;
-  }
-  .search-input {
-    width: 100%;
-    height: 44px;
-    padding: 0 14px 0 42px;
-    background: #EFEEE3;
-    border: 2px solid transparent;
-    border-radius: 9999px;
-    font-family: 'Manrope', sans-serif;
-    font-size: 14px;
-    color: #39382B;
-    outline: none;
-    transition: border-color 0.2s, background 0.2s;
-  }
-  .search-input::placeholder { color: #9B9A8E; }
-  .search-input:focus { background: white; border-color: #237329; }
-
-  .btn-select {
-    flex-shrink: 0;
-    height: 44px;
-    padding: 0 16px;
-    border-radius: 9999px;
-    border: 2px solid #DDDCD2;
-    background: white;
-    color: #39382B;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.15s;
-  }
-  .btn-select.active {
-    background: #39382B;
-    border-color: #39382B;
-    color: white;
-  }
-
-  /* ── Clic normal (vers détail) ── */
-  .vcard { cursor: pointer; transition: outline 0.12s, transform 0.12s; }
-  .vcard:hover { transform: translateY(-2px); }
-
-  /* ── Mode sélection ── */
-  .vcard.selectable { cursor: pointer; transition: outline 0.12s; }
-  .vcard.selected   { outline: 3px solid #237329; outline-offset: 2px; }
-
-  .select-check {
-    display: none;
-    position: absolute;
-    top: 10px; right: 10px;
-    width: 24px; height: 24px;
-    background: white;
-    border: 2px solid #DDDCD2;
-    border-radius: 50%;
-    align-items: center; justify-content: center;
-    z-index: 10;
-    pointer-events: none;
-    transition: background 0.12s, border-color 0.12s;
-  }
-  .selectable .select-check      { display: flex; }
-  .selected  .select-check       { background: #237329; border-color: #237329; }
-  .selected  .select-check svg   { display: block; }
-  .select-check svg { display: none; width: 13px; height: 13px; color: white; }
-
-  /* ── Barre d'action suppression (collée au-dessus de la nav) ── */
-  .delete-bar {
-    display: none;
+  /* =========================================================
+     Bouton flottant + socle de sélection
+     ========================================================= */
+  .tis-float {
     position: fixed;
-    bottom: 80px; left: 50%;
+    left: 50%;
+    bottom: 0;
     transform: translateX(-50%);
-    width: calc(100% - 32px);
-    max-width: 358px;
-    background: #A24A33;
-    border-radius: 9999px;
-    padding: 14px 24px;
-    align-items: center;
-    justify-content: space-between;
+    width: 100%;
+    max-width: 430px;
+    z-index: 30;
+    padding: 0 18px calc(96px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
     gap: 12px;
-    z-index: 100;
-    box-shadow: 0 8px 32px rgba(162,74,51,0.35);
+    pointer-events: none;
   }
-  .delete-bar.visible { display: flex; }
-  .delete-bar-label {
-    color: white;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+
+  .tis-fab {
+    pointer-events: auto;
+    align-self: flex-end;
+    height: 52px;
+    border: 0;
+    border-radius: 26px;
+    background: var(--green);
+    color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 18px 0 15px;
+    box-shadow: 0 12px 26px rgba(255, 201, 60, .5);
+    font-family: var(--display);
+    font-weight: 800;
     font-size: 14px;
-    font-weight: 700;
+    transition: transform .14s ease;
   }
-  .delete-bar-btn {
-    background: white;
-    color: #A24A33;
-    border: none;
-    border-radius: 9999px;
-    padding: 8px 20px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
+  .tis-fab:active { transform: scale(.95); }
+
+  .tis-dock {
+    pointer-events: auto;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 15px;
+    background: var(--ink);
+    border-radius: 26px;
+    box-shadow: 0 16px 34px rgba(20, 18, 15, .28);
+    color: var(--paper);
+  }
+  .tis-dock.is-open { display: flex; }
+  .tis-dock-thumb {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border-radius: 15px;
+    background-color: var(--tint, #C7BCA8);
+    background-image: repeating-linear-gradient(135deg,
+                      rgba(0, 0, 0, .075) 0 8px,
+                      rgba(255, 255, 255, .075) 8px 16px);
+    background-size: cover;
+    background-position: center;
+  }
+  .tis-dock-txt { flex: 1; min-width: 0; }
+  .tis-dock-title {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tis-dock-sub {
+    font-size: 11px;
+    color: var(--stone);
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tis-dock-del {
+    flex: none;
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 13px;
+    background: rgba(255, 253, 248, .1);
+    color: #FF8C6B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .tis-dock-go {
+    flex: none;
+    border: 0;
+    border-radius: 14px;
+    padding: 10px 13px;
+    background: var(--green);
+    color: var(--ink);
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 12px;
     cursor: pointer;
   }
 
-  /* ── Empty state ── */
-  .empty-state { text-align: center; padding: 48px 24px; color: #65655E; font-family: 'Manrope', sans-serif; }
-  .empty-state p { margin-top: 12px; font-size: 15px; }
+  @media (prefers-reduced-motion: reduce) {
+    .tis-card, .tis-fab, .tis-check, .tis-pill, .tis-view { transition: none; }
+  }
 </style>
 {% endblock %}
 
+
+{# La banque de tissus porte son propre bandeau : on neutralise celui du gabarit. #}
+{% block app_header %}{% endblock %}
+
 {% block content %}
-<div class="page-wrapper">
+<main class="tis">
 
-  <!-- Titre -->
-  <div class="page-heading">
-    <div class="page-heading-title">Mes tissus</div>
-    <div class="page-heading-sub">Ton stock de matières à transformer.</div>
-  </div>
-
-  <!-- Stats -->
-  <div class="stats-row">
-    <div class="stat-col">
-      <div class="stat-card">
-        <span class="stat-card-number">{{ nb_vetements }}</span>
-      </div>
-      <span class="badge-lbl">Nombre de tissus</span>
+  <!-- ══════════════ Bandeau ══════════════ -->
+  <header class="tis-hero">
+    <h1>Banque de tissus</h1>
+    <hr>
+    <div class="tis-hero-figures">
+      <span class="tis-hero-total">{{ total_surface|floatformat:1 }} m²</span>
+      {# Le français ne met au pluriel qu'à partir de deux ; pluralize le ferait dès zéro. #}
+      <span class="tis-hero-detail">
+        {{ nb_vetements }} pièce{% if nb_vetements > 1 %}s{% endif %}
+        vivante{% if nb_vetements > 1 %}s{% endif %}
+        · {{ nb_matieres }} matière{% if nb_matieres > 1 %}s{% endif %}
+      </span>
     </div>
-    <div class="stat-col">
-      <div class="stat-card">
-        <span class="stat-card-number">{{ total_surface|floatformat:2 }}</span>
-        <span class="stat-card-unit">m²</span>
-      </div>
-      <span class="badge-lbl">Surface totale</span>
-    </div>
-    <div class="stat-col">
-      <div class="stat-card">
-        <span class="stat-card-number">{{ total_co2 }}</span>
-        <span class="stat-card-unit">kg CO₂</span>
-      </div>
-      <span class="badge-lbl">CO₂ économisé</span>
-    </div>
-  </div>
+  </header>
 
-  <!-- Barre de recherche + bouton sélectionner -->
-  <div class="toolbar">
-    <div class="search-input-wrap">
-      <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-           fill="none" stroke="currentColor" stroke-width="2.5"
-           stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-      <input id="searchInput" class="search-input" type="search"
-             placeholder="Rechercher un vêtement…" autocomplete="off">
-    </div>
-    <button id="btnSelect" class="btn-select">Sélectionner</button>
-  </div>
-
-  <!-- Filtres -->
-  <div class="filter-row" id="filter-row">
-    <button class="filter-chip active" data-filter="tous">Tous</button>
-    <button class="filter-chip" data-filter="jean">Jean</button>
-    <button class="filter-chip" data-filter="tshirt">T-Shirt</button>
-    <button class="filter-chip" data-filter="hoodie">Hoodie</button>
-    <button class="filter-chip" data-filter="robe">Robe</button>
-    <button class="filter-chip" data-filter="jupe">Jupe</button>
-    <button class="filter-chip" data-filter="manteau">Manteau</button>
-  </div>
-
-  <!-- Cartes vêtements -->
   {% if vetements_data %}
-  <div class="vcard-list" id="vetement-grid">
-    {% for item in vetements_data %}
-    {% with v=item.vetement %}
 
-    {# Impairs → photo à gauche | pairs → photo à droite #}
-    <div class="vcard {% if forloop.counter|divisibleby:2 %}vcard--right{% endif %}"
-         data-type="{{ v.typeVetement }}"
-         data-id="{{ v.id }}"
-         data-url="{% url 'detail_vetement' v.id %}"
-         style="position:relative;">
-
-      <!-- Indicateur de sélection -->
-      <div class="select-check" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-      </div>
-
-      <!-- Photo / illustration -->
-      <div class="vcard-photo illu-{{ v.typeVetement|default:'default' }}">
-        {% if v.photoURL %}
-          <img src="{{ v.photoURL.url }}" alt="{{ v.nomVetement }}">
-        {% else %}
-          <span class="vcard-photo-emoji">
-            {% if v.typeVetement == 'tshirt' %}👕
-            {% elif v.typeVetement == 'jean' %}👖
-            {% elif v.typeVetement == 'hoodie' %}🧥
-            {% elif v.typeVetement == 'robe' %}👗
-            {% elif v.typeVetement == 'jupe' %}👗
-            {% elif v.typeVetement == 'manteau' %}🧥
-            {% else %}🎽{% endif %}
-          </span>
-        {% endif %}
-      </div>
-
-      <!-- Contenu -->
-      <div class="vcard-content">
-        <div class="vcard-name">{{ v.nomVetement }}</div>
-        <div class="vcard-badges">
-          <div class="badge-col">
-            <div class="badge-pill badge-pill--surface">
-              <span class="badge-num">{{ v.surfaceExploitable|floatformat:2 }}</span>
-              <span class="badge-unit">m²</span>
-            </div>
-            <span class="badge-lbl">surface</span>
-          </div>
-          <div class="badge-col">
-            <div class="badge-pill badge-pill--qualite">
-              <div class="qualite-inner">
-                <span class="badge-num">{{ v.qualite }}</span>
-                <span class="badge-denom">/5</span>
-              </div>
-            </div>
-            <span class="badge-lbl">qualité</span>
-          </div>
-          <div class="badge-col">
-            <div class="badge-pill badge-pill--color" data-couleur="{{ v.couleur|default:'' }}"></div>
-            <span class="badge-lbl">couleur</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    {% endwith %}
-    {% endfor %}
+  <!-- ══════════════ Recherche ══════════════ -->
+  <div class="tis-search">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="2.2"/>
+      <path d="M15.5 15.5 20 20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+    <input id="tis-search" type="search" autocomplete="off" placeholder="Chercher une pièce…"
+           aria-label="Chercher une pièce dans la banque de tissus">
+    {% if types_presents|length > 1 %}
+    <button type="button" class="tis-filters-btn" id="tis-filters-btn"
+            aria-expanded="false" aria-controls="tis-filters">Filtres</button>
+    {% endif %}
   </div>
-  {% else %}
-  <div class="empty-state">
-    <div style="font-size:48px;"><i class="ic fi-br-reel"></i></div>
-    <p>Aucun vêtement scanné pour l'instant.<br>Utilise le scanner pour ajouter ton premier tissu !</p>
+
+  {% if types_presents|length > 1 %}
+  <div class="tis-filters" id="tis-filters" hidden>
+    <button type="button" class="tis-pill tis-type" data-type="" aria-pressed="true">Tout</button>
+    {% for t in types_presents %}
+    <button type="button" class="tis-pill tis-type" data-type="{{ t.slug }}" aria-pressed="false">
+      {{ t.label }} · {{ t.nb }}
+    </button>
+    {% endfor %}
   </div>
   {% endif %}
 
+  <!-- ══════════════ Répartition par matière ══════════════ -->
+  <section class="tis-split">
+    <div class="tis-split-head">
+      <span>Répartition par matière</span>
+      <span>m²</span>
+    </div>
+    <div class="tis-split-bar">
+      {% for m in repartition %}<i style="width: {{ m.pct }}%; background: {{ m.hex }};"></i>{% endfor %}
+    </div>
+    <div class="tis-split-legend">
+      {% for m in repartition %}
+      <div class="tis-split-item">
+        <span class="tis-split-name"><i style="background: {{ m.hex }};"></i><span>{{ m.nom }}</span></span>
+        <span class="tis-split-val">{{ m.surface|floatformat:1 }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ══════════════ Tri + bascule de vue ══════════════ -->
+  <div class="tis-controls">
+    <button type="button" class="tis-pill tis-sort" data-sort="surface" aria-pressed="true">Par surface</button>
+    <button type="button" class="tis-pill tis-sort" data-sort="matiere" aria-pressed="false">Matière</button>
+    <button type="button" class="tis-pill tis-sort" data-sort="couleur" aria-pressed="false">Couleur</button>
+
+    <div class="tis-views" role="group" aria-label="Présentation de la collection">
+      <button type="button" class="tis-view" data-view="mosaic" aria-pressed="true" aria-label="Mosaïque">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="3.5" y="3.5" width="9" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+          <rect x="15" y="3.5" width="5.5" height="6" rx="1.8" stroke="currentColor" stroke-width="2"/>
+          <rect x="15" y="12" width="5.5" height="8.5" rx="1.8" stroke="currentColor" stroke-width="2"/>
+          <rect x="3.5" y="18" width="9" height="2.5" rx="1.2" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </button>
+      <button type="button" class="tis-view" data-view="list" aria-pressed="false" aria-label="Liste">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 6.5h16M4 12h16M4 17.5h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════ Collection ══════════════ -->
+  <div class="tis-body" id="tis-body" data-view="mosaic">
+    <div class="tis-thead" aria-hidden="true">
+      <span class="c-thumb"></span>
+      <span class="c-name">Pièce</span>
+      <span class="c-surf">m² <i id="tis-sort-arrow">↓</i></span>
+      <span class="c-etat">État</span>
+    </div>
+
+    <div class="tis-grid" id="tis-grid">
+      {% for item in vetements_data %}{% with v=item.vetement %}
+      <article class="tis-card{% if v.photo_url %} has-photo{% endif %}{% if not item.couleur_claire %} is-dark{% endif %}"
+               style="--tint: {{ item.couleur_hex }};"
+               data-id="{{ v.id }}"
+               data-url="{% url 'detail_vetement' v.id %}"
+               data-type="{{ v.typeVetement }}"
+               data-name="{{ v.nomVetement|lower }}"
+               data-surface="{{ v.surfaceExploitable|unlocalize }}"
+               data-matiere="{{ item.matiere_label }}"
+               data-couleur="{{ v.couleur|default:'—' }}"
+               data-tint="{{ item.couleur_hex }}"
+               data-photo="{{ v.photo_url|default:'' }}">
+
+        <div class="tis-visual">
+          {% if v.photo_url %}<img src="{{ v.photo_url }}" alt="" loading="lazy">{% endif %}
+        </div>
+
+        <button type="button" class="tis-check" aria-pressed="false"
+                aria-label="Sélectionner {{ v.nomVetement }}">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="4"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <div class="tis-info">
+          <p class="tis-name">{{ v.nomVetement }}</p>
+          <p class="tis-sub">{{ item.matiere_label }} · {% if item.nb_taches %}{{ item.nb_taches }} tache{{ item.nb_taches|pluralize }}{% if item.nb_trous %}, {% endif %}{% endif %}{% if item.nb_trous %}{{ item.nb_trous }} trou{{ item.nb_trous|pluralize }}{% endif %}{% if not item.nb_taches and not item.nb_trous %}sans défaut{% endif %}</p>
+        </div>
+
+        <p class="tis-surface">{{ v.surfaceExploitable|floatformat:2 }}<span class="tis-unit"> m²</span></p>
+
+        <span class="tis-gauge" aria-hidden="true"><i style="width: {{ item.etat_pct }}%;"></i></span>
+        <span class="tis-badge{% if item.etat_pct < 50 %} is-low{% endif %}">{{ item.etat_pct }} %</span>
+      </article>
+      {% endwith %}{% endfor %}
+    </div>
+
+    <div class="tis-empty" id="tis-noresult" hidden>
+      <h2>Rien sous cette recherche</h2>
+      <p>Change de mot-clé ou remets le filtre sur « Tout ».</p>
+    </div>
+  </div>
+
+  {% else %}
+
+  <div class="tis-empty">
+    <h2>Ta banque est encore vide</h2>
+    <p>Scanne un premier vêtement : sa surface exploitable, sa matière<br>
+       et sa couleur rejoindront ton stock de tissus.</p>
+  </div>
+
+  {% endif %}
+
+<!-- ══════════════ Bouton flottant + socle de sélection ══════════════ -->
+<div class="tis-float">
+  <a class="tis-fab" href="{% url 'ajout_textile' %}">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+    </svg>
+    Ajouter un tissu
+  </a>
+
+  <div class="tis-dock" id="tis-dock">
+    <span class="tis-dock-thumb" id="tis-dock-thumb"></span>
+    <div class="tis-dock-txt">
+      <p class="tis-dock-title" id="tis-dock-title"></p>
+      <p class="tis-dock-sub" id="tis-dock-sub"></p>
+    </div>
+    <button type="button" class="tis-dock-del" id="tis-dock-del" aria-label="Supprimer la sélection">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <a class="tis-dock-go" href="{% url 'patrons' %}">Utiliser</a>
+  </div>
 </div>
 
-<!-- Barre de suppression (fixed bottom) -->
-<div class="delete-bar" id="deleteBar">
-  <span class="delete-bar-label" id="deleteLabel">0 sélectionné</span>
-  <button class="delete-bar-btn" id="deleteBtn">Supprimer</button>
-</div>
-
-<!-- Formulaire caché pour la suppression -->
-<form id="deleteForm" method="post" action="{% url 'supprimer_vetements' %}" style="display:none">
+<form id="tis-delete-form" method="post" action="{% url 'supprimer_vetements' %}" hidden>
   {% csrf_token %}
-  <div id="deleteInputs"></div>
+  <div id="tis-delete-inputs"></div>
 </form>
 
+{% comment %}
+  Surfaces minimales des patrons, triées : le socle annonce ce que la
+  sélection courante permet de couper, sans requête supplémentaire.
+{% endcomment %}
+{{ surfaces_patrons|json_script:"tis-surfaces-patrons" }}
+</main>
+
 <script>
-  const COLOR_MAP = {
-    'ivoire':       '#F2EDD7', 'beige':        '#D4B896', 'camel':        '#C19A6B',
-    'terracotta':   '#C2694F', 'rouge':        '#CC2936', 'bordeaux':     '#7B0C0C',
-    'rose':         '#F4A0B0', 'mauve':        '#967BB6', 'lavande':      '#B57EDC',
-    'marine':       '#1F305C', 'bleu ciel':    '#89CFF0', 'vert sauge':   '#9CAF88',
-    'vert forêt':   '#228B22', 'moutarde':     '#C8A415', 'gris ardoise': '#708090',
-    'noir':         '#1A1A1A', 'blanc':        '#F0EEE8', 'gris':         '#A0A09A',
+/* ═══════════════════════════════════════════════════════════════════════
+   Banque de tissus — filtrage, tri, bascule de vue et sélection.
+
+   Une seule collection de nœuds `.tis-card` sert les deux présentations :
+   `refresh()` masque les cartes hors filtre, réordonne les autres dans le
+   DOM puis marque une tuile « héros » tous les six éléments visibles (la
+   mosaïque reste donc régulière quel que soit le filtre appliqué).
+   ═══════════════════════════════════════════════════════════════════════ */
+(function () {
+  const grid = document.getElementById('tis-grid');
+  if (!grid) return;
+
+  const zone     = document.getElementById('tis-body');
+  const recherche= document.getElementById('tis-search');
+  const panneau  = document.getElementById('tis-filters');
+  const btnFiltre= document.getElementById('tis-filters-btn');
+  const aucun    = document.getElementById('tis-noresult');
+  const fleche   = document.getElementById('tis-sort-arrow');
+  const cartes   = Array.from(grid.querySelectorAll('.tis-card'));
+  const parId    = new Map(cartes.map(c => [c.dataset.id, c]));
+
+  const CLE_VUE = 'fabrique:tissus:vue';
+  let vue  = 'mosaic';
+  let tri  = 'surface';
+  let type = '';
+
+  const nb = n => Number(n) || 0;
+  const COMPARATEURS = {
+    surface: (a, b) => nb(b.dataset.surface) - nb(a.dataset.surface),
+    matiere: (a, b) => a.dataset.matiere.localeCompare(b.dataset.matiere, 'fr')
+                    || nb(b.dataset.surface) - nb(a.dataset.surface),
+    couleur: (a, b) => a.dataset.couleur.localeCompare(b.dataset.couleur, 'fr')
+                    || nb(b.dataset.surface) - nb(a.dataset.surface),
   };
-  document.querySelectorAll('.badge-pill--color[data-couleur]').forEach(el => {
-    const raw = el.dataset.couleur.trim().toLowerCase();
-    if (!raw) return;
-    const hex = COLOR_MAP[raw.split(',')[0].trim()];
-    if (hex) el.style.background = hex;
-  });
 
-  /* ── Filtres par type ── */
-  const allCards = () => document.querySelectorAll('.vcard[data-type]');
-  let activeFilter = 'tous';
-  let searchQuery  = '';
+  function refresh() {
+    const q = recherche.value.trim().toLowerCase();
+    const visibles = [];
 
-  function applyVisibility() {
-    allCards().forEach(card => {
-      const matchFilter = activeFilter === 'tous' || card.dataset.type === activeFilter;
-      const matchSearch = card.querySelector('.vcard-name')
-                              .textContent.toLowerCase()
-                              .includes(searchQuery);
-      card.style.display = (matchFilter && matchSearch) ? '' : 'none';
+    cartes.forEach(carte => {
+      const garde = (!type || carte.dataset.type === type)
+                 && (!q || carte.dataset.name.includes(q));
+      carte.hidden = !garde;
+      if (garde) visibles.push(carte);
+    });
+
+    visibles.sort(COMPARATEURS[tri]);
+    visibles.forEach((carte, i) => {
+      grid.appendChild(carte);
+      carte.classList.toggle('is-hero', i % 6 === 0);
+    });
+
+    // La flèche n'a de sens que sur la colonne qui commande réellement l'ordre.
+    fleche.hidden = tri !== 'surface';
+    aucun.hidden = visibles.length > 0;
+  }
+
+  /* ── Recherche ─────────────────────────────────────────────────────── */
+  recherche.addEventListener('input', refresh);
+
+  /* ── Panneau de filtres par type ───────────────────────────────────── */
+  if (btnFiltre) {
+    btnFiltre.addEventListener('click', () => {
+      const ouvert = btnFiltre.getAttribute('aria-expanded') === 'true';
+      btnFiltre.setAttribute('aria-expanded', String(!ouvert));
+      panneau.hidden = ouvert;
+    });
+    panneau.addEventListener('click', e => {
+      const chip = e.target.closest('.tis-type');
+      if (!chip) return;
+      panneau.querySelectorAll('.tis-type').forEach(c =>
+        c.setAttribute('aria-pressed', String(c === chip)));
+      type = chip.dataset.type;
+      refresh();
     });
   }
 
-  document.querySelectorAll('.filter-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      activeFilter = chip.dataset.filter;
-      applyVisibility();
+  /* ── Tri ───────────────────────────────────────────────────────────── */
+  document.querySelectorAll('.tis-sort').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tis-sort').forEach(b =>
+        b.setAttribute('aria-pressed', String(b === btn)));
+      tri = btn.dataset.sort;
+      refresh();
     });
   });
 
-  /* ── Recherche ── */
-  document.getElementById('searchInput').addEventListener('input', e => {
-    searchQuery = e.target.value.toLowerCase().trim();
-    applyVisibility();
+  /* ── Bascule mosaïque / liste ──────────────────────────────────────── */
+  function appliquerVue(nouvelle) {
+    vue = nouvelle;
+    zone.dataset.view = vue;
+    document.querySelectorAll('.tis-view').forEach(b =>
+      b.setAttribute('aria-pressed', String(b.dataset.view === vue)));
+    try { localStorage.setItem(CLE_VUE, vue); } catch (e) { /* mode privé */ }
+  }
+  document.querySelectorAll('.tis-view').forEach(btn => {
+    btn.addEventListener('click', () => appliquerVue(btn.dataset.view));
   });
+  try {
+    const memorisee = localStorage.getItem(CLE_VUE);
+    if (memorisee === 'list' || memorisee === 'mosaic') appliquerVue(memorisee);
+  } catch (e) { /* mode privé */ }
 
-  /* ── Mode sélection ── */
-  const btnSelect  = document.getElementById('btnSelect');
-  const deleteBar  = document.getElementById('deleteBar');
-  const deleteLabel= document.getElementById('deleteLabel');
-  const deleteBtn  = document.getElementById('deleteBtn');
-  const deleteForm = document.getElementById('deleteForm');
-  const deleteInputs = document.getElementById('deleteInputs');
+  /* ── Sélection ─────────────────────────────────────────────────────── */
+  const choisies  = new Set();
+  const socle     = document.getElementById('tis-dock');
+  const vignette  = document.getElementById('tis-dock-thumb');
+  const titre     = document.getElementById('tis-dock-title');
+  const soustitre = document.getElementById('tis-dock-sub');
 
-  let selectMode = false;
-  const selected = new Set();
+  const m2 = v => v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  function updateDeleteBar() {
-    const n = selected.size;
-    deleteLabel.textContent = n === 1 ? '1 vêtement sélectionné' : `${n} vêtements sélectionnés`;
-    deleteBar.classList.toggle('visible', n > 0);
+  // Surfaces minimales des patrons, déjà triées côté serveur.
+  let surfacesPatrons = [];
+  try {
+    surfacesPatrons = JSON.parse(document.getElementById('tis-surfaces-patrons').textContent);
+  } catch (e) { /* aucun patron en base */ }
+
+  const nbPatronsPour = surface => surfacesPatrons.filter(s => s <= surface + 1e-9).length;
+
+  function majSocle() {
+    const sel = [...choisies].map(id => parId.get(id)).filter(Boolean);
+    socle.classList.toggle('is-open', sel.length > 0);
+    document.querySelector('.tis').classList.toggle('has-dock', sel.length > 0);
+    if (!sel.length) return;
+
+    const surface = sel.reduce((s, c) => s + nb(c.dataset.surface), 0);
+    const patrons = nbPatronsPour(surface);
+    const tete = sel[0];
+
+    vignette.style.setProperty('--tint', tete.dataset.tint);
+    vignette.style.backgroundImage = tete.dataset.photo ? 'url("' + tete.dataset.photo + '")' : '';
+
+    titre.textContent = sel.length === 1
+      ? tete.querySelector('.tis-name').textContent.trim()
+      : sel.length + ' pièces';
+    soustitre.textContent = m2(surface) + ' m² · ' + (patrons
+      ? patrons + ' patron' + (patrons > 1 ? 's' : '')
+      : 'aucun patron');
   }
 
-  btnSelect.addEventListener('click', () => {
-    selectMode = !selectMode;
-    btnSelect.textContent = selectMode ? 'Annuler' : 'Sélectionner';
-    btnSelect.classList.toggle('active', selectMode);
+  grid.addEventListener('click', e => {
+    const carte = e.target.closest('.tis-card');
+    if (!carte) return;
 
-    allCards().forEach(card => {
-      card.classList.toggle('selectable', selectMode);
-      if (!selectMode) {
-        card.classList.remove('selected');
-      }
-    });
-
-    if (!selectMode) {
-      selected.clear();
-      deleteBar.classList.remove('visible');
+    const check = e.target.closest('.tis-check');
+    if (check) {
+      const pris = !choisies.has(carte.dataset.id);
+      choisies[pris ? 'add' : 'delete'](carte.dataset.id);
+      carte.classList.toggle('is-picked', pris);
+      check.setAttribute('aria-pressed', String(pris));
+      majSocle();
+      return;
     }
+
+    if (carte.dataset.url) window.location.href = carte.dataset.url;
   });
 
-  /* Clic sur une carte */
-  document.getElementById('vetement-grid')?.addEventListener('click', e => {
-    const card = e.target.closest('.vcard[data-id]');
-    if (!card) return;
+  /* ── Suppression de la sélection ───────────────────────────────────── */
+  const formulaire = document.getElementById('tis-delete-form');
+  const champs     = document.getElementById('tis-delete-inputs');
 
-    if (selectMode) {
-      const id = card.dataset.id;
-      if (selected.has(id)) {
-        selected.delete(id);
-        card.classList.remove('selected');
-      } else {
-        selected.add(id);
-        card.classList.add('selected');
-      }
-      updateDeleteBar();
-    } else {
-      // Navigation vers le détail
-      if (card.dataset.url) window.location.href = card.dataset.url;
-    }
-  });
+  document.getElementById('tis-dock-del').addEventListener('click', () => {
+    if (!choisies.size) return;
+    const message = choisies.size === 1
+      ? 'Retirer cette pièce de ta banque de tissus ?'
+      : 'Retirer ces ' + choisies.size + ' pièces de ta banque de tissus ?';
+    if (!confirm(message)) return;
 
-  /* Suppression */
-  deleteBtn.addEventListener('click', () => {
-    if (selected.size === 0) return;
-    const label = selected.size === 1
-      ? 'Supprimer ce vêtement ?'
-      : `Supprimer ces ${selected.size} vêtements ?`;
-    if (!confirm(label)) return;
-
-    deleteInputs.innerHTML = '';
-    selected.forEach(id => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'vetement_ids[]';
-      input.value = id;
-      deleteInputs.appendChild(input);
+    champs.innerHTML = '';
+    choisies.forEach(id => {
+      const champ = document.createElement('input');
+      champ.type = 'hidden';
+      champ.name = 'vetement_ids[]';
+      champ.value = id;
+      champs.appendChild(champ);
     });
-    deleteForm.submit();
+    formulaire.submit();
   });
+
+  refresh();
+})();
 </script>
 {% endblock %}
 

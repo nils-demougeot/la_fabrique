@@ -6,9 +6,16 @@
   <title>La Fabrique</title>
 
   <link rel="icon" type="image/png" href="{% static 'core/images/favicon/favicon-logo.png' %}">
-  <link rel="apple-touch-icon" href="{% static 'core/images/favicon/favicon-logo.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'core/images/icons/pwa/icon-192.png' %}">
 
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+  {# ── PWA : installation sur mobile ── #}
+  <link rel="manifest" href="{% static 'core/manifest.json' %}">
+  <meta name="theme-color" content="#1FA85C">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="La Fabrique">
+
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" rel="stylesheet">
 
   {# ── Flaticon UIcons – Bold Rounded (icônes du site, hors navbar) ── #}
   <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-bold-rounded/css/uicons-bold-rounded.css">
@@ -45,7 +52,6 @@
           que les emojis : on réduit là où la police du conteneur était grande) ── */
     .list-empty-emoji .ic        { font-size: 38px; }
     .confetti-emoji .ic          { font-size: 36px; }
-    .fz-empty .emoji .ic         { font-size: 34px; }
     .hero-leaf .ic,
     .editor-source-emoji .ic     { font-size: 32px; }
     .creations-empty-emoji .ic,
@@ -291,6 +297,98 @@
     }
     .verif-banner button:hover { opacity: 0.9; }
 
+    /* =========================================================
+       Transition de page « drapé » entre onglets de la navbar
+       =========================================================
+       Ne s'applique QU'AUX navigations déclenchées depuis la barre de
+       navigation ; toutes les autres gardent le fondu View Transitions.
+
+       Le mouvement démarre au CLIC (contrôleur JS en bas de page), pas à
+       l'arrivée de la réponse serveur : plus aucun temps mort entre le tap
+       et le début de l'animation, la latence réseau est masquée par le
+       rideau. Deux temps :
+
+         1. « couvrir »  — un drap de la couleur de l'onglet visé est tiré
+                           en travers de l'écran, bord d'attaque bombé.
+         2. « révéler »  — dès que le DOM est remplacé, le drap poursuit sa
+                           course et découvre la nouvelle page.
+
+       forward = onglet plus à droite → le drap arrive de la droite.
+       back    = onglet plus à gauche → il arrive de la gauche.
+
+       Le drap vit sous la barre de navigation (z-index 20) mais au-dessus
+       du reste : la pastille reste visible pendant tout le balayage.
+       Tout est animé en WAAPI, d'où le peu de CSS ici : uniquement l'état
+       de repos, la matière et la profondeur.                            */
+    .fab-curtain {
+      position: absolute;
+      inset: 0;
+      z-index: 15;
+      overflow: hidden;
+      pointer-events: none;
+      visibility: hidden;
+      contain: strict;
+    }
+    .fab-curtain.is-active { visibility: visible; }
+
+    .fab-curtain__sheet {
+      position: absolute;
+      top: -8%;
+      bottom: -8%;
+      left: 0;
+      width: 118%;
+      background: var(--fab-curtain-color, #E1794F);
+      transform: translate3d(120%, 0, 0);
+      box-shadow: 0 0 52px rgba(20, 18, 15, .26);
+      will-change: transform, border-radius;
+      backface-visibility: hidden;
+    }
+
+    /* Lumière rasante : le bord d'attaque accroche la lumière, la traîne
+       retombe dans l'ombre — c'est ce qui donne l'épaisseur du tissu. */
+    .fab-curtain__sheen {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg,
+                  rgba(255, 255, 255, .26) 0%,
+                  rgba(255, 255, 255, .07) 24%,
+                  rgba(0, 0, 0, 0)         58%,
+                  rgba(0, 0, 0, .14)      100%);
+    }
+    .fab-curtain[data-dir="back"] .fab-curtain__sheen { transform: scaleX(-1); }
+
+    /* Trame textile, à la limite du perceptible. */
+    .fab-curtain__sheet::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: .045;
+      background-image:
+        repeating-linear-gradient(90deg, rgba(0, 0, 0, .9) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, .9) 0 1px, transparent 1px 4px);
+    }
+
+    /* Réponse lente : le drap respire au lieu de figer l'écran. */
+    .fab-curtain.is-waiting .fab-curtain__sheen {
+      animation: fabCurtainBreath 1.15s ease-in-out infinite;
+    }
+    @keyframes fabCurtainBreath {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: .5; }
+    }
+
+    /* Fondu des navigations hors navbar, légèrement resserré. */
+    ::view-transition-old(root),
+    ::view-transition-new(root) { animation-duration: 180ms; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fab-curtain { display: none; }
+      ::view-transition-old(root),
+      ::view-transition-new(root) { animation: none; }
+    }
+
   </style>
   {% block extra_css %}{% endblock %}
   <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
@@ -300,6 +398,11 @@
 
   <div class="app-container">
     
+    {% comment %}
+      Les pages qui portent leur propre en-tête (le tableau de bord depuis le
+      design V2) neutralisent ce bloc : {% block app_header %}{% endblock %}.
+    {% endcomment %}
+    {% block app_header %}
     <header class="header-global">
       <a href="{% url 'dashboard' %}" class="logo">
         <div class="logo-wrap">
@@ -349,8 +452,13 @@
         {% endif %}
       </div>
     </header>
+    {% endblock %}
 
-    {% if user.is_authenticated and not user.email_verifie %}
+    {% comment %}
+      Bandeau de vérification d'e-mail masqué temporairement : retirer le
+      « False and » ci-dessous pour le réafficher.
+    {% endcomment %}
+    {% if False and user.is_authenticated and not user.email_verifie %}
       {% if request.GET.email_renvoye == '1' %}
       <div class="verif-banner sent">
         <span><i class="ic fi-br-check-circle"></i> E-mail de vérification renvoyé. Pensez à regarder vos spams.</span>
@@ -374,21 +482,402 @@
 
     {% block bottom_nav %}{% endblock %}
 
+    {% comment %}
+      Le drap de transition. `hx-preserve` est indispensable : le swap
+      htmx remplace tout le contenu de <body>, ce nœud doit survivre au
+      remplacement pour que son animation en cours ne soit pas coupée en
+      plein vol (htmx réinjecte l'élément vivant dans le nouveau DOM).
+    {% endcomment %}
+    <div id="fab-curtain" class="fab-curtain" hx-preserve="true" aria-hidden="true">
+      <div class="fab-curtain__sheet">
+        <span class="fab-curtain__sheen"></span>
+      </div>
+    </div>
+
   </div>
 
   <script>
-    const avatarBtn = document.getElementById('avatarBtn');
-    const dropdownMenu = document.getElementById('dropdownMenu');
-    if (avatarBtn && dropdownMenu) {
-      avatarBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dropdownMenu.classList.toggle('open');
-      });
-      document.addEventListener('click', () => {
-        dropdownMenu.classList.remove('open');
+    // Délégation posée une seule fois sur document (le script se ré-exécute à
+    // chaque navigation htmx, mais document.addEventListener ne doit pas être
+    // réempilé à chaque fois).
+    if (!window.__avatarMenuInit) {
+      window.__avatarMenuInit = true;
+      document.addEventListener('click', (e) => {
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        if (!dropdownMenu) return;
+        if (e.target.closest('#avatarBtn')) {
+          e.stopPropagation();
+          dropdownMenu.classList.toggle('open');
+          return;
+        }
+        if (!e.target.closest('#dropdownMenu')) {
+          dropdownMenu.classList.remove('open');
+        }
       });
     }
   </script>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════════════════
+       Contrôleur de la barre de navigation (design V2)
+
+       1. Retour immédiat au tap : onde au point de contact + bascule de la
+          pastille sans attendre la réponse serveur. La bascule dure 140 ms
+          et le swap htmx est retardé de 150 ms (hx-swap="… swap:150ms" sur
+          les liens de la barre) : l'animation est donc terminée quand htmx
+          remplace le DOM par la barre re-rendue, déjà dans le même état.
+       2. Sens du swipe : comparaison des index d'onglets. Il n'est posé que
+          pour un déplacement d'onglet à onglet — toute autre navigation
+          garde le fondu View Transitions par défaut.
+       3. Transition « drapé » : lancée au clic, en deux temps (couvrir /
+          révéler) synchronisés sur l'arrivée du swap. Voir le bloc CSS
+          .fab-curtain plus haut.
+       ═══════════════════════════════════════════════════════════════════ */
+    if (!window.__fabNavInit) {
+      window.__fabNavInit = true;
+
+      (function () {
+        var body = document.body;
+        var reduce = window.matchMedia
+          ? window.matchMedia('(prefers-reduced-motion: reduce)')
+          : { matches: false };
+
+        // Onglet actif avant le clic, pour restaurer la pastille si la
+        // requête échoue (aucun swap → la barre serveur n'arrive jamais).
+        var tabAvantClic = null;
+
+        // ── Géométrie du drap ────────────────────────────────────────
+        // Positions en % de la largeur du drap (118 % du cadre) :
+        //   depart  : hors champ, du côté d'où il arrive
+        //   arrivee : recouvrement complet (débord symétrique)
+        //   sortie  : hors champ, du côté opposé
+        // Les rayons dessinent le bord d'attaque bombé (« goutte ») puis
+        // la traîne qui s'étire quand on tire dessus.
+        var PLAT = '0% 0% 0% 0% / 0% 0% 0% 0%';
+        var GEO = {
+          forward: {
+            depart: 105, arrivee: -9, sortie: -105,
+            rEntree:   '70% 0% 0% 70% / 48% 0% 0% 52%',
+            rEntreeMi: '40% 0% 0% 40% / 50% 0% 0% 50%',
+            rSortieMi: '0% 42% 42% 0% / 0% 50% 50% 0%',
+            rSortie:   '0% 72% 72% 0% / 0% 52% 48% 0%'
+          },
+          back: {
+            depart: -105, arrivee: -9, sortie: 105,
+            rEntree:   '0% 70% 70% 0% / 0% 48% 52% 0%',
+            rEntreeMi: '0% 40% 40% 0% / 0% 50% 50% 0%',
+            rSortieMi: '42% 0% 0% 42% / 50% 0% 0% 50%',
+            rSortie:   '72% 0% 0% 72% / 52% 0% 0% 48%'
+          }
+        };
+
+        var DUREE_COUVRIR = 300;
+        var DUREE_REVELER = 380;
+
+        // Transition en cours : { dir, couvert, swap, timer }.
+        var enCours = null;
+
+        function leDrap() { return document.getElementById('fab-curtain'); }
+
+        // Une animation terminée en `fill: both` continue d'imposer sa dernière
+        // image : `transform` reste alors non nul sur .scrollable-content, ce
+        // qui en fait le bloc conteneur de ses descendants `position: fixed`.
+        // Boutons flottants, socles et modales se mettraient donc à défiler
+        // avec la page après la première transition. On relâche la page dès
+        // qu'elle n'a plus rien à jouer — sa dernière image est de toute façon
+        // l'état neutre, la coupure est invisible.
+        function libererPage(page) {
+          if (!page) return;
+          page.style.willChange = '';
+          if (page.getAnimations) {
+            page.getAnimations().forEach(function (a) { a.cancel(); });
+          }
+        }
+
+        function laToile(drap) {
+          return drap ? drap.querySelector('.fab-curtain__sheet') : null;
+        }
+
+        function tx(p) { return 'translate3d(' + p + '%, 0, 0)'; }
+
+        function couleurOnglet(item) {
+          var c = getComputedStyle(item).getPropertyValue('--fab-accent');
+          return (c && c.trim()) || '#E1794F';
+        }
+
+        // ── Temps 1 : le drap est tiré en travers de l'écran ─────────
+        function couvrir(dir, couleur) {
+          var drap = leDrap(), toile = laToile(drap);
+          if (!drap || !toile || !toile.animate) return null;
+
+          toile.getAnimations().forEach(function (a) { a.cancel(); });
+          drap.style.setProperty('--fab-curtain-color', couleur);
+          drap.setAttribute('data-dir', dir);
+          drap.classList.remove('is-waiting');
+          drap.classList.add('is-active');
+
+          var g = GEO[dir];
+          return toile.animate([
+            { transform: tx(g.depart), borderRadius: g.rEntree },
+            { borderRadius: g.rEntreeMi, offset: .5 },
+            { transform: tx(g.arrivee), borderRadius: PLAT }
+          ], {
+            duration: DUREE_COUVRIR,
+            easing: 'cubic-bezier(.24, .62, .22, 1)',
+            fill: 'both'
+          });
+        }
+
+        // ── Temps 2 : il poursuit sa course et découvre la page ──────
+        function reveler() {
+          var etat = enCours;
+          enCours = null;
+          if (!etat) return;
+          clearTimeout(etat.timer);
+
+          var drap = leDrap(), toile = laToile(drap);
+          var g = GEO[etat.dir];
+
+          if (drap && toile && toile.animate) {
+            drap.classList.remove('is-waiting');
+            var sortie = toile.animate([
+              { transform: tx(g.arrivee), borderRadius: PLAT },
+              { borderRadius: g.rSortieMi, offset: .45 },
+              { transform: tx(g.sortie), borderRadius: g.rSortie }
+            ], {
+              duration: DUREE_REVELER,
+              easing: 'cubic-bezier(.5, .02, .22, 1)',
+              fill: 'both'
+            });
+            sortie.finished.then(function () {
+              if (enCours) return;              // une autre transition a repris la main
+              drap.classList.remove('is-active');
+              toile.getAnimations().forEach(function (a) { a.cancel(); });
+            }).catch(function () {});
+          }
+
+          // La nouvelle page émerge de dessous le drap, décalée du côté
+          // opposé au balayage : elle semble entraînée par le tissu.
+          var page = document.querySelector('.scrollable-content');
+          if (!page) return;
+          page.style.visibility = '';
+          if (!page.animate || reduce.matches) return;
+
+          var sens = etat.dir === 'forward' ? 1 : -1;
+          page.style.willChange = 'transform, filter, opacity';
+          page.animate([
+            { transform: tx(sens * 16), filter: 'blur(7px)', opacity: 0 },
+            { transform: tx(sens * 3),  filter: 'blur(1px)', opacity: 1, offset: .6 },
+            { transform: tx(0),         filter: 'blur(0px)', opacity: 1 }
+          ], {
+            duration: 400,
+            delay: 40,
+            easing: 'cubic-bezier(.16, .84, .3, 1)',
+            fill: 'both'
+          }).onfinish = function () {
+            // `enCours` : une nouvelle transition a déjà repris la page, c'est
+            // à son propre dénouement de la relâcher.
+            if (!enCours) libererPage(page);
+          };
+        }
+
+        function peutReveler() {
+          if (enCours && enCours.couvert && enCours.swap) reveler();
+        }
+
+        // ── Repli : la requête n'aboutit pas, le drap fait marche arrière
+        function replier() {
+          var etat = enCours;
+          enCours = null;
+          if (!etat) return;
+          clearTimeout(etat.timer);
+
+          var drap = leDrap(), toile = laToile(drap);
+          var page = document.querySelector('.scrollable-content');
+          if (page) { page.style.visibility = ''; }
+          if (!drap || !toile || !toile.animate) return;
+
+          drap.classList.remove('is-waiting');
+          var g = GEO[etat.dir];
+          var retour = toile.animate([
+            { transform: tx(g.arrivee), borderRadius: PLAT },
+            { transform: tx(g.depart), borderRadius: g.rEntree }
+          ], { duration: 260, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'both' });
+          retour.finished.then(function () {
+            if (enCours) return;
+            drap.classList.remove('is-active');
+            toile.getAnimations().forEach(function (a) { a.cancel(); });
+          }).catch(function () {});
+
+          // La page était sortie sous le drap : on la ramène en entier, pas
+          // seulement en opacité — sinon le décalage et le flou de la sortie,
+          // eux aussi en `fill: both`, resteraient appliqués.
+          if (page && page.animate && !reduce.matches) {
+            var sens = etat.dir === 'forward' ? -1 : 1;
+            var retourPage = page.animate([
+              { transform: tx(sens * 12), filter: 'blur(8px)', opacity: 0 },
+              { transform: tx(0),         filter: 'blur(0px)', opacity: 1 }
+            ], { duration: 220, easing: 'ease-out', fill: 'both' });
+            retourPage.finished.then(function () {
+              if (!enCours) libererPage(page);
+            }).catch(function () {});
+          } else {
+            libererPage(page);
+          }
+        }
+
+        // ── Départ de la transition, au clic ─────────────────────────
+        function lancerTransition(dir, couleur) {
+          if (reduce.matches) return;
+
+          var couverture = couvrir(dir, couleur);
+          if (!couverture) return;
+
+          enCours = { dir: dir, couvert: false, swap: false, timer: null };
+          var etat = enCours;
+
+          couverture.finished.then(function () {
+            if (enCours !== etat) return;
+            etat.couvert = true;
+            peutReveler();
+          }).catch(function () {});
+
+          // Réponse qui tarde : le drap se met à respirer, on ne laisse
+          // jamais un écran parfaitement immobile.
+          etat.timer = setTimeout(function () {
+            if (enCours === etat && !etat.swap) {
+              var drap = leDrap();
+              if (drap) drap.classList.add('is-waiting');
+            }
+          }, 550);
+
+          // Sortie de la page courante, sous le drap qui avance.
+          var page = document.querySelector('.scrollable-content');
+          if (!page || !page.animate) return;
+          var sens = dir === 'forward' ? -1 : 1;
+          page.style.willChange = 'transform, filter, opacity';
+          page.animate([
+            { transform: tx(0),        filter: 'blur(0px)', opacity: 1 },
+            { transform: tx(sens * 12), filter: 'blur(8px)', opacity: 0 }
+          ], {
+            duration: 200,
+            easing: 'cubic-bezier(.45, 0, .9, .55)',
+            fill: 'both'
+          });
+        }
+
+        function laNav() { return document.getElementById('fab-nav'); }
+
+        function ongletActif() {
+          var nav = laNav();
+          if (!nav) return null;
+          var actif = nav.querySelector('.fab-nav__item[aria-current="page"]');
+          return actif ? actif.getAttribute('data-tab') : null;
+        }
+
+        function activerOnglet(tab) {
+          var nav = laNav();
+          if (!nav) return;
+          var items = nav.querySelectorAll('.fab-nav__item');
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].getAttribute('data-tab') === tab) {
+              items[i].setAttribute('aria-current', 'page');
+            } else {
+              items[i].removeAttribute('aria-current');
+            }
+          }
+        }
+
+        // ── Onde au point de contact ─────────────────────────────────
+        document.addEventListener('pointerdown', function (e) {
+          var item = e.target.closest && e.target.closest('.fab-nav__item');
+          if (!item || reduce.matches) return;
+          var r = item.getBoundingClientRect();
+          item.style.setProperty('--ink-x', (e.clientX - r.left) + 'px');
+          item.style.setProperty('--ink-y', (e.clientY - r.top) + 'px');
+          item.classList.remove('is-inking');
+          void item.offsetWidth;          // force le redémarrage de l'animation
+          item.classList.add('is-inking');
+        }, true);
+
+        document.addEventListener('animationend', function (e) {
+          if (e.animationName === 'fabNavInk' && e.target.parentElement) {
+            e.target.parentElement.classList.remove('is-inking');
+          }
+        }, true);
+
+        // ── Clic : sens du swipe + bascule optimiste de la pastille ──
+        document.addEventListener('click', function (e) {
+          var item = e.target.closest && e.target.closest('.fab-nav__item');
+          if (!item) return;
+
+          var nav = laNav();
+          var depuis = ongletActif();
+          var vers = item.getAttribute('data-tab');
+
+          body.removeAttribute('data-nav-dir');
+          if (!nav || !vers || vers === depuis) return;   // déjà sur la page
+
+          var dir = null;
+          var actuel = nav.querySelector('.fab-nav__item[data-tab="' + depuis + '"]');
+          if (actuel) {
+            var i = parseInt(actuel.getAttribute('data-index'), 10);
+            var j = parseInt(item.getAttribute('data-index'), 10);
+            if (!isNaN(i) && !isNaN(j)) {
+              dir = j > i ? 'forward' : 'back';
+              body.setAttribute('data-nav-dir', dir);
+            }
+          }
+
+          tabAvantClic = depuis;
+          activerOnglet(vers);
+
+          // Le mouvement part maintenant, sans attendre le serveur.
+          if (dir) lancerTransition(dir, couleurOnglet(item));
+        }, true);
+
+        // ── Arrivée du nouveau DOM ───────────────────────────────────
+        // La page est masquée le temps que le drap achève de couvrir : si
+        // la réponse arrive avant, on ne veut pas voir le contenu changer
+        // dans la partie d'écran encore découverte.
+        document.addEventListener('htmx:afterSwap', function () {
+          body.removeAttribute('data-nav-dir');
+          tabAvantClic = null;
+          if (!enCours) return;
+
+          enCours.swap = true;
+          var page = document.querySelector('.scrollable-content');
+          if (page && !enCours.couvert) page.style.visibility = 'hidden';
+          peutReveler();
+        });
+
+        // ── Filets de sécurité : requête avortée ou en erreur ────────
+        function annuler() {
+          body.removeAttribute('data-nav-dir');
+          if (tabAvantClic) { activerOnglet(tabAvantClic); tabAvantClic = null; }
+          replier();
+        }
+        document.addEventListener('htmx:responseError', annuler);
+        document.addEventListener('htmx:sendError', annuler);
+        document.addEventListener('htmx:timeout', annuler);
+        document.addEventListener('htmx:swapError', annuler);
+      })();
+    }
+  </script>
+  <script>
+    // Enregistrement du service worker (installation PWA). Gardé derrière un
+    // flag global : ce template se ré-exécute à chaque navigation htmx, mais
+    // l'enregistrement ne doit être tenté qu'une fois par session de page.
+    if (!window.__swInit) {
+      window.__swInit = true;
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/service-worker.js').catch(function () {});
+        });
+      }
+    }
+  </script>
+
   {% block extra_js %}{% endblock %}
 </body>
 </html>

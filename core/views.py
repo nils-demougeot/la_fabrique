@@ -21,6 +21,7 @@ from django.core.mail import send_mail
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import validate_email
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
@@ -31,8 +32,10 @@ from datetime import timedelta
 import math
 
 from django.http import HttpResponse, JsonResponse
-from core.models import (Vetement, Utilisateur, Patron, EtapePatron, PiecePatron, ProgressionProjet, PatronLike,
-                         PostCommunaute, LikePost, SauvegardePost, CommentairePost, Suivi, Hashtag, Badge)
+from django.views.decorators.http import require_POST
+from core.models import (Vetement, Utilisateur, Patron, EtapePatron, PiecePatron, GestePatron, PlanDeCoupe,
+                         ProgressionProjet, PatronLike, PostCommunaute, LikePost, SauvegardePost, CommentairePost,
+                         Suivi, Hashtag, Badge)
 
 logger = logging.getLogger('core')
 
@@ -114,18 +117,36 @@ def _compress_uploaded_image(uploaded_file, name_prefix):
 _PDF_CACHE_TTL = 60 * 60  # 1 heure
 
 
+# Une teinte par badge, pour que les médaillons du tableau de bord ne soient
+# pas tous de la même couleur. arc = anneau de progression + libellé,
+# c1/c2 = dégradé de la pastille, bg/border = fond de la carte.
+BADGE_COLORS = {
+    'Premier Projet':    {'arc': '#C98600', 'c1': '#FFDC5E', 'c2': '#F0A800', 'bg': '#FFFAE6', 'border': '#F5E3AF'},
+    '5 Projets':         {'arc': '#D1591F', 'c1': '#FF9F45', 'c2': '#F2622A', 'bg': '#FFF3EC', 'border': '#F7DDCD'},
+    '10 Projets':        {'arc': '#8A5A12', 'c1': '#D9A441', 'c2': '#8A5A12', 'bg': '#F8F1E4', 'border': '#E6D6B8'},
+    '1er com':           {'arc': '#2E6FB0', 'c1': '#6FB6F2', 'c2': '#2E6FB0', 'bg': '#EEF6FF', 'border': '#D3E6F8'},
+    '5 com':             {'arc': '#0E7F7A', 'c1': '#5BD9D4', 'c2': '#12857F', 'bg': '#ECFAF8', 'border': '#CDEDEA'},
+    'Premier Like':      {'arc': '#C2405A', 'c1': '#FF8FA8', 'c2': '#D4365A', 'bg': '#FFF0F3', 'border': '#F7D6DD'},
+    '10 Likes':          {'arc': '#C2361B', 'c1': '#FF7A45', 'c2': '#D93E12', 'bg': '#FFF1EC', 'border': '#F8D6C9'},
+    'Première Création': {'arc': '#6B45F5', 'c1': '#9C84FF', 'c2': '#6B45F5', 'bg': '#F6F3FF', 'border': '#E1D9FB'},
+    'Artiste':           {'arc': '#9A3FA8', 'c1': '#D07BE0', 'c2': '#8E31A0', 'bg': '#FBF0FD', 'border': '#EEDAF3'},
+    'Éco Warrior':       {'arc': '#128F4A', 'c1': '#5BD98A', 'c2': '#128F4A', 'bg': '#F3FAF5', 'border': '#D8EEE1'},
+}
+
 BADGE_DEFINITIONS = [
-    {'nom': 'Premier Projet',      'emoji': '🏆', 'description': '1er projet terminé',        'condition': 'Terminer 1 projet'},
-    {'nom': '5 Projets',           'emoji': '⭐', 'description': 'Créateur confirmé',           'condition': 'Terminer 5 projets'},
-    {'nom': '10 Projets',          'emoji': '🥇', 'description': 'Grand créateur',             'condition': 'Terminer 10 projets'},
-    {'nom': '1er com',              'emoji': '💬', 'description': 'Actif dans la communauté',   'condition': 'Poster 1 commentaire'},
-    {'nom': '5 com',               'emoji': '🗣️', 'description': 'Très bavard !',             'condition': 'Poster 5 commentaires'},
-    {'nom': 'Premier Like',        'emoji': '❤️', 'description': 'Soutien de la communauté',  'condition': 'Donner 1 like'},
-    {'nom': '10 Likes',            'emoji': '🔥', 'description': 'Fan de la première heure',   'condition': 'Donner 10 likes'},
-    {'nom': 'Première Création',   'emoji': '✨', 'description': 'Première création partagée', 'condition': 'Partager 1 création'},
-    {'nom': 'Artiste',             'emoji': '🎨', 'description': 'Créateur prolifique',        'condition': 'Partager 5 créations'},
-    {'nom': 'Éco Warrior',         'emoji': '🌿', 'description': 'Badge exclusif',             'condition': 'Acheter dans la boutique'},
+    {'famille': 'projets',    'nom': 'Premier Projet',    'emoji': '🏆', 'description': '1er projet terminé',        'condition': 'Terminer 1 projet'},
+    {'famille': 'projets',    'nom': '5 Projets',         'emoji': '⭐', 'description': 'Créateur confirmé',           'condition': 'Terminer 5 projets'},
+    {'famille': 'projets',    'nom': '10 Projets',        'emoji': '🥇', 'description': 'Grand créateur',             'condition': 'Terminer 10 projets'},
+    {'famille': 'echanges',   'nom': '1er com',           'emoji': '💬', 'description': 'Actif dans la communauté',   'condition': 'Poster 1 commentaire'},
+    {'famille': 'echanges',   'nom': '5 com',            'emoji': '🗣️', 'description': 'Très bavard !',             'condition': 'Poster 5 commentaires'},
+    {'famille': 'soutien',    'nom': 'Premier Like',      'emoji': '❤️', 'description': 'Soutien de la communauté',  'condition': 'Donner 1 like'},
+    {'famille': 'soutien',    'nom': '10 Likes',          'emoji': '🔥', 'description': 'Fan de la première heure',   'condition': 'Donner 10 likes'},
+    {'famille': 'creations',  'nom': 'Première Création', 'emoji': '✨', 'description': 'Première création partagée', 'condition': 'Partager 1 création'},
+    {'famille': 'creations',  'nom': 'Artiste',           'emoji': '🎨', 'description': 'Créateur prolifique',        'condition': 'Partager 5 créations'},
+    {'famille': 'boutique',   'nom': 'Éco Warrior',       'emoji': '🌿', 'description': 'Badge exclusif',             'condition': 'Acheter dans la boutique'},
 ]
+
+BADGE_COLOR_DEFAUT = {'arc': '#6B45F5', 'c1': '#9C84FF', 'c2': '#6B45F5', 'bg': '#F6F3FF', 'border': '#E1D9FB'}
 
 
 def check_and_award_badges(user):
@@ -161,44 +182,177 @@ def home(request):
     return render(request, 'core/index.html')
 
 
+def service_worker(request):
+    """Sert le service worker depuis la racine du domaine.
+
+    Le scope d'un service worker est limité au dossier qui le sert : servi
+    depuis /static/..., il ne pourrait contrôler que /static/. On le lit donc
+    depuis le disque et on le renvoie sur l'URL racine /service-worker.js,
+    avec un en-tête Service-Worker-Allowed explicite et sans cache — un SW
+    obsolète en cache empêcherait les mises à jour de se propager.
+    """
+    sw_path = dj_settings.BASE_DIR / 'core' / 'static' / 'core' / 'js' / 'service-worker.js'
+    with open(sw_path, 'rb') as f:
+        content = f.read()
+    response = HttpResponse(content, content_type='application/javascript')
+    response['Service-Worker-Allowed'] = '/'
+    response['Cache-Control'] = 'no-cache'
+    return response
+
+
+# Paliers de l'atelier affichés sur le tableau de bord : (points requis, nom).
+def _niveau_atelier(nb_vetements, nb_etapes, nb_projets):
+    """Palier d'atelier calculé sur l'activité réelle : tissus scannés, étapes
+    de couture réalisées et projets menés à terme.
+
+    Le barème lui-même vit dans `core.gamification` : le tableau de bord et la
+    communauté doivent afficher exactement le même niveau, il ne peut donc pas
+    y en avoir deux définitions.
+    """
+    from . import gamification as jeu
+
+    return jeu.niveau_depuis_points(
+        jeu.points_depuis_activite(nb_vetements, nb_etapes, nb_projets)
+    )
+
+
+# Couleurs de tissu saisies au scan → pastille affichée sur le tableau de bord.
+COULEUR_HEX = {
+    'ivoire': '#F2EDD7', 'beige': '#D4B896', 'camel': '#C19A6B',
+    'terracotta': '#C2694F', 'rouge': '#CC2936', 'bordeaux': '#7B0C0C',
+    'rose': '#F4A0B0', 'mauve': '#967BB6', 'lavande': '#B57EDC',
+    'marine': '#1F305C', 'bleu ciel': '#89CFF0', 'vert sauge': '#9CAF88',
+    'vert forêt': '#228B22', 'moutarde': '#C8A415', 'gris ardoise': '#708090',
+    'noir': '#1A1A1A', 'blanc': '#F0EEE8', 'gris': '#A0A09A',
+}
+
+
+def _couleur_hex(couleur):
+    if not couleur:
+        return '#EDE4D6'
+    return COULEUR_HEX.get(couleur.split(',')[0].strip().lower(), '#EDE4D6')
+
+
+def _couleur_claire(hex_couleur):
+    """Vrai si un texte sombre est plus lisible que du blanc sur cet aplat.
+
+    Luminance perçue (ITU-R BT.601) : les tissus clairs (ivoire, beige…)
+    reçoivent une étiquette encre, les foncés (marine, noir…) une blanche.
+    """
+    try:
+        r, g, b = (int(hex_couleur[i:i + 2], 16) for i in (1, 3, 5))
+    except (ValueError, IndexError):
+        return True
+    return (r * 299 + g * 587 + b * 114) / 1000 > 150
+
+
 @login_required
 def dashboard(request):
     user = request.user
     OBJECTIF_M2 = 15.0
 
-    vetements_user = Vetement.objects.filter(utilisateur=user)
+    # ── Banque de tissus ────────────────────────────────────────────────
+    vetements_user = list(Vetement.objects.filter(utilisateur=user).order_by('-id'))
+    nb_vetements = len(vetements_user)
     surface_totale = round(sum(v.surfaceExploitable for v in vetements_user), 2)
     co2_economise = round(sum(calculer_co2_vetement(v) for v in vetements_user), 1)
 
     surface_pourcentage = min(100, round((surface_totale / OBJECTIF_M2) * 100))
     surface_restante = round(max(0, OBJECTIF_M2 - surface_totale), 1)
+    # Défi « banque de tissus » : 5 segments de 20 % chacun. Il sert de repli
+    # à la carte des quêtes quand la communauté est fermée.
+    defi_segments = [surface_pourcentage >= (i + 1) * 20 for i in range(5)]
 
-    # Projets terminés
-    termines_qs = (
+    # ── Quêtes du jour ──────────────────────────────────────────────────
+    # La carte orange du tableau de bord montre l'avancement du jour : c'est
+    # le même état que l'écran des quêtes, lu au même endroit — il ne peut
+    # donc pas y avoir deux comptes différents à l'écran.
+    quetes_jour, quetes_faites, coffre_quetes, heures_avant_reset = [], 0, None, None
+    if getattr(dj_settings, 'COMMUNAUTE_ACTIVE', True):
+        from . import gamification as jeu
+
+        quetes_jour = jeu.quetes_du_jour(user)
+        quetes_faites = sum(1 for q in quetes_jour if q.terminee)
+        coffre_quetes = jeu.coffre_du_jour(user)
+        minuit = (timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+                  + timedelta(days=1))
+        heures_avant_reset = max(0, int((minuit - timezone.localtime()).total_seconds() // 3600))
+
+    apercu_tissus = [
+        {'photo': v.photo_url, 'hex': _couleur_hex(v.couleur)}
+        for v in vetements_user[:3]
+    ]
+    reste_tissus = max(0, nb_vetements - len(apercu_tissus))
+
+    # ── Projets (en cours + terminés) ───────────────────────────────────
+    progressions = (
         ProgressionProjet.objects
-        .filter(utilisateur=user, termine=True)
+        .filter(utilisateur=user)
         .select_related('patron')
+        .annotate(nb_etapes=Count('patron__etapes'))
         .order_by('-date_derniere_activite')
     )
-    projets_termines = []
+
+    projet_en_cours = None
+    patrons_engages = set()
+    nb_projets_termines = 0
     nb_etapes_realisees = 0
-    for prog in termines_qs:
+
+    for prog in progressions:
         p = prog.patron
-        total_etapes = p.etapes.count()
-        nb_etapes_realisees += total_etapes
-        projets_termines.append({
+        patrons_engages.add(p.pk)
+
+        if prog.termine:
+            nb_projets_termines += 1
+            nb_etapes_realisees += prog.nb_etapes
+            continue
+
+        # Étapes déjà validées d'un projet en cours = étape courante − 1.
+        nb_etapes_realisees += max(0, prog.etape_actuelle - 1)
+        if projet_en_cours is None:  # le plus récemment travaillé
+            etape = p.etapes.filter(numero=prog.etape_actuelle).first()
+            projet_en_cours = {
+                'patron_id': p.pk,
+                'titre': p.titre,
+                'image': p.photo_url,
+                'etape_actuelle': prog.etape_actuelle,
+                'geste_actuelle': prog.geste_actuelle,
+                'total_etapes': prog.nb_etapes,
+                'etape_titre': etape.titre if etape else 'Reprendre là où tu en étais',
+                'progression_pct': (
+                    round((prog.etape_actuelle - 1) / prog.nb_etapes * 100)
+                    if prog.nb_etapes else 0
+                ),
+            }
+
+    # ── Patrons réalisables avec les tissus disponibles ─────────────────
+    patrons_all = list(Patron.objects.all())
+    nb_patrons_total = len(patrons_all)
+    realisables = [p for p in patrons_all if p.surfaceMin and p.surfaceMin <= surface_totale]
+    nb_patrons_realisables = len(realisables)
+    patrons_pourcentage = (
+        round(nb_patrons_realisables / nb_patrons_total * 100) if nb_patrons_total else 0
+    )
+
+    patrons_suggeres = [
+        {
+            'id': p.pk,
             'titre': p.titre,
             'image': p.photo_url,
-            'difficulte_label': DIFFICULTE_LABELS.get(p.difficulte, str(p.difficulte)),
             'duree': p.duree or '?',
-            'date_fin': prog.date_derniere_activite,
-            'patron_id': p.pk,
-        })
+            'surface': p.surfaceMin,
+        }
+        for p in sorted(
+            (p for p in realisables if p.pk not in patrons_engages),
+            key=lambda p: p.surfaceMin,
+        )[:6]
+    ]
 
+    # ── Badges ──────────────────────────────────────────────────────────
     badges_earned = {b.nom: b for b in Badge.objects.filter(utilisateur=user)}
     has_eco_warrior = 'Éco Warrior' in badges_earned
 
-    nb_projets_badge      = ProgressionProjet.objects.filter(utilisateur=user, termine=True).count()
+    nb_projets_badge      = nb_projets_termines
     nb_commentaires_badge = CommentairePost.objects.filter(utilisateur=user).count()
     nb_likes_badge        = LikePost.objects.filter(utilisateur=user).count()
     nb_posts_badge        = PostCommunaute.objects.filter(utilisateur=user).count()
@@ -223,7 +377,9 @@ def dashboard(request):
         pct = round((current / max_val) * 100) if max_val > 0 else 0
         badges_display.append({
             'nom': bd['nom'],
+            'famille': bd['famille'],
             'emoji': bd['emoji'],
+            'couleur': BADGE_COLORS.get(bd['nom'], BADGE_COLOR_DEFAUT),
             'description': bd['description'],
             'condition': bd['condition'],
             'earned': earned is not None,
@@ -233,17 +389,56 @@ def dashboard(request):
             'progress_pct': pct,
         })
 
+    # Les 3 badges les plus proches d'être décrochés (complétés par les acquis).
+    # À progression égale on évite de montrer trois badges de la même famille :
+    # sinon un compte neuf n'affiche que les trois badges « projets ».
+    candidats = (
+        sorted((b for b in badges_display if not b['earned']),
+               key=lambda b: -b['progress_pct'])
+        + [b for b in badges_display if b['earned']]
+    )
+    badges_a_portee, familles_vues = [], set()
+    for passe in (1, 2):  # 1re passe : une famille au plus ; 2e : on complète
+        for b in candidats:
+            if len(badges_a_portee) == 3:
+                break
+            if b in badges_a_portee:
+                continue
+            if passe == 1 and b['famille'] in familles_vues:
+                continue
+            badges_a_portee.append(b)
+            familles_vues.add(b['famille'])
+
     context = {
+        'aujourd_hui': timezone.localdate(),
         'surface_totale': surface_totale,
         'surface_objectif': OBJECTIF_M2,
         'surface_pourcentage': surface_pourcentage,
         'surface_restante': surface_restante,
+        'defi_segments': defi_segments,
+        'quetes_jour': quetes_jour,
+        'quetes_faites': quetes_faites,
+        'quetes_total': len(quetes_jour),
+        'quetes_pourcentage': round(quetes_faites / len(quetes_jour) * 100) if quetes_jour else 0,
+        'coffre_quetes': coffre_quetes,
+        'heures_avant_reset': heures_avant_reset,
+        'nb_vetements': nb_vetements,
+        'apercu_tissus': apercu_tissus,
+        'reste_tissus': reste_tissus,
         'credits': user.soldePieces,
         'co2_economise': co2_economise,
-        'projets_termines': projets_termines,
-        'nb_projets_termines': len(projets_termines),
+        'niveau': _niveau_atelier(nb_vetements, nb_etapes_realisees, nb_projets_termines),
+        'projet_en_cours': projet_en_cours,
+        'nb_projets_termines': nb_projets_termines,
         'nb_etapes_realisees': nb_etapes_realisees,
+        'nb_patrons_total': nb_patrons_total,
+        'nb_patrons_realisables': nb_patrons_realisables,
+        'patrons_pourcentage': patrons_pourcentage,
+        'patrons_suggeres': patrons_suggeres,
         'badges_display': badges_display,
+        'badges_a_portee': badges_a_portee,
+        'nb_badges_obtenus': len(badges_earned),
+        'nb_badges_total': len(BADGE_DEFINITIONS),
         'has_eco_warrior': has_eco_warrior,
     }
     return render(request, 'core/dashboard.html', context)
@@ -307,6 +502,24 @@ def _polygon_area_px2(px_points):
     return abs(area) / 2.0
 
 
+# Types de défauts posés dans l'éditeur (le modèle n'en stocke que deux
+# surfaces, cf. _analyser_face ; ces libellés servent au ticket de fin).
+DEFAUT_LABELS = {
+    'tache':  'Tache',
+    'trou':   'Trou',
+    'usure':  'Usure',
+    'ourlet': 'Ourlet',
+    'autre':  'Autre',
+}
+FACE_LABELS = {'avant': 'Face avant', 'arriere': 'Face arrière'}
+
+# Part de la surface détourée perdue en coutures, ourlets et bords non
+# exploitables. Constante volontairement prudente : c'est une estimation,
+# pas une mesure — elle est déduite de la surface exploitable et affichée
+# telle quelle sur le ticket de fin.
+CHUTES_BORDS_RATIO = 0.08
+
+
 def _analyser_face(request, prefix):
     """
     Analyse une face (avant / arrière) à partir des données du formulaire.
@@ -342,14 +555,25 @@ def _analyser_face(request, prefix):
 
     tache_m2 = 0.0
     trou_m2 = 0.0
+    lignes = []
     for d in defects:
         # rayon stocké normalisé par rapport à la largeur de l'image
         r_cm = float(d.get('r', 0)) * img_w * cm_per_px
         circle_m2 = math.pi * r_cm * r_cm / 10000.0
-        if d.get('type') == 'tache':
-            tache_m2 += circle_m2
-        else:
+        # Le modèle ne connaît que deux surfaces perdues : les trous d'un côté,
+        # tout le reste (tache, usure, ourlet, autre) de l'autre. Le type précis
+        # reste stocké dans le JSON `defauts` pour l'affichage.
+        if d.get('type') == 'trou':
             trou_m2 += circle_m2
+        else:
+            tache_m2 += circle_m2
+        lignes.append({
+            'type': d.get('type', 'tache'),
+            'libelle': DEFAUT_LABELS.get(d.get('type'), 'Défaut'),
+            'face': FACE_LABELS.get(prefix, prefix),
+            'taille_cm': round(r_cm * 2),
+            'perte_m2': circle_m2,
+        })
 
     return {
         'area_m2': area_m2,
@@ -359,6 +583,7 @@ def _analyser_face(request, prefix):
         'cm_per_px': cm_per_px,
         'polygon': polygon,
         'defects': defects,
+        'lignes': lignes,
     }
 
 
@@ -380,14 +605,17 @@ def ajout_textile(request):
                 surface_totale_m2 = face_av['area_m2'] + face_ar['area_m2']
                 tache_m2 = face_av['tache_m2'] + face_ar['tache_m2']
                 trou_m2 = face_av['trou_m2'] + face_ar['trou_m2']
+                lignes_defauts = face_av['lignes'] + face_ar['lignes']
             else:
                 # Face arrière ignorée : on suppose l'arrière identique à l'avant.
                 surface_totale_m2 = face_av['area_m2'] * 2
                 tache_m2 = face_av['tache_m2'] * 2
                 trou_m2 = face_av['trou_m2'] * 2
+                lignes_defauts = face_av['lignes']
 
             total_defect_area_m2 = tache_m2 + trou_m2
-            usable_area_m2 = max(0, surface_totale_m2 - total_defect_area_m2)
+            chutes_m2 = surface_totale_m2 * CHUTES_BORDS_RATIO
+            usable_area_m2 = max(0, surface_totale_m2 - total_defect_area_m2 - chutes_m2)
             percentage = int((usable_area_m2 / surface_totale_m2) * 100) if surface_totale_m2 > 0 else 0
 
             # SAUVEGARDE DANS LA BASE DE DONNÉES
@@ -396,10 +624,11 @@ def ajout_textile(request):
             qualite = int(request.POST.get('qualite', 3))
             couleur = request.POST.get('couleur', '')
             matiere_raw = request.POST.get('material', 'coton:100').strip() or 'coton:100'
+            numero_identite = request.POST.get('numero_identite', '').strip()
 
             photo_fichier = decode_base64_image(face_av['photo_data'], 'vetement')
 
-            Vetement.objects.create(
+            vetement = Vetement.objects.create(
                 utilisateur=request.user,
                 nomVetement=nom_vetement,
                 photoURL=photo_fichier,
@@ -414,6 +643,7 @@ def ajout_textile(request):
                 qualite=qualite,
                 couleur=couleur,
                 matiere=matiere_raw,
+                numeroIdentite=numero_identite or None,
                 echelle_cm_px=face_av['cm_per_px'],
                 detourage=json.dumps(face_av['polygon']),
                 defauts=json.dumps(face_av['defects']),
@@ -423,11 +653,30 @@ def ajout_textile(request):
             request.user.soldePieces += coins_earned
             request.user.save()
 
+            # ── Ticket de fin ──
+            matieres_txt = ' · '.join(
+                f"{MATERIAL_LABELS.get(n.strip().lower(), n.strip().capitalize())} {p} %"
+                for n, p in (part.split(':', 1) for part in matiere_raw.split(',') if ':' in part)
+            )
+            couleurs_txt = ' · '.join(c.strip() for c in couleur.split(',') if c.strip())
+            nb_patrons = Patron.objects.filter(surfaceMin__lte=usable_area_m2).count()
+
             context.update({
                 'result_ready': True,
                 'usable_area': round(usable_area_m2, 2),
                 'percentage': percentage,
                 'coins_earned': coins_earned,
+                'ticket': {
+                    'ref': f'{vetement.pk:06d}',
+                    'date': timezone.localdate().strftime('%d.%m.%y'),
+                    'nom': nom_vetement,
+                    'matieres': matieres_txt,
+                    'couleurs': couleurs_txt,
+                    'surface_totale': round(surface_totale_m2, 2),
+                    'lignes': lignes_defauts,
+                    'chutes': round(chutes_m2, 2),
+                    'nb_patrons': nb_patrons,
+                },
             })
 
         except (ValueError, json.JSONDecodeError, ZeroDivisionError):
@@ -568,6 +817,17 @@ def calculer_stats_passeport(patron, garments):
     return round(masse_kg * EAU_PAR_MATIERE.get(mat, 15000)), round(masse_kg * CO2_PAR_MATIERE.get(mat, CO2_DEFAUT), 2)
 
 
+# Types produits par le scanner (ajout_textile) → libellé affiché.
+TYPE_VETEMENT_LABELS = {
+    'tshirt': 'T-shirt', 'jean': 'Jean', 'hoodie': 'Hoodie', 'robe': 'Robe',
+    'jupe': 'Jupe', 'manteau': 'Manteau', 'veste': 'Veste', 'blazer': 'Blazer',
+    'pull': 'Pull', 'chemise': 'Chemise', 'short': 'Short', 'gilet': 'Gilet',
+    'debardeur': 'Débardeur', 'combinaison': 'Combinaison', 'pyjama': 'Pyjama',
+    'accessoire': 'Accessoire', 'autre': 'Autre',
+}
+
+MATIERE_HEX_DEFAUT = '#C7BCA8'
+
 MATERIAL_COLORS = {
     'coton': '#D4C5A9', 'polyester': '#93A8B8', 'laine': '#C8A96A', 'lin': '#C9B882',
     'soie': '#C4B0D8', 'viscose': '#7FC9CF', 'nylon': '#F4A06A', 'elasthanne': '#8DC89A',
@@ -602,6 +862,37 @@ def _compatibilite(surface_user, surface_min):
     return 0
 
 
+def _duree_minutes(duree):
+    """Convertit une durée libre (« 1 h 30 », « 45 min », « 2h ») en minutes."""
+    if not duree:
+        return None
+    txt = str(duree).lower().replace(' ', ' ')
+    heures = re.search(r'(\d+(?:[.,]\d+)?)\s*h', txt)
+    minutes = re.search(r'(\d+)\s*(?:min|m\b)', txt)
+    total = 0.0
+    if heures:
+        total += float(heures.group(1).replace(',', '.')) * 60
+        reste = re.search(r'h\s*(\d{1,2})\b', txt)
+        if reste and not minutes:
+            total += float(reste.group(1))
+    if minutes:
+        total += float(minutes.group(1))
+    if total <= 0 and not heures and not minutes:
+        return None
+    return int(total)
+
+
+def _pieces_gagnees(difficulte):
+    """Pièces gagnées à la réalisation d'un patron, dérivées de sa difficulté."""
+    return {1: 20, 2: 45, 3: 60}.get(difficulte, 20)
+
+
+@login_required
+def cours(request):
+    """Onglet « Cours » de la barre de navigation — page encore vide."""
+    return render(request, 'core/cours.html')
+
+
 @login_required
 def patrons(request):
     surface_user = (
@@ -626,11 +917,16 @@ def patrons(request):
         patrons_list.append({
             'id': p.pk,
             'titre': p.titre,
+            'description': p.description or '',
             'image': p.photo_url,
             'compatibilite': _compatibilite(surface_user, p.surfaceMin),
             'tissu': p.typeObjet,
+            'difficulte': p.difficulte,
             'difficulte_label': DIFFICULTE_LABELS.get(p.difficulte, str(p.difficulte)),
             'duree': p.duree or '?',
+            'duree_min': _duree_minutes(p.duree),
+            'surface_min': round(p.surfaceMin, 2),
+            'pieces': _pieces_gagnees(p.difficulte),
             'est_premium': p.estPremium,
             'est_liked': p.pk in liked_ids,
             'en_cours': p.pk in en_cours_patron_ids,
@@ -639,22 +935,103 @@ def patrons(request):
     projets_en_cours = []
     for prog in progressions_qs:
         p = prog.patron
-        total_etapes = p.etapes.count()
+        etapes = list(p.etapes.all().order_by('numero'))
+        total_etapes = len(etapes)
         pct = round((prog.etape_actuelle / total_etapes) * 100) if total_etapes > 0 else 0
+        etape_courante = next(
+            (e for e in etapes if e.numero == prog.etape_actuelle), None
+        )
         projets_en_cours.append({
             'patron_id': p.pk,
             'titre': p.titre,
             'image': p.photo_url,
             'etape_actuelle': prog.etape_actuelle,
+            'geste_actuelle': prog.geste_actuelle,
+            'etape_titre': etape_courante.titre if etape_courante else '',
+            'etapes_range': range(total_etapes),
             'total_etapes': total_etapes,
             'progression_pct': pct,
+            'date_derniere_activite': prog.date_derniere_activite,
             'difficulte_label': DIFFICULTE_LABELS.get(p.difficulte, str(p.difficulte)),
         })
 
+    projets_termines_qs = (
+        ProgressionProjet.objects
+        .filter(utilisateur=request.user, termine=True)
+        .select_related('patron')
+        .order_by('-date_derniere_activite')
+    )
+    projets_termines = [
+        {
+            'patron_id': prog.patron_id,
+            'titre': prog.patron.titre,
+            'image': prog.patron.photo_url,
+            'date_derniere_activite': prog.date_derniere_activite,
+        }
+        for prog in projets_termines_qs
+    ]
+    surface_sauvee = round(
+        sum(prog.patron.surfaceMin for prog in projets_termines_qs), 2
+    )
+
+    nb_realisables = sum(1 for p in patrons_list if p['compatibilite'] >= 100)
+    patron_vedette = max(patrons_list, key=lambda p: p['compatibilite']) if patrons_list else None
+
+    # ── « Une heure ou moins » : patrons courts, les faisables d'abord ──
+    patrons_rapides = sorted(
+        [p for p in patrons_list if p['duree_min'] is not None and p['duree_min'] <= 60],
+        key=lambda p: (-p['compatibilite'], p['duree_min']),
+    )[:8]
+
+    # ── « Pour ton <tissu> » : le vêtement le plus grand de la penderie ──
+    plus_grand = (
+        Vetement.objects
+        .filter(utilisateur=request.user)
+        .order_by('-surfaceExploitable')
+        .first()
+    )
+    tissu_focus = None
+    if plus_grand:
+        matiere = get_dominant_material(plus_grand.matiere)
+        surface_dispo = round(plus_grand.surfaceExploitable, 2)
+        # Les patrons que ce tissu couvre d'abord, du plus ajusté au plus petit.
+        suggestions = sorted(
+            patrons_list,
+            key=lambda p: (p['surface_min'] > surface_dispo,
+                           abs(p['surface_min'] - surface_dispo)),
+        )[:6]
+        tissu_focus = {
+            'nom': matiere or plus_grand.nomVetement,
+            'surface': surface_dispo,
+            'patrons': [
+                dict(p, faisable_ici=p['surface_min'] <= surface_dispo)
+                for p in suggestions
+            ],
+        }
+
+    # ── Progression de couture : 100 XP par projet terminé, 500 XP par niveau ──
+    xp_total = len(projets_termines) * 100
+    niveau = xp_total // 500 + 1
+    xp_niveau = xp_total % 500
+    NIVEAU_TITRES = {1: 'Apprenti·e', 2: 'Aiguille agile', 3: 'Couturier·ère', 4: 'Artisan·e'}
+
     return render(request, 'core/patrons.html', {
         'patrons': patrons_list,
+        'patrons_rapides': patrons_rapides,
+        'tissu_focus': tissu_focus,
         'projets_en_cours': projets_en_cours,
+        'projets_termines': projets_termines,
+        'nb_termines': len(projets_termines),
+        'surface_sauvee': surface_sauvee,
         'liked_ids_json': list(liked_ids),
+        'nb_realisables': nb_realisables,
+        'patron_vedette': patron_vedette,
+        'surface_user': round(surface_user, 2),
+        'niveau': niveau,
+        'niveau_titre': NIVEAU_TITRES.get(niveau, 'Maître couturier·ère'),
+        'xp_niveau': xp_niveau,
+        'xp_palier': 500,
+        'xp_pct': round(xp_niveau / 500 * 100),
     })
 
 
@@ -712,28 +1089,10 @@ def creer_patron(request):
             createur=request.user,
         )
 
-        # ── Étapes ──
-        nb_etapes = _i('nb_etapes', 0)
-        numero = 1
-        for i in range(nb_etapes):
-            e_titre = request.POST.get(f'etape_{i}_titre', '').strip()
-            e_desc = request.POST.get(f'etape_{i}_description', '').strip()
-            if not e_titre and not e_desc:
-                continue
-            EtapePatron.objects.create(
-                patron=patron,
-                numero=numero,
-                titre=e_titre or f"Étape {numero}",
-                description=e_desc,
-                video_url=request.POST.get(f'etape_{i}_video', '').strip() or None,
-                conseil=request.POST.get(f'etape_{i}_conseil', '').strip() or None,
-                materiaux_etape=request.POST.get(f'etape_{i}_materiaux', '').strip() or None,
-                image=_compress_uploaded_image(request.FILES.get(f'etape_{i}_image'), f'etape_{i}'),
-            )
-            numero += 1
-
-        # ── Pièces à découper (SVG) ──
+        # ── Pièces à découper (SVG) — créées avant les étapes pour que les
+        #    gestes puissent référencer leurs pièces utilisées par index. ──
         nb_pieces = _i('nb_pieces', 0)
+        pieces_creees = {}  # index du bloc pièce (j) → instance PiecePatron
         ordre = 0
         for j in range(nb_pieces):
             p_nom = request.POST.get(f'piece_{j}_nom', '').strip()
@@ -743,7 +1102,7 @@ def creer_patron(request):
             # On n'accepte que des fichiers .svg
             if svg_file and not svg_file.name.lower().endswith('.svg'):
                 svg_file = None
-            PiecePatron.objects.create(
+            pieces_creees[j] = PiecePatron.objects.create(
                 patron=patron,
                 nom=p_nom or f"Pièce {ordre + 1}",
                 quantite=max(1, _i(f'piece_{j}_quantite', 1)),
@@ -753,6 +1112,50 @@ def creer_patron(request):
                 ordre=ordre,
             )
             ordre += 1
+
+        # ── Étapes, et leurs gestes ──
+        nb_etapes = _i('nb_etapes', 0)
+        numero = 1
+        for i in range(nb_etapes):
+            e_titre = request.POST.get(f'etape_{i}_titre', '').strip()
+            e_desc = request.POST.get(f'etape_{i}_description', '').strip()
+            if not e_titre and not e_desc:
+                continue
+            etape = EtapePatron.objects.create(
+                patron=patron,
+                numero=numero,
+                titre=e_titre or f"Étape {numero}",
+                description=e_desc,
+                conseil=request.POST.get(f'etape_{i}_conseil', '').strip() or None,
+                materiaux_etape=request.POST.get(f'etape_{i}_materiaux', '').strip() or None,
+                image=_compress_uploaded_image(request.FILES.get(f'etape_{i}_image'), f'etape_{i}'),
+            )
+            numero += 1
+
+            nb_gestes = _i(f'etape_{i}_nb_gestes', 0)
+            geste_numero = 1
+            for k in range(nb_gestes):
+                g_titre = request.POST.get(f'etape_{i}_geste_{k}_titre', '').strip()
+                g_desc = request.POST.get(f'etape_{i}_geste_{k}_description', '').strip()
+                g_video = request.FILES.get(f'etape_{i}_geste_{k}_video')
+                g_pieces_raw = request.POST.get(f'etape_{i}_geste_{k}_pieces', '').strip()
+                if not g_titre and not g_desc and not g_video and not g_pieces_raw:
+                    continue
+                geste = GestePatron.objects.create(
+                    etape=etape,
+                    numero=geste_numero,
+                    titre=g_titre,
+                    description=g_desc,
+                    video=g_video,
+                )
+                if g_pieces_raw:
+                    idxs = []
+                    for tok in g_pieces_raw.split(','):
+                        tok = tok.strip()
+                        if tok.isdigit():
+                            idxs.append(int(tok))
+                    geste.pieces.set([pieces_creees[idx] for idx in idxs if idx in pieces_creees])
+                geste_numero += 1
 
         return redirect('patron_detail', pk=patron.pk)
 
@@ -833,6 +1236,20 @@ def patron_detail(request, pk):
     if prog_existante:
         selected_ids = set(prog_existante.vetements_projet.values_list('id', flat=True))
 
+    # Retour de l'outil de faisabilité (core.views.faisabilite_patron) : ids
+    # des tissus sur lesquels toutes les pièces ont été placées avec succès.
+    # Revalidés contre les tissus de l'utilisateur (le paramètre vient d'une
+    # simple query string) avant d'être affichés comme « vérifiés ».
+    verif_ids = set()
+    if request.GET.get('verifie') == '1':
+        for part in request.GET.get('vetements', '').split(','):
+            part = part.strip()
+            if part.isdigit():
+                verif_ids.add(int(part))
+    verif_vetements = [v for v in user_vetements if v.id in verif_ids] if verif_ids else []
+    if verif_vetements:
+        selected_ids |= {v.id for v in verif_vetements}
+
     vetements_compatibles = []
     for v in user_vetements:
         surface_ok = v.surfaceExploitable >= patron.surfaceMin
@@ -865,43 +1282,45 @@ def patron_detail(request, pk):
         'has_compatible': any(v['compatible'] for v in vetements_compatibles),
         'email_verifie': request.user.email_verifie,
         'verif_requise': request.GET.get('verif_requise') == '1',
+        'pieces_gagnees': _pieces_gagnees(patron.difficulte),
+        'faisabilite_ok': bool(verif_vetements),
+        'faisabilite_vetements': verif_vetements,
+        'faisabilite_ids_csv': ','.join(str(v.id) for v in verif_vetements),
     }
     return render(request, 'core/patron_detail.html', context)
 
 
-@login_required
-def faisabilite_patron(request, pk):
-    """Outil de vérification de faisabilité : placer les pièces (SVG, à l'échelle réelle)
-    sur la photo détourée d'un vêtement de l'utilisateur."""
-    patron = get_object_or_404(Patron, pk=pk)
+# Dimensions de repli (cm) d'une pièce dont le patron ne renseigne pas la
+# taille réelle : sans elles le placement à l'échelle 1:1 n'aurait aucun sens,
+# on préfère une pièce carrée « moyenne » signalée comme estimée côté client.
+PIECE_DIM_DEFAUT_CM = 20.0
 
+
+def _serialize_pieces_coupe(patron):
+    """Sérialise les pièces d'un patron pour un plan de coupe à l'échelle
+    (interactif ou figé) : mêmes clés dans les deux cas."""
     pieces = []
     for pc in patron.pieces.all():
+        quantite = max(1, pc.quantite or 1)
         pieces.append({
+            'id': pc.id,
             'nom': pc.nom,
-            'quantite': pc.quantite or 1,
-            'largeur_cm': pc.largeur_cm,
-            'hauteur_cm': pc.hauteur_cm,
+            'quantite': quantite,
+            'largeur_cm': pc.largeur_cm or PIECE_DIM_DEFAUT_CM,
+            'hauteur_cm': pc.hauteur_cm or PIECE_DIM_DEFAUT_CM,
+            # Dimensions manquantes : le client affiche un avertissement.
+            'estimee': not (pc.largeur_cm and pc.hauteur_cm),
             'svg_url': pc.svg_url,
         })
+    return pieces
 
-    # Ne proposer que les tissus choisis sur la fiche (param ?vetements=1,2,3).
-    # Sans paramètre : on retombe sur tous les vêtements mesurés.
-    sel_ids = set()
-    sel_raw = request.GET.get('vetements', '').strip()
-    if sel_raw:
-        for part in sel_raw.split(','):
-            part = part.strip()
-            if part.isdigit():
-                sel_ids.add(int(part))
 
+def _serialize_garments_coupe(vetements_qs):
+    """Sérialise des tissus mesurés (détourage + échelle) pour un plan de
+    coupe à l'échelle : mêmes clés dans faisabilite_patron et le plan figé
+    de l'étape en cours, pour réutiliser exactement le même rendu client."""
     garments = []
-    qs = (Vetement.objects
-          .filter(utilisateur=request.user, echelle_cm_px__isnull=False)
-          .order_by('-surfaceExploitable'))
-    if sel_ids:
-        qs = qs.filter(id__in=sel_ids)
-    for v in qs:
+    for v in vetements_qs:
         if not v.photo_url or not v.echelle_cm_px:
             continue
         try:
@@ -923,13 +1342,96 @@ def faisabilite_patron(request, pk):
             'defauts': defs,
             'surface': round(v.surfaceExploitable, 2),
         })
+    return garments
+
+
+@login_required
+def faisabilite_patron(request, pk):
+    """Outil de vérification de faisabilité : plan de coupe interactif.
+
+    L'utilisateur voit ses tissus détourés (photo rognée sur le polygone de
+    détourage, défauts compris) et y glisse les pièces du patron, à l'échelle
+    réelle. Toute la géométrie est exprimée en centimètres côté client : les
+    dimensions du tissu se déduisent de `echelle_cm_px` (cm par pixel de la
+    photo) et celles des pièces de `largeur_cm`/`hauteur_cm`.
+    """
+    patron = get_object_or_404(Patron, pk=pk)
+
+    pieces = _serialize_pieces_coupe(patron)
+    total_pieces = sum(p['quantite'] for p in pieces)
+
+    # Ne proposer que les tissus choisis sur la fiche (param ?vetements=1,2,3).
+    # Sans paramètre : on retombe sur tous les vêtements mesurés.
+    sel_ids = set()
+    sel_raw = request.GET.get('vetements', '').strip()
+    if sel_raw:
+        for part in sel_raw.split(','):
+            part = part.strip()
+            if part.isdigit():
+                sel_ids.add(int(part))
+
+    qs = (Vetement.objects
+          .filter(utilisateur=request.user, echelle_cm_px__isnull=False)
+          .order_by('-surfaceExploitable'))
+    if sel_ids:
+        qs = qs.filter(id__in=sel_ids)
+    garments = _serialize_garments_coupe(qs)
 
     return render(request, 'core/faisabilite_patron.html', {
         'patron': patron,
         'fz_data': {'pieces': pieces, 'garments': garments},
+        'total_pieces': total_pieces,
         'has_pieces': len(pieces) > 0,
         'has_garments': len(garments) > 0,
     })
+
+
+@login_required
+@require_POST
+def plan_coupe_save(request, pk):
+    """Sauvegarde le placement figé des pièces (appelé en AJAX depuis
+    faisabilite_patron au clic sur « Valider »), pour le réafficher en
+    lecture seule dans le plan de coupe de l'étape en cours."""
+    patron = get_object_or_404(Patron, pk=pk)
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({'ok': False}, status=400)
+
+    items = payload.get('pieces')
+    if not isinstance(items, list):
+        return JsonResponse({'ok': False}, status=400)
+
+    piece_ids = set(patron.pieces.values_list('id', flat=True))
+    cleaned = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        try:
+            piece_id = int(item.get('piece_id'))
+            gid = int(item.get('gid'))
+            x = float(item.get('x'))
+            y = float(item.get('y'))
+            rot = float(item.get('rot') or 0)
+        except (TypeError, ValueError):
+            continue
+        if piece_id not in piece_ids:
+            continue
+        cleaned.append({'piece_id': piece_id, 'gid': gid, 'x': x, 'y': y, 'rot': rot})
+
+    # Les tissus référencés doivent appartenir à l'utilisateur.
+    used_gids = set(item['gid'] for item in cleaned)
+    owned_gids = set(Vetement.objects.filter(
+        utilisateur=request.user, id__in=used_gids,
+    ).values_list('id', flat=True))
+    cleaned = [item for item in cleaned if item['gid'] in owned_gids]
+    garment_ids = sorted(set(item['gid'] for item in cleaned))
+
+    PlanDeCoupe.objects.update_or_create(
+        utilisateur=request.user, patron=patron,
+        defaults={'donnees': {'pieces': cleaned, 'garment_ids': garment_ids}},
+    )
+    return JsonResponse({'ok': True})
 
 
 @login_required
@@ -1015,9 +1517,12 @@ def patron_export(request, pk):
         except Exception:
             return None
 
+    pieces = list(patron.pieces.all())
+    piece_index = {p.id: idx for idx, p in enumerate(pieces)}
+
     data = {
         'format': 'la-fabrique/patron',
-        'version': 1,
+        'version': 2,
         'patron': {
             'titre': patron.titre,
             'description': patron.description or '',
@@ -1036,10 +1541,20 @@ def patron_export(request, pk):
                 'numero': e.numero,
                 'titre': e.titre,
                 'description': e.description or '',
-                'video_url': e.video_url or '',
                 'conseil': e.conseil or '',
                 'materiaux_etape': e.materiaux_etape or '',
                 'image_url': e.image_url,
+                'gestes': [
+                    {
+                        'numero': g.numero,
+                        'titre': g.titre or '',
+                        'description': g.description or '',
+                        'video_url': g.video_url,
+                        # Indices (dans la liste "pieces" ci-dessous) des pièces utilisées.
+                        'pieces': [piece_index[pid] for pid in g.pieces.values_list('id', flat=True) if pid in piece_index],
+                    }
+                    for g in e.gestes.order_by('numero')
+                ],
             }
             for e in patron.etapes.order_by('numero')
         ],
@@ -1051,7 +1566,7 @@ def patron_export(request, pk):
                 'hauteur_cm': p.hauteur_cm,
                 'svg': _read_svg(p),
             }
-            for p in patron.pieces.all()
+            for p in pieces
         ],
     }
 
@@ -1061,8 +1576,36 @@ def patron_export(request, pk):
     return resp
 
 
+class _VirtualGeste:
+    """Geste de repli pour les étapes historiques qui n'ont pas encore été
+    découpées en gestes : l'étape elle-même sert d'unique geste."""
+    def __init__(self, etape):
+        self.numero = 1
+        self.titre = etape.titre
+        self.description = etape.description
+        self.video_url = None
+        self.pieces = PiecePatron.objects.none()
+
+
+def _gestes_for_etape(etape):
+    gestes = list(etape.gestes.order_by('numero'))
+    return gestes if gestes else [_VirtualGeste(etape)]
+
+
+# Couleurs de surbrillance des pièces actives (fond, texte sur fond, texte du
+# badge blanc), dans l'ordre d'attribution — identiques à la palette utilisée
+# pour numéroter les pièces dans la fiche patron (patron_detail.html).
+_PIECE_PALETTE = [
+    ('#7C5CFF', '#fff', '#5B3BE0'),
+    ('#1FA85C', '#fff', '#0F7A3E'),
+    ('#FFC93C', '#5A3A0E', '#5A3A0E'),
+    ('#3B5FC0', '#fff', '#22407A'),
+    ('#A24A33', '#fff', '#7A3125'),
+]
+
+
 @login_required
-def etape_projet(request, patron_pk, etape_num):
+def etape_projet(request, patron_pk, etape_num, geste_num=1):
     patron = get_object_or_404(Patron, pk=patron_pk)
     etapes = list(patron.etapes.order_by('numero'))
 
@@ -1072,25 +1615,15 @@ def etape_projet(request, patron_pk, etape_num):
     if etape_num < 1 or etape_num > len(etapes):
         return redirect('patron_detail', pk=patron_pk)
 
+    total_etapes = len(etapes)
     etape_index = etape_num - 1
     etape_actuelle = etapes[etape_index]
-    total = len(etapes)
 
-    progression = round((etape_num / total) * 100)
-
-    etape_precedente = etapes[etape_index - 1] if etape_index > 0 else None
-    etape_suivante = etapes[etape_index + 1] if etape_index < total - 1 else None
-
-    materiaux_list = (
-        [m.strip() for m in etape_actuelle.materiaux_etape.split(',') if m.strip()]
-        if etape_actuelle.materiaux_etape else []
-    )
-
-    video_embed_id = None
-    if etape_actuelle.video_url:
-        match = re.search(r'(?:v=|youtu\.be/)([A-Za-z0-9_-]{11})', etape_actuelle.video_url)
-        if match:
-            video_embed_id = match.group(1)
+    gestes_actuels = _gestes_for_etape(etape_actuelle)
+    total_gestes = len(gestes_actuels)
+    if geste_num < 1 or geste_num > total_gestes:
+        return redirect('etape_projet_geste', patron_pk=patron_pk, etape_num=etape_num, geste_num=1)
+    geste_actuel = gestes_actuels[geste_num - 1]
 
     # Vérification souple : on ne peut pas démarrer un nouveau projet sans e-mail
     # vérifié. Un projet déjà commencé reste accessible.
@@ -1098,27 +1631,161 @@ def etape_projet(request, patron_pk, etape_num):
     if not projet_existant and not request.user.email_verifie:
         return redirect(reverse('patron_detail', kwargs={'pk': patron_pk}) + '?verif_requise=1')
 
-    # Sauvegarde / mise à jour de la progression
+    # Sauvegarde / mise à jour de la progression (ne recule jamais)
     prog, created = ProgressionProjet.objects.get_or_create(
         utilisateur=request.user,
         patron=patron,
-        defaults={'etape_actuelle': etape_num},
+        defaults={'etape_actuelle': etape_num, 'geste_actuelle': geste_num},
     )
-    if not created and etape_num > prog.etape_actuelle:
+    if not created and (etape_num, geste_num) > (prog.etape_actuelle, prog.geste_actuelle):
         prog.etape_actuelle = etape_num
+        prog.geste_actuelle = geste_num
         prog.save()
+
+    # ── Navigation : geste/étape précédent(e) ──
+    if geste_num > 1:
+        prev_url = reverse('etape_projet_geste', kwargs={
+            'patron_pk': patron_pk, 'etape_num': etape_num, 'geste_num': geste_num - 1,
+        })
+    elif etape_index > 0:
+        etape_prec = etapes[etape_index - 1]
+        nb_gestes_prec = len(_gestes_for_etape(etape_prec))
+        prev_url = reverse('etape_projet_geste', kwargs={
+            'patron_pk': patron_pk, 'etape_num': etape_num - 1, 'geste_num': nb_gestes_prec,
+        })
+    else:
+        prev_url = reverse('patron_detail', kwargs={'pk': patron_pk})
+
+    # ── Navigation : geste/étape suivant(e), ou fin du projet ──
+    est_dernier_geste_etape = geste_num >= total_gestes
+    est_derniere_etape = etape_num >= total_etapes
+    est_derniere = est_dernier_geste_etape and est_derniere_etape
+
+    if not est_dernier_geste_etape:
+        next_url = reverse('etape_projet_geste', kwargs={
+            'patron_pk': patron_pk, 'etape_num': etape_num, 'geste_num': geste_num + 1,
+        })
+        next_label = 'Geste suivant'
+    elif not est_derniere_etape:
+        next_url = reverse('etape_projet_geste', kwargs={
+            'patron_pk': patron_pk, 'etape_num': etape_num + 1, 'geste_num': 1,
+        })
+        next_label = 'Étape suivante'
+    else:
+        next_url = reverse('terminer_projet', kwargs={'pk': patron_pk})
+        next_label = 'Terminer le projet'
+
+    # ── Barre de progression segmentée : une pastille par étape, celle de
+    #    l'étape courante sous-divisée par ses gestes. ──
+    progress_segments = []
+    for e in etapes:
+        if e.numero < etape_actuelle.numero:
+            progress_segments.append({'state': 'done', 'sub': None})
+        elif e.numero > etape_actuelle.numero:
+            progress_segments.append({'state': 'upcoming', 'sub': None})
+        else:
+            sub = [g <= geste_num for g in range(1, total_gestes + 1)]
+            progress_segments.append({'state': 'current', 'sub': sub})
+
+    # ── Pièces du patron : toutes affichées, chacune avec une couleur stable
+    #    (attribuée par position, comme dans la fiche patron) pour rester
+    #    reconnaissable partout — y compris dans les jetons [[piece:i]] posés
+    #    dans le texte de la consigne. Seules celles utilisées dans ce geste
+    #    sont mises en avant (couleur pleine) ; les autres restent neutres. ──
+    pieces_actives_ids = set(geste_actuel.pieces.values_list('id', flat=True))
+    pieces_display = []
+    for idx, piece in enumerate(patron.pieces.all()):
+        bg, fg, badge_fg = _PIECE_PALETTE[idx % len(_PIECE_PALETTE)]
+        pieces_display.append({
+            'piece': piece, 'active': piece.id in pieces_actives_ids,
+            'bg': bg, 'fg': fg, 'badge_fg': badge_fg,
+        })
+
+    # ── Déroulement des étapes (pop-up « afficher les étapes ») : chaque
+    #    étape avec son statut (faite / en cours / à venir) ; l'étape en
+    #    cours est développée avec le détail de chacun de ses gestes. ──
+    piece_color_by_id = {}
+    piece_number_by_id = {}
+    for idx, pd in enumerate(pieces_display, start=1):
+        piece_color_by_id[pd['piece'].id] = (pd['bg'], pd['fg'])
+        piece_number_by_id[pd['piece'].id] = idx
+
+    overview_etapes = []
+    for e in etapes:
+        entry = {
+            'etape': e,
+            'is_done': e.numero < etape_actuelle.numero,
+            'is_current': e.numero == etape_actuelle.numero,
+        }
+        e_gestes = _gestes_for_etape(e)
+        entry['nb_gestes'] = len(e_gestes)
+        if entry['is_current']:
+            gestes_rows = []
+            for g in e_gestes:
+                first_piece = g.pieces.first()
+                badge_bg = badge_fg = badge_num = None
+                if first_piece and first_piece.id in piece_color_by_id:
+                    badge_bg, badge_fg = piece_color_by_id[first_piece.id]
+                    badge_num = piece_number_by_id[first_piece.id]
+                gestes_rows.append({
+                    'geste': g,
+                    'is_done': g.numero < geste_num,
+                    'is_current': g.numero == geste_num,
+                    'first_piece': first_piece,
+                    'badge_bg': badge_bg, 'badge_fg': badge_fg, 'badge_num': badge_num,
+                })
+            entry['gestes_rows'] = gestes_rows
+        overview_etapes.append(entry)
+
+    # ── Plan de coupe figé : placement validé lors de la vérification de
+    #    faisabilité (faisabilite_patron → « Valider »), réaffiché en lecture
+    #    seule dans la pop-up « Plan ». Même sérialisation que l'outil
+    #    interactif pour réutiliser exactement le même rendu client. ──
+    plan_row = PlanDeCoupe.objects.filter(utilisateur=request.user, patron=patron).first()
+    plan_donnees = (plan_row.donnees if plan_row else None) or {}
+    plan_placed = plan_donnees.get('pieces') or []
+    plan_garment_ids = plan_donnees.get('garment_ids') or []
+
+    if plan_garment_ids:
+        plan_vetements_qs = Vetement.objects.filter(utilisateur=request.user, id__in=plan_garment_ids)
+    else:
+        plan_vetements_qs = prog.vetements_projet.all()
+    plan_garments = _serialize_garments_coupe(plan_vetements_qs)
+
+    plan_data = {
+        'pieces': _serialize_pieces_coupe(patron),
+        'garments': plan_garments,
+        'placed': plan_placed,
+        'active_piece_ids': [pd['piece'].id for pd in pieces_display if pd['active']],
+    }
+    has_plan_coupe = bool(plan_placed) and bool(plan_garments)
+
+    # ── Mini-repère précédent/suivant pour la pop-up Plan ──
+    geste_precedent = gestes_actuels[geste_num - 2] if geste_num > 1 else None
+    geste_suivant = gestes_actuels[geste_num] if geste_num < total_gestes else None
+    progression_globale = round(((etape_num - 1) + geste_num / total_gestes) / total_etapes * 100)
 
     context = {
         'patron': patron,
         'etape': etape_actuelle,
         'etape_num': etape_num,
-        'total_etapes': total,
-        'progression': progression,
-        'etape_precedente_num': etape_num - 1 if etape_precedente else None,
-        'etape_suivante_num': etape_num + 1 if etape_suivante else None,
-        'materiaux_list': materiaux_list,
-        'video_embed_id': video_embed_id,
-        'est_derniere': etape_suivante is None,
+        'total_etapes': total_etapes,
+        'geste': geste_actuel,
+        'geste_num': geste_num,
+        'total_gestes': total_gestes,
+        'progress_segments': progress_segments,
+        'pieces_display': pieces_display,
+        'prev_url': prev_url,
+        'next_url': next_url,
+        'next_label': next_label,
+        'est_derniere': est_derniere,
+        'est_dernier_geste_etape': est_dernier_geste_etape,
+        'plan_data': plan_data,
+        'has_plan_coupe': has_plan_coupe,
+        'overview_etapes': overview_etapes,
+        'geste_precedent': geste_precedent,
+        'geste_suivant': geste_suivant,
+        'progression_globale': progression_globale,
     }
     return render(request, 'core/etape_projet.html', context)
 
@@ -1574,39 +2241,94 @@ def supprimer_vetements(request):
 
 @login_required
 def mes_tissus(request):
-    vetements = Vetement.objects.filter(utilisateur=request.user).order_by('-id')
+    """Banque de tissus — inventaire, répartition par matière, mosaïque/liste."""
+    vetements = list(Vetement.objects.filter(utilisateur=request.user).order_by('-id'))
     total_surface = sum(v.surfaceExploitable for v in vetements)
-    total_co2 = round(sum(calculer_co2_vetement(v) for v in vetements), 1)
-    objectif = 15.0
-    progression_pct = min(100, int((total_surface / objectif) * 100)) if objectif > 0 else 0
-    circumference = 251
-    stroke_offset = round(circumference * (1 - min(1.0, total_surface / objectif)))
 
-    # Nombre de patrons compatibles par tissu (surfaceExploitable >= surfaceMin).
-    # On trie les surfaces minimales une seule fois, puis bisect compte en O(log n)
-    # par tissu au lieu d'une boucle imbriquée patrons × tissus.
-    import bisect
-    surfaces_min = sorted(Patron.objects.values_list('surfaceMin', flat=True))
+    # Surfaces minimales des patrons, triées : le socle de sélection s'en sert
+    # pour annoncer combien de patrons la sélection courante permet de couper,
+    # sans aller-retour serveur à chaque case cochée.
+    surfaces_patrons = sorted(Patron.objects.values_list('surfaceMin', flat=True))
+
     vetements_data = []
+    surface_par_matiere = {}
+    nb_par_type = {}
     for v in vetements:
-        nb_compatibles = bisect.bisect_right(surfaces_min, v.surfaceExploitable)
-        vetements_data.append({'vetement': v, 'nb_compatibles': nb_compatibles})
+        matiere = get_dominant_material(v.matiere) or 'coton'
+        surface_par_matiere[matiere] = surface_par_matiere.get(matiere, 0.0) + v.surfaceExploitable
+        nb_par_type[v.typeVetement] = nb_par_type.get(v.typeVetement, 0) + 1
 
-    context = {
+        # « État » de la pièce : part de sa surface encore exploitable une fois
+        # les taches et les trous retirés.
+        etat_pct = round(v.surfaceExploitable / v.surfaceTotale * 100) if v.surfaceTotale else 100
+
+        try:
+            defauts = json.loads(v.defauts) if v.defauts else []
+        except (ValueError, TypeError):
+            defauts = []
+        nb_taches = sum(1 for d in defauts if d.get('type') == 'tache')
+
+        couleur_hex = _couleur_hex(v.couleur)
+        vetements_data.append({
+            'vetement': v,
+            'matiere_label': MATERIAL_LABELS.get(matiere, matiere.capitalize()),
+            'couleur_hex': couleur_hex,
+            'couleur_claire': _couleur_claire(couleur_hex),
+            'etat_pct': min(100, max(0, etat_pct)),
+            'nb_taches': nb_taches,
+            'nb_trous': len(defauts) - nb_taches,
+        })
+
+    # Répartition par matière : les 4 plus présentes, le reste regroupé.
+    classement = sorted(surface_par_matiere.items(), key=lambda kv: kv[1], reverse=True)
+    repartition = [
+        {
+            'nom': MATERIAL_LABELS.get(nom, nom.capitalize()),
+            'hex': MATERIAL_COLORS.get(nom, MATIERE_HEX_DEFAUT),
+            'surface': round(surface, 1),
+            'pct': round(surface / total_surface * 100) if total_surface else 0,
+        }
+        for nom, surface in classement[:4]
+    ]
+    if len(classement) > 4:
+        surface_reste = sum(s for _, s in classement[4:])
+        repartition.append({
+            'nom': 'Autres',
+            'hex': MATIERE_HEX_DEFAUT,
+            'surface': round(surface_reste, 1),
+            'pct': round(surface_reste / total_surface * 100) if total_surface else 0,
+        })
+
+    # Chips de filtre : uniquement les types réellement présents dans la banque.
+    types_presents = [
+        {'slug': slug, 'label': TYPE_VETEMENT_LABELS.get(slug, slug.capitalize()), 'nb': nb}
+        for slug, nb in sorted(nb_par_type.items(), key=lambda kv: (-kv[1], kv[0]))
+    ]
+
+    return render(request, 'core/mes_tissus.html', {
         'vetements_data': vetements_data,
         'total_surface': round(total_surface, 2),
-        'total_co2': total_co2,
-        'nb_vetements': vetements.count(),
-        'progression_pct': progression_pct,
-        'stroke_offset': stroke_offset,
-        'circumference': circumference,
-    }
-    return render(request, 'core/mes_tissus.html', context)
+        'nb_vetements': len(vetements),
+        'nb_matieres': len(surface_par_matiere),
+        'repartition': repartition,
+        'types_presents': types_presents,
+        'surfaces_patrons': surfaces_patrons,
+    })
 
 
 @login_required
 def mon_profil(request):
+    """Page « Mon profil » : identité, personnalisation et carte de jeu.
+
+    Réunit deux mondes qui vivaient jusqu'ici séparément : les champs de
+    compte (pseudo, avatar, bio…) et le profil de jeu de la communauté
+    (ville, quartier, teinte du jeton) — tenu par `core.gamification`, pas
+    par ce module, pour ne jamais dupliquer la logique de niveau.
+    """
+    from . import gamification as jeu
+
     user = request.user
+    profil_jeu = jeu.profil_de(user)
     errors = {}
 
     if request.method == 'POST':
@@ -1618,6 +2340,9 @@ def mon_profil(request):
         avatar = request.POST.get('avatar', user.avatar)
         niveau_couture = request.POST.get('niveau_couture', user.niveau_couture)
         envies_list = request.POST.getlist('envies_creation')
+        ville = request.POST.get('ville', '').strip()
+        quartier = request.POST.get('quartier', '').strip()
+        teinte = request.POST.get('teinte', '').strip()
 
         if username and username != user.username:
             if Utilisateur.objects.filter(username=username).exclude(pk=user.pk).exists():
@@ -1642,6 +2367,15 @@ def mon_profil(request):
             user.niveau_couture = niveau_couture or None
             user.envies_creation = ', '.join(envies_list) if envies_list else None
             user.save()
+
+            if ville:
+                profil_jeu.ville = ville[:60]
+            if quartier:
+                profil_jeu.quartier = quartier[:60]
+            if teinte in dict(profil_jeu.TEINTES):
+                profil_jeu.teinte = teinte
+            profil_jeu.save(update_fields=['ville', 'quartier', 'teinte'])
+
             return redirect(reverse('mon_profil') + '?saved=1')
 
     ENVIES_CHOICES = [
@@ -1653,24 +2387,47 @@ def mon_profil(request):
         ('decorations', 'Décorations'),
     ]
     current_envies = [e.strip() for e in (user.envies_creation or '').split(',') if e.strip()]
+
+    niveau = jeu.niveau_de(user)
+    saison = jeu.saison_active()
+    participation = jeu.participation_de(user, saison)
+    lignes = jeu.classement(user, 'ligue') if saison else []
+    ma_ligne = jeu.mon_rang(user, lignes) if lignes else None
+
     return render(request, 'core/mon_profil.html', {
         'avatars': AVATAR_FILENAMES,
         'current_envies': current_envies,
         'envies_choices': ENVIES_CHOICES,
-        'level_info': _get_user_level(user),
         'errors': errors,
         'saved': request.GET.get('saved') == '1',
+        # Carte de jeu — mêmes chiffres que le tableau de bord et la
+        # communauté, jamais recalculés autrement.
+        'profil_jeu': profil_jeu,
+        'niveau': niveau,
+        'participation': participation,
+        'rang_ligue': ma_ligne['rang'] if ma_ligne else None,
+        'nb_joueurs_ligue': len(lignes),
+        'nb_ecussons': jeu.EcussonObtenu.objects.filter(utilisateur=user).count(),
+        'total_ecussons': jeu.Ecusson.objects.count(),
+        'teintes': profil_jeu.TEINTES,
     })
 
 
 def inscription(request):
+    """Étape 1/4 du parcours d'inscription : l'adresse e-mail."""
     if request.method == 'POST':
         email = (request.POST.get('email') or '').strip()
-        password = request.POST.get('password') or ''
 
-        if not email or not password:
+        if not email:
             return render(request, 'core/inscription.html', {
-                'error': "L'adresse e-mail et le mot de passe sont obligatoires.",
+                'error': "L'adresse e-mail est obligatoire.",
+            })
+
+        try:
+            validate_email(email)
+        except DjangoValidationError:
+            return render(request, 'core/inscription.html', {
+                'error': "Cette adresse e-mail n'a pas l'air valide.",
                 'email': email,
             })
 
@@ -1680,121 +2437,152 @@ def inscription(request):
                 'email': email,
             })
 
-        # Validation du mot de passe selon les règles Django (longueur, robustesse…).
-        try:
-            validate_password(password)
-        except DjangoValidationError as e:
-            return render(request, 'core/inscription.html', {
-                'error': ' '.join(e.messages),
-                'email': email,
-            })
-
-        # On sauvegarde l'email et le mdp dans la session
         request.session['reg_email'] = email
-        request.session['reg_password'] = password
         return redirect('inscription_etape1')
 
-    return render(request, 'core/inscription.html')
+    return render(request, 'core/inscription.html', {
+        'email': request.session.get('reg_email', ''),
+    })
+
 
 AVATAR_FILENAMES = [f'image {i}.png' for i in range(11, 27)]
 
+NIVEAUX_COUTURE = {
+    'debutant': 'Débutant',
+    'intermediaire': 'Intermédiaire',
+    'avance': 'Confirmé',
+}
+
+
 def inscription_etape1(request):
-    # Garde : si l'étape 0 n'a pas été faite (session expirée, accès direct),
+    """Étape 2/4 : le prénom, qui sert de nom d'utilisateur."""
+    # Garde : si l'étape 1 n'a pas été faite (session expirée, accès direct),
     # on renvoie au début plutôt que de crasher plus loin.
     if not request.session.get('reg_email'):
         return redirect('inscription')
 
     if request.method == 'POST':
         username = (request.POST.get('username') or '').strip()
-        avatar = request.POST.get('avatar', 'image 11.png')
-
-        context = {'avatars': AVATAR_FILENAMES, 'username': username}
+        context = {'username': username}
 
         if not username:
-            context['error'] = "Choisis un nom d'utilisateur."
+            context['error'] = "Indique un prénom pour ton profil."
             return render(request, 'core/inscription_etape1.html', context)
 
         if Utilisateur.objects.filter(username__iexact=username).exists():
-            context['error'] = "Ce nom d'utilisateur est déjà pris."
+            context['error'] = "Ce nom est déjà pris. Ajoute une initiale, par exemple."
             return render(request, 'core/inscription_etape1.html', context)
 
         request.session['reg_username'] = username
-        request.session['reg_avatar'] = avatar
         return redirect('inscription_etape2')
 
-    return render(request, 'core/inscription_etape1.html', {'avatars': AVATAR_FILENAMES})
+    return render(request, 'core/inscription_etape1.html', {
+        'username': request.session.get('reg_username', ''),
+    })
+
 
 def inscription_etape2(request):
+    """Étape 3/4 : le mot de passe."""
     # Garde : étapes précédentes obligatoires.
     if not request.session.get('reg_email') or not request.session.get('reg_username'):
         return redirect('inscription')
 
     if request.method == 'POST':
-        # On sauvegarde le niveau
-        request.session['reg_niveau'] = request.POST.get('experience_level')
+        password = request.POST.get('password') or ''
+
+        if not password:
+            return render(request, 'core/inscription_etape2.html', {
+                'error': "Le mot de passe est obligatoire.",
+            })
+
+        # Validation selon les règles Django (longueur, robustesse…).
+        try:
+            validate_password(password)
+        except DjangoValidationError as e:
+            return render(request, 'core/inscription_etape2.html', {
+                'error': ' '.join(e.messages),
+            })
+
+        request.session['reg_password'] = password
         return redirect('inscription_etape3')
 
     return render(request, 'core/inscription_etape2.html')
 
+
 def inscription_etape3(request):
+    """Étape 4/4 : niveau de couture, consentement RGPD et création du compte."""
     # 1. On récupère toutes les infos des étapes précédentes dans la session
     email = request.session.get('reg_email')
-    password = request.session.get('reg_password')
     username = request.session.get('reg_username')
+    password = request.session.get('reg_password')
 
     # Garde : si la session a expiré ou si l'on accède directement à cette URL,
     # les données essentielles manquent → on recommence proprement (évite un 500).
-    if not email or not password or not username:
+    if not email or not username or not password:
         return redirect('inscription')
 
     if request.method == 'POST':
-        niveau = request.session.get('reg_niveau')
-        avatar = request.session.get('reg_avatar', 'image 11.png')
+        niveau = request.POST.get('experience_level') or 'debutant'
+        if niveau not in NIVEAUX_COUTURE:
+            niveau = 'debutant'
 
-        # 2. On récupère les cases cochées
-        cibles_list = request.POST.getlist('target')
-        cibles_str = ", ".join(cibles_list)
-
-        # 3. Consentement RGPD obligatoire : sans acceptation explicite, pas de compte.
-        consentement = request.POST.get('consentement_rgpd') == 'on'
-        if not consentement:
+        # 2. Consentement RGPD obligatoire : sans acceptation explicite, pas de compte.
+        if request.POST.get('consentement_rgpd') != 'on':
             return render(request, 'core/inscription_etape3.html', {
                 'error': "Vous devez accepter la politique de confidentialité pour créer votre compte.",
+                'niveau': niveau,
             })
 
-        # 4. Revalidation anti-collision juste avant la création : un autre compte
-        # a pu prendre ce pseudo / cet e-mail entre l'étape 1 et maintenant → évite un 500.
+        # 3. Revalidation anti-collision juste avant la création : un autre compte
+        # a pu prendre ce pseudo / cet e-mail entre l'étape 2 et maintenant → évite un 500.
         if (Utilisateur.objects.filter(username__iexact=username).exists()
                 or Utilisateur.objects.filter(email__iexact=email).exists()):
             return render(request, 'core/inscription.html',
                           {'error': "Ce compte existe déjà. Essayez de vous connecter."})
 
-        # 5. On crée le compte (avec preuve horodatée du consentement RGPD)
+        # 4. On crée le compte (avec preuve horodatée du consentement RGPD)
         nouvel_utilisateur = Utilisateur.objects.create_user(
             username=username,
             email=email,
             password=password,
             niveau_couture=niveau,
-            envies_creation=cibles_str,
-            avatar=avatar,
+            avatar=AVATAR_FILENAMES[0],
             consentementRGPD=True,
             dateConsentementRGPD=timezone.now(),
         )
 
-        # 6. On nettoie la session
-        keys_to_delete = ['reg_email', 'reg_password', 'reg_username', 'reg_niveau', 'reg_avatar']
-        for key in keys_to_delete:
-            if key in request.session:
-                del request.session[key]
+        # 5. On nettoie la session
+        for key in ('reg_email', 'reg_username', 'reg_password'):
+            request.session.pop(key, None)
 
-        # 7. On envoie l'e-mail de vérification (vérification souple)
+        # 6. On envoie l'e-mail de vérification (vérification souple)
         _envoyer_email_verification(request, nouvel_utilisateur)
 
-        # 8. On connecte l'utilisateur automatiquement et on l'envoie sur l'accueil
+        # 7. On connecte l'utilisateur et on lui montre sa carte d'atelier
         login(request, nouvel_utilisateur)
-        return redirect('home')
+        return redirect('inscription_bienvenue')
 
-    return render(request, 'core/inscription_etape3.html')
+    return render(request, 'core/inscription_etape3.html', {'niveau': 'debutant'})
+
+
+@login_required
+def inscription_bienvenue(request):
+    """Écran de fin d'inscription : la carte d'atelier du nouveau membre.
+
+    Accepte aussi le changement d'avatar depuis la carte (bouton crayon)."""
+    if request.method == 'POST':
+        avatar = request.POST.get('avatar', '')
+        if avatar in AVATAR_FILENAMES:
+            request.user.avatar = avatar
+            request.user.save(update_fields=['avatar'])
+        return redirect('inscription_bienvenue')
+
+    return render(request, 'core/inscription_bienvenue.html', {
+        'avatars': AVATAR_FILENAMES,
+        'numero_atelier': f'{12400 + request.user.pk:,}'.replace(',', ' '),
+        'nb_membres': f'{Utilisateur.objects.count():,}'.replace(',', ' '),
+        'niveau_label': NIVEAUX_COUTURE.get(request.user.niveau_couture, 'Débutant·e'),
+    })
 
 
 # ── RGPD : page légale, export et suppression des données ───────────────────

@@ -755,10 +755,10 @@ def build_instructions_pdf(patron, etapes, materiel_list=None):
                 c.drawString(left + 24, y[0], prefix + line); y[0] -= 13
             y[0] -= 4
 
-        if getattr(etape, 'video_url', None):
+        if getattr(etape, 'has_video', False):
             ensure(13)
             c.setFillColor(C_MUTED); c.setFont('Helvetica', 9)
-            c.drawString(left + 24, y[0], f"▶ Vidéo : {etape.video_url}"); y[0] -= 13
+            c.drawString(left + 24, y[0], "▶ Vidéo disponible dans l'application"); y[0] -= 13
 
         y[0] -= 10
         # Filet léger entre étapes

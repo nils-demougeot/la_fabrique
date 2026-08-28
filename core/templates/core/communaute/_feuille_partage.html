@@ -1,0 +1,414 @@
+{% load communaute_extras %}
+{% comment %}
+  Sélecteur de partage du salon, en deux temps.
+
+    1. la galerie : une carte par *type* de widget, chacune montrant en grand
+       l'aperçu réel de ce qui sera posté (même gabarit que le fil, cf.
+       `_widget_message.html`) ;
+    2. le choix : un panneau par type, dessiné selon ce qu'on y choisit —
+       une grille de photos pour les patrons et les tissus, une liste de
+       projets puis d'étapes, des lignes datées pour l'agenda, une planche
+       d'hexagones pour les écussons.
+
+  Un seul panneau est visible à la fois (`.est-active`), le va-et-vient est
+  géré par `[data-vue-ouvre]` dans le script du salon.
+{% endcomment %}
+
+<div class="cm-feuille" id="feuille-partage" hidden>
+  <span class="cm-feuille-voile"></span>
+  <div class="cm-feuille-corps cg-partage">
+
+    {# ══════════ 1 · La galerie des widgets ══════════ #}
+    <section class="cg-vue est-active" data-vue="galerie">
+      <span class="cm-feuille-poignee"></span>
+      <div class="cm-feuille-titre">Qu'est-ce qu'on partage ?</div>
+      <div class="cm-feuille-sous">
+        Chaque carte arrive dans le fil telle qu'elle s'affiche ici, et reste
+        cliquable pour tout le salon.
+      </div>
+
+      {# ── Un patron ── #}
+      <div class="cg-choix cm-tap {% if not partage.apercu.patron %}est-vide{% endif %}"
+           {% if partage.apercu.patron %}data-vue-ouvre="patron" role="button" tabindex="0"{% endif %}>
+        <div class="cg-choix-tete">
+          <span class="cg-choix-marque m-patron">
+            {% include 'core/communaute/_icones.html' with icone='ruban' taille=16 %}
+          </span>
+          <span style="flex:1;min-width:0">
+            <span class="cg-choix-nom">Un patron</span>
+            <span class="cg-choix-detail">La fiche complète, à ouvrir d'un tap</span>
+          </span>
+          <span class="cg-choix-chevron">
+            {% include 'core/communaute/_icones.html' with icone='chevron' taille=15 %}
+          </span>
+        </div>
+        <div class="cg-choix-apercu" aria-hidden="true">
+          {% if partage.apercu.patron %}
+            {% include 'core/communaute/_widget_message.html' with w_type='patron' w_patron=partage.apercu.patron %}
+          {% else %}
+            <div class="cg-choix-rien">Aucun patron dans la bibliothèque.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── Une étape ── #}
+      <div class="cg-choix cm-tap {% if not partage.projets %}est-vide{% endif %}"
+           {% if partage.projets %}data-vue-ouvre="etape" role="button" tabindex="0"{% endif %}>
+        <div class="cg-choix-tete">
+          <span class="cg-choix-marque m-etape">
+            {% include 'core/communaute/_icones.html' with icone='aiguille' taille=16 %}
+          </span>
+          <span style="flex:1;min-width:0">
+            <span class="cg-choix-nom">Une étape de couture</span>
+            <span class="cg-choix-detail">Pour montrer où tu bloques, ou où tu en es</span>
+          </span>
+          <span class="cg-choix-chevron">
+            {% include 'core/communaute/_icones.html' with icone='chevron' taille=15 %}
+          </span>
+        </div>
+        <div class="cg-choix-apercu" aria-hidden="true">
+          {% if partage.apercu.etape %}
+            {% include 'core/communaute/_widget_message.html' with w_type='etape' w_etape=partage.apercu.etape %}
+          {% else %}
+            <div class="cg-choix-rien">Lance un projet pour pouvoir en partager une étape.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── Un tissu ── #}
+      <div class="cg-choix cm-tap {% if not partage.tissus %}est-vide{% endif %}"
+           {% if partage.tissus %}data-vue-ouvre="tissu" role="button" tabindex="0"{% endif %}>
+        <div class="cg-choix-tete">
+          <span class="cg-choix-marque m-tissu">
+            {% include 'core/communaute/_icones.html' with icone='toile' taille=16 %}
+          </span>
+          <span style="flex:1;min-width:0">
+            <span class="cg-choix-nom">Un de mes tissus</span>
+            <span class="cg-choix-detail">Surface exploitable et matière, depuis ta banque</span>
+          </span>
+          <span class="cg-choix-chevron">
+            {% include 'core/communaute/_icones.html' with icone='chevron' taille=15 %}
+          </span>
+        </div>
+        <div class="cg-choix-apercu" aria-hidden="true">
+          {% if partage.apercu.tissu %}
+            {% include 'core/communaute/_widget_message.html' with w_type='tissu' w_tissu=partage.apercu.tissu %}
+          {% else %}
+            <div class="cg-choix-rien">Ta banque de tissus est vide. Scanne un vêtement.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── Un duel ── #}
+      <div class="cg-choix cm-tap {% if not partage.amies and not partage.duel %}est-vide{% endif %}"
+           {% if partage.amies or partage.duel %}data-vue-ouvre="duel" role="button" tabindex="0"{% endif %}>
+        <div class="cg-choix-tete">
+          <span class="cg-choix-marque m-duel">
+            {% include 'core/communaute/_icones.html' with icone='eclair' taille=16 %}
+          </span>
+          <span style="flex:1;min-width:0">
+            <span class="cg-choix-nom">Un duel</span>
+            <span class="cg-choix-detail">24 h pour coudre le plus de pièces</span>
+          </span>
+          <span class="cg-choix-chevron">
+            {% include 'core/communaute/_icones.html' with icone='chevron' taille=15 %}
+          </span>
+        </div>
+        <div class="cg-choix-apercu" aria-hidden="true">
+          {% if partage.apercu.duel %}
+            {% include 'core/communaute/_widget_message.html' with w_type='duel' w_duel=partage.apercu.duel %}
+          {% else %}
+            <div class="cg-choix-rien">
+              {% if partage.amies %}Défie un ami : le duel s'affichera ici.
+              {% else %}Ajoute un ami pour lancer un duel.{% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── Le défi de ville ── #}
+      <div class="cg-choix cm-tap {% if not partage.defi %}est-vide{% endif %}"
+           {% if partage.defi %}data-vue-ouvre="defi" role="button" tabindex="0"{% endif %}>
+        <div class="cg-choix-tete">
+          <span class="cg-choix-marque m-defi">
+            {% include 'core/communaute/_icones.html' with icone='epingle' taille=16 %}
+          </span>
+          <span style="flex:1;min-width:0">
+            <span class="cg-choix-nom">Le défi de ma ville</span>
+            <span class="cg-choix-detail">Le compteur collectif, en direct</span>
+          </span>
+          <span class="cg-choix-chevron">
+            {% include 'core/communaute/_icones.html' with icone='chevron' taille=15 %}
+          </span>
+        </div>
+        <div class="cg-choix-apercu" aria-hidden="true">
+          {% if partage.defi %}
+            {% include 'core/communaute/_widget_message.html' with w_type='defi_ville' w_defi=partage.defi %}
+          {% else %}
+            <div class="cg-choix-rien">Aucun défi ouvert dans ta ville.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── Un rendez-vous ── #}
+      <div class="cg-choix cm-tap {% if not partage.evenements %}est-vide{% endif %}"
+           {% if partage.evenements %}data-vue-ouvre="evenement" role="button" tabindex="0"{% endif %}>
+        <div class="cg-choix-tete">
+          <span class="cg-choix-marque m-evenement">
+            {% include 'core/communaute/_icones.html' with icone='calendrier' taille=16 %}
+          </span>
+          <span style="flex:1;min-width:0">
+            <span class="cg-choix-nom">Un rendez-vous</span>
+            <span class="cg-choix-detail">Un atelier de l'agenda, pour y aller ensemble</span>
+          </span>
+          <span class="cg-choix-chevron">
+            {% include 'core/communaute/_icones.html' with icone='chevron' taille=15 %}
+          </span>
+        </div>
+        <div class="cg-choix-apercu" aria-hidden="true">
+          {% if partage.apercu.evenement %}
+            {% include 'core/communaute/_widget_message.html' with w_type='evenement' w_evenement=partage.apercu.evenement %}
+          {% else %}
+            <div class="cg-choix-rien">Rien à l'agenda pour l'instant.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── Un écusson ── #}
+      <div class="cg-choix cm-tap {% if not partage.ecussons %}est-vide{% endif %}"
+           {% if partage.ecussons %}data-vue-ouvre="ecusson" role="button" tabindex="0"{% endif %}>
+        <div class="cg-choix-tete">
+          <span class="cg-choix-marque m-ecusson">
+            {% include 'core/communaute/_icones.html' with icone='etoile' taille=16 %}
+          </span>
+          <span style="flex:1;min-width:0">
+            <span class="cg-choix-nom">Un écusson</span>
+            <span class="cg-choix-detail">Celui que tu viens de décrocher</span>
+          </span>
+          <span class="cg-choix-chevron">
+            {% include 'core/communaute/_icones.html' with icone='chevron' taille=15 %}
+          </span>
+        </div>
+        <div class="cg-choix-apercu" aria-hidden="true">
+          {% if partage.apercu.ecusson %}
+            {% include 'core/communaute/_widget_message.html' with w_type='ecusson' w_ecusson=partage.apercu.ecusson w_uid='ap' %}
+          {% else %}
+            <div class="cg-choix-rien">Pas encore d'écusson à montrer.</div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    {# ══════════ 2 · Choisir un patron ══════════ #}
+    <section class="cg-vue" data-vue="patron">
+      {% include 'core/communaute/_feuille_partage_tete.html' with titre='Quel patron ?' sous='Il partira avec sa photo et sa surface minimale.' %}
+
+      <div class="cg-grille">
+        {% for patron in partage.patrons %}
+          <button type="button" class="cg-tuile cm-tap"
+                  data-type="patron" data-piece="{{ patron.pk }}"
+                  data-libelle="Patron · {{ patron.titre }}">
+            {% if patron.photo_url %}
+              <img src="{{ patron.photo_url }}" alt="" class="cg-tuile-photo">
+            {% else %}
+              <span class="cg-tuile-photo cm-motif m-denim"></span>
+            {% endif %}
+            <span class="cg-tuile-nom">{{ patron.titre }}</span>
+            <span class="cg-tuile-detail">{{ patron.typeObjet|capfirst }} · {{ patron.surfaceMin }} m²</span>
+          </button>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# ══════════ 2 · Choisir une étape — d'abord le projet ══════════ #}
+    <section class="cg-vue" data-vue="etape">
+      {% include 'core/communaute/_feuille_partage_tete.html' with titre='Quel projet ?' sous="Tu choisiras l'étape juste après." %}
+
+      {% for projet in partage.projets %}
+        <div class="cg-ligne cm-tap" role="button" tabindex="0"
+             data-vue-ouvre="etape-{{ projet.patron.pk }}">
+          {% if projet.patron.photo_url %}
+            <img src="{{ projet.patron.photo_url }}" alt="" class="cg-ligne-photo">
+          {% else %}
+            <span class="cg-ligne-photo cm-motif m-denim"></span>
+          {% endif %}
+          <span style="flex:1;min-width:0">
+            <span class="cg-ligne-nom">{{ projet.patron.titre }}</span>
+            <span class="cg-ligne-detail">
+              {% if projet.progression.termine %}
+                Terminé · {{ projet.etapes|length }} étape{{ projet.etapes|length|pluralize }}
+              {% else %}
+                Étape {{ projet.numero_courant }} sur {{ projet.etapes|length }} en cours
+              {% endif %}
+            </span>
+          </span>
+          <span class="cg-choix-chevron">
+            {% include 'core/communaute/_icones.html' with icone='chevron' taille=15 %}
+          </span>
+        </div>
+      {% endfor %}
+    </section>
+
+    {# ══════════ 2 bis · Choisir l'étape d'un projet ══════════ #}
+    {% for projet in partage.projets %}
+      <section class="cg-vue" data-vue="etape-{{ projet.patron.pk }}">
+        {% include 'core/communaute/_feuille_partage_tete.html' with titre=projet.patron.titre sous="Quelle étape veux-tu montrer ?" retour='etape' %}
+
+        {% for etape in projet.etapes %}
+          <button type="button" class="cg-etape-choix cm-tap"
+                  data-type="etape" data-piece="{{ etape.pk }}"
+                  data-libelle="Étape {{ etape.numero }} · {{ etape.titre }}">
+            <span class="cg-etape-num
+                         {% if etape.numero < projet.numero_courant or projet.progression.termine %}est-faite
+                         {% elif etape.numero == projet.numero_courant %}est-courante{% endif %}">
+              {{ etape.numero }}
+            </span>
+            <span style="flex:1;min-width:0">
+              <span class="cg-ligne-nom">{{ etape.titre }}</span>
+              <span class="cg-ligne-detail">
+                {% if projet.progression.termine or etape.numero < projet.numero_courant %}Déjà cousue
+                {% elif etape.numero == projet.numero_courant %}C'est là que tu en es
+                {% else %}À venir{% endif %}
+              </span>
+            </span>
+          </button>
+        {% endfor %}
+      </section>
+    {% endfor %}
+
+    {# ══════════ 2 · Choisir un tissu ══════════ #}
+    <section class="cg-vue" data-vue="tissu">
+      {% include 'core/communaute/_feuille_partage_tete.html' with titre='Quel tissu ?' sous='Seuls tes tissus sont partageables.' %}
+
+      <div class="cg-grille">
+        {% for tissu in partage.tissus %}
+          <button type="button" class="cg-tuile cm-tap"
+                  data-type="tissu" data-piece="{{ tissu.pk }}"
+                  data-libelle="Tissu · {{ tissu.nomVetement }}">
+            {% if tissu.photo_url %}
+              <img src="{{ tissu.photo_url }}" alt="" class="cg-tuile-photo">
+            {% else %}
+              <span class="cg-tuile-photo cm-motif m-toile"></span>
+            {% endif %}
+            <span class="cg-tuile-nom">{{ tissu.nomVetement }}</span>
+            <span class="cg-tuile-detail">{{ tissu.surfaceExploitable|floatformat:2 }} m² exploitables</span>
+          </button>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# ══════════ 2 · Duel ══════════ #}
+    <section class="cg-vue" data-vue="duel">
+      {% include 'core/communaute/_feuille_partage_tete.html' with titre='Un duel' sous='Partage celui en cours, ou lance-en un nouveau.' %}
+
+      {% if partage.duel %}
+        <button type="button" class="cg-ligne cm-tap"
+                data-type="duel" data-piece="{{ partage.duel.pk }}"
+                data-libelle="Duel · {{ partage.duel|adversaire:user|prenom }}">
+          <span class="cg-ligne-marque m-duel">
+            {% include 'core/communaute/_icones.html' with icone='eclair' taille=17 %}
+          </span>
+          <span style="flex:1;min-width:0">
+            <span class="cg-ligne-nom">Mon duel en cours</span>
+            <span class="cg-ligne-detail">
+              contre {{ partage.duel|adversaire:user|prenom }} · mise {{ partage.duel.mise_pieces }} pièces
+            </span>
+          </span>
+        </button>
+        <div class="cg-separe"><span></span>OU DÉFIER<span></span></div>
+      {% endif %}
+
+      {% for amie in partage.amies %}
+        {% comment %}
+          Défier publie directement l'invitation dans le salon : l'action et
+          son annonce vont ensemble.
+        {% endcomment %}
+        <form method="post" action="{% url 'communaute_defier' amie.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="salon" value="{{ salon.pk }}">
+          <button type="submit" class="cg-ligne cm-tap" style="width:100%">
+            <span class="cm-jeton {{ amie|teinte }} cg-ligne-marque">{{ amie|initiales }}</span>
+            <span style="flex:1;min-width:0">
+              <span class="cg-ligne-nom">Défier {{ amie|prenom }}</span>
+              <span class="cg-ligne-detail">24 h · mise de 20 pièces · +60 XP</span>
+            </span>
+            <span class="cg-ligne-action">Défier</span>
+          </button>
+        </form>
+      {% empty %}
+        {% if not partage.duel %}
+          <div class="cg-choix-rien">Ajoute des amis pour pouvoir les défier.</div>
+        {% endif %}
+      {% endfor %}
+    </section>
+
+    {# ══════════ 2 · Défi de ville ══════════ #}
+    <section class="cg-vue" data-vue="defi">
+      {% include 'core/communaute/_feuille_partage_tete.html' with titre='Le défi de ta ville' sous='Le salon verra le compteur, et pourra déclarer ses m².' %}
+
+      {% if partage.defi %}
+        <div class="cg-apercu-seul" aria-hidden="true">
+          {% include 'core/communaute/_widget_message.html' with w_type='defi_ville' w_defi=partage.defi %}
+        </div>
+        <button type="button" class="cm-bouton b-ink" style="margin-top:14px"
+                data-type="defi_ville" data-piece="{{ partage.defi.pk }}"
+                data-libelle="Défi · {{ partage.defi.ville }}">
+          Partager ce défi
+        </button>
+      {% endif %}
+    </section>
+
+    {# ══════════ 2 · Rendez-vous ══════════ #}
+    <section class="cg-vue" data-vue="evenement">
+      {% include 'core/communaute/_feuille_partage_tete.html' with titre='Quel rendez-vous ?' sous="Les prochains ateliers de l'agenda." %}
+
+      {% for evenement in partage.evenements %}
+        <button type="button" class="cg-ligne cm-tap"
+                data-type="evenement" data-piece="{{ evenement.pk }}"
+                data-libelle="Rendez-vous · {{ evenement.titre }}">
+          <span class="cg-ligne-date">
+            <span class="cg-widget-jour">{{ evenement.jour }}</span>
+            <span class="cg-widget-mois">{{ evenement.mois_court }}</span>
+          </span>
+          <span style="flex:1;min-width:0">
+            <span class="cg-ligne-nom">{{ evenement.titre }}</span>
+            <span class="cg-ligne-detail">
+              {{ evenement.horaire }}{% if evenement.lieu %} · {{ evenement.lieu|truncatechars:24 }}{% endif %}
+            </span>
+          </span>
+        </button>
+      {% endfor %}
+    </section>
+
+    {# ══════════ 2 · Écussons ══════════ #}
+    <section class="cg-vue" data-vue="ecusson">
+      {% include 'core/communaute/_feuille_partage_tete.html' with titre='Quel écusson ?' sous='Ceux que tu as déjà décrochés.' %}
+
+      <div class="cg-planche">
+        {% for obtenu in partage.ecussons %}
+          <button type="button" class="cg-hex-choix cm-tap"
+                  data-type="ecusson" data-piece="{{ obtenu.ecusson.pk }}"
+                  data-libelle="Écusson · {{ obtenu.ecusson.nom }}">
+            <span class="cm-hex">
+              <svg viewBox="0 0 100 114">
+                <defs>
+                  <linearGradient id="px{{ obtenu.ecusson.code }}" x1="15" y1="5" x2="90" y2="110" gradientUnits="userSpaceOnUse">
+                    <stop offset="0" stop-color="{{ obtenu.ecusson.couleur_haut }}"/>
+                    <stop offset="1" stop-color="{{ obtenu.ecusson.couleur_bas }}"/>
+                  </linearGradient>
+                </defs>
+                <path d="M41 7 Q50 2 59 7 L86 22 Q95 27 95 39 L95 75 Q95 87 86 92 L59 107 Q50 112 41 107 L14 92 Q5 87 5 75 L5 39 Q5 27 14 22 Z"
+                      fill="url(#px{{ obtenu.ecusson.code }})"/>
+              </svg>
+              <span class="cm-hex-icone">
+                {% include 'core/communaute/_icones.html' with icone=obtenu.ecusson.icone taille=22 uid=obtenu.ecusson.code %}
+              </span>
+            </span>
+            <span class="cm-hex-nom">{{ obtenu.ecusson.nom }}</span>
+          </button>
+        {% endfor %}
+      </div>
+    </section>
+
+  </div>
+</div>

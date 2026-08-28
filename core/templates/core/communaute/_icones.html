@@ -1,0 +1,318 @@
+{% comment %}
+  Bibliothèque de pictogrammes de la rubrique Partage.
+
+  Usage : {% include 'core/communaute/_icones.html' with icone='flamme' taille=40 %}
+  Les tracés viennent tels quels des maquettes ; les dégradés portent un
+  identifiant unique par appel (`uid`) car plusieurs instances d'une même
+  icône peuvent coexister dans une page.
+{% endcomment %}
+{% if icone == 'flamme' %}
+  {# Flamme de série — dégradé chaud + cœur clair #}
+  <svg width="{{ taille|default:40 }}" height="{{ taille|default:40 }}" viewBox="0 0 24 24">
+    <defs>
+      <linearGradient id="fl{{ uid }}" x1="12" y1="1.5" x2="12" y2="22.5" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#FFF3C4"/><stop offset=".38" stop-color="#FFC93C"/>
+        <stop offset=".78" stop-color="#FF7A34"/><stop offset="1" stop-color="#E14418"/>
+      </linearGradient>
+      <linearGradient id="fli{{ uid }}" x1="12" y1="11" x2="12" y2="20" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#FFFDF2"/><stop offset="1" stop-color="#FFDE86"/>
+      </linearGradient>
+    </defs>
+    <path d="M12.7 1.5c.5 3 2.2 5 4.1 6.8 2.1 2 3.4 4 3.4 6.4A8.2 8.2 0 0 1 3.8 15c0-1.9.7-3.3 1.9-4.7.1 1.9 1 2.9 2.4 3.2-.8-3.4.5-6.3 4.6-12Z" fill="url(#fl{{ uid }})"/>
+    <path d="M12 11.8c1.1 1.6 2.5 2.4 2.5 4.1a2.9 2.9 0 0 1-5.8.2c0-1.5 1-2.4 3.3-4.3Z" fill="url(#fli{{ uid }})"/>
+  </svg>
+
+{% elif icone == 'flamme-p' %}
+  {# Flamme pleine, monochrome : posée sur un écusson, elle prend sa couleur #}
+  <svg width="{{ taille|default:24 }}" height="{{ taille|default:24 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M12.7 1.5c.5 3 2.2 5 4.1 6.8 2.1 2 3.4 4 3.4 6.4A8.2 8.2 0 0 1 3.8 15c0-1.9.7-3.3 1.9-4.7.1 1.9 1 2.9 2.4 3.2-.8-3.4.5-6.3 4.6-12Z" fill="currentColor"/>
+  </svg>
+
+{% elif icone == 'gel' %}
+  {# Flocon : le gel qui protège la série #}
+  <svg width="{{ taille|default:22 }}" height="{{ taille|default:22 }}" viewBox="0 0 24 24">
+    <defs><linearGradient id="ic{{ uid }}" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F2FBFF"/><stop offset="1" stop-color="#4FA5CE"/>
+    </linearGradient></defs>
+    <path d="M12 2v20M3.3 7l17.4 10M20.7 7 3.3 17" stroke="url(#ic{{ uid }})" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M12 5.8 9.7 3.4M12 5.8l2.3-2.4M12 18.2l-2.3 2.4M12 18.2l2.3 2.4M6 9.3 5 6.4M6 14.7 5 17.6M18 9.3l1-2.9M18 14.7l1 2.9" stroke="url(#ic{{ uid }})" stroke-width="1.9" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'piece' %}
+  {# Pièce de monnaie, avec liseré et reflet #}
+  <svg width="{{ taille|default:30 }}" height="{{ taille|default:30 }}" viewBox="0 0 24 24">
+    <defs><linearGradient id="cn{{ uid }}" x1="5" y1="4" x2="19" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF3C4"/><stop offset=".5" stop-color="#FFC93C"/><stop offset="1" stop-color="#C98A0E"/>
+    </linearGradient></defs>
+    <circle cx="12" cy="12" r="9" fill="url(#cn{{ uid }})"/>
+    <circle cx="12" cy="12" r="6.4" fill="none" stroke="#B57A08" stroke-width="1.2" opacity=".5"/>
+    <path d="M12 7.6v8.8M9.6 9.6h3.6a1.9 1.9 0 0 1 0 3.8H9.6h3.8" stroke="#8A5B03" stroke-width="1.7" stroke-linecap="round" fill="none"/>
+    <path d="M8.4 6.2A7 7 0 0 1 12 5" stroke="#FFF6D9" stroke-width="1.6" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'piece-plate' %}
+  {# Pièce compacte, pour les prix en ligne #}
+  <svg width="{{ taille|default:13 }}" height="{{ taille|default:13 }}" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="8.5" fill="#E0A20C"/>
+    <path d="M12 7.8v8.4M9.8 9.8h3.4a1.8 1.8 0 0 1 0 3.6H9.8h3.6" stroke="#FFF3C4" stroke-width="1.7" stroke-linecap="round" fill="none"/>
+  </svg>
+
+{% elif icone == 'coffre' %}
+  {# Coffre fermé, récompense de palier #}
+  <svg width="{{ taille|default:52 }}" height="{{ taille|default:52 }}" viewBox="0 0 24 24">
+    <defs><linearGradient id="ch{{ uid }}" x1="4" y1="7" x2="20" y2="21" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF3C4"/><stop offset=".55" stop-color="#FFC93C"/><stop offset="1" stop-color="#C98A0E"/>
+    </linearGradient></defs>
+    <path d="M3.2 9.4A2.2 2.2 0 0 1 5.4 7h13.2a2.2 2.2 0 0 1 2.2 2.4l-.9 9.4a2 2 0 0 1-2 1.8H6.1a2 2 0 0 1-2-1.8l-.9-9.4Z" fill="url(#ch{{ uid }})"/>
+    <path d="M3.4 11.6h17.2" stroke="#8A5B03" stroke-width="1.4" opacity=".55"/>
+    <path d="M10.2 11.6h3.6v3.4h-3.6z" fill="#8A5B03"/>
+    <path d="M8.4 7V5.6A3.6 3.6 0 0 1 15.6 5.6V7" stroke="#C98A0E" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <path d="M6.2 4.2 5 2.6M17.8 4.2 19 2.6M12 3.4V1.6" stroke="#FFC93C" stroke-width="1.7" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'trophee' %}
+  <svg width="{{ taille|default:20 }}" height="{{ taille|default:20 }}" viewBox="0 0 24 24">
+    <defs><linearGradient id="tr{{ uid }}" x1="12" y1="3" x2="12" y2="21" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF3C4"/><stop offset=".5" stop-color="#FFC93C"/><stop offset="1" stop-color="#C98A0E"/>
+    </linearGradient></defs>
+    <path d="M7 4h10v5.2a5 5 0 0 1-10 0V4Z" fill="url(#tr{{ uid }})"/>
+    <path d="M7 5H5.4a2.4 2.4 0 0 0 0 4.8H7M17 5h1.6a2.4 2.4 0 0 1 0 4.8H17" stroke="url(#tr{{ uid }})" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+    <path d="M10.6 14.4v1.8c0 .9-1.2 1.2-1.8 1.8M13.4 14.4v1.8c0 .9 1.2 1.2 1.8 1.8M6.6 20.4h10.8" stroke="url(#tr{{ uid }})" stroke-width="1.9" stroke-linecap="round" fill="none"/>
+  </svg>
+
+{% elif icone == 'couronne' %}
+  <svg width="{{ taille|default:26 }}" height="{{ taille|default:26 }}" viewBox="0 0 24 24">
+    <defs><linearGradient id="cr{{ uid }}" x1="12" y1="4" x2="12" y2="19" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF3C4"/><stop offset="1" stop-color="#E0A20C"/>
+    </linearGradient></defs>
+    <path d="M3 7.6 7.2 11 12 4.6 16.8 11 21 7.6V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7.6Z" fill="url(#cr{{ uid }})"/>
+    <circle cx="12" cy="14" r="1.6" fill="#8A5B03" opacity=".5"/>
+  </svg>
+
+{% elif icone == 'eclair' %}
+  <svg width="{{ taille|default:13 }}" height="{{ taille|default:13 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" fill="currentColor"/>
+  </svg>
+
+{% elif icone == 'etoile' %}
+  <svg width="{{ taille|default:24 }}" height="{{ taille|default:24 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M12 4.5 14.4 9.6l5.6.8-4 4 .9 5.6-4.9-2.7-4.9 2.7.9-5.6-4-4 5.6-.8L12 4.5Z" fill="currentColor"/>
+  </svg>
+
+{% elif icone == 'coche' %}
+  <svg width="{{ taille|default:16 }}" height="{{ taille|default:16 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M5 12.5 10 17.5 19 7" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+{% elif icone == 'fleche-gauche' %}
+  <svg width="{{ taille|default:18 }}" height="{{ taille|default:18 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+{% elif icone == 'fleche-droite' %}
+  <svg width="{{ taille|default:18 }}" height="{{ taille|default:18 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+{% elif icone == 'chevron-bas' %}
+  <svg width="{{ taille|default:14 }}" height="{{ taille|default:14 }}" viewBox="0 0 24 24" fill="none">
+    <path d="m5 9 7 7 7-7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+{% elif icone == 'chevron' %}
+  <svg width="{{ taille|default:12 }}" height="{{ taille|default:12 }}" viewBox="0 0 24 24" fill="none">
+    <path d="m9 5 7 7-7 7" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+{% elif icone == 'croix' %}
+  <svg width="{{ taille|default:18 }}" height="{{ taille|default:18 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'loupe' %}
+  <svg width="{{ taille|default:19 }}" height="{{ taille|default:19 }}" viewBox="0 0 24 24" fill="none">
+    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2.2"/>
+    <path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'cloche' %}
+  <svg width="{{ taille|default:19 }}" height="{{ taille|default:19 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M18 8a6 6 0 1 0-12 0c0 6-2 7-2 7h16s-2-1-2-7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M10.5 19a2 2 0 0 0 3 0" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'cible' %}
+  {# Quêtes du jour #}
+  <svg width="{{ taille|default:19 }}" height="{{ taille|default:19 }}" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="8.6" stroke="currentColor" stroke-width="2.1"/>
+    <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2.1"/>
+    <circle cx="12" cy="12" r="1.4" fill="currentColor"/>
+  </svg>
+
+{% elif icone == 'bulle' %}
+  <svg width="{{ taille|default:21 }}" height="{{ taille|default:21 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M20.5 11.5a8 8 0 0 1-11.7 7.1L4 20l1.4-4.3A8 8 0 1 1 20.5 11.5Z" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+{% elif icone == 'amis' %}
+  <svg width="{{ taille|default:15 }}" height="{{ taille|default:15 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M15 20v-1.6a3.4 3.4 0 0 0-3.4-3.4H6.4A3.4 3.4 0 0 0 3 18.4V20" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+    <circle cx="9" cy="8" r="3.6" stroke="currentColor" stroke-width="2.1"/>
+    <path d="M21 20v-1.6a3.4 3.4 0 0 0-2.6-3.3M16 4.3a3.4 3.4 0 0 1 0 6.6" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'atelier' %}
+  {# Trophée au trait : onglet Atelier #}
+  <svg width="{{ taille|default:15 }}" height="{{ taille|default:15 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M6.5 9H5a2.5 2.5 0 0 1 0-5h1.5M17.5 9H19a2.5 2.5 0 0 0 0-5h-1.5M5 21h14M10 14.7V17c0 .8-1 1.2-1.6 1.6-.9.6-1.4 1.5-1.4 2.4M14 14.7V17c0 .8 1 1.2 1.6 1.6.9.6 1.4 1.5 1.4 2.4M17.5 3h-11v6a5.5 5.5 0 0 0 11 0V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+{% elif icone == 'epingle' %}
+  <svg width="{{ taille|default:12 }}" height="{{ taille|default:12 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+    <circle cx="12" cy="10" r="2.6" stroke="currentColor" stroke-width="2.2"/>
+  </svg>
+
+{% elif icone == 'calendrier' %}
+  <svg width="{{ taille|default:16 }}" height="{{ taille|default:16 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M8 2.5v4M16 2.5v4M3.5 10h17M6 4.5h12a2 2 0 0 1 2 2V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'calendrier-plus' %}
+  <svg width="{{ taille|default:16 }}" height="{{ taille|default:16 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M8 2.5v4M16 2.5v4M3.5 10h17M6 4.5h12a2 2 0 0 1 2 2V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+    <path d="M12 13v4M10 15h4" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'troc' %}
+  <svg width="{{ taille|default:16 }}" height="{{ taille|default:16 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M4 8h13l-3-3M20 16H7l3 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+{% elif icone == 'cadenas' %}
+  <svg width="{{ taille|default:24 }}" height="{{ taille|default:24 }}" viewBox="0 0 24 24" fill="none">
+    <rect x="5" y="10.5" width="14" height="9.5" rx="2.6" stroke="currentColor" stroke-width="2.1"/>
+    <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'coeur' %}
+  <svg width="{{ taille|default:18 }}" height="{{ taille|default:18 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M12 20s-7.5-4.7-7.5-9.4A4.1 4.1 0 0 1 12 8.2a4.1 4.1 0 0 1 7.5 2.4C19.5 15.3 12 20 12 20Z" fill="currentColor"/>
+  </svg>
+
+{% elif icone == 'envoyer' %}
+  <svg width="{{ taille|default:20 }}" height="{{ taille|default:20 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+{% elif icone == 'appareil' %}
+  <svg width="{{ taille|default:20 }}" height="{{ taille|default:20 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M4 8.5h3l1.5-2.5h7L17 8.5h3V19H4V8.5Z" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/>
+    <circle cx="12" cy="13.5" r="3.2" stroke="currentColor" stroke-width="2.1"/>
+  </svg>
+
+{% elif icone == 'partager' %}
+  <svg width="{{ taille|default:18 }}" height="{{ taille|default:18 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 16V4M7.5 8.5 12 4l4.5 4.5" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+{% elif icone == 'plus' %}
+  <svg width="{{ taille|default:20 }}" height="{{ taille|default:20 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'fleche-haut' %}
+  <svg width="{{ taille|default:12 }}" height="{{ taille|default:12 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M12 5v14M6 11l6-6 6 6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+{% elif icone == 'info' %}
+  <svg width="{{ taille|default:18 }}" height="{{ taille|default:18 }}" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.1"/>
+    <path d="M12 10.5v6M12 7.5v.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'alerte' %}
+  <svg width="{{ taille|default:17 }}" height="{{ taille|default:17 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M12 7v7M12 17.5v.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'points' %}
+  <svg width="{{ taille|default:17 }}" height="{{ taille|default:17 }}" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="5.5" r="1.6" fill="currentColor"/>
+    <circle cx="12" cy="12" r="1.6" fill="currentColor"/>
+    <circle cx="12" cy="18.5" r="1.6" fill="currentColor"/>
+  </svg>
+
+{% elif icone == 'mentor' %}
+  <svg width="{{ taille|default:19 }}" height="{{ taille|default:19 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M15 20v-1.6a3.4 3.4 0 0 0-3.4-3.4H6.4A3.4 3.4 0 0 0 3 18.4V20" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+    <circle cx="9" cy="8" r="3.6" stroke="currentColor" stroke-width="2.1"/>
+    <path d="M18 8v6M21 11h-6" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'bobine' %}
+  {# Bobine de fil : ciseaux stylisés de la maquette #}
+  <svg width="{{ taille|default:13 }}" height="{{ taille|default:13 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M6 4a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5ZM6 15a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5ZM20 4.5 8.2 15.6M14.6 14.8 20 19.5M8.2 8.4 12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'ruban' %}
+  <svg width="{{ taille|default:24 }}" height="{{ taille|default:24 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M6 4.5h12v15l-6-3.2-6 3.2v-15Z" fill="currentColor"/>
+  </svg>
+
+{% elif icone == 'diamant' %}
+  <svg width="{{ taille|default:24 }}" height="{{ taille|default:24 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M6 3h12l4 6-10 12L2 9l4-6Z" fill="currentColor"/>
+  </svg>
+
+{% elif icone == 'toile' %}
+  {# Trame de tissu #}
+  <svg width="{{ taille|default:24 }}" height="{{ taille|default:24 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M4 8h16M4 12h16M4 16h16M8 4v16M12 4v16M16 4v16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'aiguille' %}
+  <svg width="{{ taille|default:24 }}" height="{{ taille|default:24 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M20 4 8 16M8 16l-1.5 4L4 21l1-2.5L6.5 14 20 4Z" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="18.5" cy="5.5" r="1.6" stroke="currentColor" stroke-width="1.8"/>
+  </svg>
+
+{% elif icone == 'grille' %}
+  <svg width="{{ taille|default:20 }}" height="{{ taille|default:20 }}" viewBox="0 0 24 24" fill="none">
+    <rect x="3.5" y="3.5" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="2"/>
+    <rect x="13.5" y="3.5" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="2"/>
+    <rect x="3.5" y="13.5" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="2"/>
+    <path d="M14 14h3v3M20 20h.01M17 20h.01M20 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'messages' %}
+  {% comment %}
+    Deux bulles superposées : les conversations, par opposition à « bulle »
+    qui sert à l'entraide (une seule bulle).
+  {% endcomment %}
+  <svg width="{{ taille|default:19 }}" height="{{ taille|default:19 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M20.5 11.5a8 8 0 0 1-11.7 7.1L4 20l1.4-4.3A8 8 0 1 1 20.5 11.5Z"
+          stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="8.6" cy="11.5" r="1.15" fill="currentColor"/>
+    <circle cx="12.3" cy="11.5" r="1.15" fill="currentColor"/>
+    <circle cx="16" cy="11.5" r="1.15" fill="currentColor"/>
+  </svg>
+
+{% elif icone == 'smiley-plus' %}
+  {# Ajouter une réaction : visage neutre + petit plus en coin #}
+  <svg width="{{ taille|default:16 }}" height="{{ taille|default:16 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M20.9 10.6a9 9 0 1 1-7.5-7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="9" cy="10" r="1.3" fill="currentColor"/>
+    <circle cx="15" cy="10" r="1.3" fill="currentColor"/>
+    <path d="M8.6 14.4a4.3 4.3 0 0 0 6.8 0" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+    <path d="M19 2.6v4.8M16.6 5h4.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+
+{% elif icone == 'reglages' %}
+  <svg width="{{ taille|default:17 }}" height="{{ taille|default:17 }}" viewBox="0 0 24 24" fill="none">
+    <path d="M12 5.5v2M12 16.5v2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M4 12h2M18 12h2M6.3 17.7l1.4-1.4M16.3 7.7l1.4-1.4" stroke="currentColor" stroke-width="2"/>
+    <circle cx="12" cy="12" r="3.4" stroke="currentColor" stroke-width="2"/>
+  </svg>
+{% endif %}
