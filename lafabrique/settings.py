@@ -106,13 +106,16 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.design.DesignMiddleware',
 ]
 
 ROOT_URLCONF = 'lafabrique.urls'
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        # Backend Django standard, doublé d'une version « fait main » du design
+        # (voir core/design.py : ?design=fait-main / ?design=classique).
+        'BACKEND': 'core.design.DesignTemplates',
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {

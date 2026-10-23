@@ -1,0 +1,521 @@
+{% load static %}
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>La Fabrique</title>
+
+  <link rel="icon" type="image/png" href="{% static 'core/images/favicon/favicon-logo.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'core/images/icons/pwa/icon-192.png' %}">
+
+  {# ── PWA : installation sur mobile ── #}
+  <link rel="manifest" href="{% static 'core/manifest.json' %}">
+  <meta name="theme-color" content="#1FA85C">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="La Fabrique">
+
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" rel="stylesheet">
+
+  {# ── Flaticon UIcons – Bold Rounded (icônes du site, hors navbar) ── #}
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-bold-rounded/css/uicons-bold-rounded.css">
+
+  <style>
+    /* ── Icônes UIcons (.ic = <i class="ic fi-br-…">) ──
+       Héritent de la taille (1em) et de la couleur (currentColor) du contexte.
+       inline-flex + centrage pour un rendu net dans les conteneurs flex et le texte. */
+    .ic {
+      font-style: normal;
+      line-height: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: -0.125em;
+      margin: 0 0.22em; /* air icône↔texte ; marge symétrique = reste centrée quand seule */
+    }
+    .ic::before { line-height: 1; display: block; }
+
+    /* Pièce de monnaie : même visuel que la popup « mes pièces » (coin.png) */
+    .coin-ic {
+      height: 1.05em;
+      width: auto;
+      vertical-align: -0.18em;
+      display: inline-block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    .shop-price-coin .coin-ic { height: 1.25em; vertical-align: -0.28em; }
+    .pack-coins-unit .coin-ic,
+    .info-row-label .coin-ic { height: 1.1em; }
+
+    /* ── Tailles d'icônes par contexte (les glyphes remplissent plus l'em-box
+          que les emojis : on réduit là où la police du conteneur était grande) ── */
+    .list-empty-emoji .ic        { font-size: 38px; }
+    .confetti-emoji .ic          { font-size: 36px; }
+    .hero-leaf .ic,
+    .editor-source-emoji .ic     { font-size: 32px; }
+    .creations-empty-emoji .ic,
+    .beta-icon .ic,
+    .photo-upload-icon .ic       { font-size: 30px; }
+    .verif-result-icon .ic       { font-size: 26px; }
+    .card-passport-icon .ic,
+    .cta-emoji .ic,
+    .danger-icon .ic,
+    .cmp-emoji .ic,
+    .auth-icon .ic               { font-size: 24px; }
+    .pack-icon .ic,
+    .impact-icon .ic,
+    .patron-lie-icon .ic         { font-size: 22px; }
+    .fact-emoji .ic,
+    .shop-item-icon .ic,
+    .src-icon .ic,
+    .face-thumb-emoji .ic        { font-size: 21px; }
+    .u-emoji .ic                 { font-size: 20px; }
+    .level-emoji .ic,
+    .stat-mini-icon .ic          { font-size: 18px; }
+    .other-type-emoji .ic        { font-size: 17px; }
+
+    /* ── Couleurs d'icônes par contexte ── */
+    .card-passport-icon .ic,
+    .hero-leaf .ic,
+    .impact-icon .ic,
+    .stat-mini-icon .ic,
+    .cta-emoji .ic,
+    .confetti-emoji .ic          { color: var(--color-primary); }
+    .danger-icon .ic,
+    .verif-result-icon.ko .ic    { color: var(--color-accent); }
+    .verif-result-icon.ok .ic    { color: var(--color-primary); }
+    .auth-icon .ic               { color: var(--color-primary); }
+  </style>
+
+  <style>
+    /* =========================================
+       Variables CSS (Communes à tout le site)
+       ========================================= */
+    :root {
+      --bg-page: #f0f0f0;
+      --bg-main: #FFFBFF;
+      --bg-input: #EFEEE3;
+      --text-dark: #39382B;
+      --text-muted: #666556;
+      --color-primary: #237329;
+      --color-accent: #A24A33;
+      --color-white: #FFFFFF;
+      --font-title: 'Plus Jakarta Sans', sans-serif;
+      --font-body: 'Manrope', sans-serif;
+    }
+
+    /* Le reset basique de ton design */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background-color: var(--bg-page);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100dvh;
+      font-family: var(--font-body);
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 430px;
+      height: 100vh;
+      height: 100dvh;
+      max-height: 100vh;
+      max-height: 100dvh;
+      background-color: var(--bg-main);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Le Header Commun */
+    .header-global {
+      background-color: #FEFCF3; /* La couleur de fond de ton header existant */
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .logo {
+      font-family: var(--font-title);
+      font-weight: 800;
+      font-size: 20px;
+      color: var(--color-primary);
+      text-decoration: none;
+      height: 32px;
+    }
+
+    .logo-img {
+      height: 32px;
+      width: auto;
+      display: block;
+    }
+
+    .logo-wrap {
+      display: inline-flex;
+      align-items: flex-start;
+      gap: 5px;
+    }
+    .beta-badge {
+      font-family: var(--font-title);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #8A5A00;
+      background: #FFF4E5;
+      padding: 2px 6px;
+      border-radius: 9999px;
+      white-space: nowrap;
+      margin-top: 1px;
+    }
+
+    .user-stats { display: flex; align-items: center; gap: 10px; }
+    .coins {
+      background-color: #F5F4EA;
+      color: var(--color-primary);
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .coins:active { opacity: 0.75; }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #D2F4D1;
+      object-fit: cover;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      display: block;
+    }
+    .avatar:active { opacity: 0.7; }
+
+    /* Menu déroulant profil */
+    .avatar-menu { position: relative; }
+
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+      padding: 8px;
+      min-width: 190px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      transform-origin: top right;
+      transform: scale(0.92);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .dropdown-menu.open {
+      transform: scale(1);
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-dark);
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .dropdown-item:hover { background: #F5F4EA; }
+
+    .dropdown-item.logout-item { color: var(--color-accent); }
+    .dropdown-item.logout-item:hover { background: #FFF0EC; }
+
+    .dropdown-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .dropdown-icon img { width: 16px; height: 16px; }
+    .icon-dashboard { background: #D2F4D1; }
+    .icon-profile   { background: #DDE8FF; }
+    .icon-logout    { background: #FFE4DC; }
+
+    .dropdown-divider {
+      height: 1px;
+      background: #EEEDE3;
+      margin: 4px 4px;
+    }
+
+    .scrollable-content {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Bandeau de vérification d'e-mail */
+    .verif-banner {
+      display: flex; align-items: center; gap: 10px;
+      background: #FFF4E5; color: #8A5A00;
+      padding: 10px 16px; font-size: 13px; font-weight: 600; line-height: 1.35;
+      border-bottom: 1px solid #F3E2C0;
+    }
+    .verif-banner.sent { background: #EAF7EA; color: #237329; border-bottom-color: #CDEBCD; }
+    .verif-banner span { flex: 1; }
+    .verif-banner form { margin: 0; flex-shrink: 0; }
+    .verif-banner button {
+      background: #8A5A00; color: white; border: none; border-radius: 9999px;
+      padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+      font-family: var(--font-body); white-space: nowrap;
+    }
+    .verif-banner button:hover { opacity: 0.9; }
+
+  </style>
+  {% block extra_css %}{% endblock %}
+  <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/htmx-ext-head-support@2.0.3" crossorigin="anonymous"></script>
+</head>
+<body hx-boost="true" hx-swap="innerHTML" hx-ext="head-support">
+
+  <div class="app-container">
+    
+    {% comment %}
+      Les pages qui portent leur propre en-tête (le tableau de bord depuis le
+      design V2) neutralisent ce bloc : {% block app_header %}{% endblock %}.
+    {% endcomment %}
+    {% block app_header %}
+    <header class="header-global">
+      <a href="{% url 'dashboard' %}" class="logo">
+        <div class="logo-wrap">
+          <img class="logo-img" src="{% static 'core/images/logo-la-fabrique.svg' %}" alt="logo">
+          <span class="beta-badge">BÊTA</span>
+        </div>
+      </a>
+      
+      <div class="user-stats">
+        {% if user.is_authenticated %}
+          <a href="{% url 'dashboard' %}?credits=1" class="coins">{{ user.soldePieces }} <img class="coin-ic" src="{% static 'core/images/icons/coin.png' %}" alt="pièces"></a>
+          <div class="avatar-menu">
+            {% get_static_prefix as STATIC_PREFIX %}
+            <img class="avatar"
+                 src="{% static user.avatar_url %}"
+                 alt="Avatar"
+                 id="avatarBtn">
+            <div class="dropdown-menu" id="dropdownMenu">
+              <a href="{% url 'dashboard' %}" class="dropdown-item">
+                <span class="dropdown-icon icon-dashboard">
+                  <img src="{% static 'core/images/page-accueil/icon-analyser.svg' %}" alt="">
+                </span>
+                Dashboard
+              </a>
+              <a href="{% url 'mon_profil' %}" class="dropdown-item">
+                <span class="dropdown-icon icon-profile">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B5FC0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                Profil
+              </a>
+              <div class="dropdown-divider"></div>
+              <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="dropdown-item logout-item">
+                  <span class="dropdown-icon icon-logout">
+                    <img src="{% static 'core/images/page-accueil/icon-logout.svg' %}" alt="">
+                  </span>
+                  Déconnexion
+                </button>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <a href="{% url 'connexion' %}" style="color: var(--color-primary); font-weight: bold; text-decoration: none;">
+            Se connecter
+          </a>
+        {% endif %}
+      </div>
+    </header>
+    {% endblock %}
+
+    {% comment %}
+      Bandeau de vérification d'e-mail masqué temporairement : retirer le
+      « False and » ci-dessous pour le réafficher.
+    {% endcomment %}
+    {% if False and user.is_authenticated and not user.email_verifie %}
+      {% if request.GET.email_renvoye == '1' %}
+      <div class="verif-banner sent">
+        <span><i class="ic fi-br-check-circle"></i> E-mail de vérification renvoyé. Pensez à regarder vos spams.</span>
+      </div>
+      {% else %}
+      <div class="verif-banner">
+        <span><i class="ic fi-br-envelope"></i> Vérifiez votre adresse e-mail pour débloquer le démarrage de projets.</span>
+        <form method="post" action="{% url 'renvoyer_verification' %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit">Renvoyer</button>
+        </form>
+      </div>
+      {% endif %}
+    {% endif %}
+
+    <div class="scrollable-content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    {% block bottom_nav %}{% endblock %}
+  </div>
+
+  <script>
+    // Délégation posée une seule fois sur document (le script se ré-exécute à
+    // chaque navigation htmx, mais document.addEventListener ne doit pas être
+    // réempilé à chaque fois).
+    if (!window.__avatarMenuInit) {
+      window.__avatarMenuInit = true;
+      document.addEventListener('click', (e) => {
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        if (!dropdownMenu) return;
+        if (e.target.closest('#avatarBtn')) {
+          e.stopPropagation();
+          dropdownMenu.classList.toggle('open');
+          return;
+        }
+        if (!e.target.closest('#dropdownMenu')) {
+          dropdownMenu.classList.remove('open');
+        }
+      });
+    }
+  </script>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════════════════
+       Contrôleur de la barre de navigation
+
+       Les pages s'enchaînent sans transition. Deux retours restent au tap :
+       l'onde au point de contact et la bascule immédiate de la pastille,
+       sans attendre la réponse serveur (la barre re-rendue arrive ensuite
+       dans le même état). Si la requête échoue, la pastille revient sur
+       l'onglet d'origine.
+       ═══════════════════════════════════════════════════════════════════ */
+    if (!window.__fabNavInit) {
+      window.__fabNavInit = true;
+
+      (function () {
+        var reduce = window.matchMedia
+          ? window.matchMedia('(prefers-reduced-motion: reduce)')
+          : { matches: false };
+
+        // Onglet actif avant le clic, pour restaurer la pastille si la
+        // requête échoue (aucun swap → la barre serveur n'arrive jamais).
+        var tabAvantClic = null;
+
+        function laNav() { return document.getElementById('fab-nav'); }
+
+        function ongletActif() {
+          var nav = laNav();
+          if (!nav) return null;
+          var actif = nav.querySelector('.fab-nav__item[aria-current="page"]');
+          return actif ? actif.getAttribute('data-tab') : null;
+        }
+
+        function activerOnglet(tab) {
+          var nav = laNav();
+          if (!nav) return;
+          var items = nav.querySelectorAll('.fab-nav__item');
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].getAttribute('data-tab') === tab) {
+              items[i].setAttribute('aria-current', 'page');
+            } else {
+              items[i].removeAttribute('aria-current');
+            }
+          }
+        }
+
+        // ── Onde au point de contact ─────────────────────────────────
+        document.addEventListener('pointerdown', function (e) {
+          var item = e.target.closest && e.target.closest('.fab-nav__item');
+          if (!item || reduce.matches) return;
+          var r = item.getBoundingClientRect();
+          item.style.setProperty('--ink-x', (e.clientX - r.left) + 'px');
+          item.style.setProperty('--ink-y', (e.clientY - r.top) + 'px');
+          item.classList.remove('is-inking');
+          void item.offsetWidth;          // force le redémarrage de l'animation
+          item.classList.add('is-inking');
+        }, true);
+
+        document.addEventListener('animationend', function (e) {
+          if (e.animationName === 'fabNavInk' && e.target.parentElement) {
+            e.target.parentElement.classList.remove('is-inking');
+          }
+        }, true);
+
+        // ── Clic : bascule optimiste de la pastille ──────────────────
+        document.addEventListener('click', function (e) {
+          var item = e.target.closest && e.target.closest('.fab-nav__item');
+          if (!item) return;
+
+          var depuis = ongletActif();
+          var vers = item.getAttribute('data-tab');
+          if (!vers || vers === depuis) return;   // déjà sur la page
+
+          tabAvantClic = depuis;
+          activerOnglet(vers);
+        }, true);
+
+        document.addEventListener('htmx:afterSwap', function () {
+          tabAvantClic = null;
+        });
+
+        // ── Filets de sécurité : requête avortée ou en erreur ────────
+        function annuler() {
+          if (tabAvantClic) { activerOnglet(tabAvantClic); tabAvantClic = null; }
+        }
+        document.addEventListener('htmx:responseError', annuler);
+        document.addEventListener('htmx:sendError', annuler);
+        document.addEventListener('htmx:timeout', annuler);
+        document.addEventListener('htmx:swapError', annuler);
+      })();
+    }
+  </script>
+  <script>
+    // Enregistrement du service worker (installation PWA). Gardé derrière un
+    // flag global : ce template se ré-exécute à chaque navigation htmx, mais
+    // l'enregistrement ne doit être tenté qu'une fois par session de page.
+    if (!window.__swInit) {
+      window.__swInit = true;
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/service-worker.js').catch(function () {});
+        });
+      }
+    }
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

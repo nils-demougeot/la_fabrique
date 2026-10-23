@@ -1,0 +1,164 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Kit « fait main » — commun à l'accueil, aux tissus, aux patrons, aux
+   cours et à la rubrique Partage, façon page de scrapbooking : fond en
+   papier mâché uni, coupons de vichy collés çà et là, feuilles de papier
+   déchiré, bords crantés (ciseaux cranteurs) et masking tape.
+
+   Le papier vient d'une vraie photo de papier fait main
+   (core/images/papier/) : ses quatre bords déchirés servent de masques et
+   ses fibres de texture, teintée par --sheet.
+
+   Utilisation :
+     · `.fm` sur le conteneur de page → fond papier mâché + deux coupons de
+       vichy. La rubrique Partage (`.cm`, commun à ses 21 écrans) reçoit le
+       même socle. Couleurs par page : --fm-cloth (teinte du papier mâché)
+       et --fm-check (trame du vichy).
+     · `.fm-paper` sur une carte → feuille déchirée (teinte : --sheet).
+     · `.fm-tape` (+ is-green / is-yellow, is-tl / is-tr / is-side) → scotch.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.fm, .cm {
+  --fm-check: rgba(225,165,45,.3);
+  --fm-cloth: #F1DFB0;
+  --fm-paper: #FFF9EC;
+
+  /* Grain fin du fond. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .30 0 0 0 0 .14 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* Fibres du papier (niveaux de gris, multipliées par la teinte). */
+  --fibres: url("/static/core/images/papier/fibres.jpg");
+  /* Froissé du papier mâché : relief de bruit éclairé en lumière rasante,
+     ramené vers le blanc pour rester discret (multiplié par la teinte). */
+  --crumple: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.016' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeDiffuseLighting lighting-color='%23fff' surfaceScale='3'%3E%3CfeDistantLight azimuth='225' elevation='55'/%3E%3C/feDiffuseLighting%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='.24' intercept='.78'/%3E%3CfeFuncG type='linear' slope='.24' intercept='.78'/%3E%3CfeFuncB type='linear' slope='.24' intercept='.78'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
+  /* Bord jauni, plus foncé vers les déchirures. */
+  --age: radial-gradient(ellipse 120% 110% at 50% 45%, transparent 64%, rgba(160,110,40,.09) 100%);
+
+  /* Masque « papier déchiré » : les quatre bords de la photo, inversés
+     (opaques HORS du papier), sont réunis puis retranchés d'un aplat.
+     Retrancher plutôt qu'additionner : chaque coin est entamé par ses deux
+     bords et prend une forme naturelle, sans cran carré. */
+  --torn:
+    linear-gradient(#000 0 0),
+    url("/static/core/images/papier/bord-haut.png") top left / 576px 15px repeat-x,
+    url("/static/core/images/papier/bord-bas.png") bottom left / 576px 15px repeat-x,
+    url("/static/core/images/papier/bord-gauche.png") top left / 15px 805px repeat-y,
+    url("/static/core/images/papier/bord-droit.png") top right / 15px 805px repeat-y;
+  --torn-op: subtract, add, add, add;
+  --torn-op-webkit: source-out, source-over, source-over, source-over;
+
+  /* Masque « ciseaux cranteurs » pour les échantillons de tissu. */
+  --pinked:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='4'%3E%3Cpath d='M0 4L3 1L6 4z'/%3E%3C/svg%3E") top left / 6px 4px repeat-x,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='4'%3E%3Cpath d='M0 0L3 3L6 0z'/%3E%3C/svg%3E") bottom left / 6px 4px repeat-x,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='6'%3E%3Cpath d='M4 0L1 3L4 6z'/%3E%3C/svg%3E") top left / 4px 6px repeat-y,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='6'%3E%3Cpath d='M0 0L3 3L0 6z'/%3E%3C/svg%3E") top right / 4px 6px repeat-y,
+    linear-gradient(#000 0 0) center / calc(100% - 6px) calc(100% - 6px) no-repeat;
+
+  /* Papier mâché uni : froissé + fibres multipliés par la teinte de la
+     page. Les coupons de vichy sont posés par ::before/::after. */
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  background-color: var(--fm-cloth);
+  background-image: var(--crumple), var(--fibres);
+  background-size: 600px 600px, 520px 520px;
+  background-blend-mode: multiply, multiply;
+}
+
+/* ── Coupons de vichy ─────────────────────────────────────────────────
+   Deux chutes de tissu découpées aux ciseaux cranteurs, collées de biais
+   sur la page comme dans un scrapbook : l'une dépasse du coin supérieur
+   droit, l'autre du bord gauche à mi-hauteur. Elles passent sous les
+   cartes, qui n'en laissent voir qu'un morceau. */
+.fm::before, .fm::after,
+.cm::before, .cm::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  background-color: #FCF6EA;
+  background-image:
+    linear-gradient(90deg, var(--fm-check) 50%, transparent 50%),
+    linear-gradient(var(--fm-check) 50%, transparent 50%);
+  background-size: 22px 22px;
+  -webkit-mask: var(--pinked);
+          mask: var(--pinked);
+}
+.fm::before, .cm::before {
+  top: 14px; right: -38px;
+  width: 150px; height: 108px;
+  transform: rotate(14deg);
+}
+.fm::after, .cm::after {
+  top: 47%; left: -44px;
+  width: 128px; height: 156px;
+  transform: rotate(-9deg);
+}
+
+/* ── Feuille de papier déchiré ────────────────────────────────────────
+   La feuille est dessinée par ::before (fond + masque) pour que le
+   contenu, lui, ne soit pas rogné. L'ombre portée (filter) épouse la
+   découpe. */
+.fm-paper {
+  --sheet: var(--fm-paper);
+  position: relative;
+  isolation: isolate;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  filter: drop-shadow(0 1px 1px rgba(70,45,20,.26)) drop-shadow(0 8px 14px rgba(70,45,20,.2));
+}
+.fm-paper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--fibres), var(--age), var(--sheet);
+  background-size: 400px 400px, 100% 100%;
+  background-blend-mode: multiply, normal, normal;
+  -webkit-mask: var(--torn);
+  -webkit-mask-composite: var(--torn-op-webkit);
+          mask: var(--torn);
+          mask-composite: var(--torn-op);
+}
+/* Feuille posée sur une autre feuille : pas d'ombre en double. */
+.fm-paper.is-flat { filter: none; }
+
+/* ── Masking tape ─────────────────────────────────────────────────────
+   Bande translucide vichy aux bouts dentelés, posée en absolu sur le
+   coin d'une feuille (le parent doit être positionné). */
+.fm-tape {
+  position: absolute;
+  z-index: 2;
+  width: 66px;
+  height: 20px;
+  pointer-events: none;
+  background-color: rgba(201,92,66,.62);
+  background-image:
+    linear-gradient(90deg, rgba(255,243,226,.42) 50%, transparent 50%),
+    linear-gradient(rgba(255,243,226,.42) 50%, transparent 50%);
+  background-size: 8px 8px;
+  clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 25%, calc(100% - 3px) 50%, 100% 75%,
+                     calc(100% - 3px) 100%, 3px 100%, 0 75%, 3px 50%, 0 25%);
+}
+.fm-tape.is-green  { background-color: rgba(125,139,74,.62); }
+.fm-tape.is-yellow { background-color: rgba(222,164,52,.66); }
+.fm-tape.is-tl { top: -9px; left: -14px; transform: rotate(-14deg); }
+.fm-tape.is-tr { top: -8px; right: -12px; transform: rotate(12deg); }
+.fm-tape.is-side {
+  top: 14px; right: -10px; width: 20px; height: 58px; transform: rotate(3deg);
+  clip-path: polygon(0 3px, 25% 0, 50% 3px, 75% 0, 100% 3px, 100% calc(100% - 3px),
+                     75% 100%, 50% calc(100% - 3px), 25% 100%, 0 calc(100% - 3px));
+}
+
+/* ── Barre de navigation brune ────────────────────────────────────────
+   Chargée uniquement par les pages du kit : la barre des autres pages
+   reste inchangée. Le préfixe `html` donne le pas sur le <style> de
+   bottom_nav.html, déclaré après dans le document. */
+html .fab-nav { --fab-bar-bg: #3A2A1E; }
+/* Une couleur par rubrique, assez claire pour ressortir sur la barre brune. */
+html .fab-nav__item[data-tab="accueil"] { --fab-accent: #E3C9A3; --fab-accent-ink: #3A2A1E; }
+html .fab-nav__item[data-tab="tissus"]  { --fab-accent: #D06A50; --fab-accent-ink: #FFF6E6; }
+html .fab-nav__item[data-tab="patrons"] { --fab-accent: #EE9E62; --fab-accent-ink: #3A2A1E; }
+html .fab-nav__item[data-tab="cours"]   { --fab-accent: #EDBA4E; --fab-accent-ink: #3A2A1E; }
+html .fab-nav__item[data-tab="partage"] { --fab-accent: #A7A866; --fab-accent-ink: #2E2A16; }
