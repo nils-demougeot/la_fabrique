@@ -6,14 +6,35 @@
   <title>La Fabrique</title>
 
   <link rel="icon" type="image/png" href="{% static 'core/images/favicon/favicon-logo.png' %}">
-  <link rel="apple-touch-icon" href="{% static 'core/images/icons/pwa/icon-192.png' %}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{% static 'core/images/icons/pwa/apple-touch-icon.png' %}">
 
   {# ── PWA : installation sur mobile ── #}
   <link rel="manifest" href="{% static 'core/manifest.json' %}">
   <meta name="theme-color" content="#1FA85C">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="La Fabrique">
+  <meta name="application-name" content="La Fabrique">
+  <script>
+    // L'invitation native à installer (Chrome, Edge, Samsung Internet) peut
+    // arriver avant que le corps de page soit prêt : on la capture dès le
+    // <head> pour que la feuille « Installez La Fabrique » puisse la
+    // déclencher (voir _installation_appli.html).
+    if (!window.__fabBipInit) {
+      window.__fabBipInit = true;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__fabBip = e;
+        document.dispatchEvent(new CustomEvent('fab:installable'));
+      });
+      window.addEventListener('appinstalled', function () {
+        window.__fabBip = null;
+        try { localStorage.setItem('fab-pwa-proposee', 'installee'); } catch (e) {}
+        document.dispatchEvent(new CustomEvent('fab:installee'));
+      });
+    }
+  </script>
 
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" rel="stylesheet">
 
@@ -493,6 +514,8 @@
         <span class="fab-curtain__sheen"></span>
       </div>
     </div>
+
+    {% if user.is_authenticated %}{% include 'core/_installation_appli.html' %}{% endif %}
 
   </div>
 
