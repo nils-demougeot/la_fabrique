@@ -16,7 +16,7 @@
 
 {% block extra_css %}
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'core/css/fait-main.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/fait-main.css' %}?v=3">
 <style>
 
   /* =========================================================
@@ -39,8 +39,12 @@
     --red:      #C95C42;
 
     /* Vichy orange (voir .fm). */
-    --fm-check: rgba(225,130,60,.28);
-    --fm-cloth: #F1D2B3;
+    /* Fond blanc cassé commun ; un bout de nappe orange dans le coin haut droit. */
+    --fm-check: rgba(224,138,78,.62);
+    --coin-display: block;
+    --coin: var(--coin-hd);
+    --coin-pos: top right;
+    --coin-taille: 112px 96px;
 
     --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
     --text:    'DM Sans', 'Manrope', system-ui, sans-serif;
@@ -695,8 +699,6 @@
     {% if patron_vedette %}
     <section class="pat-browse">
       <a href="{% url 'patron_detail' patron_vedette.id %}" class="pat-feature pat-link fm-paper">
-        <span class="fm-tape is-tl" aria-hidden="true"></span>
-        <span class="fm-tape is-green is-tr" aria-hidden="true"></span>
         <div class="pat-feature-media">
           {% if patron_vedette.image %}
           <img src="{{ patron_vedette.image }}" alt="{{ patron_vedette.titre }}">
@@ -833,7 +835,6 @@
     {% if projets_termines %}
     <section class="pat-browse">
       <div class="pat-done-box fm-paper">
-        <span class="fm-tape is-yellow is-tl" aria-hidden="true"></span>
         <div class="pat-done-head">
           <span class="pat-done-title">Déjà cousus</span>
           <span class="pat-done-count">{{ nb_termines }}</span>

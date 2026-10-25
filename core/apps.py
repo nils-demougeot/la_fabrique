@@ -6,6 +6,10 @@ class CoreConfig(AppConfig):
     name = 'core'
 
     def ready(self):
+        # Rechargement des templates des versions annexes du design en dev
+        # (branche les signaux de l'autoreloader, voir core/design.py).
+        from core import design  # noqa: F401
+
         # Précharge le modèle de détourage IA (rembg) en tâche de fond au démarrage
         # du process : le premier appel réel (import onnxruntime + init de session)
         # prend ~30s, ce qui serait sinon subi par le premier utilisateur.

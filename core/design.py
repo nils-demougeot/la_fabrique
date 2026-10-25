@@ -1,13 +1,16 @@
-"""Deux versions du design servies côte à côte.
+"""Plusieurs versions du design servies côte à côte.
 
     · « classique »  — le design de base, templates de core/templates/.
     · « fait-main »  — la DA papier déchiré / vichy. Seuls les templates
       qu'elle modifie vivent dans core/templates_fait_main/ ; pour tout le
       reste, elle retombe sur les templates classiques.
+    · « scrapbook »  — variante de la page d'accueil seulement (fond kraft
+      sombre, stickers et chutes de tissu, core/templates_scrapbook/) ; les
+      autres pages sont celles de « fait-main ».
 
-On bascule en ajoutant `?design=fait-main` (ou `?design=classique`) à
-n'importe quelle URL : le choix est gardé dans un cookie, la navigation
-reste donc dans la version choisie. Sans cookie, c'est le classique.
+On bascule en ajoutant `?design=<version>` à n'importe quelle URL : le choix
+est gardé dans un cookie, la navigation reste donc dans la version choisie.
+Sans cookie, c'est le classique.
 
 Côté rendu, chaque version a son propre `Engine` — et donc son propre cache
 de templates : un cache commun resservirait à l'une la page compilée pour
@@ -17,47 +20,90 @@ que le backend lit à chaque `get_template`.
 from contextvars import ContextVar
 
 from django.conf import settings
+from django.dispatch import receiver
+from django.template import engines
 from django.template.backends.django import DjangoTemplates
 from django.template.engine import Engine
+from django.utils.autoreload import autoreload_started, file_changed
 
 CLASSIQUE = 'classique'
 FAIT_MAIN = 'fait-main'
-VERSIONS = (CLASSIQUE, FAIT_MAIN)
+SCRAPBOOK = 'scrapbook'
+
+_CORE = settings.BASE_DIR / 'core'
+# Dossiers consultés avant les templates de l'application, du plus
+# spécifique au plus général.
+DOSSIERS = {
+    CLASSIQUE: [],
+    FAIT_MAIN: [_CORE / 'templates_fait_main'],
+    SCRAPBOOK: [_CORE / 'templates_scrapbook', _CORE / 'templates_fait_main'],
+}
+VERSIONS = tuple(DOSSIERS)
 
 COOKIE = 'design'
-DOSSIER_FAIT_MAIN = settings.BASE_DIR / 'core' / 'templates_fait_main'
 
 _version = ContextVar('design_version', default=CLASSIQUE)
 
 
 class DesignTemplates(DjangoTemplates):
-    """Backend Django standard, doublé d'un moteur « fait main » dont le
-    dossier de templates passe avant ceux de l'application."""
+    """Backend Django standard, doublé d'un moteur par version du design,
+    dont les dossiers de templates passent avant ceux de l'application."""
 
     def __init__(self, params):
         super().__init__(params)
-        self._classique = self.engine
-        moteur = self._classique
-        self._fait_main = Engine(
-            dirs=[DOSSIER_FAIT_MAIN, *moteur.dirs],
-            app_dirs=moteur.app_dirs,
-            context_processors=moteur.context_processors,
-            debug=moteur.debug,
-            libraries=moteur.libraries,
-            builtins=[b for b in moteur.builtins if b not in Engine.default_builtins],
-            string_if_invalid=moteur.string_if_invalid,
-            file_charset=moteur.file_charset,
-            autoescape=moteur.autoescape,
-        )
+        moteur = self._moteurs[CLASSIQUE]
+        for version, dossiers in DOSSIERS.items():
+            if version == CLASSIQUE:
+                continue
+            self._moteurs[version] = Engine(
+                dirs=[*dossiers, *moteur.dirs],
+                app_dirs=moteur.app_dirs,
+                context_processors=moteur.context_processors,
+                debug=moteur.debug,
+                libraries=moteur.libraries,
+                builtins=[b for b in moteur.builtins if b not in Engine.default_builtins],
+                string_if_invalid=moteur.string_if_invalid,
+                file_charset=moteur.file_charset,
+                autoescape=moteur.autoescape,
+            )
 
     @property
     def engine(self):
-        return self._fait_main if _version.get() == FAIT_MAIN else self._classique
+        return self._moteurs.get(_version.get(), self._moteurs[CLASSIQUE])
 
     @engine.setter
     def engine(self, valeur):
         # Appelé une seule fois, par DjangoTemplates.__init__.
-        self._classique = valeur
+        self._moteurs = {CLASSIQUE: valeur}
+
+    def vider_caches_annexes(self):
+        for version, moteur in self._moteurs.items():
+            if version != CLASSIQUE:
+                for loader in moteur.template_loaders:
+                    loader.reset()
+
+
+# ── Développement : l'autoreloader de Django ne surveille que les dossiers
+# du moteur classique. Sans ces deux récepteurs, un template modifié dans
+# templates_fait_main/ ou templates_scrapbook/ resterait servi depuis le
+# cache jusqu'au redémarrage du serveur.
+def _dossiers_annexes():
+    return {d for dossiers in DOSSIERS.values() for d in dossiers}
+
+
+@receiver(autoreload_started, dispatch_uid='design_surveiller_templates')
+def _surveiller(sender, **kwargs):
+    for dossier in _dossiers_annexes():
+        sender.watch_dir(dossier, '**/*')
+
+
+@receiver(file_changed, dispatch_uid='design_template_modifie')
+def _template_modifie(sender, file_path, **kwargs):
+    if any(dossier in file_path.parents for dossier in _dossiers_annexes()):
+        for backend in engines.all():
+            if isinstance(backend, DesignTemplates):
+                backend.vider_caches_annexes()
+        return True  # pris en charge : pas de redémarrage complet
 
 
 class DesignMiddleware:

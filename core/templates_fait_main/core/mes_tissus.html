@@ -3,8 +3,8 @@
 
 {% comment %}
   ─────────────────────────────────────────────────────────────────────────
-  Banque de tissus — DA « fait main » de l'accueil (core/css/fait-main.css)
-  en dominante rouge : vichy brique, feuilles de papier déchiré, échantillons
+  Banque de tissus — même DA que l'accueil (core/css/fait-main.css) :
+  fond blanc cassé lisse, en-tête figé, dominante rouge brique, feuilles de papier déchiré, échantillons
   aux bords crantés. Bricolage Grotesque + DM Sans/Mono, encre #3A2A1E.
 
   La page porte son propre en-tête vert : le bandeau global du gabarit est
@@ -22,7 +22,7 @@
 
 {% block extra_css %}
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'core/css/fait-main.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/fait-main.css' %}?v=3">
 <style>
   /* =========================================================
      Jetons de design de la banque de tissus
@@ -40,24 +40,63 @@
     --on-green: #FFF6E6;
     --orange:   #D4694E;
 
-    /* Vichy rouge (voir .fm). */
+    /* Même DA que l'accueil : fond blanc cassé lisse, feuilles blanc cassé,
+       le rouge brique tient le rôle du beige de l'accueil. */
     --fm-check: rgba(190,80,55,.24);
-    --fm-cloth: #EECDBF;
+    --fm-cloth: #FAF6EE;
+    --fm-paper: #FFFDF8;
 
     --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
     --text:    'DM Sans', 'Manrope', system-ui, sans-serif;
     --mono:    'DM Mono', ui-monospace, monospace;
 
-    min-height: 100%;
     font-family: var(--text);
     color: var(--ink);
+  }
+
+  /* En-tête figé, seul le reste défile (même principe que l'accueil) :
+     la page occupe toute la hauteur et c'est .tis-defile qui porte le
+     défilement, coupé net sous le bandeau. */
+  main.tis.fm {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  main.tis.fm > .tis-hero { flex: none; position: relative; z-index: 2; padding-bottom: 14px; }
+  .tis-defile {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    position: relative;
+    z-index: 1;
     /* Réserve : barre de navigation (≈96 px) + bouton flottant. */
     padding-bottom: 176px;
     transition: padding-bottom .18s ease;
   }
+  .tis-defile::-webkit-scrollbar { display: none; }
   /* Le socle de sélection s'ajoute sous le bouton flottant : on creuse
      d'autant pour que la dernière pièce reste atteignable. */
-  .tis.has-dock { padding-bottom: 258px; }
+  .tis.has-dock .tis-defile { padding-bottom: 258px; }
+
+  /* Fond lisse et uni : ni grain, ni coins de nappe. */
+  .tis.fm::before { background-image: none; }
+  /* Un bout de nappe rouge, fixe, dans le coin haut gauche. */
+  .tis.fm {
+    --coin-display: block;
+    --coin: var(--coin-hg);
+    --coin-pos: top left;
+    --coin-taille: 112px 96px;
+  }
+  .tis.fm::after { --fm-check: rgba(185,80,58,.6); }
+  /* Feuilles détachées du fond clair par une ombre marquée. */
+  .tis .fm-paper,
+  .tis-body[data-view="list"] .tis-grid {
+    filter: drop-shadow(0 1px 1px rgba(90,55,20,.32)) drop-shadow(0 10px 16px rgba(90,55,20,.24));
+  }
+  /* Le titre se teinte de la couleur dominante. */
+  .tis-hero-total { color: var(--green); }
   .tis :where(a) { text-decoration: none; color: inherit; }
   .tis :where(button) { font-family: inherit; }
   .tis [hidden] { display: none !important; }
@@ -99,7 +138,7 @@
   .tis-search {
     position: relative;
     z-index: 2;
-    margin: 14px 18px 0;
+    margin: 8px 18px 0;
     height: 56px;
     display: flex;
     align-items: center;
@@ -609,6 +648,8 @@
     </div>
   </header>
 
+  <div class="tis-defile">
+
   {% if vetements_data %}
 
   <!-- ══════════════ Recherche ══════════════ -->
@@ -638,7 +679,6 @@
 
   <!-- ══════════════ Répartition par matière ══════════════ -->
   <section class="tis-split fm-paper">
-    <span class="fm-tape is-green is-tl" aria-hidden="true"></span>
     <div class="tis-split-head">
       <span>Répartition par matière</span>
       <span>m²</span>
@@ -736,13 +776,14 @@
   {% else %}
 
   <div class="tis-empty fm-paper">
-    <span class="fm-tape is-green is-tl" aria-hidden="true"></span>
     <h2>Ta banque est encore vide</h2>
     <p>Scanne un premier vêtement : sa surface exploitable, sa matière<br>
        et sa couleur rejoindront ton stock de tissus.</p>
   </div>
 
   {% endif %}
+
+  </div><!-- /.tis-defile -->
 
 <!-- ══════════════ Bouton flottant + socle de sélection ══════════════ -->
 <div class="tis-float">

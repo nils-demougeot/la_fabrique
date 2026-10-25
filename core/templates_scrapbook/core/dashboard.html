@@ -1,0 +1,2118 @@
+{% extends 'core/header.html' %}
+{% load static l10n %}
+
+{% comment %}
+  ─────────────────────────────────────────────────────────────────────────
+  Tableau de bord — variante « scrapbook » (?design=scrapbook) : la DA
+  « fait main » posée sur un fond kraft sombre, parsemé de chutes de tissu,
+  de stickers (fraise, marguerite) et de gribouillis, avec des surpiqûres
+  en pointillés. Seule la page d'accueil change ; les autres pages de cette
+  version sont celles de « fait-main ».
+
+  Base reprise de templates_fait_main/core/dashboard.html : nappe vichy,
+  feuilles de papier jauni déchirées, masking tape. Polices inchangées (Bricolage
+  Grotesque + DM Sans/Mono), dominante brune : encre #3A2A1E, noisette #8B5E3C.
+
+  Toutes les données affichées viennent de la vue `dashboard` : aucune
+  valeur n'est écrite en dur ici hormis les libellés.
+
+  Trois feuilles plein écran (pièces, bilan CO₂, badges) remplacent des
+  pages à part entière ; elles masquent le header + la barre de navigation
+  le temps de leur affichage.
+  ─────────────────────────────────────────────────────────────────────────
+{% endcomment %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'core/css/fait-main.css' %}?v=3">
+<style>
+  /* =========================================================
+     Jetons de design du tableau de bord — DA « fait main »
+     (vichy, papier déchiré, scotch : core/css/fait-main.css).
+     ========================================================= */
+  .dash {
+    --ink:      #3A2A1E;
+    --paper:    #FFF9EC;
+    --kraft:    #F4E6D2;
+    --sand:     #EFE0C8;
+    --line:     #E0CCAE;
+    --muted:    #8A7560;
+    --green:    #7D8B4A;
+    --yellow:   #D9B48A;
+    --orange:   #B98257;
+    --red:      #8B5E3C;   /* brun noisette : couleur dominante de la page */
+    --ring:     #C8925A;
+    --violet:   #8B5E3C;
+    --violet-l: #EAD6BE;
+
+    /* Vichy brun (voir .fm). */
+    --fm-check: rgba(140,95,55,.26);
+    --fm-cloth: #E6D3B8;
+
+    --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --text:    'DM Sans', 'Manrope', system-ui, sans-serif;
+    --mono:    'DM Mono', ui-monospace, monospace;
+
+    /* Grain, déchirures et vichy : voir core/css/fait-main.css (.fm). */
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--text);
+    color: var(--ink);
+  }
+
+  /* `:where()` n'ajoute aucune spécificité : cette remise à zéro ne prend donc
+     jamais le pas sur la couleur d'une carte qui est elle-même un lien
+     (bloc « Scanner », bloc « Défi », lien « Tout voir »…). */
+  .dash :where(a) { text-decoration: none; color: inherit; }
+  .dash-link {
+    display: block;
+    transition: transform .14s ease;
+  }
+  .dash-link:active { transform: scale(.985); }
+
+  /* =========================================================
+     Bandeau d'accueil
+     ========================================================= */
+  .dash-hero {
+    position: relative;
+    flex: none;
+    padding: 24px 20px 4px;
+  }
+
+  .dash-hero-top {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .dash-hero-avatar {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--kraft);
+    box-shadow: 0 0 0 3px var(--paper), 0 3px 8px rgba(90,60,25,.2);
+    flex: none;
+    display: block;
+  }
+
+  /* Menu de compte : reprend le rôle de l'ancien en-tête global
+     (profil + déconnexion), qui n'est plus rendu sur cette page. */
+  .dash-account { position: relative; flex: none; z-index: 5; }
+  .dash-account-btn {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    display: block;
+    transition: transform .12s ease;
+  }
+  .dash-account-btn:active { transform: scale(.93); }
+
+  .dash-account-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    min-width: 186px;
+    background: var(--grain), var(--paper);
+    border-radius: 6px;
+    padding: 7px;
+    box-shadow: 0 14px 30px rgba(90,60,25,.24);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 5;
+    transform-origin: top left;
+    transform: scale(.92);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .15s ease, opacity .15s ease;
+  }
+  .dash-account-menu.is-open {
+    transform: scale(1);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .dash-account-menu form { margin: 0; }
+
+  .dash-account-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    font: 700 13.5px var(--text);
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+  }
+  .dash-account-item:active { background: var(--kraft); }
+  .dash-account-item.is-logout { color: var(--red); }
+  .dash-account-item.is-logout:active { background: #F3D9C8; }
+  .dash-hero-id { flex: 1; min-width: 0; }
+  .dash-hello {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 19px;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dash-date {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .dash-coins {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 15px;
+    flex: none;
+    cursor: pointer;
+    font: 800 15px var(--display);
+    color: var(--ink);
+    transition: transform .12s;
+  }
+  .dash-coins:active { transform: scale(.95); }
+  .dash-coins img { height: 15px; width: auto; display: block; }
+
+  .dash-headline {
+    position: relative;
+    margin-top: 22px;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 28px;
+    line-height: 1.14;
+    letter-spacing: -.02em;
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+  .dash-headline em { font-style: normal; color: var(--red); }
+
+  /* =========================================================
+     Corps
+     ========================================================= */
+  .dash-body {
+    flex: 1;
+    /* La barre de navigation flotte au-dessus du contenu : on lui réserve
+       la hauteur de la pastille + ses marges. */
+    padding: 22px 20px calc(112px + env(safe-area-inset-bottom, 0px));
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .dash-section-title {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -.01em;
+  }
+  .dash-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .dash-section-more {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--red);
+  }
+
+  /* ── Carte niveau ─────────────────────────────────────── */
+  .dash-level { padding: 20px 20px 19px; }
+  .dash-level-top {
+    display: flex; align-items: center; gap: 12px;
+    color: inherit; text-decoration: none;
+    transition: opacity .12s ease;
+  }
+  .dash-level-top:active { opacity: .78; }
+  .dash-level-chevron { color: var(--muted); display: flex; flex: none; }
+  .dash-ring {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
+  .dash-ring > span {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 800 16px var(--display);
+  }
+  .dash-level-name { font: 800 17px var(--display); }
+  .dash-level-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+  .dash-level-pct { font: 800 15px var(--display); color: var(--green); flex: none; }
+
+  .dash-bar {
+    height: 10px;
+    border-radius: 6px;
+    background: rgba(58,42,30,.09);
+    margin-top: 14px;
+    overflow: hidden;
+  }
+  .dash-bar > i {
+    display: block;
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--yellow), var(--orange));
+    width: 0;
+    transition: width .9s cubic-bezier(.25,1,.5,1);
+  }
+
+  .dash-stats { display: flex; gap: 8px; margin-top: 14px; }
+  .dash-stat {
+    --sheet: var(--kraft);
+    flex: 1;
+    min-width: 0;
+    padding: 12px 12px 11px;
+    text-align: left;
+    font-family: var(--text);
+    color: var(--ink);
+    cursor: default;
+    filter: none;
+  }
+  button.dash-stat { cursor: pointer; transition: transform .12s ease; }
+  button.dash-stat:active { transform: scale(.95); }
+  .dash-stat-icon {
+    width: 24px; height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    color: var(--ink);
+  }
+  .dash-stat-value { font: 800 17px var(--display); margin-top: 6px; color: var(--ink); }
+  .dash-stat-label { font-size: 10.5px; color: var(--muted); margin-top: 1px; }
+
+  /* ── Appel à l'action scan ────────────────────────────── */
+  .dash-scan {
+    --sheet: var(--red);
+    padding: 20px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: #FFF4E4;
+  }
+  .dash-scan-badge {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(255,244,228,.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
+  .dash-scan-title { font: 800 19px/1.1 var(--display); }
+  .dash-scan-sub { font-size: 12px; color: rgba(255,244,228,.85); margin-top: 5px; }
+
+  /* ── Reprendre / créations ────────────────────────────── */
+  .dash-resume { padding: 18px; }
+  .dash-resume-top { display: flex; align-items: center; gap: 14px; }
+  .dash-thumb {
+    width: 60px; height: 60px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex: none;
+    display: block;
+    background: repeating-linear-gradient(135deg, var(--violet-l) 0 7px, #EBC6B0 7px 14px);
+  }
+  .dash-kicker {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .dash-resume-title { font: 800 17px var(--display); margin-top: 4px; }
+  .dash-resume-bar {
+    height: 7px;
+    border-radius: 5px;
+    background: rgba(58,42,30,.09);
+    margin-top: 9px;
+    overflow: hidden;
+  }
+  .dash-resume-bar > i {
+    display: block;
+    height: 100%;
+    border-radius: 5px;
+    background: var(--violet);
+  }
+  .dash-resume-count { font: 800 14px var(--display); color: var(--violet); flex: none; }
+  .dash-resume-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(170,118,42,.12);
+    border-radius: 6px;
+    padding: 11px 13px;
+    margin-top: 12px;
+  }
+  .dash-resume-play {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
+  .dash-resume-step-label {
+    flex: 1;
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 1.3;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  /* ── Duo de tuiles ────────────────────────────────────── */
+  .dash-duo { display: flex; gap: 14px; }
+  .dash-tile {
+    flex: 1;
+    min-width: 0;
+    padding: 18px;
+  }
+  .dash-tile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .dash-tile-title { font: 800 17px var(--display); margin-top: 14px; }
+  .dash-tile-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+  .dash-swatches { display: flex; align-items: center; }
+  .dash-swatch {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2.5px var(--paper);
+    display: block;
+    object-fit: cover;
+    flex: none;
+  }
+  .dash-swatch + .dash-swatch { margin-left: -12px; }
+  .dash-swatch-more {
+    background: var(--kraft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 800 11px var(--display);
+    color: var(--muted);
+  }
+
+  .dash-mini-ring {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
+  .dash-mini-ring > span {
+    width: 23px; height: 23px;
+    border-radius: 50%;
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 800 10px var(--display);
+  }
+  .dash-mini-ratio {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: .06em;
+    color: var(--muted);
+  }
+
+  /* ── Défi ─────────────────────────────────────────────── */
+  .dash-defi {
+    --sheet: #EFD6B6;
+    padding: 20px;
+    color: var(--ink);
+  }
+  .dash-defi-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .dash-defi .dash-kicker { color: rgba(58,42,30,.66); }
+  .dash-defi-title { font: 800 21px/1.1 var(--display); margin-top: 6px; }
+  .dash-defi-pill {
+    background: var(--ink);
+    color: #FFF4E4;
+    border-radius: 999px;
+    padding: 8px 13px;
+    font: 800 13px var(--display);
+    flex: none;
+    white-space: nowrap;
+  }
+  .dash-defi-segments { display: flex; gap: 5px; margin-top: 15px; }
+  .dash-defi-segments > span {
+    flex: 1;
+    height: 8px;
+    border-radius: 5px;
+    background: rgba(58,42,30,.14);
+  }
+  .dash-defi-segments > span.is-on { background: var(--red); }
+
+  /* ── Quêtes du jour ───────────────────────────────────────
+     Même carte que le défi : seule la liste des quêtes s'ajoute
+     sous les segments, un segment par quête. */
+  .dash-defi-liste { margin-top: 14px; display: flex; flex-direction: column; gap: 2px; }
+  .dash-quete {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+  }
+  .dash-quete + .dash-quete { border-top: 1px dashed rgba(58,42,30,.2); }
+  .dash-quete-coche {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(58,42,30,.4);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    color: #FFF4E4;
+  }
+  .dash-quete.est-faite .dash-quete-coche {
+    background: var(--red);
+    border-color: var(--red);
+  }
+  .dash-quete-coche svg { display: block; opacity: 0; }
+  .dash-quete.est-faite .dash-quete-coche svg { opacity: 1; }
+  .dash-quete-nom {
+    flex: 1;
+    min-width: 0;
+    font: 700 12.5px var(--text);
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dash-quete.est-faite .dash-quete-nom { opacity: .55; text-decoration: line-through; }
+  .dash-quete-gain {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: .06em;
+    color: rgba(58,42,30,.7);
+    flex: none;
+  }
+  .dash-quete.est-faite .dash-quete-gain { color: var(--red); }
+  /* Coffre débloqué : le pied de carte devient l'appel à l'action. */
+  .dash-defi-coffre {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--ink);
+    border-radius: 999px;
+    padding: 11px 0;
+    margin-top: 12px;
+    font: 800 13px var(--display);
+    color: var(--yellow);
+  }
+
+  /* ── Rails horizontaux ────────────────────────────────── */
+  .dash-rail {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    /* Place pour l'ombre des feuilles, rognée sinon par le défilement. */
+    padding: 2px 4px 12px;
+    margin: 0 -4px -10px;
+  }
+  .dash-rail::-webkit-scrollbar { display: none; }
+
+  .dash-card {
+    flex: none;
+    width: 158px;
+    padding: 13px;
+  }
+  .dash-card-img {
+    width: 100%;
+    height: 78px;
+    border-radius: 4px;
+    object-fit: cover;
+    display: block;
+    background: repeating-linear-gradient(135deg, var(--line) 0 8px, #E9D6AE 8px 16px);
+  }
+  .dash-card-title {
+    font: 800 14px var(--display);
+    margin-top: 10px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    min-height: 34px;
+  }
+  .dash-card-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Médaillons de badges ─────────────────────────────── */
+  .dash-medals { display: flex; gap: 10px; }
+  /* Chaque badge porte sa propre teinte : le gabarit pose --medal-arc,
+     --medal-c1/c2, --medal-bg, --medal-border et --medal-pct. */
+  .dash-medal {
+    flex: 1;
+    min-width: 0;
+    padding: 15px 10px;
+    text-align: center;
+    color: var(--ink);
+  }
+  .dash-medal-ring {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    background: conic-gradient(var(--medal-arc) 0 var(--medal-pct, 0%),
+                               rgba(58,42,30,.1) var(--medal-pct, 0%) 100%);
+  }
+  .dash-medal-core {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    line-height: 1;
+    background: linear-gradient(150deg, var(--medal-c1), var(--medal-c2));
+  }
+  .dash-medal-name {
+    font: 800 12.5px/1.25 var(--display);
+    margin-top: 10px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    min-height: 31px;
+  }
+  .dash-medal-state { font: 800 10px var(--display); color: var(--medal-arc); margin-top: 3px; }
+
+  /* ── État vide générique ──────────────────────────────── */
+  .dash-empty {
+    padding: 24px 20px;
+    text-align: center;
+  }
+  .dash-empty-title { font: 800 16px var(--display); }
+  .dash-empty-sub {
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-top: 5px;
+  }
+  .dash-empty-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--red);
+    color: #FFF4E4;
+    border-radius: 9999px;
+    padding: 10px 18px;
+    font: 800 13px var(--display);
+    margin-top: 13px;
+  }
+
+  /* ── Retour bêta ──────────────────────────────────────── */
+  .dash-beta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+  }
+  .dash-beta-tag {
+    font: 800 8px var(--display);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: var(--yellow);
+    padding: 4px 8px;
+    border-radius: 9999px;
+    flex: none;
+  }
+  .dash-beta-text {
+    flex: 1;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+     Feuilles plein écran (pièces · CO₂ · badges)
+     ========================================================= */
+  @keyframes dashSheetIn {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+  }
+
+  .dash-sheet {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    flex-direction: row;
+    justify-content: center;
+    align-items: stretch;
+  }
+  .dash-sheet.is-open { display: flex; }
+
+  .dash-sheet-inner {
+    width: 100%;
+    max-width: 430px;
+    max-height: 100dvh;
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding-bottom: 56px;
+    /* Même nappe vichy que la page (héritée de .dash.fm). */
+    background-color: var(--fm-cloth);
+    background-image: inherit;
+    background-size: inherit;
+    font-family: var(--text);
+    color: var(--ink);
+    animation: dashSheetIn .3s cubic-bezier(.33,1,.68,1);
+  }
+  .dash-sheet-inner::-webkit-scrollbar { display: none; }
+
+  .dash-sheet-head {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    background: rgba(255,249,236,.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  .dash-back {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: var(--sand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--ink);
+    flex: none;
+    transition: transform .12s ease;
+  }
+  .dash-back:active { transform: scale(.92); }
+  .dash-sheet-title { font: 800 17px var(--display); flex: 1; }
+
+  .dash-sheet-hero {
+    margin: 18px 18px 0;
+    border-radius: 32px;
+    padding: 28px 22px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+  }
+  .dash-sheet-hero.is-coins { background: linear-gradient(152deg, #D9B48A 0%, #A9744B 62%, #6E4A30 100%); }
+  .dash-sheet-hero.is-eco   { background: linear-gradient(152deg, #A3AF6C 0%, #7D8B4A 55%, #4F5A2B 100%); }
+  .dash-sheet-hero.is-badge { background: linear-gradient(152deg, #DB8A68 0%, #C95C42 60%, #8E3A28 100%); }
+  .dash-sheet-hero::after {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.22) 0%, transparent 68%);
+    pointer-events: none;
+  }
+  .dash-sheet-hero > * { position: relative; z-index: 1; }
+  .dash-hero-img {
+    width: 96px; height: 96px;
+    object-fit: contain;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+    filter: drop-shadow(0 8px 20px rgba(0,0,0,.28));
+    animation: dashFloat 3s ease-in-out infinite;
+  }
+  @keyframes dashFloat {
+    0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+    50%      { transform: translateY(-9px) rotate(1.5deg); }
+  }
+  .dash-hero-figure {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .dash-hero-big {
+    font: 800 60px/1 var(--display);
+    letter-spacing: -.03em;
+    text-shadow: 0 4px 12px rgba(0,0,0,.2);
+  }
+  .dash-hero-unit { font: 700 18px var(--display); color: rgba(255,255,255,.75); }
+  .dash-hero-note { font-size: 12.5px; color: rgba(255,255,255,.8); text-align: center; }
+
+  .dash-sheet-section { margin-top: 24px; }
+  .dash-sheet-section > .dash-section-head { padding: 0 18px; }
+  .dash-sheet-rail {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 4px 18px 14px;
+  }
+  .dash-sheet-rail::-webkit-scrollbar { display: none; }
+
+  /* Boutique */
+  .dash-shop-item {
+    flex: none;
+    width: 156px;
+    padding: 17px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .dash-shop-icon {
+    width: 44px; height: 44px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .dash-shop-name { font: 800 13.5px var(--display); line-height: 1.25; }
+  .dash-shop-desc { font-size: 11px; color: var(--muted); line-height: 1.4; flex: 1; }
+  .dash-shop-price {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font: 800 17px var(--display);
+    color: #8B5E3C;
+  }
+  .dash-shop-price img { height: 15px; width: auto; display: block; }
+  .dash-btn {
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    border-radius: 9999px;
+    padding: 10px;
+    width: 100%;
+    font: 800 12px var(--display);
+    cursor: pointer;
+    transition: transform .1s ease, opacity .15s;
+  }
+  .dash-btn:active { transform: scale(.96); }
+  .dash-btn.is-locked {
+    background: var(--sand);
+    color: var(--muted);
+    cursor: not-allowed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .dash-btn.is-locked img { height: 13px; width: auto; }
+  .dash-btn.is-done {
+    background: #E6ECCF;
+    color: #4F6534;
+    cursor: default;
+  }
+
+  /* Packs */
+  .dash-packs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 0 18px;
+  }
+  .dash-pack {
+    border-radius: 24px;
+    padding: 18px 15px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    position: relative;
+  }
+  .dash-pack.p1 { background: linear-gradient(148deg, #EEF0DC, #C9CF9E); }
+  .dash-pack.p2 { background: linear-gradient(148deg, #FBEBCB, #EDBA4E); }
+  .dash-pack.p3 { background: linear-gradient(148deg, #F8E2D6, #E29A7C); }
+  .dash-pack.p4 { background: linear-gradient(148deg, #F4E6D2, #C8925A); }
+  .dash-pack-tag {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: var(--ink);
+    color: #fff;
+    font: 800 8px var(--display);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 9999px;
+  }
+  .dash-pack-name { font: 800 14px var(--display); }
+  .dash-pack-coins {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font: 800 26px/1 var(--display);
+  }
+  .dash-pack-coins img { height: 16px; width: auto; display: block; }
+  .dash-pack-price { font-size: 12px; font-weight: 500; color: rgba(20,18,15,.6); }
+  .dash-pack-btn {
+    background: rgba(20,18,15,.12);
+    border: none;
+    border-radius: 9999px;
+    padding: 10px;
+    width: 100%;
+    font: 800 13px var(--display);
+    color: var(--ink);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .dash-pack-btn:active { background: rgba(20,18,15,.22); }
+
+  /* Comparaisons + faits CO₂ */
+  .dash-cmp {
+    flex: none;
+    width: 148px;
+    border-radius: 24px;
+    padding: 16px 14px;
+    background: var(--sand);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .dash-cmp-icon { font-size: 24px; line-height: 1; }
+  .dash-cmp-value { font: 800 21px/1 var(--display); margin-top: 4px; }
+  .dash-cmp-desc { font-size: 12px; font-weight: 700; line-height: 1.3; }
+  .dash-cmp-fun { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  .dash-fact {
+    flex: none;
+    width: 212px;
+    border-radius: 24px;
+    padding: 18px 16px;
+    background: var(--sand);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .dash-fact-title { font: 800 13px var(--display); line-height: 1.3; }
+  .dash-fact-body { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* Compteur communautaire */
+  .dash-community {
+    margin: 24px 18px 0;
+    background: linear-gradient(148deg, #4A3627 0%, #3A2A1E 55%, #2C1F16 100%);
+    border-radius: 28px;
+    padding: 22px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    color: #fff;
+  }
+  .dash-community-title { font: 800 16px var(--display); }
+  .dash-community-stats { display: flex; gap: 8px; }
+  .dash-community-stat {
+    flex: 1;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 18px;
+    padding: 12px 10px;
+  }
+  .dash-community-value { font: 800 20px/1 var(--display); color: #EDBA4E; }
+  .dash-community-label { font-size: 10px; color: rgba(255,255,255,.55); line-height: 1.35; margin-top: 5px; }
+  .dash-community-bar {
+    height: 10px;
+    border-radius: 9999px;
+    background: rgba(255,255,255,.12);
+    overflow: hidden;
+  }
+  .dash-community-bar > i {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, #C8925A, #EDBA4E);
+    transition: width 1.3s cubic-bezier(.25,1,.5,1);
+  }
+  .dash-community-legend {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 7px;
+    font-size: 11px;
+    color: rgba(255,255,255,.5);
+  }
+  .dash-community-legend b { font: 800 12px var(--display); color: #EDBA4E; }
+
+  /* Liste complète des badges */
+  .dash-quest-list {
+    margin: 18px 18px 0;
+    border: 1.5px solid var(--line);
+    border-radius: 26px;
+    overflow: hidden;
+  }
+  .dash-quest {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+  }
+  .dash-quest + .dash-quest { border-top: 1px solid var(--line); }
+  /* Même teinte que le médaillon du tableau de bord, désaturée tant que le
+     badge n'est pas décroché. */
+  .dash-quest-medal {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex: none;
+    background: linear-gradient(150deg, var(--medal-c1), var(--medal-c2));
+    filter: saturate(.3);
+    opacity: .72;
+  }
+  .dash-quest.is-earned .dash-quest-medal { filter: none; opacity: 1; }
+  .dash-quest-body { flex: 1; min-width: 0; }
+  .dash-quest-name { font: 800 14.5px var(--display); }
+  .dash-quest:not(.is-earned) .dash-quest-name { color: rgba(20,18,15,.55); }
+  .dash-quest-desc {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dash-quest-track {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 7px;
+  }
+  .dash-quest-bar {
+    flex: 1;
+    height: 7px;
+    border-radius: 9999px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .dash-quest-bar > i {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, var(--medal-c2), var(--medal-c1));
+    transition: width .9s cubic-bezier(.25,1,.5,1);
+  }
+  .dash-quest-meta { font: 500 10px var(--mono); color: var(--muted); white-space: nowrap; }
+  .dash-quest.is-earned .dash-quest-meta { color: var(--green); }
+  .dash-quest-flag {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    background: var(--sand);
+    color: rgba(20,18,15,.3);
+  }
+  .dash-quest.is-earned .dash-quest-flag {
+    background: linear-gradient(145deg, #A9744B, #6E4A30);
+    color: #fff;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dash-sheet-inner, .dash-hero-img { animation: none; }
+    .dash-bar > i, .dash-quest-bar > i, .dash-community-bar > i { transition: none; }
+  }
+
+  /* =========================================================
+     Variante « scrapbook »
+     ========================================================= */
+  .dash.sb {
+    --fm-cloth: #4A3427;
+    --fm-paper: #F2E7D0;
+    --kraft:    #EADBBF;
+    --red:      #B4483B;
+    --ring:     #C9A050;
+    --creme:    #FFF3DF;
+  }
+  /* Les deux coupons du kit cèdent la place au décor ci-dessous. */
+  .dash.sb::before, .dash.sb::after { display: none; }
+  .dash.sb .dash-hero, .dash.sb .dash-body { position: relative; z-index: 1; }
+
+  /* ── Décor : chutes de tissu, stickers, gribouillis ─────── */
+  .sb-decor {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .sb-decor > * { position: absolute; display: block; }
+  /* Les stickers, eux, sont collés PAR-DESSUS les cartes : ils en
+     chevauchent les bords, comme sur une vraie page de scrapbook. */
+  .sb-stickers {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .sb-stickers > * { position: absolute; display: block; }
+
+  /* Chute de vichy (--c : couleur de la trame) ou de toile unie. */
+  .sb-chute {
+    background-color: #F7EFDD;
+    background-image:
+      linear-gradient(90deg, var(--c) 50%, transparent 50%),
+      linear-gradient(var(--c) 50%, transparent 50%);
+    background-size: var(--t, 16px) var(--t, 16px);
+    -webkit-mask: var(--pinked);
+            mask: var(--pinked);
+  }
+  .sb-chute.is-dechiree {
+    -webkit-mask: var(--torn);
+    -webkit-mask-composite: var(--torn-op-webkit);
+            mask: var(--torn);
+            mask-composite: var(--torn-op);
+  }
+  .sb-chute.is-unie {
+    background: var(--fibres), var(--c);
+    background-size: 300px 300px, auto;
+    background-blend-mode: multiply, normal;
+  }
+  .sb-c-rouge  { --c: rgba(190,62,48,.62); }
+  .sb-c-orange { --c: rgba(232,146,62,.6); }
+  .sb-c-jaune  { --c: rgba(226,176,58,.62); }
+  .sb-c-vert   { --c: rgba(112,128,66,.5); }
+  .sb-chute.is-unie.sb-c-rouge { --c: #B4483B; }
+
+  /* Stickers : découpe blanche + ombre portée, comme collés sur la page. */
+  .sb-sticker { filter: drop-shadow(0 3px 4px rgba(0,0,0,.35)); }
+
+  /* Gribouillis au crayon crème. */
+  .sb-gribouillis {
+    fill: none;
+    stroke: var(--creme);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .7;
+  }
+
+  /* ── Bandeau ──────────────────────────────────────────── */
+  .dash.sb .dash-hello { color: var(--creme); }
+  .dash.sb .dash-date { color: rgba(255,240,220,.66); }
+  .dash.sb .dash-hero-avatar { box-shadow: 0 0 0 4px var(--fm-paper), 0 5px 12px rgba(0,0,0,.4); }
+
+  .sb-titre { margin-top: 20px; padding: 24px 24px 30px; }
+  .dash.sb .dash-headline { margin-top: 0; font-size: 27px; }
+  .sb-coeur {
+    position: absolute;
+    right: 24px; bottom: 18px;
+    width: 26px; height: 26px;
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* ── Surpiqûres en pointillés ─────────────────────────── */
+  .dash.sb .dash-ring { outline: 1.5px dashed var(--ring); outline-offset: 3px; }
+  .dash.sb .dash-stat::after {
+    content: '';
+    position: absolute;
+    inset: 7px;
+    border: 1.5px dashed rgba(58,42,30,.26);
+    border-radius: 10px;
+    pointer-events: none;
+  }
+  .dash.sb .dash-scan { padding: 22px 22px; }
+  .dash.sb .dash-scan::after {
+    content: '';
+    position: absolute;
+    inset: 9px;
+    border: 1.5px dashed rgba(255,240,225,.55);
+    border-radius: 16px;
+    pointer-events: none;
+  }
+  .dash.sb .dash-scan-badge {
+    width: auto; height: 48px;
+    padding-right: 16px;
+    border: 0;
+    border-right: 1.5px solid rgba(255,240,225,.5);
+    border-radius: 0;
+  }
+
+  /* ── Titres de section posés sur le kraft ─────────────── */
+  .dash.sb .dash-section-title { color: var(--creme); }
+  .dash.sb .dash-section-more { color: #F2C46B; }
+
+  /* ── Barre de navigation cousue ───────────────────────── */
+  html .fab-nav {
+    --fab-bar-bg: #2B1D15;
+    outline: 1.5px dashed rgba(255,236,210,.32);
+    outline-offset: -6px;
+  }
+  html .fab-nav__item[data-tab="accueil"] { --fab-accent: #E9C46A; --fab-accent-ink: #3A2A1E; }
+  html .fab-nav__item[aria-current="page"] { outline: 1.5px dashed rgba(58,42,30,.4); outline-offset: -5px; }
+</style>
+{% endblock %}
+
+
+{# Le tableau de bord porte son propre en-tête : on neutralise celui du gabarit. #}
+{% block app_header %}{% endblock %}
+
+{% block content %}
+<main class="dash fm sb">
+
+  <!-- ══════════════ Décor de scrapbook (purement visuel) ══════════════ -->
+  <div class="sb-decor" aria-hidden="true">
+    <span class="sb-chute sb-c-rouge" style="top:-16px;left:48%;width:176px;height:48px;transform:rotate(6deg)"></span>
+    <span class="sb-chute sb-c-orange is-dechiree" style="top:150px;right:58px;width:76px;height:58px;transform:rotate(-9deg);--t:14px"></span>
+    <span class="sb-chute sb-c-jaune" style="top:236px;left:-34px;width:74px;height:196px;transform:rotate(-5deg);--t:18px"></span>
+    <span class="sb-chute sb-c-rouge is-unie is-dechiree" style="top:372px;left:-24px;width:54px;height:112px;transform:rotate(9deg)"></span>
+    <span class="sb-chute sb-c-vert" style="top:300px;right:-16px;width:66px;height:226px;transform:rotate(5deg);--t:12px"></span>
+    <span class="sb-chute sb-c-rouge is-unie is-dechiree" style="top:610px;right:-20px;width:62px;height:142px;transform:rotate(-10deg)"></span>
+    <span class="sb-chute sb-c-orange" style="top:640px;left:-74px;width:150px;height:150px;transform:rotate(18deg);--t:20px"></span>
+    <span class="sb-chute sb-c-jaune is-dechiree" style="top:1290px;right:-62px;width:130px;height:104px;transform:rotate(-14deg)"></span>
+    <span class="sb-chute sb-c-rouge" style="top:1330px;left:-46px;width:112px;height:150px;transform:rotate(-8deg);--t:14px"></span>
+    <span class="sb-chute sb-c-orange is-dechiree" style="top:1700px;right:-34px;width:124px;height:112px;transform:rotate(12deg);--t:18px"></span>
+    <svg class="sb-gribouillis" viewBox="0 0 24 24" style="top:16px;right:30px;width:22px;height:22px;transform:rotate(12deg)"><path d="M12 2l2.6 6.4 6.9.5-5.3 4.4 1.7 6.7L12 16.3 6.1 20l1.7-6.7L2.5 8.9l6.9-.5z"/></svg>
+    <svg class="sb-gribouillis" viewBox="0 0 24 24" style="top:66px;right:128px;width:24px;height:24px;transform:rotate(-6deg)"><path d="M4 18c2-8 10-12 14-8s-2 9-6 6 0-9 6-10"/></svg>
+    <svg class="sb-gribouillis" viewBox="0 0 24 24" style="top:212px;right:8px;width:22px;height:22px;transform:rotate(0deg)"><path d="M12 3v5M12 16v5M3 12h5M16 12h5M6 6l3 3M15 15l3 3M18 6l-3 3M9 15l-3 3"/></svg>
+    <svg class="sb-gribouillis" viewBox="0 0 24 24" style="top:520px;left:4px;width:30px;height:30px;transform:rotate(20deg)"><path d="M3 16c3 0 4-9 8-9s3 7 0 7-3-7 1-9 7 2 9 4"/></svg>
+    <svg class="sb-gribouillis" viewBox="0 0 24 24" style="top:720px;left:6px;width:28px;height:28px;transform:rotate(-12deg)"><path d="M2 12c4-6 6 6 10 0s6 6 10 0"/></svg>
+    <svg class="sb-gribouillis" viewBox="0 0 24 24" style="top:930px;right:10px;width:22px;height:22px;transform:rotate(14deg)"><path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z"/></svg>
+    <svg class="sb-gribouillis" viewBox="0 0 24 24" style="top:1120px;left:8px;width:20px;height:20px;transform:rotate(-10deg)"><path d="M12 2l2.6 6.4 6.9.5-5.3 4.4 1.7 6.7L12 16.3 6.1 20l1.7-6.7L2.5 8.9l6.9-.5z"/></svg>
+    <svg class="sb-gribouillis" viewBox="0 0 24 24" style="top:1460px;right:12px;width:26px;height:26px;transform:rotate(8deg)"><path d="M4 18c2-8 10-12 14-8s-2 9-6 6 0-9 6-10"/></svg>
+    <svg class="sb-gribouillis" viewBox="0 0 24 24" style="top:1880px;left:10px;width:22px;height:22px;transform:rotate(0deg)"><path d="M12 3v5M12 16v5M3 12h5M16 12h5M6 6l3 3M15 15l3 3M18 6l-3 3M9 15l-3 3"/></svg>
+  </div>
+  <div class="sb-stickers" aria-hidden="true">
+    <svg class="sb-sticker" viewBox="0 0 100 112" style="top:112px;right:-6px;width:70px;transform:rotate(12deg)">
+      <defs><radialGradient id="sb-fraise" cx=".38" cy=".35" r=".8"><stop offset="0" stop-color="#E4524A"/><stop offset="1" stop-color="#A3241D"/></radialGradient></defs>
+      <path d="M50 106C24 96 6 66 10 42 13 26 30 21 50 26 70 21 87 26 90 42 94 66 76 96 50 106Z" fill="#fff" stroke="#fff" stroke-width="11" stroke-linejoin="round"/>
+      <path d="M50 31 36 9 46 22 25 17 41 30 29 41 50 34 71 41 59 30 75 17 54 22 64 9Z" fill="#fff" stroke="#fff" stroke-width="11" stroke-linejoin="round"/>
+      <path d="M50 106C24 96 6 66 10 42 13 26 30 21 50 26 70 21 87 26 90 42 94 66 76 96 50 106Z" fill="url(#sb-fraise)"/>
+      <ellipse cx="34" cy="48" rx="7" ry="13" fill="#fff" opacity=".22" transform="rotate(-18 34 48)"/>
+      <ellipse cx="32" cy="50" rx="1.6" ry="2.6" fill="#F7DC8A" transform="rotate(-20 32 50)"/><ellipse cx="50" cy="46" rx="1.6" ry="2.6" fill="#F7DC8A" transform="rotate(0 50 46)"/><ellipse cx="68" cy="50" rx="1.6" ry="2.6" fill="#F7DC8A" transform="rotate(20 68 50)"/><ellipse cx="24" cy="64" rx="1.6" ry="2.6" fill="#F7DC8A" transform="rotate(-25 24 64)"/><ellipse cx="41" cy="62" rx="1.6" ry="2.6" fill="#F7DC8A" transform="rotate(-10 41 62)"/><ellipse cx="59" cy="62" rx="1.6" ry="2.6" fill="#F7DC8A" transform="rotate(10 59 62)"/><ellipse cx="76" cy="64" rx="1.6" ry="2.6" fill="#F7DC8A" transform="rotate(25 76 64)"/><ellipse cx="33" cy="78" rx="1.6" ry="2.6" fill="#F7DC8A" transform="rotate(-15 33 78)"/><ellipse cx="50" cy="76" rx="1.6" ry="2.6" fill="#F7DC8A" transform="rotate(0 50 76)"/><ellipse cx="67" cy="78" rx="1.6" ry="2.6" fill="#F7DC8A" transform="rotate(15 67 78)"/><ellipse cx="42" cy="91" rx="1.6" ry="2.6" fill="#F7DC8A" transform="rotate(-8 42 91)"/><ellipse cx="58" cy="91" rx="1.6" ry="2.6" fill="#F7DC8A" transform="rotate(8 58 91)"/>
+      <path d="M50 31 36 9 46 22 25 17 41 30 29 41 50 34 71 41 59 30 75 17 54 22 64 9Z" fill="#4F7D3A"/>
+      <path d="M50 28c0-8 3-14 8-18" stroke="#3E6A2D" stroke-width="3" stroke-linecap="round" fill="none"/>
+    </svg>
+    <svg class="sb-sticker" viewBox="0 0 100 130" style="top:800px;right:0;width:60px;transform:rotate(-8deg)">
+      <path d="M50 64c-3 24 3 40-2 64" stroke="#fff" stroke-width="10" stroke-linecap="round" fill="none"/>
+      <g fill="#fff" stroke="#fff" stroke-width="8"><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(0 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(26 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(52 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(78 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(104 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(130 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(156 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(182 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(208 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(234 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(260 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(286 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(312 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(338 50 48)"/></g>
+      <path d="M50 64c-3 24 3 40-2 64" stroke="#6B8A47" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M49 98c-12-10-22-8-26-4 8 6 18 8 26 4Z" fill="#7C9A55"/>
+      <g fill="#FFFDF6" stroke="#E2D5BC" stroke-width="1"><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(0 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(26 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(52 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(78 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(104 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(130 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(156 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(182 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(208 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(234 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(260 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(286 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(312 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(338 50 48)"/></g>
+      <circle cx="50" cy="48" r="11" fill="#F2B33D"/>
+      <circle cx="46" cy="45" r="1.4" fill="#C9862A"/><circle cx="54" cy="47" r="1.4" fill="#C9862A"/><circle cx="49" cy="53" r="1.4" fill="#C9862A"/>
+    </svg>
+    <svg class="sb-sticker" viewBox="0 0 100 130" style="top:1560px;left:2px;width:52px;transform:rotate(10deg)">
+      <path d="M50 64c-3 24 3 40-2 64" stroke="#fff" stroke-width="10" stroke-linecap="round" fill="none"/>
+      <g fill="#fff" stroke="#fff" stroke-width="8"><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(0 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(26 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(52 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(78 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(104 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(130 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(156 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(182 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(208 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(234 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(260 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(286 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(312 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(338 50 48)"/></g>
+      <path d="M50 64c-3 24 3 40-2 64" stroke="#6B8A47" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M49 98c-12-10-22-8-26-4 8 6 18 8 26 4Z" fill="#7C9A55"/>
+      <g fill="#FFFDF6" stroke="#E2D5BC" stroke-width="1"><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(0 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(26 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(52 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(78 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(104 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(130 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(156 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(182 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(208 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(234 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(260 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(286 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(312 50 48)"/><ellipse cx="50" cy="27" rx="7" ry="19" transform="rotate(338 50 48)"/></g>
+      <circle cx="50" cy="48" r="11" fill="#F2B33D"/>
+      <circle cx="46" cy="45" r="1.4" fill="#C9862A"/><circle cx="54" cy="47" r="1.4" fill="#C9862A"/><circle cx="49" cy="53" r="1.4" fill="#C9862A"/>
+    </svg>
+  </div>
+
+  <!-- ══════════════ Bandeau d'accueil ══════════════ -->
+  <header class="dash-hero">
+    <div class="dash-hero-top">
+      <div class="dash-account">
+        <button type="button" class="dash-account-btn" id="dash-account-btn"
+                aria-haspopup="true" aria-expanded="false" aria-label="Mon compte">
+          <img class="dash-hero-avatar" src="{% static user.avatar_url %}" alt="">
+        </button>
+        <div class="dash-account-menu" id="dash-account-menu">
+          <a href="{% url 'mon_profil' %}" class="dash-account-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2.2"/></svg>
+            Mon profil
+          </a>
+          <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="dash-account-item is-logout">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Déconnexion
+            </button>
+          </form>
+        </div>
+      </div>
+      <div class="dash-hero-id">
+        <p class="dash-hello">Salut, {{ user.first_name|default:user.username }}</p>
+        <p class="dash-date">{{ aujourd_hui|date:"l j F" }}</p>
+      </div>
+      <button type="button" class="dash-coins fm-paper" onclick="dashOpen('sheet-coins')">
+        <img src="{% static 'core/images/icons/coin.png' %}" alt="">
+        <span>{{ credits }}</span>
+      </button>
+    </div>
+
+    <div class="sb-titre fm-paper">
+      <h1 class="dash-headline">
+        {% if nb_vetements %}
+          Tu as <em>{{ surface_totale }} m²</em> de tissu qui attendent une seconde vie.
+        {% else %}
+          Scanne ton premier vêtement pour ouvrir <em>ta banque de tissus</em>.
+        {% endif %}
+      </h1>
+      <svg class="sb-coeur" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z"/></svg>
+    </div>
+  </header>
+
+  <div class="dash-body">
+
+    <!-- ══════════════ Niveau d'atelier ══════════════
+         Le bloc entier ouvre l'échelle des niveaux (rubrique Partage) : c'est
+         là qu'on voit d'où viennent les points et ce que chaque palier ouvre. -->
+    <section class="dash-level fm-paper">
+      <span class="fm-tape is-tl" aria-hidden="true"></span>
+      <span class="fm-tape is-green is-side" aria-hidden="true"></span>
+      <a href="{% url 'communaute_progression' %}" class="dash-level-top">
+        <span class="dash-ring" style="background: conic-gradient(var(--ring) 0 {{ niveau.pourcentage }}%, rgba(58,42,30,.1) {{ niveau.pourcentage }}% 100%);">
+          <span>{{ niveau.numero }}</span>
+        </span>
+        <div style="flex:1;min-width:0;">
+          <p class="dash-level-name">{{ niveau.nom }}</p>
+          <p class="dash-level-sub">
+            {% if niveau.niveau_suivant %}
+              {{ niveau.points_restants }} point{{ niveau.points_restants|pluralize }} avant le niveau {{ niveau.niveau_suivant }}
+            {% else %}
+              Niveau maximum atteint — chapeau !
+            {% endif %}
+          </p>
+        </div>
+        <span class="dash-level-pct">{{ niveau.pourcentage }} %</span>
+        <span class="dash-level-chevron" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="m9 5 7 7-7 7" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </a>
+
+      <div class="dash-bar"><i data-fill="{{ niveau.pourcentage }}"></i></div>
+
+      <div class="dash-stats">
+        <a href="{% url 'communaute_serie' %}" class="dash-stat dash-link fm-paper">
+          <span class="dash-stat-icon is-flame">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.8 2.4c.5 3 2 3.9 3.6 5.6 1.5 1.6 2.4 3.3 2.4 5.4 0 4-3.1 6.9-6.8 6.9S5.2 17.4 5.2 13.4c0-2.3 1.1-3.9 2.5-5.3.4 1.1 1.1 1.8 2 2.1.5-3.4 1.4-6 3.1-7.8Z" fill="currentColor"/></svg>
+          </span>
+          <p class="dash-stat-value">{{ nb_projets_termines }}</p>
+          <p class="dash-stat-label">projet{{ nb_projets_termines|pluralize }} fini{{ nb_projets_termines|pluralize }}</p>
+        </a>
+
+        <a href="{% url 'mes_tissus' %}" class="dash-stat dash-link fm-paper">
+          <span class="dash-stat-icon is-layers">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6 21.5 7 12 11.4 2.5 7 12 2.6Z" fill="currentColor"/><path d="m4.6 11.3-2.1 1 9.5 4.4 9.5-4.4-2.1-1L12 14.6l-7.4-3.3Z" fill="currentColor" opacity=".78"/><path d="m4.6 15.9-2.1 1L12 21.4l9.5-4.5-2.1-1L12 19.2l-7.4-3.3Z" fill="currentColor" opacity=".55"/></svg>
+          </span>
+          <p class="dash-stat-value">{{ nb_vetements }}</p>
+          <p class="dash-stat-label">pièce{{ nb_vetements|pluralize }} sauvée{{ nb_vetements|pluralize }}</p>
+        </a>
+
+        <button type="button" class="dash-stat fm-paper" onclick="dashOpen('sheet-eco')">
+          <span class="dash-stat-icon is-leaf">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 3.4c-8.6-1.2-14.7 2-14.7 8.3 0 1.7.5 3.1 1.4 4.2L4.2 18.6a1.1 1.1 0 0 0 1.6 1.6l2.5-2.5c1.2 1 2.8 1.5 4.6 1.5 4.5 0 7.1-4.5 7.1-15.8Z" fill="currentColor"/></svg>
+          </span>
+          <p class="dash-stat-value">{{ co2_economise }} kg</p>
+          <p class="dash-stat-label">CO₂ évité</p>
+        </button>
+      </div>
+    </section>
+
+    <!-- ══════════════ Scanner ══════════════ -->
+    <a href="{% url 'ajout_textile' %}" class="dash-scan dash-link fm-paper">
+      <span class="dash-scan-badge">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9V6.5A1.5 1.5 0 0 1 5.5 5H8M16 5h2.5A1.5 1.5 0 0 1 20 6.5V9M20 15v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 19H5.5A1.5 1.5 0 0 1 4 17.5V15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="2"/></svg>
+      </span>
+      <span style="flex:1;">
+        <span class="dash-scan-title" style="display:block;">Scanner un vêtement</span>
+        <span class="dash-scan-sub" style="display:block;">Mesure la surface exploitable en une photo</span>
+      </span>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none;"><path d="M5 12h13M12.5 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+
+    <!-- ══════════════ Reprendre un projet ══════════════ -->
+    {% if projet_en_cours %}
+    <a href="{% url 'etape_projet_geste' patron_pk=projet_en_cours.patron_id etape_num=projet_en_cours.etape_actuelle geste_num=projet_en_cours.geste_actuelle %}"
+       class="dash-resume dash-link fm-paper">
+      <div class="dash-resume-top">
+        {% if projet_en_cours.image %}
+        <img class="dash-thumb" src="{{ projet_en_cours.image }}" alt="">
+        {% else %}
+        <span class="dash-thumb"></span>
+        {% endif %}
+        <div style="flex:1;min-width:0;">
+          <p class="dash-kicker">Reprendre</p>
+          <p class="dash-resume-title">{{ projet_en_cours.titre }}</p>
+          <div class="dash-resume-bar"><i style="width: {{ projet_en_cours.progression_pct }}%;"></i></div>
+        </div>
+        <span class="dash-resume-count">{{ projet_en_cours.etape_actuelle }}/{{ projet_en_cours.total_etapes }}</span>
+      </div>
+      <div class="dash-resume-step">
+        <span class="dash-resume-play">
+          <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5 18 12l-9.5 7V5Z" fill="#fff"/></svg>
+        </span>
+        <span class="dash-resume-step-label">Étape {{ projet_en_cours.etape_actuelle }} · {{ projet_en_cours.etape_titre }}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none;"><path d="M9 6l6 6-6 6" stroke="#C4BAAB" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </a>
+    {% endif %}
+
+    <!-- ══════════════ Tissus + patrons ══════════════ -->
+    <div class="dash-duo">
+      <a href="{% url 'mes_tissus' %}" class="dash-tile dash-link fm-paper">
+        <span class="fm-tape is-green is-tl" aria-hidden="true"></span>
+        <div class="dash-tile-head">
+          <span class="dash-swatches">
+            {% for t in apercu_tissus %}
+              {% if t.photo %}
+              <img class="dash-swatch" src="{{ t.photo }}" alt="">
+              {% else %}
+              <span class="dash-swatch" style="background: {{ t.hex }};"></span>
+              {% endif %}
+            {% empty %}
+              <span class="dash-swatch" style="background: var(--line);"></span>
+            {% endfor %}
+            {% if reste_tissus %}
+            <span class="dash-swatch dash-swatch-more">+{{ reste_tissus }}</span>
+            {% endif %}
+          </span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none;"><path d="M9 6l6 6-6 6" stroke="#C4BAAB" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="dash-tile-title">Mes tissus</p>
+        <p class="dash-tile-sub">{{ nb_vetements }} pièce{{ nb_vetements|pluralize }} · {{ surface_totale }} m²</p>
+      </a>
+
+      <a href="{% url 'patrons' %}" class="dash-tile dash-link fm-paper">
+        <span class="fm-tape is-tr" aria-hidden="true"></span>
+        <div class="dash-tile-head">
+          <span style="display:flex;align-items:center;gap:9px;">
+            <span class="dash-mini-ring" style="background: conic-gradient(var(--ring) 0 {{ patrons_pourcentage }}%, rgba(58,42,30,.1) {{ patrons_pourcentage }}% 100%);">
+              <span>{{ nb_patrons_realisables }}</span>
+            </span>
+            <span class="dash-mini-ratio">/ {{ nb_patrons_total }}</span>
+          </span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none;"><path d="M9 6l6 6-6 6" stroke="#C4BAAB" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="dash-tile-title">Patrons</p>
+        <p class="dash-tile-sub">{{ nb_patrons_realisables }} réalisable{{ nb_patrons_realisables|pluralize }}</p>
+      </a>
+    </div>
+
+    <!-- ══════════════ Quêtes du jour ══════════════
+         Quand la communauté est fermée, la carte reprend le défi « banque de
+         tissus » : elle ne doit jamais renvoyer vers un écran inaccessible. -->
+    {% if quetes_jour %}
+    <a href="{% url 'communaute_quetes' %}" class="dash-defi dash-link fm-paper">
+      <div class="dash-defi-head">
+        <div>
+          <p class="dash-kicker">
+            Quêtes du jour{% if heures_avant_reset %} · encore {{ heures_avant_reset }} h{% endif %}
+          </p>
+          <p class="dash-defi-title">
+            {% if quetes_faites == quetes_total %}Journée bouclée{% else %}À faire aujourd'hui{% endif %}
+          </p>
+        </div>
+        <span class="dash-defi-pill">{{ quetes_faites }}/{{ quetes_total }}</span>
+      </div>
+
+      <div class="dash-defi-segments">
+        {% for quete in quetes_jour %}
+        <span {% if quete.terminee %}class="is-on"{% endif %}></span>
+        {% endfor %}
+      </div>
+
+      <div class="dash-defi-liste">
+        {% for quete in quetes_jour %}
+        <div class="dash-quete {% if quete.terminee %}est-faite{% endif %}">
+          <span class="dash-quete-coche">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 12.5 10 17.5 19 7.5" stroke="currentColor" stroke-width="3.2"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="dash-quete-nom">{{ quete.quete.libelle }}</span>
+          <span class="dash-quete-gain">
+            {% if quete.quete.xp %}+{{ quete.quete.xp }} XP{% else %}+{{ quete.quete.pieces }} ⛁{% endif %}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if coffre_quetes and not coffre_quetes.ouvert %}
+      <span class="dash-defi-coffre">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 8h16l-1.4 11a2 2 0 0 1-2 1.8H7.4a2 2 0 0 1-2-1.8L4 8Z" fill="currentColor"/>
+          <path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+        Coffre du jour à ouvrir
+      </span>
+      {% endif %}
+    </a>
+
+    {% else %}
+    <a href="{% url 'ajout_textile' %}" class="dash-defi dash-link fm-paper">
+      <div class="dash-defi-head">
+        <div>
+          <p class="dash-kicker">Défi · objectif {{ surface_objectif|floatformat:0 }} m²</p>
+          <p class="dash-defi-title">Banque de tissus</p>
+        </div>
+        <span class="dash-defi-pill">
+          {% if surface_restante %}+{{ surface_restante }} m²{% else %}Atteint !{% endif %}
+        </span>
+      </div>
+      <div class="dash-defi-segments">
+        {% for on in defi_segments %}
+        <span {% if on %}class="is-on"{% endif %}></span>
+        {% endfor %}
+      </div>
+    </a>
+    {% endif %}
+
+    <!-- ══════════════ À coudre avec tes tissus ══════════════ -->
+    <section>
+      <div class="dash-section-head">
+        <h2 class="dash-section-title">À coudre avec tes tissus</h2>
+        <a href="{% url 'patrons' %}" class="dash-section-more">Tout voir</a>
+      </div>
+
+      {% if patrons_suggeres %}
+      <div class="dash-rail">
+        {% for p in patrons_suggeres %}
+        <a href="{% url 'patron_detail' pk=p.id %}" class="dash-card dash-link fm-paper">
+          {% if p.image %}
+          <img class="dash-card-img" src="{{ p.image }}" alt="">
+          {% else %}
+          <span class="dash-card-img"></span>
+          {% endif %}
+          <p class="dash-card-title">{{ p.titre }}</p>
+          <p class="dash-card-meta">{{ p.duree }} · {{ p.surface }} m²</p>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="dash-empty fm-paper">
+        <p class="dash-empty-title">Pas encore assez de tissu</p>
+        <p class="dash-empty-sub">Scanne un vêtement : on te dira aussitôt quels patrons deviennent réalisables.</p>
+        <a href="{% url 'ajout_textile' %}" class="dash-empty-cta">
+          Scanner un vêtement
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- ══════════════ Badges ══════════════ -->
+    <section>
+      <div class="dash-section-head">
+        <h2 class="dash-section-title">Badges à portée</h2>
+        <button type="button" class="dash-section-more" onclick="dashOpen('sheet-badges')"
+                style="background:none;border:none;padding:0;cursor:pointer;font-family:inherit;">
+          {{ nb_badges_obtenus }} / {{ nb_badges_total }}
+        </button>
+      </div>
+      <div class="dash-medals">
+        {% for badge in badges_a_portee %}
+        <button type="button" onclick="dashOpen('sheet-badges')" class="dash-medal fm-paper"
+                style="--medal-pct: {{ badge.progress_pct }}%;
+                       --medal-arc: {{ badge.couleur.arc }};
+                       --medal-c1: {{ badge.couleur.c1 }};
+                       --medal-c2: {{ badge.couleur.c2 }};
+                       --medal-bg: {{ badge.couleur.bg }};
+                       --medal-border: {{ badge.couleur.border }};
+                       cursor:pointer; font-family:inherit;">
+          <span class="dash-medal-ring">
+            <span class="dash-medal-core">{{ badge.emoji }}</span>
+          </span>
+          <p class="dash-medal-name">{{ badge.nom }}</p>
+          <p class="dash-medal-state">
+            {% if badge.earned %}OBTENU{% else %}{{ badge.progress_current }} / {{ badge.progress_max }}{% endif %}
+          </p>
+        </button>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- ══════════════ Retour bêta ══════════════ -->
+    <a class="dash-beta dash-link fm-paper" hx-boost="false"
+       href="mailto:nils.demougeot@edu.devinci.fr?subject=Retour%20La%20Fabrique%20%E2%80%94%20B%C3%AAta&body=Bonjour%2C%0A%0AVoici%20mon%20retour%20sur%20La%20Fabrique%20%3A%0A%0A">
+      <span class="dash-beta-tag">Bêta</span>
+      <span class="dash-beta-text">On apprend : partage tes idées, bugs ou difficultés</span>
+      <span style="color:var(--red);flex:none;">→</span>
+    </a>
+
+  </div>
+</main>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     FEUILLE — MES PIÈCES
+     ══════════════════════════════════════════════════════════ -->
+<div class="dash fm dash-sheet" id="sheet-coins">
+  <div class="dash-sheet-inner">
+    <div class="dash-sheet-head">
+      <button type="button" class="dash-back" onclick="dashClose('sheet-coins')" aria-label="Retour">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="dash-sheet-title">Mes pièces</span>
+    </div>
+
+    <div class="dash-sheet-hero is-coins">
+      <img class="dash-hero-img" src="{% static 'core/images/icons/coin.png' %}" alt="" draggable="false">
+      <div class="dash-hero-figure">
+        <span class="dash-hero-big" id="coins-balance">{{ credits }}</span>
+        <span class="dash-hero-unit">pièces</span>
+      </div>
+      <p class="dash-hero-note">disponibles dans ta bourse</p>
+    </div>
+
+    <section class="dash-sheet-section">
+      <div class="dash-section-head">
+        <h3 class="dash-section-title">Boutique</h3>
+        <span class="dash-section-more">Dépense tes pièces</span>
+      </div>
+      <div class="dash-sheet-rail">
+
+        <div class="dash-shop-item fm-paper">
+          <span class="dash-shop-icon" style="background:#DCF5E0;color:#237329;"><i class="ic fi-br-reel"></i></span>
+          <p class="dash-shop-name">Patron Tote Bag Éco</p>
+          <p class="dash-shop-desc">Un sac stylé cousu de chutes de tissu récupérées</p>
+          <p class="dash-shop-price"><img src="{% static 'core/images/icons/coin.png' %}" alt="pièces">15</p>
+          <button type="button" class="dash-btn" data-price="15" onclick="dashBuyItem(this)">Obtenir</button>
+        </div>
+
+        <div class="dash-shop-item fm-paper">
+          <span class="dash-shop-icon" style="background:#FFF0E8;color:#C2603F;"><i class="ic fi-br-ruler-triangle"></i></span>
+          <p class="dash-shop-name">Patron Robe Fluide</p>
+          <p class="dash-shop-desc">Coupe intemporelle, zéro déchet de coupe</p>
+          <p class="dash-shop-price"><img src="{% static 'core/images/icons/coin.png' %}" alt="pièces">35</p>
+          <button type="button" class="dash-btn" data-price="35" onclick="dashBuyItem(this)">Obtenir</button>
+        </div>
+
+        <div class="dash-shop-item fm-paper">
+          <span class="dash-shop-icon" style="background:#E8F4FD;color:#2E6FB0;"><i class="ic fi-br-palette"></i></span>
+          <p class="dash-shop-name">Guide Teinture Naturelle</p>
+          <p class="dash-shop-desc">Indigo, garance et kaki 100 % naturels</p>
+          <p class="dash-shop-price"><img src="{% static 'core/images/icons/coin.png' %}" alt="pièces">25</p>
+          <button type="button" class="dash-btn" data-price="25" onclick="dashBuyItem(this)">Obtenir</button>
+        </div>
+
+        <div class="dash-shop-item fm-paper">
+          <span class="dash-shop-icon" style="background:#F4E8FF;color:#7A4FB0;"><i class="ic fi-br-scissors"></i></span>
+          <p class="dash-shop-name">Patron Veste Upcyclée</p>
+          <p class="dash-shop-desc">Transforme un vieux jean en veste tendance</p>
+          <p class="dash-shop-price"><img src="{% static 'core/images/icons/coin.png' %}" alt="pièces">45</p>
+          <button type="button" class="dash-btn" data-price="45" onclick="dashBuyItem(this)">Obtenir</button>
+        </div>
+
+        <div class="dash-shop-item fm-paper">
+          <span class="dash-shop-icon" style="background:#FFF3CD;color:#5B8C2A;"><i class="ic fi-br-leaf"></i></span>
+          <p class="dash-shop-name">Badge Éco Warrior</p>
+          <p class="dash-shop-desc">Badge exclusif affiché sur ton profil</p>
+          <p class="dash-shop-price"><img src="{% static 'core/images/icons/coin.png' %}" alt="pièces">10</p>
+          {% if has_eco_warrior %}
+          <button type="button" class="dash-btn is-done" disabled>Obtenu <i class="ic fi-br-check"></i></button>
+          {% else %}
+          <button type="button" class="dash-btn" data-price="10" onclick="dashBuyBadge(this)">Obtenir</button>
+          {% endif %}
+        </div>
+
+        <div class="dash-shop-item fm-paper">
+          <span class="dash-shop-icon" style="background:#FFEBEE;color:#C2405A;"><i class="ic fi-br-box"></i></span>
+          <p class="dash-shop-name">Pack Zéro Déchet</p>
+          <p class="dash-shop-desc">4 patrons + guide couture responsable complet</p>
+          <p class="dash-shop-price"><img src="{% static 'core/images/icons/coin.png' %}" alt="pièces">55</p>
+          <button type="button" class="dash-btn" data-price="55" onclick="dashBuyItem(this)">Obtenir</button>
+        </div>
+
+        <div class="dash-shop-item fm-paper">
+          <span class="dash-shop-icon" style="background:#FFF9C4;color:#C99A12;"><i class="ic fi-br-star"></i></span>
+          <p class="dash-shop-name">Accès Premium</p>
+          <p class="dash-shop-desc">Tous les patrons en illimité pendant 1 mois</p>
+          <p class="dash-shop-price"><img src="{% static 'core/images/icons/coin.png' %}" alt="pièces">80</p>
+          <button type="button" class="dash-btn" data-price="80" onclick="dashBuyItem(this)">Obtenir</button>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="dash-sheet-section">
+      <div class="dash-section-head">
+        <h3 class="dash-section-title">Recharger mes pièces</h3>
+      </div>
+      <div class="dash-packs">
+        <div class="dash-pack p1">
+          <p class="dash-pack-name">Graine</p>
+          <p class="dash-pack-coins"><img src="{% static 'core/images/icons/coin.png' %}" alt="pièces">50</p>
+          <p class="dash-pack-price">0,99 €</p>
+          <button type="button" class="dash-pack-btn" onclick="dashBuyPack(50, '0,99')">Acheter</button>
+        </div>
+        <div class="dash-pack p2">
+          <span class="dash-pack-tag">Populaire</span>
+          <p class="dash-pack-name">Bobine</p>
+          <p class="dash-pack-coins"><img src="{% static 'core/images/icons/coin.png' %}" alt="pièces">150</p>
+          <p class="dash-pack-price">2,49 €</p>
+          <button type="button" class="dash-pack-btn" onclick="dashBuyPack(150, '2,49')">Acheter</button>
+        </div>
+        <div class="dash-pack p3">
+          <p class="dash-pack-name">Atelier</p>
+          <p class="dash-pack-coins"><img src="{% static 'core/images/icons/coin.png' %}" alt="pièces">400</p>
+          <p class="dash-pack-price">5,99 €</p>
+          <button type="button" class="dash-pack-btn" onclick="dashBuyPack(400, '5,99')">Acheter</button>
+        </div>
+        <div class="dash-pack p4">
+          <span class="dash-pack-tag">Meilleure valeur</span>
+          <p class="dash-pack-name">Maître</p>
+          <p class="dash-pack-coins"><img src="{% static 'core/images/icons/coin.png' %}" alt="pièces">1000</p>
+          <p class="dash-pack-price">12,99 €</p>
+          <button type="button" class="dash-pack-btn" onclick="dashBuyPack(1000, '12,99')">Acheter</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     FEUILLE — BILAN CO₂
+     ══════════════════════════════════════════════════════════ -->
+<div class="dash fm dash-sheet" id="sheet-eco">
+  <div class="dash-sheet-inner">
+    <div class="dash-sheet-head">
+      <button type="button" class="dash-back" onclick="dashClose('sheet-eco')" aria-label="Retour">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="dash-sheet-title">Bilan CO₂</span>
+    </div>
+
+    <div class="dash-sheet-hero is-eco">
+      <img class="dash-hero-img" src="{% static 'core/images/icons/leaf.png' %}" alt="" draggable="false">
+      <div class="dash-hero-figure">
+        <span class="dash-hero-big">−{{ co2_economise }}</span>
+        <span class="dash-hero-unit">kg CO₂</span>
+      </div>
+      <p class="dash-hero-note">économisés grâce à tes {{ nb_vetements }} pièce{{ nb_vetements|pluralize }} sauvée{{ nb_vetements|pluralize }}</p>
+    </div>
+
+    <section class="dash-sheet-section">
+      <div class="dash-section-head">
+        <h3 class="dash-section-title">C'est équivalent à…</h3>
+      </div>
+      <div class="dash-sheet-rail" id="eco-comparisons"></div>
+    </section>
+
+    <div class="dash-community">
+      <p class="dash-community-title">La Fabrique, ensemble</p>
+      <div class="dash-community-stats">
+        <div class="dash-community-stat">
+          <p class="dash-community-value" id="comm-co2">0</p>
+          <p class="dash-community-label">kg CO₂<br>économisés</p>
+        </div>
+        <div class="dash-community-stat">
+          <p class="dash-community-value" id="comm-users">0</p>
+          <p class="dash-community-label">membres<br>actifs</p>
+        </div>
+        <div class="dash-community-stat">
+          <p class="dash-community-value" id="comm-pieces">0</p>
+          <p class="dash-community-label">pièces de tissu<br>sauvées</p>
+        </div>
+      </div>
+      <div>
+        <div class="dash-community-legend">
+          <span>Objectif communautaire : 2 000 kg CO₂</span>
+          <b id="comm-pct">0 %</b>
+        </div>
+        <div class="dash-community-bar"><i id="comm-bar"></i></div>
+      </div>
+    </div>
+
+    <section class="dash-sheet-section">
+      <div class="dash-section-head">
+        <h3 class="dash-section-title">Le savais-tu ?</h3>
+      </div>
+      <div class="dash-sheet-rail">
+        <div class="dash-fact" style="background:#EDFFF4;">
+          <span class="dash-cmp-icon" style="color:#E8743B;"><i class="ic fi-br-flame"></i></span>
+          <p class="dash-fact-title">La mode, c'est sérieux</p>
+          <p class="dash-fact-body">L'industrie textile génère 10 % des émissions mondiales de CO₂ — plus que tous les vols internationaux réunis.</p>
+        </div>
+        <div class="dash-fact" style="background:#EFF6FF;">
+          <span class="dash-cmp-icon" style="color:#2E6FB0;"><i class="ic fi-br-raindrops"></i></span>
+          <p class="dash-fact-title">Un jean très gourmand</p>
+          <p class="dash-fact-body">Fabriquer un seul jean consomme 7 500 litres d'eau, soit l'eau que tu bois pendant 10 ans.</p>
+        </div>
+        <div class="dash-fact" style="background:#FFF4ED;">
+          <span class="dash-cmp-icon" style="color:#C2603F;"><i class="ic fi-br-trash"></i></span>
+          <p class="dash-fact-title">Une benne par seconde</p>
+          <p class="dash-fact-body">Chaque seconde dans le monde, l'équivalent d'un camion de vêtements est mis en décharge ou brûlé.</p>
+        </div>
+        <div class="dash-fact" style="background:#F5F3FF;">
+          <span class="dash-cmp-icon" style="color:#7A4FB0;"><i class="ic fi-br-recycle"></i></span>
+          <p class="dash-fact-title">La seconde main, ça déchire</p>
+          <p class="dash-fact-body">Acheter un vêtement de seconde main réduit son empreinte carbone de 82 %.</p>
+        </div>
+        <div class="dash-fact" style="background:#FAFFF0;">
+          <span class="dash-cmp-icon" style="color:#5B8C2A;"><i class="ic fi-br-leaf"></i></span>
+          <p class="dash-fact-title">Le slow fashion, ça marche</p>
+          <p class="dash-fact-body">Doubler la durée de vie d'un vêtement réduit de 44 % son impact environnemental total.</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     FEUILLE — TOUS MES BADGES
+     ══════════════════════════════════════════════════════════ -->
+<div class="dash fm dash-sheet" id="sheet-badges">
+  <div class="dash-sheet-inner">
+    <div class="dash-sheet-head">
+      <button type="button" class="dash-back" onclick="dashClose('sheet-badges')" aria-label="Retour">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="dash-sheet-title">Mes badges</span>
+    </div>
+
+    <div class="dash-sheet-hero is-badge">
+      <div class="dash-hero-figure">
+        <span class="dash-hero-big" id="badges-earned-count">{{ nb_badges_obtenus }}</span>
+        <span class="dash-hero-unit">/ {{ nb_badges_total }}</span>
+      </div>
+      <p class="dash-hero-note">badges décrochés dans ton atelier</p>
+      <a href="{% url 'communaute_ecussons' %}" class="dash-hero-link" hx-boost="false"
+         style="display:inline-block;margin-top:10px;color:#fff;font:800 12px var(--display,inherit);text-decoration:underline;text-underline-offset:3px;">
+        Voir mes écussons dans la communauté
+      </a>
+    </div>
+
+    <div class="dash-quest-list">
+      {% for badge in badges_display %}
+      <div class="dash-quest {% if badge.earned %}is-earned{% endif %}" data-badge-nom="{{ badge.nom }}"
+           style="--medal-c1: {{ badge.couleur.c1 }}; --medal-c2: {{ badge.couleur.c2 }};">
+        <span class="dash-quest-medal">{{ badge.emoji }}</span>
+        <div class="dash-quest-body">
+          <p class="dash-quest-name">{{ badge.nom }}</p>
+          <p class="dash-quest-desc">{% if badge.earned %}{{ badge.description }}{% else %}{{ badge.condition }}{% endif %}</p>
+          <div class="dash-quest-track">
+            <span class="dash-quest-bar"><i data-fill="{{ badge.progress_pct }}"></i></span>
+            <span class="dash-quest-meta">
+              {% if badge.earned %}{{ badge.date_obtention|date:"d/m/Y" }}{% else %}{{ badge.progress_current }} / {{ badge.progress_max }}{% endif %}
+            </span>
+          </div>
+        </div>
+        <span class="dash-quest-flag">
+          {% if badge.earned %}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          {% else %}
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 10h-1V7c0-2.76-2.24-5-5-5S7 4.24 7 7v3H6c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2zm-6 7c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-7H8.9V7c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v3z"/></svg>
+          {% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+
+{% block bottom_nav %}
+  {% with nav_active='accueil' %}
+    {% include 'core/bottom_nav.html' %}
+  {% endwith %}
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+(function () {
+  const CREDITS  = parseInt('{{ credits|unlocalize }}', 10) || 0;
+  const CO2_KG   = parseFloat('{{ co2_economise|unlocalize }}') || 0;
+  const COIN_SRC = '{% static "core/images/icons/coin.png" %}';
+  const BUY_URL  = '{% url "acheter_badge" %}';
+  const CSRF     = '{{ csrf_token }}';
+
+  const header = document.querySelector('.header-global');
+  const nav    = document.querySelector('.bottom-nav');
+
+  /* ── Menu de compte du bandeau ────────────────────────────── */
+  const accountBtn  = document.getElementById('dash-account-btn');
+  const accountMenu = document.getElementById('dash-account-menu');
+
+  function closeAccountMenu() {
+    if (!accountMenu) return;
+    accountMenu.classList.remove('is-open');
+    if (accountBtn) accountBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  if (window.__dashAccount) document.removeEventListener('click', window.__dashAccount);
+  window.__dashAccount = e => {
+    if (!accountMenu) return;
+    if (accountBtn && e.target.closest('#dash-account-btn')) {
+      const open = accountMenu.classList.toggle('is-open');
+      accountBtn.setAttribute('aria-expanded', String(open));
+      return;
+    }
+    if (!e.target.closest('#dash-account-menu')) closeAccountMenu();
+  };
+  document.addEventListener('click', window.__dashAccount);
+
+  /* ── Ouverture / fermeture des feuilles ───────────────────── */
+  window.dashOpen = function (id) {
+    const sheet = document.getElementById(id);
+    if (!sheet) return;
+    closeAccountMenu();
+    sheet.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    if (header) header.style.display = 'none';
+    if (nav) nav.style.display = 'none';
+
+    if (id === 'sheet-coins') refreshShopButtons();
+    if (id === 'sheet-eco')   fillEcoSheet();
+    if (id === 'sheet-badges') animateBars(sheet);
+  };
+
+  window.dashClose = function (id) {
+    const sheet = document.getElementById(id);
+    if (sheet) sheet.classList.remove('is-open');
+    if (document.querySelector('.dash-sheet.is-open')) return;
+    document.body.style.overflow = '';
+    if (header) header.style.display = '';
+    if (nav) nav.style.display = '';
+  };
+
+  function closeAll() {
+    document.querySelectorAll('.dash-sheet.is-open').forEach(s => s.classList.remove('is-open'));
+    document.body.style.overflow = '';
+    if (header) header.style.display = '';
+    if (nav) nav.style.display = '';
+  }
+
+  // Ce script est ré-exécuté à chaque navigation htmx : on remplace les
+  // écouteurs précédents au lieu de les empiler sur `document`.
+  if (window.__dashEsc) document.removeEventListener('keydown', window.__dashEsc);
+  window.__dashEsc = e => { if (e.key === 'Escape') { closeAccountMenu(); closeAll(); } };
+  document.addEventListener('keydown', window.__dashEsc);
+
+  // Filet de sécurité : si l'on quitte la page alors qu'une feuille est
+  // ouverte, le header et la barre de navigation doivent réapparaître.
+  if (window.__dashLeave) document.removeEventListener('htmx:beforeSwap', window.__dashLeave);
+  window.__dashLeave = () => closeAll();
+  document.addEventListener('htmx:beforeSwap', window.__dashLeave);
+
+  /* ── Boutique ─────────────────────────────────────────────── */
+  function refreshShopButtons() {
+    document.querySelectorAll('#sheet-coins .dash-btn[data-price]').forEach(btn => {
+      if (btn.classList.contains('is-done')) return;
+      const price = parseInt(btn.dataset.price, 10) || 0;
+      if (price > CREDITS) {
+        btn.classList.add('is-locked');
+        btn.innerHTML = 'Manque ' + (price - CREDITS) +
+                        ' <img src="' + COIN_SRC + '" alt="pièces">';
+      } else {
+        btn.classList.remove('is-locked');
+        btn.textContent = 'Obtenir';
+      }
+    });
+  }
+
+  window.dashBuyItem = function (btn) {
+    const price = parseInt(btn.dataset.price, 10) || 0;
+    if (CREDITS < price) return;
+    alert('Achat simulé — ' + price + ' pièces dépensées.\n(La transaction sera implémentée prochainement.)');
+  };
+
+  window.dashBuyPack = function (coins, price) {
+    alert('Achat simulé — pack de ' + coins + ' pièces pour ' + price + ' €.\n(Le paiement sera implémenté prochainement.)');
+  };
+
+  window.dashBuyBadge = function (btn) {
+    const price = parseInt(btn.dataset.price, 10) || 0;
+    if (CREDITS < price) return;
+
+    btn.disabled = true;
+    btn.textContent = '…';
+
+    fetch(BUY_URL, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' },
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) throw new Error(data.error || 'Une erreur est survenue.');
+
+        btn.classList.remove('is-locked');
+        btn.classList.add('is-done');
+        btn.innerHTML = 'Obtenu <i class="ic fi-br-check"></i>';
+
+        const solde = document.getElementById('coins-balance');
+        if (solde) solde.textContent = data.nouveau_solde;
+        document.querySelectorAll('.dash-coins span').forEach(el => {
+          el.textContent = data.nouveau_solde;
+        });
+
+        markBadgeEarned('Éco Warrior');
+      })
+      .catch(err => {
+        btn.disabled = false;
+        btn.textContent = 'Obtenir';
+        alert(err.message || 'Erreur réseau. Réessaie dans un instant.');
+      });
+  };
+
+  /* ── Mise à jour du badge acheté, sans rechargement ────────── */
+  function markBadgeEarned(nom) {
+    const today = new Date().toLocaleDateString('fr-FR',
+      { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    const quest = document.querySelector('.dash-quest[data-badge-nom="' + nom + '"]');
+    if (quest) {
+      quest.classList.add('is-earned');
+      const desc = quest.querySelector('.dash-quest-desc');
+      if (desc) desc.textContent = 'Badge exclusif';
+      const meta = quest.querySelector('.dash-quest-meta');
+      if (meta) meta.textContent = today;
+      const fill = quest.querySelector('.dash-quest-bar > i');
+      if (fill) { fill.dataset.fill = '100'; fill.style.width = '100%'; }
+      const flag = quest.querySelector('.dash-quest-flag');
+      if (flag) flag.innerHTML =
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+        '<polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="3" ' +
+        'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
+
+    const total = document.querySelectorAll('.dash-quest').length;
+    const earned = document.querySelectorAll('.dash-quest.is-earned').length;
+    const heroCount = document.getElementById('badges-earned-count');
+    if (heroCount) heroCount.textContent = earned;
+    document.querySelectorAll('.dash-section-more').forEach(el => {
+      if (/^\s*\d+\s*\/\s*\d+\s*$/.test(el.textContent)) {
+        el.textContent = earned + ' / ' + total;
+      }
+    });
+  }
+
+  /* ── Bilan CO₂ ────────────────────────────────────────────── */
+  function buildComparisons(co2) {
+    const kmVoiture = Math.round(co2 / 0.12);
+    const steaks    = Math.round(co2 / 2.5);
+    const netflix   = Math.round(co2 / 0.036);
+    const arbre     = Math.round(co2 / 0.022);
+
+    const villeVoiture =
+      kmVoiture >= 700 ? "l'équivalent d'un aller-retour à Bordeaux" :
+      kmVoiture >= 465 ? "l'équivalent d'un aller-retour à Lyon" :
+      kmVoiture >= 200 ? "l'équivalent d'un aller-retour à Tours" :
+      kmVoiture >= 100 ? "l'équivalent d'un aller-retour à Orléans" :
+                         'chaque kilomètre compte';
+
+    const ic = n => '<i class="ic ' + n + '"></i>';
+
+    return [
+      { glyph: ic('fi-br-car'),       color: '#C2603F', bg: '#FFF3E0', value: kmVoiture + ' km',       desc: 'en voiture',              fun: villeVoiture },
+      { glyph: ic('fi-br-hamburger'), color: '#C2405A', bg: '#FCE4EC', value: String(steaks),          desc: steaks > 1 ? 'steaks de bœuf' : 'steak de bœuf', fun: 'la planète te dit merci' },
+      { glyph: ic('fi-br-screen'),    color: '#7A4FB0', bg: '#F3E5F5', value: netflix + ' h',          desc: 'de streaming',            fun: 'soit ' + Math.round(netflix / 24) + ' jours non-stop' },
+      { glyph: ic('fi-br-tree'),      color: '#2E7D32', bg: '#E8F5E9', value: arbre + ' jours',        desc: "d'absorption d'un arbre", fun: arbre >= 365 ? (arbre / 365).toFixed(1) + ' ans pour un seul arbre' : 'pour un seul arbre' },
+      { glyph: '👕',                  color: '#2E6FB0', bg: '#E3F2FD', value: (co2 / 5).toFixed(1),    desc: 't-shirts fast fashion',   fun: 'que tu as évité de faire fabriquer' },
+      { glyph: ic('fi-br-plane'),     color: '#C99A12', bg: '#FFF8E1', value: Math.round(co2 / 0.255) + ' km', desc: 'évités en avion', fun: 'moins de kérosène, plus de karma' },
+    ];
+  }
+
+  function animateCounter(el, target, duration) {
+    if (!el) return;
+    const start = Date.now();
+    (function tick() {
+      const t = Math.min((Date.now() - start) / duration, 1);
+      el.textContent = Math.round((1 - Math.pow(1 - t, 3)) * target).toLocaleString('fr-FR');
+      if (t < 1) requestAnimationFrame(tick);
+    })();
+  }
+
+  let ecoFilled = false;
+  function fillEcoSheet() {
+    const box = document.getElementById('eco-comparisons');
+    if (box && !ecoFilled) {
+      ecoFilled = true;
+      buildComparisons(CO2_KG).forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'dash-cmp';
+        card.style.background = c.bg;
+        card.innerHTML =
+          '<span class="dash-cmp-icon" style="color:' + c.color + '">' + c.glyph + '</span>' +
+          '<span class="dash-cmp-value">' + c.value + '</span>' +
+          '<span class="dash-cmp-desc">' + c.desc + '</span>' +
+          '<span class="dash-cmp-fun">' + c.fun + '</span>';
+        box.appendChild(card);
+      });
+    }
+
+    // Chiffres communautaires de la bêta (valeurs de démonstration).
+    const TOTAL_CO2 = 1247, TOTAL_USERS = 312, TOTAL_PIECES = 8941, GOAL = 2000;
+    const pct = Math.round(TOTAL_CO2 / GOAL * 100);
+
+    setTimeout(() => {
+      animateCounter(document.getElementById('comm-co2'),    TOTAL_CO2,    1300);
+      animateCounter(document.getElementById('comm-users'),  TOTAL_USERS,   900);
+      animateCounter(document.getElementById('comm-pieces'), TOTAL_PIECES, 1600);
+      const bar = document.getElementById('comm-bar');
+      if (bar) bar.style.width = pct + '%';
+      const label = document.getElementById('comm-pct');
+      if (label) label.textContent = pct + ' %';
+    }, 80);
+  }
+
+  /* ── Barres de progression ────────────────────────────────── */
+  function animateBars(scope) {
+    (scope || document).querySelectorAll('[data-fill]').forEach(el => {
+      el.style.width = el.dataset.fill + '%';
+    });
+  }
+  setTimeout(() => animateBars(document.querySelector('.dash-body')), 140);
+
+  /* Ouverture directe depuis le header (« … pièces » → ?credits=1). */
+  if (new URLSearchParams(window.location.search).get('credits') === '1') {
+    window.dashOpen('sheet-coins');
+  }
+})();
+</script>
+{% endblock %}

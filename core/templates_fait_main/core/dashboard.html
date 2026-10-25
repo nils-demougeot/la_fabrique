@@ -3,8 +3,9 @@
 
 {% comment %}
   ─────────────────────────────────────────────────────────────────────────
-  Tableau de bord — DA « fait main » : nappe vichy jaune, feuilles de
-  papier jauni déchirées, masking tape. Polices inchangées (Bricolage
+  Tableau de bord — DA « fait main » : fond fixe blanc cassé uni parsemé
+  de chutes de tissu aux couleurs des rubriques, feuilles de papier jauni déchirées,
+  masking tape. Polices inchangées (Bricolage
   Grotesque + DM Sans/Mono), dominante brune : encre #3A2A1E, noisette #8B5E3C.
 
   Toutes les données affichées viennent de la vue `dashboard` : aucune
@@ -18,7 +19,7 @@
 
 {% block extra_css %}
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'core/css/fait-main.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/fait-main.css' %}?v=3">
 <style>
   /* =========================================================
      Jetons de design du tableau de bord — DA « fait main »
@@ -41,7 +42,8 @@
 
     /* Vichy brun (voir .fm). */
     --fm-check: rgba(140,95,55,.26);
-    --fm-cloth: #E6D3B8;
+    --fm-cloth: #FAF6EE;   /* blanc cassé */
+    --creme:    #FFF3DF;
 
     --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
     --text:    'DM Sans', 'Manrope', system-ui, sans-serif;
@@ -688,10 +690,8 @@
     overflow-y: auto;
     scrollbar-width: none;
     padding-bottom: 56px;
-    /* Même nappe vichy que la page (héritée de .dash.fm). */
-    background-color: var(--fm-cloth);
-    background-image: inherit;
-    background-size: inherit;
+    /* Transparente : le fond fixe de .dash.fm reste visible derrière. */
+    background: transparent;
     font-family: var(--text);
     color: var(--ink);
     animation: dashSheetIn .3s cubic-bezier(.33,1,.68,1);
@@ -1053,6 +1053,89 @@
     .dash-sheet-inner, .dash-hero-img { animation: none; }
     .dash-bar > i, .dash-quest-bar > i, .dash-community-bar > i { transition: none; }
   }
+
+  /* =========================================================
+     Fond kraft foncé (fond fixe : voir fait-main.css)
+     ========================================================= */
+  /* En-tête figé, seul le corps défile : la page occupe toute la hauteur
+     disponible et c'est .dash-body qui porte le défilement. Le bandeau
+     (salutation, date, pièces) reste donc en place ; tout le reste, à
+     partir de la phrase d'accroche, défile et est coupé net sous lui. */
+  main.dash.fm {
+    height: 100%;
+    min-height: 0;
+  }
+  main.dash.fm > .dash-hero { position: relative; z-index: 2; flex: none; padding-bottom: 14px; }
+  main.dash.fm .dash-body > .dash-headline { margin-top: 0; }
+  main.dash.fm > .dash-body {
+    position: relative;
+    z-index: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+  main.dash.fm > .dash-body::-webkit-scrollbar { display: none; }
+  /* Titres de section : lisibles même devant une chute de tissu. */
+  .dash-section-title, .dash-section-more {
+    text-shadow: 0 0 6px #FAF6EE, 0 0 12px #FAF6EE;
+  }
+
+  /* Fond uni et lisse : ni coins de nappe, ni grain de papier. */
+  main.dash.fm::after { display: none; }
+
+  /* Chute de tissu rouge en haut, fixe avec le fond : elle ne bouge pas
+     quand la page défile. */
+  .dash-chutes {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    width: min(100vw, 430px);
+    height: 100vh;
+    height: 100dvh;
+    transform: translateX(-50%);
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .dash-chute {
+    position: absolute;
+    display: block;
+    background-color: #FBF5EA;
+    background-image:
+      linear-gradient(90deg, var(--c) 50%, transparent 50%),
+      linear-gradient(var(--c) 50%, transparent 50%);
+    background-size: var(--t, 16px) var(--t, 16px);
+    -webkit-mask: var(--pinked);
+            mask: var(--pinked);
+  }
+  .dash-chute.is-dechiree {
+    -webkit-mask: var(--torn);
+    -webkit-mask-composite: var(--torn-op-webkit);
+            mask: var(--torn);
+            mask-composite: var(--torn-op);
+  }
+  .dash-chute.c-rouge  { --c: rgba(185,80,58,.6); }
+  .dash-chute.c-orange { --c: rgba(224,138,78,.62); }
+  .dash-chute.c-jaune  { --c: rgba(237,186,78,.66); }
+  .dash-chute.c-vert   { --c: rgba(127,128,69,.55); }
+  .dash-chute.c-marron { --c: rgba(139,94,60,.58); }
+  .dash.fm::before { background-image: none; }
+
+  /* Textes posés directement sur le fond blanc cassé : à l'encre. */
+  .dash-hello, .dash-headline { color: var(--ink); }
+  .dash-date { color: var(--muted); }
+  .dash-headline em { color: var(--red); }
+  .dash-hero-avatar { box-shadow: 0 0 0 4px #fff, 0 5px 12px rgba(70,45,20,.25); }
+  .dash-section-title { color: var(--ink); }
+  .dash-section-more { color: var(--red); }
+  /* Cartes en papier blanc cassé, détachées du fond clair
+     par une ombre marquée. */
+  .dash { --fm-paper: #FFFDF8; --kraft: #F3EADB; }
+  .dash .fm-paper { filter: drop-shadow(0 1px 1px rgba(90,55,20,.32)) drop-shadow(0 10px 16px rgba(90,55,20,.24)); }
+
+  /* Barre de navigation un ton plus sombre que le fond, pour s'en détacher. */
+  html .fab-nav { --fab-bar-bg: #2B1D15; }
 </style>
 {% endblock %}
 
@@ -1062,6 +1145,13 @@
 
 {% block content %}
 <main class="dash fm">
+
+  <!-- ══════════════ Chutes de tissu colorées (fond fixe, purement visuel) ══════════════ -->
+  <div class="dash-chutes" aria-hidden="true">
+    <span class="dash-chute c-marron" style="top:-16px;left:48%;width:176px;height:48px;transform:rotate(6deg)"></span>
+  </div>
+
+
 
   <!-- ══════════════ Bandeau d'accueil ══════════════ -->
   <header class="dash-hero">
@@ -1095,6 +1185,10 @@
       </button>
     </div>
 
+  </header>
+
+  <div class="dash-body">
+
     <h1 class="dash-headline">
       {% if nb_vetements %}
         Tu as <em>{{ surface_totale }} m²</em> de tissu qui attendent une seconde vie.
@@ -1102,16 +1196,11 @@
         Scanne ton premier vêtement pour ouvrir <em>ta banque de tissus</em>.
       {% endif %}
     </h1>
-  </header>
-
-  <div class="dash-body">
 
     <!-- ══════════════ Niveau d'atelier ══════════════
          Le bloc entier ouvre l'échelle des niveaux (rubrique Partage) : c'est
          là qu'on voit d'où viennent les points et ce que chaque palier ouvre. -->
     <section class="dash-level fm-paper">
-      <span class="fm-tape is-tl" aria-hidden="true"></span>
-      <span class="fm-tape is-green is-side" aria-hidden="true"></span>
       <a href="{% url 'communaute_progression' %}" class="dash-level-top">
         <span class="dash-ring" style="background: conic-gradient(var(--ring) 0 {{ niveau.pourcentage }}%, rgba(58,42,30,.1) {{ niveau.pourcentage }}% 100%);">
           <span>{{ niveau.numero }}</span>
@@ -1203,7 +1292,6 @@
     <!-- ══════════════ Tissus + patrons ══════════════ -->
     <div class="dash-duo">
       <a href="{% url 'mes_tissus' %}" class="dash-tile dash-link fm-paper">
-        <span class="fm-tape is-green is-tl" aria-hidden="true"></span>
         <div class="dash-tile-head">
           <span class="dash-swatches">
             {% for t in apercu_tissus %}
@@ -1226,7 +1314,6 @@
       </a>
 
       <a href="{% url 'patrons' %}" class="dash-tile dash-link fm-paper">
-        <span class="fm-tape is-tr" aria-hidden="true"></span>
         <div class="dash-tile-head">
           <span style="display:flex;align-items:center;gap:9px;">
             <span class="dash-mini-ring" style="background: conic-gradient(var(--ring) 0 {{ patrons_pourcentage }}%, rgba(58,42,30,.1) {{ patrons_pourcentage }}% 100%);">
