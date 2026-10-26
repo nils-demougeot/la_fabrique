@@ -145,6 +145,35 @@
   }
   .ep-novideo p { font: 600 13px var(--text); margin: 0; }
 
+  /* ── Mode texte : geste sans vidéo ──
+     Plutôt qu'une grande zone vide, la consigne prend toute la place : elle
+     s'affiche en entier (plus de troncature à 3 lignes ni de pop-up), en plus
+     grand, suivie du conseil de l'étape, et défile si elle est longue. */
+  .ep-page.is-texte .ep-mid { display: none; }
+  .ep-page.is-texte .ep-bottom { flex: 1; min-height: 0; padding-top: 18px; }
+  .ep-page.is-texte .ep-desc-block {
+    flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none;
+    display: flex; flex-direction: column; justify-content: flex-start;
+    padding-top: 22px;
+  }
+  .ep-page.is-texte .ep-desc-block::-webkit-scrollbar { display: none; }
+  .ep-page.is-texte .ep-title-wrap { -webkit-mask-image: none; mask-image: none; }
+  .ep-page.is-texte .ep-title { white-space: normal; display: block; }
+  .ep-page.is-texte .ep-desc {
+    display: block; -webkit-line-clamp: unset; overflow: visible;
+    font-size: 17px; line-height: 1.6; color: #EFE9DE; margin-top: 14px;
+  }
+  .ep-page.is-texte .ep-expand { display: none; }
+  .ep-conseil {
+    margin-top: 18px; padding: 14px 16px; border-radius: 16px;
+    background: rgba(255,253,248,.1); border: 1px solid rgba(255,253,248,.16);
+  }
+  .ep-conseil-label {
+    font: 500 10px var(--mono); color: #E8C27A;
+    text-transform: uppercase; letter-spacing: .1em;
+  }
+  .ep-conseil p { font: 400 14px/1.55 var(--text); color: #D9D2C6; margin: 6px 0 0; }
+
   /* ── Panneau bas ── */
   .ep-bottom {
     position: relative;
@@ -545,7 +574,7 @@
 
 {% block content %}
 <div class="ep">
-<div class="ep-page" id="epPage">
+<div class="ep-page{% if not geste.video_url %} is-texte{% endif %}" id="epPage">
 
   {% if geste.video_url %}
   <video class="ep-bg-video" id="epVideo" preload="metadata" playsinline muted="false" src="{{ geste.video_url }}"></video>
@@ -646,6 +675,12 @@
         <span>Voir toute la consigne</span>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M9 5l6 7-6 7" stroke="#B39CFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
       </button>
+      {% endif %}
+      {% if not geste.video_url and etape.conseil %}
+      <div class="ep-conseil">
+        <div class="ep-conseil-label">Conseil</div>
+        <p>{{ etape.conseil }}</p>
+      </div>
       {% endif %}
     </div>
 

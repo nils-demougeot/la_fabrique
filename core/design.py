@@ -99,11 +99,16 @@ def _surveiller(sender, **kwargs):
 
 @receiver(file_changed, dispatch_uid='design_template_modifie')
 def _template_modifie(sender, file_path, **kwargs):
+    # Les moteurs annexes retombent aussi sur les templates classiques et en
+    # gardent leur propre copie en cache : tout template modifié les concerne.
+    if file_path.suffix != '.html':
+        return None
+    for backend in engines.all():
+        if isinstance(backend, DesignTemplates):
+            backend.vider_caches_annexes()
     if any(dossier in file_path.parents for dossier in _dossiers_annexes()):
-        for backend in engines.all():
-            if isinstance(backend, DesignTemplates):
-                backend.vider_caches_annexes()
         return True  # pris en charge : pas de redémarrage complet
+    return None  # template classique : Django vide aussi son propre cache
 
 
 class DesignMiddleware:
